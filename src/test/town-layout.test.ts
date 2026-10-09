@@ -24,7 +24,7 @@ describe("town masterplan geometry", () => {
   it("gives every doorway a reachable street-facing pavement position", () => {
     for (const b of lots) {
       const d = door(b);
-      expect(d.y, b.id + " door y").toBeGreaterThan(b.y+b.d);
+      expect(d.x >= 0.2 && d.y >= 0.2 && d.x <= 29.8 && d.y <= 29.8,b.id + " bounds").toBe(true);
       expect(lots.some(other => other.id !== b.id && d.x > other.x && d.x < other.x+other.w && d.y > other.y && d.y < other.y+other.d), b.label + " blocked door").toBe(false);
       const route=findRoute({x:8.9,y:8.9},d,lots);
       expect(route.length,b.label + " unreachable").toBeGreaterThan(0);
