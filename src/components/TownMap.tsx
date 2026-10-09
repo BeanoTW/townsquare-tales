@@ -284,6 +284,35 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "#0b1530" : "#c2562a"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
       </svg>
       
+      {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
+      <div className="absolute bottom-16 left-3 z-10 w-32 rounded-lg border-2 border-foreground bg-card/95 p-1 shadow-lg sm:bottom-3 sm:w-40" aria-label="Town minimap">
+        <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
+          <span>🗺️ Town map</span>
+          <span className="text-[10px] font-normal text-muted-foreground">Tap to walk</span>
+        </div>
+        <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded bg-[#8ab979]" role="img" aria-label="Overhead map showing buildings and your location"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            const bounds = e.currentTarget.getBoundingClientRect();
+            routeTo({
+              x: Math.max(0.3, Math.min(N - 0.3, (e.clientX - bounds.left) / bounds.width * N)),
+              y: Math.max(0.3, Math.min(N - 0.3, (e.clientY - bounds.top) / bounds.height * N)),
+            });
+          }}>
+          <rect x="20" y="20" width="9" height="9" fill="#a6cc80" />
+          {[8, 18.3].map((v) => <g key={v}>
+            <rect x={v} y="0" width={v === 8 ? 2 : 1.6} height={N} fill="#50525b" />
+            <rect x="0" y={v} width={N} height={v === 8 ? 2 : 1.6} fill="#50525b" />
+          </g>)}
+          {bs.map((b) => <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.d}
+            fill={b.sign} stroke="#fff" strokeWidth={0.18} rx={0.2}>
+            <title>{b.label}</title>
+          </rect>)}
+          <circle cx={m.x} cy={m.y} r={0.85} fill="#fff" stroke="#111" strokeWidth={0.35} />
+          <circle cx={m.x} cy={m.y} r={0.28} fill="#e44335" />
+        </svg>
+      </div>
+
       {near && (
         <button onClick={() => onEnter(near.id)} className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-xl text-primary-foreground">
           Enter {near.label} <span className="hidden sm:inline">(E)</span>
