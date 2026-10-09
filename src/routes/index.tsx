@@ -95,19 +95,19 @@ function Game() {
 
   const walk = (id: PlaceId) => {
     setPlace(id);
-    if (id !== "home" && Math.random() < 0.3) setEnc(ENCOUNTERS[Math.floor(Math.random() * ENCOUNTERS.length)]);
+    if (id !== "home" && Math.random() < 0.3) setEnc(ENCOUNTERS[Math.floor(Math.random() * ENCOUNTERS.length)]!);
   };
 
-  const job = JOBS[s.job];
-  const nextJob = JOBS[s.job + 1];
+  const job = JOBS[s.job]!;
+  const nextJob = JOBS[s.job + 1]!;
   const actions: Record<PlaceId, { label: string; run: () => void }[]> = {
     home: [
-      { label: `Sleep (+${HOUSES[s.house].rest} energy)`, run: () => {
-        setS((p) => ({ ...p, day: p.day + 1, hour: 8, energy: Math.min(100, p.energy + HOUSES[p.house].rest), heat: Math.max(0, p.heat - 1) }));
-        say(`Day ${s.day + 1}. You wake up in your ${HOUSES[s.house].name}.`);
+      { label: `Sleep (+${HOUSES[s.house]!.rest} energy)`, run: () => {
+        setS((p) => ({ ...p, day: p.day + 1, hour: 8, energy: Math.min(100, p.energy + HOUSES[p.house]!.rest), heat: Math.max(0, p.heat - 1) }));
+        say(`Day ${s.day + 1}. You wake up in your ${HOUSES[s.house]!.name}.`);
       }},
-      ...(HOUSES[s.house + 1] ? [{ label: `Buy ${HOUSES[s.house + 1].name} ($${HOUSES[s.house + 1].cost})`, run: () => act(0, 0, (p) =>
-        p.money >= HOUSES[p.house + 1].cost ? [{ money: p.money - HOUSES[p.house + 1].cost, house: p.house + 1 }, `You moved into a ${HOUSES[p.house + 1].name}!`] : "Not enough cash.") }] : []),
+      ...(HOUSES[s.house + 1]! ? [{ label: `Buy ${HOUSES[s.house + 1]!.name} ($${HOUSES[s.house + 1]!.cost})`, run: () => act(0, 0, (p) =>
+        p.money >= HOUSES[p.house + 1]!.cost ? [{ money: p.money - HOUSES[p.house + 1]!.cost, house: p.house + 1 }, `You moved into a ${HOUSES[p.house + 1]!.name}!`] : "Not enough cash.") }] : []),
     ],
     gym: [
       { label: "Lift weights ($5, 2h)", run: () => act(2, 20, (p) => p.money >= 5 ? [{ money: p.money - 5, str: p.str + 3 }, "+3 strength. Swole."] : "Gym costs $5.") },
@@ -119,7 +119,7 @@ function Game() {
         p.money >= (p.school + 1) * 100 ? [{ money: p.money - (p.school + 1) * 100, school: p.school + 1, int: p.int + 10 }, `Graduated: ${SCHOOLS[p.school + 1]}! +10 int`] : "Tuition too high.") }] : []),
     ],
     work: [
-      { label: `Work shift as ${job.name} ($${job.pay * 4}, 4h)`, run: () => act(4, 30, (p) => [{ money: p.money + JOBS[p.job].pay * 4, karma: p.karma + 1 }, `Earned $${JOBS[p.job].pay * 4}. Honest living.`]) },
+      { label: `Work shift as ${job.name} ($${job.pay * 4}, 4h)`, run: () => act(4, 30, (p) => [{ money: p.money + JOBS[p.job]!.pay * 4, karma: p.karma + 1 }, `Earned $${JOBS[p.job]!.pay * 4}. Honest living.`]) },
       ...(nextJob ? [{ label: `Ask for promotion (needs ${nextJob.int} int, ${nextJob.cha} cha)`, run: () => act(1, 5, (p) =>
         p.int >= nextJob.int && p.cha >= nextJob.cha ? [{ job: p.job + 1 }, `Promoted to ${nextJob.name}!`] : "Boss laughs at you.") }] : []),
     ],
@@ -155,7 +155,7 @@ function Game() {
           <Stat k="Strength" v={s.str} />
           <Stat k="Intelligence" v={s.int} />
           <Stat k="Charm" v={s.cha} />
-          <Stat k="Home" v={HOUSES[s.house].name} />
+          <Stat k="Home" v={HOUSES[s.house]!.name} />
           <Stat k="Job" v={`${job.name} · ${SCHOOLS[s.school]}`} />
         </div>
 
