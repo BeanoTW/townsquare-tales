@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
+import { LocationScene } from "@/components/LocationScene";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -211,11 +212,10 @@ function Game() {
           {enc.choices.map((c) => <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); }}>{c.label}</Btn>)}
         </Sheet>
       )}
-      {!enc && place && (
-        <Sheet title={PLACES.find((p) => p.id === place)!.label} onClose={close}>
+      {!enc && place && !tab && (
+        <LocationScene id={place} house={s.house} onClose={close} feedback={log[0]}>
           {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
-          <p className="text-base text-muted-foreground">{log[0]}</p>
-        </Sheet>
+        </LocationScene>
       )}
       {tab === "player" && (
         <Sheet title="Player" onClose={() => setTab(null)}>
