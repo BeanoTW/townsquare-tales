@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 type S = GameState;
-const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0 };
+const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0, trainers: 0, alarm: 0 };
 const HOUSES = [
   { name: "Cardboard Box", cost: 0, rest: 50 },
   { name: "Studio Flat", cost: 300, rest: 75 },
@@ -41,6 +41,8 @@ const PLACES = [
   { id: "work", label: "Work", x: 12, y: 62 },
   { id: "bar", label: "Bar", x: 44, y: 58 },
   { id: "alley", label: "Dark Alley", x: 74, y: 62 },
+  { id: "bank", label: "Bank", x: 28, y: 72 },
+  { id: "shop", label: "Corner Shop", x: 64, y: 78 },
 ] as const;
 type PlaceId = (typeof PLACES)[number]["id"];
 
@@ -102,7 +104,7 @@ function Game() {
   const actions: Record<PlaceId, { label: string; run: () => void }[]> = {
     home: [
       { label: `Sleep (+${HOUSES[s.house]!.rest} energy)`, run: () => {
-        setS((p) => ({ ...p, day: p.day + 1, hour: 8, energy: Math.min(100, p.energy + HOUSES[p.house]!.rest), heat: Math.max(0, p.heat - 1) }));
+        setS((p) => ({ ...p, day: p.day + 1, hour: p.alarm ? 7 : 8, bank: Math.min(1e12, p.bank + Math.floor(p.bank * 0.001)), energy: Math.min(100, p.energy + HOUSES[p.house]!.rest), heat: Math.max(0, p.heat - 1) }));
         say(`Day ${s.day + 1}. You wake up in your ${HOUSES[s.house]!.name}.`);
       }},
       ...(HOUSES[s.house + 1]! ? [{ label: `Buy ${HOUSES[s.house + 1]!.name} ($${HOUSES[s.house + 1]!.cost})`, run: () => act(0, 0, (p) =>
@@ -126,6 +128,17 @@ function Game() {
       { label: "Buy a round ($15, 2h)", run: () => act(2, 10, (p) => p.money >= 15 ? [{ money: p.money - 15, cha: p.cha + 3 }, "Everyone loves you. +3 charm"] : "Can't afford it.") },
       { label: "Hit on someone (2h)", run: () => act(2, 10, (p) => Math.random() * 60 < p.cha ? [{ cha: p.cha + 2 }, "They gave you their number! +2 charm"] : [{ cha: p.cha + 1 }, "Rejected. Character building. +1 charm"]) },
     ],
+    bank: [
+      { label: `Deposit $50 (balance ${s.bank})`, run: () => act(0, 0, (p) => p.money >= 50 ? [{ money: p.money - 50, bank: p.bank + 50 }, "Deposited $50. Savings earn 0.1% per night."] : "You need $50 cash.") },
+      { label: "Deposit all cash", run: () => act(0, 0, (p) => p.money > 0 ? [{ bank: p.bank + p.money, money: 0 }, "Your cash is safe in the bank."] : "No cash to deposit.") },
+      { label: "Withdraw $50", run: () => act(0, 0, (p) => p.bank >= 50 ? [{ money: p.money + 50, bank: p.bank - 50 }, "Withdrew $50."] : "Not enough savings.") },
+      { label: "Withdraw all savings", run: () => act(0, 0, (p) => p.bank > 0 ? [{ money: p.money + p.bank, bank: 0 }, "Withdrew your savings."] : "No savings to withdraw.") },
+    ],
+    shop: [
+      { label: "Buy snack ($10, +1 to bag)", run: () => act(0, 0, (p) => p.money >= 10 && p.snacks < 99 ? [{ money: p.money - 10, snacks: p.snacks + 1 }, "Bought a snack. Open Player to eat it."] : "Need $10 and room in your bag.") },
+      { label: `Buy running shoes ($150)${s.trainers ? " — owned" : ""}`, run: () => act(0, 0, (p) => !p.trainers && p.money >= 150 ? [{ money: p.money - 150, trainers: 1 }, "New shoes! Walk 35% faster."] : "Already owned or not enough cash.") },
+      { label: `Buy alarm clock ($100)${s.alarm ? " — owned" : ""}`, run: () => act(0, 0, (p) => !p.alarm && p.money >= 100 ? [{ money: p.money - 100, alarm: 1 }, "You now wake at 7:00, gaining an extra hour."] : "Already owned or not enough cash.") },
+    ],
     alley: [
       { label: "Sell sketchy goods (2h)", run: () => act(2, 15, (p) => {
         if (Math.random() < Math.min(0.9, 0.15 + p.heat * 0.05)) return [{ money: Math.floor(p.money / 2), heat: 0, karma: p.karma - 3 }, "BUSTED! Cops take half your cash."];
@@ -142,7 +155,7 @@ function Game() {
   const close = () => { setPlace(null); };
   return (
     <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
-      <TownMap hour={s.hour} house={s.house} active={place} onEnter={(id) => walk(id as PlaceId)} />
+      <TownMap hour={s.hour} house={s.house} speed={s.trainers ? 1.35 : 1} active={place} onEnter={(id) => walk(id as PlaceId)} />
 
       {/* top HUD */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
@@ -178,11 +191,14 @@ function Game() {
           {won && <div className="border-2 border-foreground bg-accent p-2 text-center text-xl">🏆 Mansion + CEO in {s.day} days!</div>}
           <div className="grid grid-cols-2 gap-2 text-lg">
             <Stat k="Day" v={s.day} /><Stat k="Energy" v={`${s.energy}/100`} />
+            <Stat k="Bank savings" v={`${s.bank}`} /><Stat k="Snacks" v={s.snacks} />
+            <Stat k="Running shoes" v={s.trainers ? "Owned" : "—"} /><Stat k="Alarm clock" v={s.alarm ? "Owned" : "—"} />
             <Stat k="Strength" v={s.str} /><Stat k="Intelligence" v={s.int} />
             <Stat k="Charm" v={s.cha} /><Stat k="Karma" v={`${s.karma} · ${align}`} />
             <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} /><Stat k="Home" v={HOUSES[s.house]!.name} />
             <Stat k="Job" v={job.name} /><Stat k="School" v={SCHOOLS[s.school]} />
           </div>
+          {s.snacks > 0 && <Btn onClick={() => act(0, 0, (p) => p.snacks > 0 ? [{ snacks: p.snacks - 1, energy: Math.min(100, p.energy + 25) }, "Ate a snack. +25 energy."] : "No snacks left.")}>Eat snack (+25 energy)</Btn>}
         </Sheet>
       )}
       {tab === "log" && (
