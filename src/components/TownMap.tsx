@@ -4,7 +4,7 @@ import { findRoute, type Point } from "@/lib/pathfinding";
 // Upright oblique projection: ground plan matches the minimap; height offsets
 // the roof up and slightly right to reveal front and side walls.
 const TW = 48, TH = 36, N = 30;
-export const P = (x: number, y: number, h = 0) => [x * TW + h * 0.23, y * TH - h * 0.68] as const;
+export const P = (x: number, y: number, h = 0) => [x * TW + h * 0.025, y * TH - h * 0.57] as const;
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 type B = { id: string; label: string; x: number; y: number; w: number; d: number; h: number; wall: string; side: string; roof: string; sign: string; win?: boolean };
@@ -68,8 +68,8 @@ function Box({ b, night }: { b: B; night: boolean }) {
   return (
     <g>
       <polygon points={pts([P(x + 0.2, y + d + 0.3), P(x + w + 0.3, y + d + 0.3), P(x + w + 0.3, y + 0.2), P(x + w, y), P(x, y + d)])} fill="#000" opacity={0.18} />
-      <polygon points={pts(front)} fill={b.wall} stroke="#1d1d1d" strokeWidth={1.5} />
       <polygon points={pts(right)} fill={b.side} stroke="#1d1d1d" strokeWidth={1.5} />
+      <polygon points={pts(front)} fill={b.wall} stroke="#1d1d1d" strokeWidth={1.5} />
       {wins}
       <polygon points={pts(doorPts)} fill={night ? "#ffcf5c" : "#3a2a1e"} stroke="#1d1d1d" />
       <polygon points={pts(top)} fill={b.roof} stroke="#1d1d1d" strokeWidth={1.5} />
@@ -106,7 +106,7 @@ function Lamp({ x, y, night }: { x: number; y: number; night: boolean }) {
 
 function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color: string }) {
   const [w, d] = dir === "x" ? [1.2, 0.6] : [0.6, 1.2];
-  const bx = x - w / 2, by = y - d / 2, h = 14;
+  const bx = x - w / 2, by = y - d / 2, h = 11;
   return (
     <g>
       <polygon points={pts([P(bx, by + d), P(bx + w, by + d), P(bx + w, by + d, h), P(bx, by + d, h)])} fill={color} stroke="#1d1d1d" />
@@ -253,7 +253,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
 
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: night ? "#1b2433" : dusk ? "#e8a76a" : "#9fd3e8" }}>
-      <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 190} ${cy - 330} 380 640`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
+      <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 240} ${cy - 415} 480 800`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={(e) => { const p = toTile(e); routeTo({ x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }); }}>
         {/* ground */}
         {tile(0, 0, N, N, "#7fb069", "g")}
