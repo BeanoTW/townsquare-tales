@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Isometric projection
-const TW = 64, TH = 32, N = 18;
+const TW = 64, TH = 46, N = 18;
 const P = (x: number, y: number, h = 0) => [(x - y) * (TW / 2), (x + y) * (TH / 2) - h] as const;
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
@@ -232,8 +232,8 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
   );
 
   return (
-    <div className="relative w-full overflow-hidden rounded-sm border-2 border-foreground" style={{ background: night ? "#1b2433" : dusk ? "#e8a76a" : "#9fd3e8" }}>
-      <svg ref={svgRef} viewBox="-600 -180 1200 800" className="block w-full touch-none select-none font-hand"
+    <div className="absolute inset-0 overflow-hidden" style={{ background: night ? "#1b2433" : dusk ? "#e8a76a" : "#9fd3e8" }}>
+      <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 190} ${cy - 330} 380 640`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={(e) => { const p = toTile(e); target.current = { x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }; }}>
         {/* ground */}
         {tile(0, 0, N, N, "#7fb069", "g")}
@@ -253,13 +253,11 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="#4a6536" stroke="#1d1d1d" />
         {target.current && !target.current.enter && (() => { const [x, y] = P(target.current.x, target.current.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="#fff" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
-        {(night || dusk) && <rect x={-600} y={-180} width={1200} height={800} fill={night ? "#0b1530" : "#c2562a"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
+        {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "#0b1530" : "#c2562a"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
       </svg>
-      <div className="pointer-events-none absolute left-2 top-2 rounded-sm border-2 border-foreground bg-card px-2 py-0.5 text-sm">
-        <span className="hidden sm:inline">WASD / arrows to walk · </span>tap to walk · tap a building to go in
-      </div>
+      
       {near && (
-        <button onClick={() => onEnter(near.id)} className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-xl text-primary-foreground">
+        <button onClick={() => onEnter(near.id)} className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-xl text-primary-foreground">
           Enter {near.label} <span className="hidden sm:inline">(E)</span>
         </button>
       )}

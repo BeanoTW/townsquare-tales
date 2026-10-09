@@ -74,6 +74,7 @@ function Game() {
   const [s, setS] = useState<S>(START);
   const [log, setLog] = useState<string[]>(["Welcome to Stick Town. You live in a box. Good luck."]);
   const [place, setPlace] = useState<PlaceId | null>(null);
+  const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<(typeof ENCOUNTERS)[number] | null>(null);
 
   useEffect(() => {
@@ -141,56 +142,79 @@ function Game() {
   const align = s.karma >= 20 ? "Saint" : s.karma >= 5 ? "Legit" : s.karma > -5 ? "Neutral" : s.karma > -20 ? "Crooked" : "Kingpin";
   const won = s.house === 3 && s.job === 4;
 
+  const close = () => { setPlace(null); };
   return (
-    <main className="min-h-screen bg-background text-foreground p-4 font-hand">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="text-5xl font-bold text-center mb-1">Stick Town</h1>
-        <p className="text-center text-muted-foreground mb-4">Go legit or go crooked. Buy a mansion. Become CEO.</p>
+    <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
+      <TownMap hour={s.hour} house={s.house} active={place} onEnter={(id) => walk(id as PlaceId)} />
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4 text-lg">
-          <Stat k="Day" v={`${s.day} · ${s.hour}:00`} />
-          <Stat k="Money" v={`$${s.money}`} />
-          <Stat k="Energy" v={`${s.energy}/100`} />
-          <Stat k="Karma" v={`${s.karma} (${align})`} />
-          <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} />
-          <Stat k="Strength" v={s.str} />
-          <Stat k="Intelligence" v={s.int} />
-          <Stat k="Charm" v={s.cha} />
-          <Stat k="Home" v={HOUSES[s.house]!.name} />
-          <Stat k="Job" v={`${job.name} · ${SCHOOLS[s.school]}`} />
+      {/* top HUD */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-full border-2 border-foreground bg-card px-3 py-1 text-lg shadow">
+          <span>☀ {s.hour}:00</span><span>${s.money}</span>
+          <span className="flex items-center gap-1">⚡<span className="h-2 w-14 overflow-hidden rounded-full bg-muted"><span className="block h-full bg-primary" style={{ width: `${s.energy}%` }} /></span></span>
         </div>
-
-        {won && <div className="border-2 border-foreground bg-accent p-3 mb-4 text-2xl text-center">🏆 You made it! Mansion + CEO in {s.day} days.</div>}
-
-        <div className="grid md:grid-cols-[1fr_320px] gap-4">
-          <TownMap hour={s.hour} house={s.house} active={place} onEnter={(id) => walk(id as PlaceId)} />
-
-          <div className="border-2 border-foreground bg-card p-3 rounded-sm flex flex-col gap-2">
-            {enc ? (
-              <>
-                <h2 className="text-2xl font-bold">Random encounter!</h2>
-                <p className="text-lg">{enc.text}</p>
-                {enc.choices.map((c) => (
-                  <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); }}>{c.label}</Btn>
-                ))}
-              </>
-            ) : place ? (
-              <>
-                <h2 className="text-2xl font-bold">{PLACES.find((p) => p.id === place)!.label}</h2>
-                {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
-              </>
-            ) : <p className="text-lg">Click a building to walk there.</p>}
-            <div className="mt-2 border-t-2 border-dashed border-foreground/40 pt-2 text-base max-h-56 overflow-auto">
-              {log.map((l, i) => <p key={i} className={i ? "text-muted-foreground" : ""}>{l}</p>)}
-            </div>
-            <button className="text-sm text-muted-foreground underline mt-auto" onClick={() => { setS(START); setLog(["New life started."]); setPlace(null); }}>Restart life</button>
-          </div>
+        <div className="pointer-events-auto flex flex-col gap-2">
+          <Icon label="Player" onClick={() => setTab("player")}>👤</Icon>
+          <Icon label="Journal" onClick={() => setTab("log")}>📜</Icon>
+          <Icon label="Settings" onClick={() => setTab("settings")}>⚙️</Icon>
         </div>
       </div>
+
+      {log[0] && !place && !enc && !tab && (
+        <div className="pointer-events-none absolute inset-x-3 bottom-4 mx-auto max-w-md rounded-sm border-2 border-foreground bg-card/90 px-3 py-1 text-center text-base">{log[0]}</div>
+      )}
+
+      {enc && (
+        <Sheet title="Random encounter!">
+          <p className="text-lg">{enc.text}</p>
+          {enc.choices.map((c) => <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); }}>{c.label}</Btn>)}
+        </Sheet>
+      )}
+      {!enc && place && (
+        <Sheet title={PLACES.find((p) => p.id === place)!.label} onClose={close}>
+          {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
+          <p className="text-base text-muted-foreground">{log[0]}</p>
+        </Sheet>
+      )}
+      {tab === "player" && (
+        <Sheet title="Player" onClose={() => setTab(null)}>
+          {won && <div className="border-2 border-foreground bg-accent p-2 text-center text-xl">🏆 Mansion + CEO in {s.day} days!</div>}
+          <div className="grid grid-cols-2 gap-2 text-lg">
+            <Stat k="Day" v={s.day} /><Stat k="Energy" v={`${s.energy}/100`} />
+            <Stat k="Strength" v={s.str} /><Stat k="Intelligence" v={s.int} />
+            <Stat k="Charm" v={s.cha} /><Stat k="Karma" v={`${s.karma} · ${align}`} />
+            <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} /><Stat k="Home" v={HOUSES[s.house]!.name} />
+            <Stat k="Job" v={job.name} /><Stat k="School" v={SCHOOLS[s.school]} />
+          </div>
+        </Sheet>
+      )}
+      {tab === "log" && (
+        <Sheet title="Journal" onClose={() => setTab(null)}>
+          <div className="max-h-[50vh] overflow-auto text-base">{log.map((l, i) => <p key={i} className={i ? "text-muted-foreground" : ""}>{l}</p>)}</div>
+        </Sheet>
+      )}
+      {tab === "settings" && (
+        <Sheet title="Settings" onClose={() => setTab(null)}>
+          <p className="text-base text-muted-foreground">Tap the ground to walk. Tap a building to go inside. On a keyboard, use WASD or arrows and E to enter.</p>
+          <Btn onClick={() => { if (confirm("Start a new life?")) { setS(START); setLog(["New life started."]); setPlace(null); setTab(null); } }}>Restart life</Btn>
+        </Sheet>
+      )}
     </main>
   );
 }
 
+function Icon(p: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return <button aria-label={p.label} onClick={p.onClick} className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-card text-xl shadow">{p.children}</button>;
+}
+function Sheet(p: { title: string; onClose?: () => void; children: React.ReactNode }) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex max-h-[75vh] max-w-md flex-col gap-2 overflow-auto rounded-t-xl border-2 border-b-0 border-foreground bg-card p-4">
+      <div className="flex items-center justify-between"><h2 className="text-2xl font-bold">{p.title}</h2>
+        {p.onClose && <button aria-label="Close" onClick={p.onClose} className="text-2xl">✕</button>}</div>
+      {p.children}
+    </div>
+  );
+}
 function Stat({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="border-2 border-foreground bg-card px-2 py-1 rounded-sm"><div className="text-sm text-muted-foreground">{k}</div><div className="truncate">{v}</div></div>;
 }
