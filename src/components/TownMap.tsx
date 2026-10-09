@@ -15,29 +15,29 @@ const HOUSE_LOOK = [
   { h: 95, wall: "#f4efe4", side: "#cfc7b4", roof: "#4a5a72", label: "Mansion" },
 ];
 
-const buildings = (house: number): B[] => {
+export const buildings = (house: number): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   return [
-    { id: "home", label: `Home · ${hl.label}`, x: 1, y: 4, w: 3, d: 3, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
-    { id: "gym", label: "Iron Gym", x: 4.6, y: 3, w: 3, d: 4, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
-    { id: "school", label: "Stick U", x: 11, y: 2, w: 4, d: 5, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
-    { id: "bar", label: "The Tipsy Stick", x: 15.3, y: 4, w: 2.4, d: 3, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
-    { id: "work", label: "MegaCorp", x: 1, y: 11, w: 4, d: 4, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
-    { id: "alley", label: "Dark Alley", x: 12, y: 12, w: 3, d: 3, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
-    { id: "bank", label: "Town Bank", x: 4.5, y: 12, w: 3, d: 3, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
-    { id: "shop", label: "Corner Shop", x: 11, y: 15.2, w: 3, d: 2, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
-    { id: "diner", label: "Fryday Diner", x: 21, y: 2, w: 3.5, d: 3.5, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
-    { id: "pawn", label: "Oddities Pawn", x: 25, y: 2, w: 3, d: 3.5, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
-    { id: "furniture", label: "Cosy Corner", x: 21, y: 10.2, w: 6.5, d: 2.1, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
-    { id: "casino", label: "Lucky Sevens", x: 21, y: 14.2, w: 5, d: 4, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
-    { id: "depot", label: "Town Transit", x: 2, y: 22, w: 5, d: 3, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
-    { id: "police", label: "Town Police", x: 9, y: 22, w: 4, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
-    { id: "clinic", label: "Patch Up Clinic", x: 14, y: 22, w: 4, d: 3.5, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
+    { id: "home", label: `Home · ${hl.label}`, x: 1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
+    { id: "gym", label: "Iron Gym", x: 15.2, y: 3, w: 2.5, d: 3.5, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
+    { id: "school", label: "Stick U", x: 10.5, y: 2, w: 4, d: 4.5, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
+    { id: "bar", label: "The Tipsy Stick", x: 1, y: 22, w: 3, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
+    { id: "work", label: "MegaCorp", x: 14.4, y: 11, w: 3.4, d: 5, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
+    { id: "alley", label: "Dark Alley", x: 10.8, y: 22, w: 3, d: 4, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
+    { id: "bank", label: "Town Bank", x: 10.7, y: 12, w: 3.2, d: 4, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
+    { id: "shop", label: "Corner Shop", x: 4.4, y: 3, w: 2.5, d: 3, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
+    { id: "diner", label: "Fryday Diner", x: 4.4, y: 12.5, w: 2.5, d: 3.5, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
+    { id: "pawn", label: "Oddities Pawn", x: 25.1, y: 3, w: 3, d: 3, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
+    { id: "furniture", label: "Cosy Corner", x: 20.6, y: 2, w: 4, d: 4, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
+    { id: "casino", label: "Lucky Sevens", x: 4.5, y: 21, w: 3, d: 5, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
+    { id: "depot", label: "Town Transit", x: 25.1, y: 12, w: 3.1, d: 4, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
+    { id: "police", label: "Town Police", x: 20.8, y: 12, w: 3.8, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
+    { id: "clinic", label: "Patch Up Clinic", x: 1, y: 12, w: 3, d: 4, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
   ];
 };
 
-const door = (b: B) => ({ x: b.x + b.w / 2, y: b.y + b.d + 0.6 });
-const TREES = [[6, 14], [7.2, 16], [15.8, 15.6], [16.6, 11], [2, 1.5], [9, 1], [11, 15.8], [0.6, 8.2], [22, 21.5], [25, 23], [27, 26], [22, 26], [5, 27], [11, 28]] as const;
+export const door = (b: B) => ({ x: b.x + b.w / 2, y: b.y + b.d + 0.6 });
+const TREES = [[0.8, 0.7], [7.2, 2], [16.8, 1], [28.8, 4], [1.2, 11], [7.3, 14], [12, 11], [28.4, 15], [15, 23], [18, 26], [22, 24], [25, 25.5], [28, 27], [1, 27]] as const;
 const LAMPS = [[7.6, 7.6], [10.4, 7.6], [7.6, 10.4], [10.4, 10.4], [3, 7.6], [14, 10.4]] as const;
 
 function Box({ b, night }: { b: B; night: boolean }) {
@@ -259,13 +259,18 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {tile(0, 0, N, N, "#7fb069", "g")}
         {tile(0, 0, 8, 8, "#86b872", "q1")}{tile(10, 10, 8, 8, "#5d5a52", "q4")}
         {tile(10, 0, 8, 8, "#8cbf78", "q2")}{tile(0, 10, 8, 8, "#a8a8a0", "q3")}
-        {tile(20, 20, 9, 9, "#86b872", "park")}
-        {tile(21, 21, 7, 5, "#90c27e", "park-lawn")}
+        {tile(19.95, 20, 9.3, 7, "#86b872", "park")}
+        {tile(20.8, 20.8, 7.5, 5.9, "#90c27e", "park-lawn")}
+        {/* Continuous paved frontages in front of all three rows of buildings */}
+        {tile(0, 7, N, 1, "#d5d0c5", "front-north")}
+        {tile(0, 17, N, 1.3, "#d5d0c5", "front-middle")}
+        {tile(0, 27, N, 1.2, "#d5d0c5", "front-south")}
         {/* sidewalks */}
         {tile(18, 0, 2, N, "#c9c4b8", "new-sw-x")}
         {tile(0, 18, N, 2, "#c9c4b8", "new-sw-y")}
         {tile(0, 7.4, N, 3.2, "#c9c4b8", "sw1")}{tile(7.4, 0, 3.2, N, "#c9c4b8", "sw2")}
         {/* roads */}
+        {tile(0, 28.2, N, 1.5, "#3d3f44", "south-street")}
         {tile(18.3, 0, 1.6, N, "#3d3f44", "road-east")}
         {tile(0, 18.3, N, 1.6, "#3d3f44", "road-south")}
         {tile(0, 8, N, 2, "#3d3f44", "r1")}{tile(8, 0, 2, N, "#3d3f44", "r2")}
@@ -273,8 +278,8 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
           <g key={`m${v}`}>{tile(v, 8.95, 0.9, 0.1, "#f2d24b", `ma${v}`)}{tile(8.95, v, 0.1, 0.9, "#f2d24b", `mb${v}`)}</g>
         ))}
         {[0, 1, 2, 3, 4].map((i) => <g key={`z${i}`}>{tile(7.45, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `za${i}`)}{tile(10.05, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `zb${i}`)}</g>)}
-        {tile(20.8, 20.8, 7.5, 0.45, "#ded4bb", "park-path1")}
-        {tile(24.2, 20.8, 0.45, 7, "#ded4bb", "park-path2")}
+        {tile(20.8, 23.5, 7.5, 0.45, "#ded4bb", "park-path1")}
+        {tile(24.2, 20.8, 0.45, 6.1, "#ded4bb", "park-path2")}
         {/* alley grime */}
         {tile(15.5, 13, 1, 1, "#3a3733", "gr")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="#5b7a43" stroke="#1d1d1d" />
