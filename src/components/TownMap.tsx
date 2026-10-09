@@ -7,6 +7,15 @@ const TW = 48, TH = 36, N = 30;
 export const P = (x: number, y: number, h = 0) => [x * TW + h * 0.025, y * TH - h * 0.57] as const;
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
+// Streets have deliberate ends and T-junctions rather than an endless grid.
+export const ROADS = [
+  { x: 8, y: 0, w: 2, d: 30 }, // main north-south street
+  { x: 0, y: 8, w: 20, d: 2 }, // northern street terminates at east junction
+  { x: 18.3, y: 8, w: 1.6, d: 11.9 }, // shopping connector, not a through-road
+  { x: 0, y: 18.3, w: 30, d: 1.6 }, // central cross-town road
+  { x: 0, y: 28.2, w: 10, d: 1.5 }, // short southern access road
+] as const;
+
 type Facing = "north" | "south" | "east" | "west";
 type B = { facing: Facing; id: string; label: string; x: number; y: number; w: number; d: number; h: number; wall: string; side: string; roof: string; sign: string; win?: boolean };
 
@@ -284,15 +293,18 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {tile(18, 0, 2, N, "#c9c4b8", "new-sw-x")}
         {tile(0, 18, N, 2, "#c9c4b8", "new-sw-y")}
         {tile(0, 7.4, N, 3.2, "#c9c4b8", "sw1")}{tile(7.4, 0, 3.2, N, "#c9c4b8", "sw2")}
-        {/* roads */}
-        {tile(0, 28.2, N, 1.5, "#3d3f44", "south-street")}
-        {tile(18.3, 0, 1.6, N, "#3d3f44", "road-east")}
-        {tile(0, 18.3, N, 1.6, "#3d3f44", "road-south")}
-        {tile(0, 8, N, 2, "#3d3f44", "r1")}{tile(8, 0, 2, N, "#3d3f44", "r2")}
-        {Array.from({ length: 15 }, (_, i) => i * 2 + 0.3).filter((v) => v < 7.5 || v > 10).map((v) => (
-          <g key={`m${v}`}>{tile(v, 8.95, 0.9, 0.1, "#f2d24b", `ma${v}`)}{tile(8.95, v, 0.1, 0.9, "#f2d24b", `mb${v}`)}</g>
-        ))}
-        {[0, 1, 2, 3, 4].map((i) => <g key={`z${i}`}>{tile(7.45, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `za${i}`)}{tile(10.05, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `zb${i}`)}</g>)}
+        {/* Mixed street hierarchy: long main street, T-junctions and short access roads. */}
+        {ROADS.map((road, i) => tile(road.x, road.y, road.w, road.d, "#3d3f44", "road-" + i))}
+        {/* Road centre markings stop at junctions and dead ends. */}
+        {Array.from({ length: 14 }, (_, i) => i * 2 + 0.35).filter(v => v < 7.8 || v > 10.1).map(v => tile(8.95, v, 0.1, 0.9, "#f2d24b", "main-line-"+v))}
+        {[0.6,2.7,4.8,6.9,11.1,13.2,15.3,17.4].map(v => tile(v, 8.95, 0.9, 0.1, "#f2d24b", "north-line-"+v))}
+        {[0.6,2.8,5,11,13.2,15.4,21,23.2,25.4,27.6].map(v => tile(v, 19.05, .9, .1, "#f2d24b", "cross-line-"+v))}
+        {[9.6,11.7,13.8,16].map(v => tile(19.05, v, .1, .9, "#f2d24b", "connector-line-"+v))}
+        {[0.7,2.8,5,7.1].map(v => tile(v, 28.9, .9, .1, "#f2d24b", "south-line-"+v))}
+        {/* Square-edged dead-end caps and pedestrian crossings. */}
+        {tile(0, 28.05, 10, .15, "#dbd5c8", "south-kerb")}
+        {tile(19.9, 8, .15, 2, "#d8d2c6", "north-terminus")}
+        {[0,1,2,3,4].map(i => <g key={"cross-"+i}>{tile(7.45, 8.12+i*.39, .45, .19, "#efefed", "c1-"+i)}{tile(10.05, 18.42+i*.29, .42, .16, "#efefed", "c2-"+i)}</g>)}
         {tile(20.8, 23.5, 7.5, 0.45, "#ded4bb", "park-path1")}
         {tile(24.2, 20.8, 0.45, 6.1, "#ded4bb", "park-path2")}
         {/* Every property has a short approach path linking its door to the surrounding pavement. */}
@@ -331,10 +343,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
             });
           }}>
           <rect x="20" y="20" width="9" height="9" fill="#a6cc80" />
-          {[8, 18.3].map((v) => <g key={v}>
-            <rect x={v} y="0" width={v === 8 ? 2 : 1.6} height={N} fill="#50525b" />
-            <rect x="0" y={v} width={N} height={v === 8 ? 2 : 1.6} fill="#50525b" />
-          </g>)}
+          {ROADS.map((r,i) => <rect key={"mini-road-"+i} x={r.x} y={r.y} width={r.w} height={r.d} fill="#50525b" />)}
           {bs.map((b) => <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.d}
             fill={b.sign} stroke="#fff" strokeWidth={0.18} rx={0.2}>
             <title>{b.label}</title>
