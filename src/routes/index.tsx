@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
 
 export const Route = createFileRoute("/")({
@@ -16,11 +17,7 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type S = {
-  day: number; hour: number; energy: number; money: number;
-  str: number; int: number; cha: number; karma: number;
-  house: number; school: number; job: number; heat: number;
-};
+type S = GameState;
 const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0 };
 const HOUSES = [
   { name: "Cardboard Box", cost: 0, rest: 50 },
@@ -71,17 +68,14 @@ const ENCOUNTERS: { text: string; choices: { label: string; f: (s: S) => [Partia
 ];
 
 function Game() {
-  const [s, setS] = useState<S>(START);
+  const [s, setS] = useState<S>(() => loadGame(START));
+  const [lastEncounterDay, setLastEncounterDay] = useState<number | null>(null);
   const [log, setLog] = useState<string[]>(["Welcome to Stick Town. You live in a box. Good luck."]);
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<(typeof ENCOUNTERS)[number] | null>(null);
 
-  useEffect(() => {
-    const raw = localStorage.getItem("sticktown");
-    if (raw) try { setS({ ...START, ...JSON.parse(raw) }); } catch {}
-  }, []);
-  useEffect(() => { localStorage.setItem("sticktown", JSON.stringify(s)); }, [s]);
+  useEffect(() => { saveGame(s); }, [s]);
 
   const say = (m: string) => setLog((l) => [m, ...l].slice(0, 30));
 
@@ -91,13 +85,16 @@ function Game() {
     const r = fn(s);
     if (typeof r === "string") return say(r);
     const [patch, msg] = r;
-    setS((p) => ({ ...p, ...patch, hour: p.hour + hours, energy: Math.max(0, p.energy - energy) }));
+    setS((p) => ({ ...p, ...patch, hour: p.hour + hours, energy: Math.max(0, Math.min(100, patch.energy ?? p.energy - energy)) }));
     say(msg);
   };
 
   const walk = (id: PlaceId) => {
     setPlace(id);
-    if (id !== "home" && Math.random() < 0.3) setEnc(ENCOUNTERS[Math.floor(Math.random() * ENCOUNTERS.length)]!);
+    if (id !== "home" && lastEncounterDay !== s.day && Math.random() < 0.3) {
+      setEnc(ENCOUNTERS[Math.floor(Math.random() * ENCOUNTERS.length)]!);
+      setLastEncounterDay(s.day);
+    }
   };
 
   const job = JOBS[s.job]!;
@@ -131,7 +128,7 @@ function Game() {
     ],
     alley: [
       { label: "Sell sketchy goods (2h)", run: () => act(2, 15, (p) => {
-        if (Math.random() < 0.15 + p.heat * 0.05) return [{ money: Math.floor(p.money / 2), heat: 0, karma: p.karma - 3 }, "BUSTED! Cops take half your cash."];
+        if (Math.random() < Math.min(0.9, 0.15 + p.heat * 0.05)) return [{ money: Math.floor(p.money / 2), heat: 0, karma: p.karma - 3 }, "BUSTED! Cops take half your cash."];
         const g = 40 + p.cha * 2; return [{ money: p.money + g, karma: p.karma - 3, heat: p.heat + 1 }, `Made $${g}. -3 karma`];
       })},
       { label: "Mug someone (1h)", run: () => act(1, 20, (p) => p.str > 15 + Math.random() * 30 ? [{ money: p.money + 60, karma: p.karma - 8, heat: p.heat + 2 }, "+$60. You monster. -8 karma"] : [{ energy: 0 }, "They fought back. You're knocked out."]) },
@@ -196,7 +193,7 @@ function Game() {
       {tab === "settings" && (
         <Sheet title="Settings" onClose={() => setTab(null)}>
           <p className="text-base text-muted-foreground">Tap the ground to walk. Tap a building to go inside. On a keyboard, use WASD or arrows and E to enter.</p>
-          <Btn onClick={() => { if (confirm("Start a new life?")) { setS(START); setLog(["New life started."]); setPlace(null); setTab(null); } }}>Restart life</Btn>
+          <Btn onClick={() => { if (confirm("Start a new life?")) { setS(START); setLastEncounterDay(null); setLog(["New life started."]); setPlace(null); setTab(null); } }}>Restart life</Btn>
         </Sheet>
       )}
     </main>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { findRoute, type Point } from "@/lib/pathfinding";
 
 // Isometric projection
 const TW = 64, TH = 46, N = 18;
@@ -132,7 +133,11 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 8.9, y: 8.9, phase: 0, walking: false });
-  const target = useRef<{ x: number; y: number; enter?: string } | null>(null);
+  const target = useRef<{ waypoints: Point[]; enter?: string } | null>(null);
+  const routeTo = (destination: Point, enter?: string) => {
+    const route = findRoute(me.current, destination, bs);
+    target.current = route.length ? { waypoints: route, enter } : null;
+  };
   const keys = useRef(new Set<string>());
   const [t, setT] = useState(0);
   const [near, setNear] = useState<B | null>(null);
@@ -165,10 +170,16 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
       if (k.has("a") || k.has("arrowleft")) { dx -= 1; dy += 1; }
       if (k.has("d") || k.has("arrowright")) { dx += 1; dy -= 1; }
       if (!dx && !dy && target.current) {
-        dx = target.current.x - m.x; dy = target.current.y - m.y;
-        if (Math.hypot(dx, dy) < 0.15) {
+        const waypoint = target.current.waypoints[0];
+        if (waypoint) {
+          dx = waypoint.x - m.x; dy = waypoint.y - m.y;
+          if (Math.hypot(dx, dy) < 0.15) {
+            target.current.waypoints.shift(); dx = dy = 0;
+          }
+        }
+        if (target.current && target.current.waypoints.length === 0) {
           const id = target.current.enter;
-          target.current = null; dx = dy = 0;
+          target.current = null;
           if (id) enterRef.current(id);
         }
       }
@@ -209,7 +220,7 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
   // depth-sorted drawables
   const items: { key: number; el: React.ReactNode }[] = [];
   bs.forEach((b) => items.push({ key: b.x + b.w + b.y + b.d - 0.5, el: (
-    <g key={b.id} onClick={(e) => { e.stopPropagation(); target.current = { ...door(b), enter: b.id }; }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
+    <g key={b.id} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
       <Box b={b} night={night} />
     </g>) }));
   TREES.forEach(([x, y], i) => items.push({ key: x + y, el: <Tree key={`t${i}`} x={x} y={y} /> }));
@@ -234,7 +245,7 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: night ? "#1b2433" : dusk ? "#e8a76a" : "#9fd3e8" }}>
       <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 190} ${cy - 330} 380 640`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
-        onPointerDown={(e) => { const p = toTile(e); target.current = { x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }; }}>
+        onPointerDown={(e) => { const p = toTile(e); routeTo({ x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }); }}>
         {/* ground */}
         {tile(0, 0, N, N, "#7fb069", "g")}
         {tile(0, 0, 8, 8, "#86b872", "q1")}{tile(10, 10, 8, 8, "#5d5a52", "q4")}
@@ -251,7 +262,7 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
         {tile(15.5, 13, 1, 1, "#3a3733", "gr")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="#5b7a43" stroke="#1d1d1d" />
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="#4a6536" stroke="#1d1d1d" />
-        {target.current && !target.current.enter && (() => { const [x, y] = P(target.current.x, target.current.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="#fff" strokeWidth={2} />; })()}
+        {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1)!; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="#fff" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
         {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "#0b1530" : "#c2562a"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
       </svg>
