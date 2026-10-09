@@ -29,7 +29,7 @@ const buildings = (house: number): B[] => {
     { id: "diner", label: "Fryday Diner", x: 21, y: 2, w: 3.5, d: 3.5, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
     { id: "pawn", label: "Oddities Pawn", x: 25, y: 2, w: 3, d: 3.5, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
     { id: "furniture", label: "Cosy Corner", x: 21, y: 10.2, w: 6.5, d: 2.1, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
-    { id: "casino", label: "Lucky Sevens", x: 21, y: 12.5, w: 5, d: 4, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
+    { id: "casino", label: "Lucky Sevens", x: 21, y: 14.2, w: 5, d: 4, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
     { id: "depot", label: "Town Transit", x: 2, y: 22, w: 5, d: 3, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
     { id: "police", label: "Town Police", x: 9, y: 22, w: 4, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
     { id: "clinic", label: "Patch Up Clinic", x: 14, y: 22, w: 4, d: 3.5, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
