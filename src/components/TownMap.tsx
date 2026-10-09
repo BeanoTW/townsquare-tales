@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Isometric projection
-const TW = 64, TH = 32, N = 18;
+const TW = 64, TH = 46, N = 18;
 const P = (x: number, y: number, h = 0) => [(x - y) * (TW / 2), (x + y) * (TH / 2) - h] as const;
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
