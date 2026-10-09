@@ -43,6 +43,13 @@ const PLACES = [
   { id: "alley", label: "Dark Alley", x: 74, y: 62 },
   { id: "bank", label: "Bank", x: 28, y: 72 },
   { id: "shop", label: "Corner Shop", x: 64, y: 78 },
+  { id: "diner", label: "Fryday Diner", x: 0, y: 0 },
+  { id: "pawn", label: "Oddities Pawn", x: 0, y: 0 },
+  { id: "furniture", label: "Cosy Corner", x: 0, y: 0 },
+  { id: "casino", label: "Lucky Sevens", x: 0, y: 0 },
+  { id: "depot", label: "Town Transit", x: 0, y: 0 },
+  { id: "police", label: "Town Police", x: 0, y: 0 },
+  { id: "clinic", label: "Patch Up Clinic", x: 0, y: 0 },
 ] as const;
 type PlaceId = (typeof PLACES)[number]["id"];
 
@@ -138,6 +145,30 @@ function Game() {
       { label: "Buy snack ($10, +1 to bag)", run: () => act(0, 0, (p) => p.money >= 10 && p.snacks < 99 ? [{ money: p.money - 10, snacks: p.snacks + 1 }, "Bought a snack. Open Player to eat it."] : "Need $10 and room in your bag.") },
       { label: `Buy running shoes ($150)${s.trainers ? " — owned" : ""}`, run: () => act(0, 0, (p) => !p.trainers && p.money >= 150 ? [{ money: p.money - 150, trainers: 1 }, "New shoes! Walk 35% faster."] : "Already owned or not enough cash.") },
       { label: `Buy alarm clock ($100)${s.alarm ? " — owned" : ""}`, run: () => act(0, 0, (p) => !p.alarm && p.money >= 100 ? [{ money: p.money - 100, alarm: 1 }, "You now wake at 7:00, gaining an extra hour."] : "Already owned or not enough cash.") },
+    ],
+    diner: [
+      { label: "Work lunch shift ($40, 4h)", run: () => act(4, 30, (p) => [{ money: p.money + 40, karma: p.karma + 1 }, "Busy shift. Earned $40."]) },
+      { label: "Eat hot meal ($18, +45 energy)", run: () => act(1, 0, (p) => p.money >= 18 ? [{ money: p.money - 18, energy: Math.min(100, p.energy + 45) }, "Proper meal! +45 energy."] : "Not enough cash.") },
+    ],
+    pawn: [
+      { label: "Sell running shoes ($70)", run: () => act(0, 0, (p) => p.trainers ? [{ trainers: 0, money: p.money + 70 }, "Sold shoes for $70."] : "Nothing to sell.") },
+      { label: "Sell alarm clock ($45)", run: () => act(0, 0, (p) => p.alarm ? [{ alarm: 0, money: p.money + 45 }, "Sold clock for $45."] : "Nothing to sell.") },
+    ],
+    furniture: [
+      { label: "Try showroom mattresses (1h, +15 energy)", run: () => act(1, 0, (p) => [{ energy: Math.min(100, p.energy + 15) }, "The salesperson catches you napping."]) },
+    ],
+    casino: [
+      { label: "Play slots ($50, 1h)", run: () => act(1, 5, (p) => p.money < 50 ? "Need $50." : Math.random() < 0.28 ? [{ money: p.money + 100 }, "Jackpot! +$100 net."] : [{ money: p.money - 50 }, "The house wins. -$50."]) },
+      { label: "High-stakes dice ($200, 1h)", run: () => act(1, 5, (p) => p.money < 200 ? "Need $200." : Math.random() < 0.45 ? [{ money: p.money + 200 }, "Lucky roll! +$200."] : [{ money: p.money - 200 }, "Snake eyes. -$200."]) },
+    ],
+    depot: [
+      { label: "Check departures", run: () => say("No routes out of town yet. New destinations coming soon.") },
+    ],
+    police: [
+      { label: "Pay $100 fine (-3 heat, 1h)", run: () => act(1, 0, (p) => p.heat > 0 && p.money >= 100 ? [{ money: p.money - 100, heat: Math.max(0, p.heat - 3) }, "Fine settled; heat reduced."] : "Need $100 and an outstanding record.") },
+    ],
+    clinic: [
+      { label: "Medical recovery ($40, 1h)", run: () => act(1, 0, (p) => p.money >= 40 ? [{ money: p.money - 40, energy: 100 }, "Back on your feet!"] : "Treatment costs $40.") },
     ],
     alley: [
       { label: "Sell sketchy goods (2h)", run: () => act(2, 15, (p) => {
