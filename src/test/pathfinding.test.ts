@@ -29,7 +29,11 @@ describe("town navigation", () => {
     expect(path.length).toBeGreaterThan(0);
     expect(path.at(-1)).toEqual({x:14,y:14});
   });
-  it("returns an empty route when completely enclosed", () => {
-    expect(findRoute({x:3,y:3},{x:15,y:15},[{x:0,y:0,w:18,d:18}])).toEqual([]);
+  it("recovers a player who starts inside a previously obstructing plot", () => {
+    const b={x:0,y:0,w:18,d:18};
+    const safe=nearestWalkable({x:3,y:3},[b]);
+    expect(isWalkable(safe,[b])).toBe(true);
+    const route=findRoute(safe,{x:20,y:20},[b]);
+    expect(route.at(-1)).toEqual({x:20,y:20});
   });
 });
