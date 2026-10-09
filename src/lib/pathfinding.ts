@@ -14,8 +14,25 @@ export function isWalkable(p: Point, obstacles: Obstacle[]): boolean {
     !obstacles.some(b => p.x > b.x - .15 && p.x < b.x + b.w + .15 &&
                           p.y > b.y - .15 && p.y < b.y + b.d + .15);
 }
+/** Snap an invalid start to safe ground after map migrations. */
+export function nearestWalkable(start: Point, obstacles: Obstacle[]): Point {
+  if (isWalkable(start, obstacles)) return start;
+  const origin=cell(start);
+  for(let radius=1;radius<SIZE;radius++) {
+    let candidate:Point|null=null, best=Infinity;
+    for(let dx=-radius;dx<=radius;dx++) for(let dy=-radius;dy<=radius;dy++) {
+      if(Math.max(Math.abs(dx),Math.abs(dy))!==radius)continue;
+      const p={x:(origin.x+dx)*STEP,y:(origin.y+dy)*STEP};
+      if(!isWalkable(p,obstacles))continue;
+      const distance=Math.hypot(p.x-start.x,p.y-start.y);
+      if(distance<best){candidate=p;best=distance;}
+    }
+    if(candidate)return candidate;
+  }
+  return {x:9.95,y:9};
+}
 export function findRoute(start: Point, goal: Point, obstacles: Obstacle[]): Point[] {
-  const openStart = cell(start), desired = cell(goal);
+  const openStart = cell(nearestWalkable(start, obstacles)), desired = cell(goal);
   const visited = new Uint8Array(SIZE*SIZE), parent = new Int32Array(SIZE*SIZE).fill(-1);
   const queue = new Int32Array(SIZE*SIZE);
   const startId=key(openStart.x,openStart.y);
