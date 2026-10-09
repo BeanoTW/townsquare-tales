@@ -2,11 +2,11 @@
 export type Point = { x: number; y: number };
 export type Obstacle = { x: number; y: number; w: number; d: number };
 const STEP = 0.5;
-const SIZE = 36;
+const SIZE = 60;
 const cell = (p: Point) => ({ x: Math.max(0, Math.min(SIZE - 1, Math.round(p.x / STEP))), y: Math.max(0, Math.min(SIZE - 1, Math.round(p.y / STEP))) });
 const key = (p: Point) => p.x + "," + p.y;
 export function findRoute(start: Point, goal: Point, obstacles: Obstacle[]): Point[] {
-  const blocked = (p: Point) => p.x < 0.2 || p.y < 0.2 || p.x > 17.8 || p.y > 17.8 ||
+  const blocked = (p: Point) => p.x < 0.2 || p.y < 0.2 || p.x > 29.8 || p.y > 29.8 ||
     obstacles.some(b => p.x > b.x - 0.15 && p.x < b.x + b.w + 0.15 && p.y > b.y - 0.15 && p.y < b.y + b.d + 0.15);
   const from = cell(start), to = cell(goal);
   const valid = (c: Point) => c.x >= 1 && c.y >= 1 && c.x < SIZE && c.y < SIZE && !blocked({x:c.x*STEP,y:c.y*STEP});
