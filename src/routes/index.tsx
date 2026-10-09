@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
 import { LocationScene } from "@/components/LocationScene";
+import { FURNITURE, ownsFurniture, furnitureBonus, type FurnitureId } from "@/lib/furniture";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 type S = GameState;
-const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0, trainers: 0, alarm: 0 };
+const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0, trainers: 0, alarm: 0, furniture: 0 };
 const HOUSES = [
   { name: "Cardboard Box", cost: 0, rest: 50 },
   { name: "Studio Flat", cost: 300, rest: 75 },
@@ -111,8 +112,12 @@ function Game() {
   const nextJob = JOBS[s.job + 1]!;
   const actions: Record<PlaceId, { label: string; run: () => void }[]> = {
     home: [
-      { label: `Sleep (+${HOUSES[s.house]!.rest} energy)`, run: () => {
-        setS((p) => ({ ...p, day: p.day + 1, hour: p.alarm ? 7 : 8, bank: Math.min(1e12, p.bank + Math.floor(p.bank * 0.001)), energy: Math.min(100, p.energy + HOUSES[p.house]!.rest), heat: Math.max(0, p.heat - 1) }));
+      ...(ownsFurniture(s.furniture, "weights") ? [{ label: "Home workout (2h, +2 strength)", run: () => act(2, 18, (p) => [{ str: p.str + 2 }, "Home gym session. +2 strength."]) }] : []),
+      ...(ownsFurniture(s.furniture, "desk") ? [{ label: "Study at desk (2h, +2 intelligence)", run: () => act(2, 12, (p) => [{ int: p.int + 2 }, "Quiet study session. +2 intelligence."]) }] : []),
+      ...(ownsFurniture(s.furniture, "kitchen") ? [{ label: "Cook at home (1h, $5, +40 energy)", run: () => act(1, 0, (p) => p.money >= 5 ? [{ money: p.money - 5, energy: Math.min(100, p.energy + 40) }, "Homemade dinner! +40 energy."] : "Need $5 for ingredients.") }] : []),
+      ...(ownsFurniture(s.furniture, "sofa") ? [{ label: "Relax on your sofa (1h, +2 charm)", run: () => act(1, 0, (p) => [{ cha: p.cha + 2 }, "You feel surprisingly sociable. +2 charm."]) }] : []),
+      { label: `Sleep (+${Math.min(100, HOUSES[s.house]!.rest + furnitureBonus(s.furniture, "sleep"))} energy)`, run: () => {
+        setS((p) => ({ ...p, day: p.day + 1, hour: p.alarm ? 7 : 8, bank: Math.min(1e12, p.bank + Math.floor(p.bank * 0.001)), energy: Math.min(100, p.energy + HOUSES[p.house]!.rest + furnitureBonus(p.furniture, "sleep")), heat: Math.max(0, p.heat - 1) }));
         say(`Day ${s.day + 1}. You wake up in your ${HOUSES[s.house]!.name}.`);
       }},
       ...(HOUSES[s.house + 1]! ? [{ label: `Buy ${HOUSES[s.house + 1]!.name} ($${HOUSES[s.house + 1]!.cost})`, run: () => act(0, 0, (p) =>
@@ -156,7 +161,7 @@ function Game() {
       { label: "Sell alarm clock ($45)", run: () => act(0, 0, (p) => p.alarm ? [{ alarm: 0, money: p.money + 45 }, "Sold clock for $45."] : "Nothing to sell.") },
     ],
     furniture: [
-      { label: "Try showroom mattresses (1h, +15 energy)", run: () => act(1, 0, (p) => [{ energy: Math.min(100, p.energy + 15) }, "The salesperson catches you napping."]) },
+      ...FURNITURE.map((item) => ({ label: `${ownsFurniture(s.furniture, item.id) ? "✓ Owned · " : ""}${item.name} (${item.cost}) — ${item.benefit}`, run: () => act(0, 0, (p) => ownsFurniture(p.furniture, item.id) ? "You already own that. It is set up at home." : p.money < item.cost ? `Need ${item.cost} cash.` : [{ money: p.money - item.cost, furniture: p.furniture | item.bit }, `${item.name} delivered! Check your home.`]) })),
     ],
     casino: [
       { label: "Play slots ($50, 1h)", run: () => act(1, 5, (p) => p.money < 50 ? "Need $50." : Math.random() < 0.28 ? [{ money: p.money + 100 }, "Jackpot! +$100 net."] : [{ money: p.money - 50 }, "The house wins. -$50."]) },
@@ -213,7 +218,7 @@ function Game() {
         </Sheet>
       )}
       {!enc && place && !tab && (
-        <LocationScene id={place} house={s.house} onClose={close} feedback={log[0]}>
+        <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0]}>
           {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}
@@ -223,7 +228,7 @@ function Game() {
           <div className="grid grid-cols-2 gap-2 text-lg">
             <Stat k="Day" v={s.day} /><Stat k="Energy" v={`${s.energy}/100`} />
             <Stat k="Bank savings" v={`${s.bank}`} /><Stat k="Snacks" v={s.snacks} />
-            <Stat k="Running shoes" v={s.trainers ? "Owned" : "—"} /><Stat k="Alarm clock" v={s.alarm ? "Owned" : "—"} />
+            <Stat k="Furniture" v={`${FURNITURE.filter(item => ownsFurniture(s.furniture, item.id)).length}/${FURNITURE.length}`} /><Stat k="Running shoes" v={s.trainers ? "Owned" : "—"} /><Stat k="Alarm clock" v={s.alarm ? "Owned" : "—"} />
             <Stat k="Strength" v={s.str} /><Stat k="Intelligence" v={s.int} />
             <Stat k="Charm" v={s.cha} /><Stat k="Karma" v={`${s.karma} · ${align}`} />
             <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} /><Stat k="Home" v={HOUSES[s.house]!.name} />

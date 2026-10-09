@@ -2,7 +2,7 @@ export type GameState = {
   day: number; hour: number; energy: number; money: number;
   str: number; int: number; cha: number; karma: number;
   house: number; school: number; job: number; heat: number;
-  bank: number; snacks: number; trainers: number; alarm: number;
+  bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
 };
 
 const KEY = "sticktown";
@@ -11,7 +11,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
   karma: [-1e6, 1e6], house: [0, 3], school: [0, 4],
   job: [0, 4], heat: [0, 100],
-  bank: [0, 1e12], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1],
+  bank: [0, 1e12], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 31],
 };
 
 export function parseGame(raw: string | null, fallback: GameState): GameState {

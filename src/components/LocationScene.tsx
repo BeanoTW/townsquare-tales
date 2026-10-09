@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ownsFurniture } from "@/lib/furniture";
 
 type SceneId = "home" | "gym" | "school" | "work" | "bar" | "alley" | "bank" | "shop" | "diner" | "pawn" | "furniture" | "casino" | "depot" | "police" | "clinic";
 
@@ -55,30 +56,42 @@ function Prop({ name, x, accent }: { name: string; x: number; accent: string }) 
   }
 }
 
-export function LocationScene({ id, house = 0, children, onClose, feedback }: { id: string; house?: number; children: ReactNode; onClose: () => void; feedback?: string }) {
+export function LocationScene({ id, house = 0, furniture = 0, children, onClose, feedback }: { id: string; house?: number; furniture?: number; children: ReactNode; onClose: () => void; feedback?: string }) {
   const scene = LOOK[id as SceneId] ?? LOOK.shop;
   const props = scene.props;
+  const homes = [{ wall: "#8c9575", floor: "#806c57", title: "A room with questionable walls", basics: ["BIN","CRATE","LAMP"] }, { wall: "#d6c9ad", floor: "#ad8667", title: "Your first studio flat", basics: ["BED","WINDOW","LAMP"] }, { wall: "#a9c5b0", floor: "#926b4c", title: "Welcome to the suburbs", basics: ["SOFA","WINDOW","LAMP"] }, { wall: "#d9d3c4", floor: "#84674d", title: "The mansion life", basics: ["SOFA","WINDOW","CLOCK"] }];
+  const home = homes[Math.min(3, Math.max(0, house))]!;
+  const wall = id === "home" ? home.wall : scene.wall;
+  const floor = id === "home" ? home.floor : scene.floor;
   return <div className="absolute inset-0 z-20 flex flex-col bg-background/95 font-hand sm:items-center sm:justify-center">
     <section className="flex h-full w-full flex-col overflow-hidden border-foreground bg-card sm:h-[min(850px,95vh)] sm:max-w-2xl sm:rounded-xl sm:border-2 sm:shadow-2xl">
       <header className="flex shrink-0 items-center justify-between border-b-2 border-foreground px-4 py-3">
         <div><div className="text-xs uppercase tracking-widest text-muted-foreground">Town Square Tales · Inside</div><h2 className="text-2xl font-bold">{scene.title}</h2></div>
         <button onClick={onClose} aria-label="Leave building" className="rounded-lg border-2 border-foreground bg-secondary px-4 py-2 text-lg font-bold">← Leave</button>
       </header>
-      <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{height:"clamp(190px,39vh,365px)",background:scene.wall}}>
+      <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{height:"clamp(190px,39vh,365px)",background:wall}}>
         <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice" className="h-full w-full" role="img" aria-label={`Illustrated interior of ${scene.title}`}>
-          <rect width="420" height="230" fill={scene.wall}/><path d="M0 150H420V230H0Z" fill={scene.floor}/>
+          <rect width="420" height="230" fill={wall}/><path d="M0 150H420V230H0Z" fill={floor}/>
           <path d="M0 150H420" stroke="#29252a" strokeWidth="5"/>
           <path d="M0 230L155 150H265L420 230" fill="#fff" opacity=".06"/>
           <rect x="10" y="10" width="105" height="27" rx="5" fill={scene.accent} stroke="#25242a" strokeWidth="3"/>
           <text x="62" y="29" textAnchor="middle" fill="white" fontWeight="bold" fontSize="14">{id==="home"?["CARDBOARD","STUDIO","HOUSE","MANSION"][house] ?? "HOME":scene.title.toUpperCase().slice(0,13)}</text>
-          <Prop name={props[0]} x={17} accent={scene.accent}/>
-          <Prop name={props[1]} x={285} accent={scene.accent}/>
-          <g opacity=".8"><Prop name={props[2]} x={164} accent={scene.accent}/></g>
+          {id === "home" ? <>
+            <Prop name={ownsFurniture(furniture, "bed") ? "BED" : home.basics[0]} x={17} accent={scene.accent}/>
+            <Prop name={ownsFurniture(furniture, "kitchen") ? "FRIDGE" : home.basics[1]} x={295} accent={scene.accent}/>
+            <Prop name={ownsFurniture(furniture, "desk") ? "COMPUTER" : home.basics[2]} x={167} accent={scene.accent}/>
+            {ownsFurniture(furniture, "sofa") && <g transform="translate(0 42) scale(.72)"><Prop name="SOFA" x={295} accent="#ba826a"/></g>}
+            {ownsFurniture(furniture, "weights") && <g transform="translate(24 65) scale(.6)"><Prop name="WEIGHTS" x={17} accent="#647d86"/></g>}
+          </> : <>
+            <Prop name={props[0]} x={17} accent={scene.accent}/>
+            <Prop name={props[1]} x={285} accent={scene.accent}/>
+            <g opacity=".8"><Prop name={props[2]} x={164} accent={scene.accent}/></g>
+          </>}
           <Person x={225} y={187} shirt={scene.accent}/><Person x={369} y={208} shirt="#e1bb6d"/>
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
         </svg>
       </div>
-      <div className="shrink-0 border-b border-foreground/20 bg-secondary/60 px-4 py-2 text-base italic">{scene.caption}</div>
+      <div className="shrink-0 border-b border-foreground/20 bg-secondary/60 px-4 py-2 text-base italic">{id === "home" ? home.title + " · " + (furniture ? "Your upgrades are making it feel like yours." : "A fresh start.") : scene.caption}</div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
         <div className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">What would you like to do?</div>
         <div className="flex flex-col gap-2">{children}</div>
