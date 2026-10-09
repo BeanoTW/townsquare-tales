@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { findRoute, type Point } from "@/lib/pathfinding";
 
-// Isometric projection
-const TW = 64, TH = 46, N = 30;
-const P = (x: number, y: number, h = 0) => [(x - y) * (TW / 2), (x + y) * (TH / 2) - h] as const;
+// Upright oblique projection: ground plan matches the minimap; height offsets
+// the roof up and slightly right to reveal front and side walls.
+const TW = 48, TH = 36, N = 30;
+export const P = (x: number, y: number, h = 0) => [x * TW + h * 0.23, y * TH - h * 0.68] as const;
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 type B = { id: string; label: string; x: number; y: number; w: number; d: number; h: number; wall: string; side: string; roof: string; sign: string; win?: boolean };
@@ -133,9 +134,9 @@ function Stick({ x, y, phase, walking, color = "#111" }: { x: number; y: number;
 }
 
 const NPCS = [
-  { path: [[3, 8.2], [7, 8.2]], color: "#7a2a2a", speed: 0.5 },
-  { path: [[10.7, 2], [10.7, 7]], color: "#2a4a7a", speed: 0.35 },
-  { path: [[11, 10.6], [17, 10.6]], color: "#2a6a3a", speed: 0.45 },
+  { path: [[3, 7.2], [7, 7.2]], color: "#7a2a2a", speed: 0.5 },
+  { path: [[10.7, 10.5], [10.7, 17.3]], color: "#2a4a7a", speed: 0.35 },
+  { path: [[11, 20.6], [17, 20.6]], color: "#2a6a3a", speed: 0.45 },
 ] as const;
 
 export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null }) {
@@ -174,10 +175,10 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
       last = now;
       const k = keys.current, m = me.current;
       let dx = 0, dy = 0;
-      if (k.has("w") || k.has("arrowup")) { dx -= 1; dy -= 1; }
-      if (k.has("s") || k.has("arrowdown")) { dx += 1; dy += 1; }
-      if (k.has("a") || k.has("arrowleft")) { dx -= 1; dy += 1; }
-      if (k.has("d") || k.has("arrowright")) { dx += 1; dy -= 1; }
+      if (k.has("w") || k.has("arrowup")) dy -= 1;
+      if (k.has("s") || k.has("arrowdown")) dy += 1;
+      if (k.has("a") || k.has("arrowleft")) dx -= 1;
+      if (k.has("d") || k.has("arrowright")) dx += 1;
       if (!dx && !dy && target.current) {
         const waypoint = target.current.waypoints[0];
         if (waypoint) {
@@ -218,8 +219,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
     const pt = svg.createSVGPoint();
     pt.x = e.clientX; pt.y = e.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM()!.inverse());
-    const a = p.x / (TW / 2), b = p.y / (TH / 2);
-    return { x: (a + b) / 2, y: (b - a) / 2 };
+    return { x: p.x / TW, y: p.y / TH };
   };
 
   const night = hour >= 19 || hour < 6;
@@ -228,23 +228,23 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
 
   // depth-sorted drawables
   const items: { key: number; el: React.ReactNode }[] = [];
-  bs.forEach((b) => items.push({ key: b.x + b.w + b.y + b.d - 0.5, el: (
+  bs.forEach((b) => items.push({ key: (b.y + b.d) * 100 + b.x, el: (
     <g key={b.id} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
       <Box b={b} night={night} />
     </g>) }));
-  TREES.forEach(([x, y], i) => items.push({ key: x + y, el: <Tree key={`t${i}`} x={x} y={y} /> }));
-  LAMPS.forEach(([x, y], i) => items.push({ key: x + y, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
+  TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
+  LAMPS.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
   const c1 = ((t * 2.2) % (N + 4)) - 2, c2 = N + 2 - ((t * 1.7) % (N + 4)), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
-  items.push({ key: c1 + 8.5, el: <Car key="c1" x={c1} y={8.5} dir="x" color="#d94a3a" /> });
-  items.push({ key: c2 + 9.5, el: <Car key="c2" x={c2} y={9.5} dir="x" color="#3a7bd9" /> });
-  items.push({ key: 8.5 + c3, el: <Car key="c3" x={8.5} y={c3} dir="y" color="#e6b83a" /> });
+  items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="#d94a3a" /> });
+  items.push({ key: 9.5 * 100 + c2, el: <Car key="c2" x={c2} y={9.5} dir="x" color="#3a7bd9" /> });
+  items.push({ key: c3 * 100 + 8.5, el: <Car key="c3" x={8.5} y={c3} dir="y" color="#e6b83a" /> });
   NPCS.forEach((n, i) => {
     const [[ax, ay], [bx, by]] = n.path;
     const f = (Math.sin(t * n.speed + i) + 1) / 2;
     const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
-    items.push({ key: x + y, el: <Stick key={`n${i}`} x={x} y={y} phase={t * 8} walking color={n.color} /> });
+    items.push({ key: y * 100 + x, el: <Stick key={`n${i}`} x={x} y={y} phase={t * 8} walking color={n.color} /> });
   });
-  items.push({ key: m.x + m.y, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
@@ -274,7 +274,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {tile(18.3, 0, 1.6, N, "#3d3f44", "road-east")}
         {tile(0, 18.3, N, 1.6, "#3d3f44", "road-south")}
         {tile(0, 8, N, 2, "#3d3f44", "r1")}{tile(8, 0, 2, N, "#3d3f44", "r2")}
-        {Array.from({ length: 9 }, (_, i) => i * 2 + 0.3).filter((v) => v < 7.5 || v > 10).map((v) => (
+        {Array.from({ length: 15 }, (_, i) => i * 2 + 0.3).filter((v) => v < 7.5 || v > 10).map((v) => (
           <g key={`m${v}`}>{tile(v, 8.95, 0.9, 0.1, "#f2d24b", `ma${v}`)}{tile(8.95, v, 0.1, 0.9, "#f2d24b", `mb${v}`)}</g>
         ))}
         {[0, 1, 2, 3, 4].map((i) => <g key={`z${i}`}>{tile(7.45, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `za${i}`)}{tile(10.05, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `zb${i}`)}</g>)}
