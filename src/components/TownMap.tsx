@@ -24,6 +24,8 @@ const buildings = (house: number): B[] => {
     { id: "bar", label: "The Tipsy Stick", x: 15.3, y: 4, w: 2.4, d: 3, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
     { id: "work", label: "MegaCorp", x: 1, y: 11, w: 4, d: 4, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
     { id: "alley", label: "Dark Alley", x: 12, y: 12, w: 3, d: 3, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
+    { id: "bank", label: "Town Bank", x: 4.5, y: 12, w: 3, d: 3, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
+    { id: "shop", label: "Corner Shop", x: 11, y: 15.2, w: 3, d: 2, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
   ];
 };
 
@@ -129,7 +131,7 @@ const NPCS = [
   { path: [[11, 10.6], [17, 10.6]], color: "#2a6a3a", speed: 0.45 },
 ] as const;
 
-export function TownMap({ hour, house, onEnter, active }: { hour: number; house: number; onEnter: (id: string) => void; active: string | null }) {
+export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 8.9, y: 8.9, phase: 0, walking: false });
@@ -186,7 +188,7 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
       const len = Math.hypot(dx, dy);
       m.walking = len > 0;
       if (len) {
-        const sp = 4.5 * dt;
+        const sp = 4.5 * speed * dt;
         const nx = m.x + (dx / len) * sp, ny = m.y + (dy / len) * sp;
         if (!blocked(nx, ny)) { m.x = nx; m.y = ny; }
         else if (!blocked(nx, m.y)) m.x = nx;
@@ -202,7 +204,7 @@ export function TownMap({ hour, house, onEnter, active }: { hour: number; house:
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [house]);
+  }, [house, speed]);
 
   const toTile = (e: React.PointerEvent) => {
     const svg = svgRef.current!;
