@@ -262,9 +262,9 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {tile(19.95, 20, 9.3, 7, "#86b872", "park")}
         {tile(20.8, 20.8, 7.5, 5.9, "#90c27e", "park-lawn")}
         {/* Continuous paved frontages in front of all three rows of buildings */}
-        {tile(0, 7, N, 1, "#d5d0c5", "front-north")}
-        {tile(0, 17, N, 1.3, "#d5d0c5", "front-middle")}
-        {tile(0, 27, N, 1.2, "#d5d0c5", "front-south")}
+        {tile(0, 6.1, N, 1.9, "#d5d0c5", "front-north")}
+        {tile(0, 16.1, N, 2.2, "#d5d0c5", "front-middle")}
+        {tile(0, 26.1, N, 2.1, "#d5d0c5", "front-south")}
         {/* sidewalks */}
         {tile(18, 0, 2, N, "#c9c4b8", "new-sw-x")}
         {tile(0, 18, N, 2, "#c9c4b8", "new-sw-y")}
