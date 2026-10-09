@@ -16,9 +16,10 @@ describe("upright oblique town projection", () => {
   it("aligns all entrances to a street-facing frontage", () => {
     for (const b of buildings(0)) {
       const threshold=door(b);
-      expect(threshold.x).toBeGreaterThan(b.x);
-      expect(threshold.x).toBeLessThan(b.x+b.w);
-      expect(threshold.y).toBeGreaterThan(b.y+b.d);
+      if (b.facing === "north") expect(threshold.y).toBeLessThan(b.y);
+      if (b.facing === "south") expect(threshold.y).toBeGreaterThan(b.y+b.d);
+      if (b.facing === "east") expect(threshold.x).toBeGreaterThan(b.x+b.w);
+      if (b.facing === "west") expect(threshold.x).toBeLessThan(b.x);
     }
   });
 });

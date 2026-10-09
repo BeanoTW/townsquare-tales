@@ -7,7 +7,8 @@ const TW = 48, TH = 36, N = 30;
 export const P = (x: number, y: number, h = 0) => [x * TW + h * 0.025, y * TH - h * 0.57] as const;
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
-type B = { id: string; label: string; x: number; y: number; w: number; d: number; h: number; wall: string; side: string; roof: string; sign: string; win?: boolean };
+type Facing = "north" | "south" | "east" | "west";
+type B = { facing: Facing; id: string; label: string; x: number; y: number; w: number; d: number; h: number; wall: string; side: string; roof: string; sign: string; win?: boolean };
 
 const HOUSE_LOOK = [
   { h: 18, wall: "#c9a26b", side: "#a9824f", roof: "#dcb986", label: "Box" },
@@ -19,25 +20,32 @@ const HOUSE_LOOK = [
 export const buildings = (house: number): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   return [
-    { id: "home", label: `Home · ${hl.label}`, x: 1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
-    { id: "gym", label: "Iron Gym", x: 15.2, y: 3, w: 2.5, d: 3.5, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
-    { id: "school", label: "Stick U", x: 10.5, y: 2, w: 4, d: 4.5, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
-    { id: "bar", label: "The Tipsy Stick", x: 1, y: 22, w: 3, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
-    { id: "work", label: "MegaCorp", x: 14.4, y: 11, w: 3.4, d: 5, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
-    { id: "alley", label: "Dark Alley", x: 10.8, y: 22, w: 3, d: 4, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
-    { id: "bank", label: "Town Bank", x: 10.7, y: 12, w: 3.2, d: 4, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
-    { id: "shop", label: "Corner Shop", x: 4.4, y: 3, w: 2.5, d: 3, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
-    { id: "diner", label: "Fryday Diner", x: 4.4, y: 12.5, w: 2.5, d: 3.5, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
-    { id: "pawn", label: "Oddities Pawn", x: 25.1, y: 3, w: 3, d: 3, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
-    { id: "furniture", label: "Cosy Corner", x: 20.6, y: 2, w: 4, d: 4, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
-    { id: "casino", label: "Lucky Sevens", x: 4.5, y: 21, w: 3, d: 5, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
-    { id: "depot", label: "Town Transit", x: 25.1, y: 12, w: 3.1, d: 4, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
-    { id: "police", label: "Town Police", x: 20.8, y: 12, w: 3.8, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
-    { id: "clinic", label: "Patch Up Clinic", x: 1, y: 12, w: 3, d: 4, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
+    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
+    { facing: "south", id: "gym", label: "Iron Gym", x: 15.2, y: 3, w: 2.5, d: 3.5, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
+    { facing: "south", id: "school", label: "Stick U", x: 10.5, y: 2, w: 4, d: 4.5, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
+    { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1, y: 22, w: 3, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
+    { facing: "east", id: "work", label: "MegaCorp", x: 14.4, y: 11, w: 3.4, d: 5, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
+    { facing: "west", id: "alley", label: "Dark Alley", x: 10.8, y: 22, w: 3, d: 4, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
+    { facing: "west", id: "bank", label: "Town Bank", x: 10.7, y: 12, w: 3.2, d: 4, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
+    { facing: "south", id: "shop", label: "Corner Shop", x: 4.4, y: 3, w: 2.5, d: 3, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
+    { facing: "south", id: "diner", label: "Fryday Diner", x: 4.4, y: 12.5, w: 2.5, d: 3.5, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
+    { facing: "south", id: "pawn", label: "Oddities Pawn", x: 25.1, y: 3, w: 3, d: 3, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
+    { facing: "south", id: "furniture", label: "Cosy Corner", x: 20.6, y: 2, w: 4, d: 4, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
+    { facing: "east", id: "casino", label: "Lucky Sevens", x: 4.5, y: 21, w: 3, d: 5, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
+    { facing: "south", id: "depot", label: "Town Transit", x: 25.1, y: 12, w: 3.1, d: 4, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
+    { facing: "west", id: "police", label: "Town Police", x: 20.8, y: 12, w: 3.8, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
+    { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1, y: 12, w: 3, d: 4, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
   ];
 };
 
-export const door = (b: B) => ({ x: b.x + b.w / 2, y: b.y + b.d + 0.6 });
+export const door = (b: B) => {
+  switch (b.facing) {
+    case "north": return { x: b.x + b.w / 2, y: b.y - 0.6 };
+    case "south": return { x: b.x + b.w / 2, y: b.y + b.d + 0.6 };
+    case "east": return { x: b.x + b.w + 0.6, y: b.y + b.d / 2 };
+    case "west": return { x: b.x - 0.6, y: b.y + b.d / 2 };
+  }
+};
 const TREES = [[0.8, 0.7], [7.2, 2], [16.8, 1], [28.8, 4], [1.2, 11], [7.3, 14], [12, 11], [28.4, 15], [15, 23], [18, 26], [22, 24], [25, 25.5], [28, 27], [1, 27]] as const;
 const LAMPS = [[7.6, 7.6], [10.4, 7.6], [7.6, 10.4], [10.4, 10.4], [3, 7.6], [14, 10.4]] as const;
 
@@ -62,14 +70,21 @@ function Box({ b, night }: { b: B; night: boolean }) {
       }
     }
   }
-  const dc = x + w / 2;
-  const doorPts = [P(dc - 0.3, y + d), P(dc + 0.3, y + d), P(dc + 0.3, y + d, 22), P(dc - 0.3, y + d, 22)];
+  const dc = x + w / 2, dy = y + d / 2;
+  const face = b.facing;
+  const doorPts = face === "north" || face === "south"
+    ? [P(dc - .3, face === "south" ? y+d : y), P(dc + .3, face === "south" ? y+d : y), P(dc + .3, face === "south" ? y+d : y, 22), P(dc - .3, face === "south" ? y+d : y, 22)]
+    : [P(face === "east" ? x+w : x, dy-.34), P(face === "east" ? x+w : x, dy+.34), P(face === "east" ? x+w : x, dy+.34, 22), P(face === "east" ? x+w : x, dy-.34, 22)];
+  const north = [P(x,y),P(x+w,y),P(x+w,y,h),P(x,y,h)];
+  const left = [P(x,y),P(x,y+d),P(x,y+d,h),P(x,y,h)];
   const [lx, ly] = P(x + w / 2, y + d / 2, h);
   return (
     <g>
       <polygon points={pts([P(x + 0.2, y + d + 0.3), P(x + w + 0.3, y + d + 0.3), P(x + w + 0.3, y + 0.2), P(x + w, y), P(x, y + d)])} fill="#000" opacity={0.18} />
-      <polygon points={pts(right)} fill={b.side} stroke="#1d1d1d" strokeWidth={1.5} />
-      <polygon points={pts(front)} fill={b.wall} stroke="#1d1d1d" strokeWidth={1.5} />
+      <polygon points={pts(north)} fill={face === "north" ? b.wall : b.side} stroke="#1d1d1d" strokeWidth={1.5} />
+      <polygon points={pts(left)} fill={face === "west" ? b.wall : b.side} stroke="#1d1d1d" strokeWidth={1.5} />
+      <polygon points={pts(right)} fill={face === "east" ? b.wall : b.side} stroke="#1d1d1d" strokeWidth={1.5} />
+      <polygon points={pts(front)} fill={face === "south" ? b.wall : b.side} stroke="#1d1d1d" strokeWidth={1.5} />
       {wins}
       <polygon points={pts(doorPts)} fill={night ? "#ffcf5c" : "#3a2a1e"} stroke="#1d1d1d" />
       <polygon points={pts(top)} fill={b.roof} stroke="#1d1d1d" strokeWidth={1.5} />
@@ -280,6 +295,17 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {[0, 1, 2, 3, 4].map((i) => <g key={`z${i}`}>{tile(7.45, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `za${i}`)}{tile(10.05, 8.1 + i * 0.4, 0.5, 0.2, "#eee", `zb${i}`)}</g>)}
         {tile(20.8, 23.5, 7.5, 0.45, "#ded4bb", "park-path1")}
         {tile(24.2, 20.8, 0.45, 6.1, "#ded4bb", "park-path2")}
+        {/* Every property has a short approach path linking its door to the surrounding pavement. */}
+        {bs.map((b) => {
+          const d = door(b);
+          const south = b.facing === "south";
+          const north = b.facing === "north";
+          const x = south || north ? d.x - 0.33 : Math.min(d.x, b.facing === "east" ? b.x+b.w : b.x) - 0.05;
+          const y = south ? b.y+b.d : north ? d.y : d.y - 0.33;
+          const w = south || north ? 0.66 : 0.7;
+          const depth = south || north ? 0.65 : 0.66;
+          return tile(x, y, w, depth, "#e4ddce", "walk-" + b.id);
+        })}
         {/* alley grime */}
         {tile(15.5, 13, 1, 1, "#3a3733", "gr")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="#5b7a43" stroke="#1d1d1d" />
