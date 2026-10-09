@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { findRoute, type Point } from "@/lib/pathfinding";
+import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 
 // Upright oblique projection: ground plan matches the minimap; height offsets
 // the roof up and slightly right to reveal front and side walls.
@@ -170,6 +170,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
   const target = useRef<{ waypoints: Point[]; enter?: string } | null>(null);
   const routeTo = (destination: Point, enter?: string) => {
+    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
     const route = findRoute(me.current, destination, bs);
     target.current = route.length ? { waypoints: route, enter } : null;
   };
@@ -194,6 +195,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
     let last = performance.now(), raf = 0;
     const loop = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
