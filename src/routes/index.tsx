@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { TownMap } from "@/components/TownMap";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -162,17 +163,7 @@ function Game() {
         {won && <div className="border-2 border-foreground bg-accent p-3 mb-4 text-2xl text-center">🏆 You made it! Mansion + CEO in {s.day} days.</div>}
 
         <div className="grid md:grid-cols-[1fr_320px] gap-4">
-          <div className="relative aspect-[16/10] border-2 border-foreground bg-card rounded-sm overflow-hidden">
-            <div className="absolute left-0 right-0 top-[45%] h-[10%] bg-muted border-y-2 border-dashed border-foreground/40" />
-            {PLACES.map((p) => (
-              <button key={p.id} onClick={() => walk(p.id)}
-                className={`absolute w-[20%] h-[28%] border-2 border-foreground rounded-sm flex flex-col items-center justify-end pb-1 text-xl transition-transform hover:-translate-y-1 ${place === p.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-                style={{ left: `${p.x}%`, top: `${p.y}%` }}>
-                {place === p.id && <StickMan />}
-                {p.label}
-              </button>
-            ))}
-          </div>
+          <TownMap hour={s.hour} house={s.house} active={place} onEnter={(id) => walk(id as PlaceId)} />
 
           <div className="border-2 border-foreground bg-card p-3 rounded-sm flex flex-col gap-2">
             {enc ? (
