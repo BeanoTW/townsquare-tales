@@ -13,8 +13,8 @@ export const ROADS = [
   { x: 0, y: 8, w: 24, d: 1.8 },     // residential / campus street, ends at East Lane
   { x: 22, y: 8, w: 2, d: 22 },      // East Lane, stopping at the edge of town
   { x: 0, y: 18.3, w: 24, d: 1.8 },  // market street: the main shopping T-junction
-  { x: 0, y: 27.3, w: 11, d: 1.7 },  // nightlife access, ends at Main Street
-  { x: 22, y: 27.3, w: 8, d: 1.7 },  // depot access, short eastern branch
+  { x: 0, y: 27.3, w: 11, d: 1.7 },  // local access street with an actual end
+  { x: 22, y: 26.5, w: 7, d: 1.7 },  // depot turning street
 ] as const;
 
 type Facing = "north" | "south" | "east" | "west";
@@ -30,21 +30,21 @@ const HOUSE_LOOK = [
 export const buildings = (house: number): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   return [
-    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1, y: 2, w: 3.1, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
-    { facing: "south", id: "gym", label: "Iron Gym", x: 17, y: 2.4, w: 3.5, d: 3.6, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
-    { facing: "south", id: "school", label: "Stick U", x: 12, y: 2, w: 4.1, d: 4.2, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
-    { facing: "south", id: "bar", label: "The Tipsy Stick", x: 1, y: 22.1, w: 3.1, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
-    { facing: "east", id: "work", label: "MegaCorp", x: 17, y: 22, w: 3.6, d: 4.1, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
-    { facing: "west", id: "alley", label: "Dark Alley", x: 25, y: 25, w: 3.2, d: 2.3, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
-    { facing: "south", id: "bank", label: "Town Bank", x: 12, y: 12, w: 4.2, d: 4.2, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
-    { facing: "south", id: "shop", label: "Corner Shop", x: 5, y: 2.3, w: 2.7, d: 3.7, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
-    { facing: "south", id: "diner", label: "Fryday Diner", x: 5, y: 12.2, w: 2.7, d: 4, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
-    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 25, y: 2.8, w: 3, d: 3.5, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
-    { facing: "south", id: "furniture", label: "Cosy Corner", x: 17, y: 12.2, w: 3.6, d: 3.8, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
-    { facing: "south", id: "casino", label: "Lucky Sevens", x: 5, y: 21.8, w: 3, d: 4.5, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
-    { facing: "west", id: "depot", label: "Town Transit", x: 25, y: 21.5, w: 3.3, d: 3, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
-    { facing: "west", id: "police", label: "Town Police", x: 25, y: 12.1, w: 3.3, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
-    { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1, y: 12.2, w: 3.1, d: 4, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
+    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1.1, y: 1.9, w: 3.1, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
+    { facing: "south", id: "gym", label: "Iron Gym", x: 17.8, y: 2.9, w: 3, d: 3.4, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
+    { facing: "south", id: "school", label: "Stick U", x: 12.1, y: 1.8, w: 4, d: 4.2, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
+    { facing: "south", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22.2, w: 3, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
+    { facing: "east", id: "work", label: "MegaCorp", x: 17.4, y: 21.2, w: 3.4, d: 4, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
+    { facing: "west", id: "alley", label: "Dark Alley", x: 25.2, y: 25.2, w: 3, d: 1.1, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
+    { facing: "south", id: "bank", label: "Town Bank", x: 12.3, y: 12.1, w: 3.8, d: 4.1, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
+    { facing: "south", id: "shop", label: "Corner Shop", x: 5.3, y: 2.5, w: 2.5, d: 3.3, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
+    { facing: "south", id: "diner", label: "Fryday Diner", x: 5.4, y: 12.4, w: 2.5, d: 3.8, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
+    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 25.1, y: 2.7, w: 3, d: 3.5, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
+    { facing: "south", id: "furniture", label: "Cosy Corner", x: 17.5, y: 12.3, w: 3.2, d: 3.6, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
+    { facing: "south", id: "casino", label: "Lucky Sevens", x: 5.3, y: 22.2, w: 2.8, d: 4, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
+    { facing: "west", id: "depot", label: "Town Transit", x: 25.2, y: 21.3, w: 3.2, d: 3.1, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
+    { facing: "west", id: "police", label: "Town Police", x: 25.2, y: 12.1, w: 3.1, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
+    { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 12.3, w: 3, d: 3.8, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
   ];
 };
 
@@ -167,7 +167,7 @@ const NPCS = [
 export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
-  const me = useRef({ x: 8.9, y: 8.9, phase: 0, walking: false });
+  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
   const target = useRef<{ waypoints: Point[]; enter?: string } | null>(null);
   const routeTo = (destination: Point, enter?: string) => {
     const route = findRoute(me.current, destination, bs);
@@ -208,7 +208,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         const waypoint = target.current.waypoints[0];
         if (waypoint) {
           dx = waypoint.x - m.x; dy = waypoint.y - m.y;
-          if (Math.hypot(dx, dy) < 0.15) {
+          if (Math.hypot(dx, dy) < Math.max(0.15, 4.5 * speed * dt)) {
             target.current.waypoints.shift(); dx = dy = 0;
           }
         }
@@ -282,17 +282,23 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         onPointerDown={(e) => { const p = toTile(e); routeTo({ x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }); }}>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"#83b773","grass")}
-        {tile(0,0,8.8,7.9,"#8dbd7b","residential")}
-        {tile(11.2,0,10.6,7.9,"#91bd83","campus")}
-        {tile(0,20.3,8.8,7,"#77a76e","nightlife")}
-        {tile(11.3,20.3,10.4,8.7,"#91bf79","park-lawn")}
+        {/* Mixed neighbourhood greens without artificial rectangular district boundaries. */}
+        {tile(0,0,8.8,7.4,"#8dbd7b","green-northwest")}
+        {tile(11.7,0,10.1,7.3,"#91bd83","green-northeast")}
+        {tile(0,20.7,8.7,6.2,"#7ead75","green-southwest")}
+        {tile(11.8,21.2,9.5,7.4,"#91bf79","green-park")}
         {/* Road shoulders do not extend across entire neighbourhoods. */}
         {ROADS.map((r,i) => tile(Math.max(0,r.x-.42),Math.max(0,r.y-.42),
           Math.min(N,r.x+r.w+.42)-Math.max(0,r.x-.42),
           Math.min(N,r.y+r.d+.42)-Math.max(0,r.y-.42),
           "#d2cec2","kerb-"+i))}
-        {/* Front forecourts and narrow footpaths for individual plots. */}
-        {bs.map(b => tile(Math.max(0,b.x-.2),Math.max(0,b.y-.2),b.w+.4,b.d+.4,"#9bc081","lot-"+b.id))}
+        {/* Individual lawns and building setbacks, rather than continuous square paving. */}
+        {bs.map(b => tile(Math.max(0,b.x-.15),Math.max(0,b.y-.15),b.w+.3,b.d+.3,
+          b.id==="casino" || b.id==="alley"?"#84a16e":"#a3c58b","lot-"+b.id))}
+        {/* Paths connect the side-street plots to their actual street frontages. */}
+        {tile(11.05,5.8,.38,2.4,"#dfd5be","campus-link")}
+        {tile(21,10,.42,8.4,"#dfd5be","east-walk")}
+        {tile(11.1,20.3,.38,6.8,"#dfd5be","park-walk")}
         {/* Central park: not another paved rectangle. */}
         {tile(12.15,22.1,3.9,5.2,"#a4cb82","park")}
         <ellipse cx={P(14.5,24.1)[0]} cy={P(14.5,24.1)[1]} rx={38} ry={23} fill="#5aa7c9" stroke="#4086a3" strokeWidth={3} />
