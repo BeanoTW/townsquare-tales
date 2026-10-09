@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findRoute, isWalkable } from "@/lib/pathfinding";
+import { findRoute, isWalkable, nearestWalkable } from "@/lib/pathfinding";
 describe("town navigation", () => {
   it("routes around a building", () => {
     const obstacle={x:2,y:2,w:3,d:3};
@@ -23,7 +23,9 @@ describe("town navigation", () => {
   });
   it("does not strand the player when a revised map encloses their old spawn", () => {
     const b={x:8.5,y:8.5,w:1,d:1};
-    const path=findRoute({x:9,y:9},{x:14,y:14},[b]);
+    const safe=nearestWalkable({x:9,y:9},[b]);
+    expect(isWalkable(safe,[b])).toBe(true);
+    const path=findRoute(safe,{x:14,y:14},[b]);
     expect(path.length).toBeGreaterThan(0);
     expect(path.at(-1)).toEqual({x:14,y:14});
   });
