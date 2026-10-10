@@ -79,18 +79,6 @@ function Label({
     </text>
   );
 }
-function Window({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
-  return (
-    <g>
-      <R x={x} y={y} w={w} h={h} fill="#cfe9f2" rx={2} />
-      <path
-        d={`M${x + w / 2} ${y}V${y + h}M${x} ${y + h / 2}H${x + w}`}
-        stroke={INK}
-        strokeWidth={3}
-      />
-    </g>
-  );
-}
 function Plant({ x, y }: { x: number; y: number }) {
   return (
     <g className="room-sway" style={{ transformOrigin: `${x}px ${y + 40}px` }}>
@@ -486,7 +474,6 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
       const bedOwned = ownsFurniture(state.furniture, "bed");
       return (
         <g>
-          {state.house > 0 && <Window x={196} y={44} w={84} h={62} />}
           {bedOwned ? (
             <g>
               <path d="M13 142L130 142L145 171H20Z" fill="#64473b" stroke={INK} strokeWidth="4"/>
