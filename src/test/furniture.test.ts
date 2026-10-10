@@ -33,7 +33,7 @@ describe("furnishings", () => {
       furniture: 0,
     }));
   it("persists and clamps ownership bitmask", () => {
-    expect(parseGame(JSON.stringify({ ...old, furniture: 31 }), old).furniture).toBe(63);
+    expect(parseGame(JSON.stringify({ ...old, furniture: 31 }), old).furniture).toBe(31);
     expect(parseGame(JSON.stringify({ ...old, furniture: 999 }), old).furniture).toBe(63);
   });
   it("keeps all upgrades independently owned", () => {
