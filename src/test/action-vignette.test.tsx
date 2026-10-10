@@ -11,7 +11,7 @@ describe("action cutaways", () => {
     ["round","drink"],["sleep","sleep"],["cook","food"],
     ["hot-meal","food"],["eat-snack","food"],["shift","work"],
     ["slots","gamble"],["high-dice","gamble"],["sell-goods","shady"],
-    ["recovery","recover"],["buy-smokes","shop"],["deposit-50","money"],
+    ["recovery","recover"],["buy-smokes","shop"],["deposit-50","money"],["furniture-console","shop"],["furniture-bookshelf","shop"],
   ])("assigns %s its own themed scene", (id, expected) => {
     expect(vignetteForAction(id)).toBe(expected);
   });
