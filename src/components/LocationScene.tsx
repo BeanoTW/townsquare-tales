@@ -3,7 +3,8 @@ import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
-import { ArcadeInterior, isArcadeRoom } from "@/components/rooms/ArcadeInterior";
+import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
+import { isArcadeRoom } from "@/lib/arcade-rooms";
 import {
   VIEW,
   hotspotActions,
