@@ -13,25 +13,25 @@ describe("arcade shop", () => {
   it("shows all seven goods on a selectable product wheel with a clerk", () => {
     render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
     expect(screen.getByText("The shopkeeper")).toBeInTheDocument();
-    expect(screen.getByLabelText("Product wheel")).toBeInTheDocument();
-    for (const good of SHOP_GOODS) expect(screen.getByRole("button", { name: `Select ${good.name}` })).toBeInTheDocument();
+    expect(screen.getByLabelText("Corner Shop shelves")).toBeInTheDocument();
+    for (const good of SHOP_GOODS) expect(screen.getByRole("button", { name: `Browse ${good.name}` })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "BUY · $10" })).toBeEnabled();
   });
 
-  it("keeps consumables purchasable in one session without closing the wheel", () => {
+  it("keeps consumables purchasable in one session without closing the shop", () => {
     const onRun = vi.fn();
     render(<LocationScene room={shop()} state={START} feedback={null} onRun={onRun} onLeave={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "BUY · $10" }));
     fireEvent.click(screen.getByRole("button", { name: "BUY · $10" }));
     expect(onRun).toHaveBeenCalledTimes(2);
     expect(onRun.mock.calls[0]![0].id).toBe("snack");
-    expect(screen.getByLabelText("Product wheel")).toBeInTheDocument();
+    expect(screen.getByLabelText("Corner Shop shelves")).toBeInTheDocument();
   });
 
   it("rotates to an equipment item and prevents unaffordable purchases", () => {
     render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Select Running shoes" }));
-    expect(screen.getAllByText("Running shoes", { selector: "strong" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Browse Running shoes" }));
+    expect(screen.getAllByText("Running shoes").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByRole("button", { name: "Need $130 more" })).toBeDisabled();
   });
 

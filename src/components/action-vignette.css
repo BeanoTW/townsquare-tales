@@ -21,3 +21,11 @@
 @keyframes vig-zz{50%{opacity:.35;transform:translateY(-9px)}}
 @keyframes vig-bob{50%{transform:translateY(-7px)}}
 @media(prefers-reduced-motion:reduce){.action-vignette,.action-vignette-gain,.vig-press,.vig-study,.vig-chug,.vig-sleep,.vig-zzz,.vig-runner,.vig-eat,.vig-work,.vig-gesture,.vig-dice{animation:none}}
+
+.action-vignette-shop .action-vignette-card{width:min(92vw,290px);padding:8px}
+.action-vignette-shop .action-vignette-svg{min-height:110px;max-height:155px}
+.action-vignette-shop .action-vignette-gain{min-height:0;margin:3px 0;font-size:20px}
+.action-vignette-shop .action-vignette-message{margin:2px auto;font-size:12px}
+.vig-cash-flight{transform-origin:159px 120px;animation:vig-cash .72s ease-out both}
+@keyframes vig-cash{0%{transform:scale(.45) translateY(35px);opacity:.3}45%{transform:scale(1.16) translateY(-9px);opacity:1}100%{transform:scale(.9) translateY(-20px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.vig-cash-flight{animation:none}}

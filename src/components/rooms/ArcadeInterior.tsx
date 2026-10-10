@@ -50,7 +50,6 @@ function ActionChoice({ action, onRun }: { action: ActionDef; onRun: (action: Ac
 function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: ActionDef) => void; room: Room }) {
   const [selected, setSelected] = useState(0);
   const [view, setView] = useState<"goods" | "jobs">("goods");
-  const [pop, setPop] = useState(0);
   const good = SHOP_GOODS[selected]!;
   const owned = good.owned(state);
   const available = good.available(state);
@@ -63,7 +62,6 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
   function purchase() {
     if (!available) return;
     onRun(good.action(state));
-    setPop((count) => count + 1);
   }
 
   return (
@@ -88,33 +86,18 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
               {available ? `${good.repeatable ? "BUY" : "PURCHASE"} · $${good.price}` : availability}
             </button>
           </div>
-          <p className="arcade-mini-title">SPIN THE WHEEL · TAP AN ITEM</p>
-          <div className="arcade-wheel" aria-label="Product wheel">
-            <div className="arcade-wheel-ring" />
-            {SHOP_GOODS.map((entry, index) => {
-              const angle = ((index - selected) * 60 - 90) * Math.PI / 180;
-              return (
-                <button
-                  type="button"
-                  key={entry.id}
-                  className={`arcade-wheel-item ${index === selected ? "is-selected" : ""}`}
-                  aria-pressed={index === selected}
-                  aria-label={`Select ${entry.name}`}
-                  onClick={() => setSelected(index)}
-                  style={{ left: `${50 + 39 * Math.cos(angle)}%`, top: `${50 + 39 * Math.sin(angle)}%` }}
-                >
-                  <span aria-hidden="true">{entry.icon}</span>
-                </button>
-              );
-            })}
-            <div key={`${good.id}-${pop}`} className={`arcade-wheel-centre ${pop ? "arcade-purchase-pop" : ""}`} aria-hidden="true">
-              {good.icon}
-            </div>
-          </div>
-          <div className="arcade-wheel-nav">
-            <button type="button" aria-label="Previous item" onClick={() => setSelected((selected + SHOP_GOODS.length - 1) % SHOP_GOODS.length)}>◀</button>
-            <div className="arcade-product-name"><strong>{good.name}</strong><span>{good.category} · {selected + 1}/{SHOP_GOODS.length}</span></div>
-            <button type="button" aria-label="Next item" onClick={() => setSelected((selected + 1) % SHOP_GOODS.length)}>▶</button>
+          <p className="arcade-mini-title">ON THE SHELF · PICK WHAT YOU NEED</p>
+          <div className="arcade-product-shelf" aria-label="Corner Shop shelves">
+            {SHOP_GOODS.map((entry, index) => (
+              <button type="button" key={entry.id}
+                className={`arcade-shelf-item ${index === selected ? "is-selected" : ""}`}
+                aria-pressed={index === selected} aria-label={`Browse ${entry.name}`}
+                onClick={() => setSelected(index)}>
+                <span className="arcade-shelf-icon" aria-hidden="true">{entry.icon}</span>
+                <span className="arcade-shelf-name">{entry.name}</span>
+                <span className="arcade-shelf-price">${entry.price}</span>
+              </button>
+            ))}
           </div>
         </div>
       ) : (

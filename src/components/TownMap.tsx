@@ -112,7 +112,7 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, skating = false, idle = false, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; color?: string; head?: string }) {
+function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "right", color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; facing?: "left" | "right" | "up" | "down"; color?: string; head?: string }) {
   const [sx, sy] = P(x, y);
   const s = walking && !skating ? Math.sin(phase) * 7 : 0;
   const breathe = idle ? Math.sin(phase * 0.55) * 1.2 : 0;
@@ -120,13 +120,16 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, color = "v
   return (
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
-      {skating && <g data-skateboard stroke="#272737" strokeWidth={2}>
+      {skating && <g data-skateboard data-facing={facing} transform={facing === "up" || facing === "down" ? "rotate(90 0 -3)" : undefined} stroke="#272737" strokeWidth={2}>
         <rect x={-19} y={-5} width={38} height={5} rx={2.5} fill="#d99539" />
         <circle cx={-12} cy={2} r={3} fill="#363846" />
         <circle cx={12} cy={2} r={3} fill="#363846" />
       </g>}
       <circle cx={0} cy={(skating ? -39 : -40) + breathe} r={7} fill={head} />
       <line x1={0} y1={-33} x2={0} y2={-16} />
+      {skating && <g data-rider-facing={facing} strokeWidth={2.3}>
+        {(facing === "up" || facing === "down") && <path d={facing === "up" ? "M-4 -37L0 -41L4 -37" : "M-4 -39L0 -35L4 -39"} />}
+      </g>}
       <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe} />
       <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe} />
       {skating ? <>
@@ -149,7 +152,7 @@ const NPCS = [
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
-  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
+  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, facing: "right" as "left" | "right" | "up" | "down" });
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = (destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
@@ -262,6 +265,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         else if (!blocked(nx, m.y)) m.x = nx;
         else if (!blocked(m.x, ny)) m.y = ny;
         else target.current = null;
+        if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
+        else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
         m.phase += dt * 12;
       }
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
@@ -459,7 +464,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} skating={skating} head={karmaHeadColor(karma)} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} skating={skating} facing={m.facing} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (

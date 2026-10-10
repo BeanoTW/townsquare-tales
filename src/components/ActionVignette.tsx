@@ -28,7 +28,7 @@ export const VIGNETTE_TITLES: Record<VignetteKind, string> = {
   strength: "FEEL THE BURN", run: "ONE MORE LAP", study: "BRAIN POWER",
   drink: "BOTTOMS UP", sleep: "LIGHTS OUT", food: "GOOD EATS",
   work: "CLOCKING IN", gamble: "LUCKY DAY?", shady: "QUESTIONABLE CHOICES",
-  shop: "NEW GEAR", social: "MAKING FRIENDS", recover: "PATCHING UP",
+  shop: "CHING CHING!", social: "MAKING FRIENDS", recover: "PATCHING UP",
   travel: "ON THE MOVE", money: "MONEY TALKS", tv: "CHANNEL SURFING",
 };
 
@@ -43,7 +43,7 @@ export function ActionVignette({
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
   useEffect(() => {
-    const timer = window.setTimeout(() => doneRef.current(), 1850);
+    const timer = window.setTimeout(() => doneRef.current(), kind === "shop" ? 760 : 1850);
     return () => window.clearTimeout(timer);
   }, [kind, message]);
   const gains = changes.filter(change => /\+\d/.test(change) && /Strength|Intelligence|Charm|Energy|Cash|Work XP|Karma/.test(change));
@@ -135,7 +135,18 @@ export function ActionVignette({
             <g className="vig-dice"><rect x="123" y="127" width="35" height="35" rx="5" fill="#fff8e6" stroke="#3d3440" strokeWidth="4"/><circle cx="140" cy="143" r="5" fill="#473947"/><rect x="179" y="132" width="35" height="35" rx="5" fill="#fff8e6" stroke="#3d3440" strokeWidth="4"/><circle cx="189" cy="143" r="4" fill="#473947"/><circle cx="203" cy="156" r="4" fill="#473947"/></g>
             <text x="149" y="86" fontSize="34" textAnchor="middle" fill="#d9a84d">★</text>
           </g>}
-          {["shady", "shop", "social", "recover", "travel", "money"].includes(kind) && <g data-vignette-scene={kind}>
+          {kind === "shop" && <g data-vignette-scene="shop">
+            <g className="vig-cash-flight">
+              <path d="M116 112Q65 37 30 85Q63 94 82 132Z" fill="#f5faf8" stroke="#405468" strokeWidth="4"/>
+              <path d="M202 112Q251 37 290 85Q254 94 237 132Z" fill="#f5faf8" stroke="#405468" strokeWidth="4"/>
+              <rect x="109" y="88" width="100" height="65" rx="9" fill="#80bd82" stroke="#2d5946" strokeWidth="6"/>
+              <rect x="118" y="96" width="82" height="49" rx="4" fill="none" stroke="#d6e9a5" strokeWidth="4"/>
+              <circle cx="159" cy="120" r="19" fill="#d6e9a5"/>
+              <text x="159" y="131" textAnchor="middle" fontSize="33" fontWeight="bold" fill="#2d5946">$</text>
+            </g>
+            <text x="159" y="63" fontWeight="bold" fontSize="23" fill="#4e7b60">CHING!</text>
+          </g>}
+          {["shady", "social", "recover", "travel", "money"].includes(kind) && <g data-vignette-scene={kind}>
             <g className="vig-gesture" stroke="#33323b" strokeWidth="5" strokeLinecap="round" fill="none">
               <circle cx="123" cy="94" r="17" fill="#eacaa2"/>
               <path d="M123 111V147M123 127L157 112M123 127L95 144M123 147L102 177M123 147L144 177"/>
