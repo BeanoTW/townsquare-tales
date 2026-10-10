@@ -8,7 +8,10 @@ const overlap = (a: {x:number;y:number;w:number;d:number}, b: {x:number;y:number
 
 describe("town masterplan geometry", () => {
   const lots = buildings(0);
-  it("preserves all 16 destinations", () => expect(new Set(lots.map(l => l.id)).size).toBe(16));
+  it("keeps 15 enterable buildings, with the former Dark Alley now a street encounter", () => {
+    expect(new Set(lots.map(l => l.id)).size).toBe(15);
+    expect(lots.some(b => b.id === "alley")).toBe(false);
+  });
   it("keeps building footprints clear of roads and each other", () => {
     for (const b of lots) {
       expect(roads.some(r => overlap(b,r)), b.label + " overlaps a road").toBe(false);
