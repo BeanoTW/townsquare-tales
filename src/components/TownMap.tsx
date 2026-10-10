@@ -221,7 +221,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
         const waypoint = target.current.waypoints[0];
         if (waypoint) {
           dx = waypoint.x - m.x; dy = waypoint.y - m.y;
-          if (Math.hypot(dx, dy) < Math.max(0.15, 4.5 * speed * dt)) {
+          if (Math.hypot(dx, dy) < Math.max(0.15, 2.7 * speed * dt)) {
             target.current.waypoints.shift(); dx = dy = 0;
           }
         }
@@ -235,7 +235,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
       const len = Math.hypot(dx, dy);
       m.walking = len > 0;
       if (len) {
-        const sp = 4.5 * speed * dt;
+        const sp = 2.7 * speed * dt;
         const nx = m.x + (dx / len) * sp, ny = m.y + (dy / len) * sp;
         if (!blocked(nx, ny)) { m.x = nx; m.y = ny; }
         else if (!blocked(nx, m.y)) m.x = nx;
