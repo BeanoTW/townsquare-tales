@@ -105,7 +105,7 @@ export const SHOP_GOODS: readonly ShopGood[] = [
     action: buyAlarmAction,
     owned: (s) => s.alarm,
     available: (s) => !s.alarm && s.money >= 100,
-  },,
+  },
   {
     id: "smokes", name: "Smokes (pack of 5)", icon: "🚬", price: 25,
     description: "Five smokes for your inventory. A dubious purchase.",
