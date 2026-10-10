@@ -15,7 +15,7 @@ describe("karma and inventory movement", () => {
   });
   it("colours the player and uses a scaled park gang", () => {
     const view = render(<TownMap hour={12} house={0} karma={-30} active={null} onEnter={vi.fn()} />);
-    expect(view.container.querySelector('[data-street-gang] g[transform*="scale(0.55)"]')).toBeInTheDocument();
+    expect(view.container.querySelector('[data-street-gang] g[transform*="scale(0.4)"]')).toBeInTheDocument();
     expect(view.container.querySelector('circle[fill="rgb(216, 59, 76)"]')).toBeInTheDocument();
   });
   it("equips legacy skateboard saves", () => {
