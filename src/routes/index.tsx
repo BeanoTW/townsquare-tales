@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
+import { DayClock } from "@/components/DayClock";
+import { encounterForDay } from "@/lib/world-encounters";
 import { LocationScene } from "@/components/LocationScene";
 import { EmploymentDesk } from "@/components/EmploymentDesk";
 import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
@@ -81,8 +83,8 @@ function Game() {
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<(typeof ENCOUNTERS)[number] | null>(null);
-  const [pendingDestination, setPendingDestination] = useState<PlaceId | null>(null);
-  const [result, setResult] = useState<{message:string;success:boolean;before:number;after:number} | null>(null);
+  const [encounterDone, setEncounterDone] = useState<number | null>(null);
+  const [result, setResult] = useState<{message:string;success:boolean;before:number;after:number;changes?:string[]} | null>(null);
 
   // SSR and the initial browser render must agree. Load the save only after hydration.
   useEffect(() => { setS(loadGame(START)); setSaveReady(true); }, []);
@@ -91,8 +93,8 @@ function Game() {
 
   const say = (m: string) => setLog((l) => [m, ...l].slice(0, 30));
 
-  const notify = (message:string,success:boolean,hours=0) => {
-    setResult({message,success,before:s.hour,after:Math.min(24,s.hour+hours)});
+  const notify = (message:string,success:boolean,hours=0,changes:string[]=[]) => {
+    setResult({message,success,before:s.hour,after:Math.min(24,s.hour+hours),changes});
     say(message);
   };
   const act = (hours: number, energy: number, fn: (s: S) => [Partial<S>, string] | string) => {
@@ -102,22 +104,30 @@ function Game() {
     if (typeof r === "string") return notify(r,false);
     const [patch, msg] = r;
     setS((p) => ({ ...p, ...patch, hour: p.hour + hours, energy: Math.max(0, Math.min(100, patch.energy ?? p.energy - energy)) }));
-    notify(msg,true,hours);
+    const labels:Partial<Record<keyof S,string>> = {money:"Cash",bank:"Savings",xp:"Work XP",int:"Intelligence",cha:"Charm",str:"Strength",energy:"Energy",karma:"Karma",heat:"Heat",school:"Education",job:"Job",career:"Career",house:"Housing",snacks:"Snacks"};
+    const changes=(Object.keys(labels) as (keyof S)[]).flatMap(key=>{
+      const value=patch[key], before=s[key];
+      if(typeof value!=="number"||value===before)return [];
+      const delta=value-before;
+      return [`${labels[key]}: ${delta>0?"+":""}${delta}`];
+    });
+    if(hours && patch.energy===undefined)changes.push(`Energy: -${energy}`);
+    notify(msg,true,hours,changes);
   };
 
-  const walk = (id: PlaceId) => {
-    setResult(null);
-    // Incidents are contextual and happen on the street, before entering a building.
-    // Only one possible encounter per day, and not on every arrival.
-    const eventPlaces: PlaceId[] = ["alley","bar","diner","casino"];
-    if (eventPlaces.includes(id) && lastEncounterDay !== s.day && Math.random() < 0.12) {
-      setPendingDestination(id);
-      setPlace(null);
-      setEnc(ENCOUNTERS[Math.floor(Math.random() * ENCOUNTERS.length)]!);
-      setLastEncounterDay(s.day);
-    } else {
-      setPlace(id);
-    }
+  const walk = (id: PlaceId) => { setResult(null); setPlace(id); };
+  const encounterSpot = encounterDone===s.day ? null : encounterForDay(s.day);
+  const approachEncounter = () => {
+    if(!encounterSpot)return;
+    setPlace(null);setTab(null);setResult(null);
+    // Each encounter draws from a situation suited to its location.
+    const pool = encounterSpot.id==="school" ? [4] :
+      encounterSpot.id==="work" ? [2,4] :
+      encounterSpot.id==="alley" ? [1,2] :
+      encounterSpot.id==="bar" ? [2,3] :
+      encounterSpot.id==="shop" ? [0,3] : [0,3];
+    setEnc(ENCOUNTERS[pool[s.day%pool.length]]);
+    setEncounterDone(s.day);
   };
 
   const job = currentRole(s);
@@ -235,20 +245,11 @@ function Game() {
   const close = () => { setPlace(null); };
   return (
     <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
-      <TownMap hour={s.hour} house={s.house} speed={s.trainers ? 1.35 : 1} active={place} onEnter={(id) => walk(id as PlaceId)} />
+      <TownMap hour={s.hour} house={s.house} speed={s.trainers ? 1.35 : 1} active={place} encounter={encounterSpot} onEncounter={approachEncounter} onEnter={(id) => walk(id as PlaceId)} />
 
       {/* top HUD */}
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-        <div className="pointer-events-auto min-w-0 max-w-[calc(100%-9rem)] rounded-xl border-2 border-foreground bg-card/95 px-2 py-1 text-sm shadow sm:px-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-bold">
-            <span>Day {s.day}</span><span>🕒 {timeLabel(s.hour)}</span><span>${s.money}</span>
-            <span>⚡ {s.energy}%</span>
-          </div>
-          <div className="mt-1 flex gap-[2px]" role="progressbar" aria-label="Hours elapsed today" aria-valuemin={0} aria-valuemax={24} aria-valuenow={s.hour}>
-            {Array.from({length:24},(_,i)=><span key={i} className={`h-[6px] min-w-0 flex-1 rounded-[1px] ${i < s.hour ? (i >= 19 || i < 6 ? "bg-indigo-600" : i >= 16 ? "bg-orange-500" : "bg-primary") : "bg-muted"}`} />)}
-          </div>
-          <div className="text-[10px] text-muted-foreground">{Math.max(0,24-s.hour)}h remaining · actions advance time</div>
-        </div>
+        <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} />
         <div className="pointer-events-auto flex flex-col gap-2">
           <Icon label="Player" onClick={() => setTab("player")}>👤</Icon>
           <Icon label="Journal" onClick={() => setTab("log")}>📜</Icon>
@@ -261,10 +262,10 @@ function Game() {
       )}
 
       {enc && (
-        <Sheet title="Something happened nearby">
+        <Sheet title={encounterSpot?.title ?? "A town encounter"}>
           <p className="text-lg">{enc.text}</p>
-          {enc.choices.map((c) => <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); setPendingDestination(null); }}>{c.label}</Btn>)}
-          <Btn onClick={() => {setEnc(null);setPlace(pendingDestination);setPendingDestination(null);}}>Ignore and enter building</Btn>
+          {enc.choices.map((c) => <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); }}>{c.label}</Btn>)}
+          <Btn onClick={() => setEnc(null)}>Walk away</Btn>
         </Sheet>
       )}
       {!enc && place && !tab && (
@@ -272,13 +273,14 @@ function Game() {
           {place === "work" ? <EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob} /> : actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}
-      {result && !enc && <div role="status" aria-live="assertive" className="pointer-events-none absolute inset-x-3 top-24 z-50 mx-auto max-w-sm">
+      {result && !enc && <div key={result.message + result.before} role="status" aria-live="polite" className="pointer-events-none absolute inset-x-3 top-24 z-50 mx-auto max-w-sm animate-in fade-in slide-in-from-top-2 duration-200">
         <div className="pointer-events-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-xl">
           <div className="flex items-start justify-between gap-2">
             <strong>{result.success?"✓ Action complete":"! Action unavailable"}</strong>
             <button onClick={()=>setResult(null)} aria-label="Dismiss result" className="min-h-8 min-w-8 rounded border border-foreground">✕</button>
           </div>
           <p className="text-sm">{result.message}</p>
+          {!!result.changes?.length && <div className="mt-2 flex flex-wrap gap-1">{result.changes.map((c,i)=><span key={i} className="rounded bg-secondary px-2 py-1 text-xs font-bold">{c}</span>)}</div>}
           {result.success && result.after>result.before && <p className="text-xs font-bold">🕒 {timeLabel(result.before)} → {timeLabel(result.after)} · {result.after-result.before}h used</p>}
         </div>
       </div>}
