@@ -12,6 +12,15 @@ import { PARK_KID_SPOT } from "@/lib/park-kid";
 // the roof up and slightly right to reveal front and side walls.
 const TW = 48, TH = 36, N = 30;
 
+/** Shift the paper-coloured head continuously toward red or blue with karma. */
+export function karmaHeadColor(karma: number): string {
+  const intensity = Math.min(1, Math.abs(karma) / 30);
+  const base = [255, 244, 214];
+  const target = karma < 0 ? [216, 59, 76] : [73, 161, 255];
+  const mix = base.map((c, i) => Math.round(c + (target[i]! - c) * intensity));
+  return `rgb(${mix.join(", ")})`;
+}
+
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 // Streets have deliberate ends and T-junctions rather than an endless grid.
@@ -102,13 +111,13 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, color = "var(--town-player)" }: { x: number; y: number; phase: number; walking: boolean; color?: string }) {
+function Stick({ x, y, phase, walking, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; color?: string; head?: string }) {
   const [sx, sy] = P(x, y);
   const s = walking ? Math.sin(phase) * 7 : 0;
   return (
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
-      <circle cx={0} cy={-40} r={7} fill="var(--town-paper)" />
+      <circle cx={0} cy={-40} r={7} fill={head} />
       <line x1={0} y1={-33} x2={0} y2={-16} />
       <line x1={0} y1={-28} x2={-8 - s / 2} y2={-20 + Math.abs(s) / 3} />
       <line x1={0} y1={-28} x2={8 + s / 2} y2={-20 + Math.abs(s) / 3} />
@@ -124,7 +133,7 @@ const NPCS = [
   { path: [[11, 20.6], [17, 20.6]], color: "var(--town-npc-green)", speed: 0.45 },
 ] as const;
 
-export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
+export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { hour: number; house: number; speed?: number; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
@@ -265,7 +274,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT); } }}>
-        <g transform={`translate(${gx} ${gy})`}>
+        <g transform={`translate(${gx} ${gy}) scale(0.55)`}>
           {/* A casual hangout on the grass. The seat belongs to the park, not a raised platform. */}
           <ellipse cx="0" cy="6" rx="62" ry="10" fill="#27372f" opacity=".16"/>
           <path d="M-49 -20H23M-49 -9H23" stroke="#846b53" strokeWidth="9" strokeLinecap="round"/>
@@ -346,7 +355,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (

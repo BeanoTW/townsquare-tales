@@ -23,6 +23,7 @@ export function giveParkSmoke(s: GameState): { patch: Partial<GameState>; messag
       smokes: s.smokes - 1,
       parkSmokes: given,
       skateboard: given >= 2 ? 1 : s.skateboard,
+      skateboardEquipped: given >= 2 ? 1 : s.skateboardEquipped,
       karma: s.karma - (given >= 10 ? 3 : given >= 5 ? 2 : 1),
     },
     message: parkKidDialogue(given) + (given === 2 ? " Skateboard unlocked!" : "") + " Karma decreased.",

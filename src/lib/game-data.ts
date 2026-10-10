@@ -17,6 +17,7 @@ export const START: GameState = {
   snacks: 0,
   smokes: 0,
   skateboard: 0,
+  skateboardEquipped: 0,
   parkSmokes: 0,
   parkKidGone: 0,
   trainers: 0,
