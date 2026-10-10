@@ -28,15 +28,6 @@ export const ENCOUNTER_SPOTS: readonly EncounterSpot[] = [
     title: "By the pub",
   },
   {
-    id: "alley",
-    x: 11.7,
-    y: 22.0,
-    icon: "$",
-    pose: "pacing",
-    hint: "An unusual offer",
-    title: "Around the corner",
-  },
-  {
     id: "school",
     x: 11.4,
     y: 6.5,
