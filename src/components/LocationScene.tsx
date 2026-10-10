@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { ownsFurniture } from "@/lib/furniture";
 
-type SceneId = "home" | "gym" | "school" | "work" | "bar" | "alley" | "bank" | "shop" | "diner" | "pawn" | "furniture" | "casino" | "depot" | "police" | "clinic";
+type SceneId = "home" | "gym" | "yard" | "school" | "work" | "bar" | "alley" | "bank" | "shop" | "diner" | "pawn" | "furniture" | "casino" | "depot" | "police" | "clinic";
 
 const LOOK: Record<SceneId, { title: string; caption: string; wall: string; floor: string; accent: string; props: string[] }> = {
   home: { title: "Home sweet home", caption: "It isn't much, but the landlord never calls.", wall: "#b8c5a0", floor: "#9d7858", accent: "#8c5844", props: ["BED", "LAMP", "WINDOW"] },
+  yard: { title: "Workers Yard", caption: "Hard hats, early starts, and proper work.", wall: "#bba981", floor: "#79624d", accent: "#d8a63c", props: ["WEIGHTS", "BOARD", "DESK"] },
   gym: { title: "Iron Gym", caption: "No pain, no gain. Refunds not available.", wall: "#8da4af", floor: "#56636b", accent: "#e1a53a", props: ["WEIGHTS", "MIRROR", "POSTER"] },
   school: { title: "Stick U", caption: "An expensive way to become slightly smarter.", wall: "#c9b78e", floor: "#916f55", accent: "#547b62", props: ["BOARD", "BOOKS", "DESK"] },
   work: { title: "MegaCorp", caption: "Your soul is valued. At an hourly rate.", wall: "#aebdcb", floor: "#708393", accent: "#47759b", props: ["DESK", "COMPUTER", "CLOCK"] },
