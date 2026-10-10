@@ -222,7 +222,7 @@ function Game() {
         </Sheet>
       )}
       {!enc && place && !tab && (
-        <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0]}>
+        <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0] ?? ""}>
           {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}

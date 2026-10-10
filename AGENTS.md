@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep upright ground projection in the browser-safe town-projection module so map geometry and exterior rendering agree.
+- Render destination architecture in BuildingExterior using the same lots and frontage as navigation, so visual entrances stay reachable.
+- Keep town illustration colors in global semantic CSS tokens so exterior details and the map share one palette.

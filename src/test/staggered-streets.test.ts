@@ -14,8 +14,8 @@ function isFourWayAt(a:Road,b:Road) {
 }
 describe("staggered street plan",()=>{
   it("contains no four-way junctions",()=>{
-    for(let i=0;i<ROADS.length;i++)for(let j=i+1;j<ROADS.length;j++)
-      expect(isFourWayAt(ROADS[i],ROADS[j]),"crossroads "+i+"/"+j).toBe(false);
+    for(const [i,a] of ROADS.entries())for(const [j,b] of ROADS.entries())
+      if(j>i) expect(isFourWayAt(a,b),"crossroads "+i+"/"+j).toBe(false);
   });
   it("offsets west and east side-street junctions",()=>{
     const west=ROADS.filter(r=>r.w>r.d&&r.x===0).map(r=>r.y);
@@ -30,7 +30,9 @@ describe("staggered street plan",()=>{
       expect(isWalkable(d,lots),b.id+" door obstructed").toBe(true);
       const path=findRoute({x:9.95,y:9},d,lots);
       expect(path.length,b.id+" path missing").toBeGreaterThan(0);
-      expect(Math.hypot(path.at(-1)!.x-d.x,path.at(-1)!.y-d.y),b.id+" path endpoint").toBeLessThan(.8);
+      const end=path.at(-1);
+      expect(end,b.id+" endpoint exists").toBeDefined();
+      if(end) expect(Math.hypot(end.x-d.x,end.y-d.y),b.id+" path endpoint").toBeLessThan(.8);
     }
   });
 });
