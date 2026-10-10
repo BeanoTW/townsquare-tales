@@ -3,6 +3,7 @@ import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
+import { ArcadeInterior, isArcadeRoom } from "@/components/rooms/ArcadeInterior";
 import {
   VIEW,
   hotspotActions,
@@ -68,7 +69,7 @@ function ActionPanel({
   );
 }
 
-export function LocationScene({
+function ObjectLocationScene({
   room,
   state,
   feedback,
@@ -206,4 +207,9 @@ export function LocationScene({
       </footer>
     </div>
   );
+}
+ 
+/** Arcade counters for service locations; object scenes for home, training and the street. */
+export function LocationScene(props: Parameters<typeof ObjectLocationScene>[0]) {
+  return isArcadeRoom(props.room.id) ? <ArcadeInterior {...props} /> : <ObjectLocationScene {...props} />;
 }
