@@ -112,7 +112,7 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "right", color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; facing?: "left" | "right" | "up" | "down"; color?: string; head?: string }) {
+function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "right", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string }) {
   const [sx, sy] = P(x, y);
   const s = walking && !skating ? Math.sin(phase) * 7 : 0;
   const breathe = idle ? Math.sin(phase * 0.55) * 1.2 : 0;
@@ -120,37 +120,23 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
   return (
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
-      {skating && <g data-skateboard data-facing={facing} stroke="#272737" strokeWidth={2}>
-        {facing === "up" || facing === "down" ? <>
-          {/* Top-down deck in perspective: never rotate a side-view board upright. */}
-          <ellipse cx={0} cy={-2} rx={7} ry={20} fill="#d99539" stroke="#272737" strokeWidth={2.5}/>
-          <path d="M-3 -12H3M-3 8H3" stroke="#e7c27c" strokeWidth={1.5}/>
-        </> : <>
-          <rect x={-19} y={-5} width={38} height={5} rx={2.5} fill="#d99539" />
-          <circle cx={-12} cy={2} r={3} fill="#363846" />
-          <circle cx={12} cy={2} r={3} fill="#363846" />
-        </>}
-      </g>}
-      {skating && (facing === "up" || facing === "down") ? (
-        <g data-rider-facing={facing}>
-          {/* Foreshortened top-down figure: head, angled shoulders and asymmetric lead/trail arms. */}
-          <ellipse cx={0} cy={-29} rx={8} ry={9} fill={head}/>
-          <path d="M-6 -19Q0 -23 6 -19L5 -11Q0 -8 -5 -11Z" fill={color} strokeWidth={2}/>
-          <path d={facing === "up" ? "M-6 -19L-11 -26L-13 -23M6 -19L11 -12L9 -8" : "M-6 -19L-11 -12L-9 -8M6 -19L11 -26L13 -23"} strokeWidth={3} strokeLinecap="round"/>
-          <path d="M-3 -10L-4 -4M3 -10L4 1" strokeWidth={3} strokeLinecap="round"/>
+      {skating ? (
+        <g data-skater-pose data-skate-angle={skateAngle} transform={`translate(0 -22) rotate(${skateAngle})`}>
+          {/* Overhead silhouette: the entire skater and deck turn together, including diagonals. */}
+          <ellipse cx="0" cy="17" rx="5" ry="19" fill="#d99539" stroke="#272737" strokeWidth="2" data-skateboard="deck"/>
+          <path d="M-3 5H3M-3 24H3" stroke="#f3d18d" strokeWidth="1.5"/>
+          <path d="M-4 1L-5 9M4 1L5 12" strokeWidth="3.2" strokeLinecap="round"/>
+          <ellipse cx="0" cy="-3" rx="7" ry="9" fill={color} strokeWidth="2"/>
+          <path d="M-6 -5L-12 -11L-15 -7M6 -5L12 1L10 5" strokeWidth="3.2" strokeLinecap="round"/>
+          <circle cx="0" cy="-14" r="8" fill={head}/>
         </g>
       ) : <>
-        <circle cx={0} cy={(skating ? -39 : -40) + breathe} r={7} fill={head} />
-        <line x1={0} y1={-33} x2={0} y2={-16} />
-        <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe} />
-        <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe} />
-        {skating ? <>
-          <line x1={0} y1={-16} x2={-12} y2={-4} />
-          <line x1={0} y1={-16} x2={11} y2={-4} />
-      </> : <>
-        <line x1={0} y1={-16} x2={-s} y2={0} />
-        <line x1={0} y1={-16} x2={s} y2={0} />
-      </>}
+        <circle cx={0} cy={-40 + breathe} r={7} fill={head}/>
+        <line x1={0} y1={-33} x2={0} y2={-16}/>
+        <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe}/>
+        <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe}/>
+        <line x1={0} y1={-16} x2={-s} y2={0}/>
+        <line x1={0} y1={-16} x2={s} y2={0}/>
       </>}
     </g>
   );
@@ -165,7 +151,7 @@ const NPCS = [
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
-  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, facing: "right" as "left" | "right" | "up" | "down" });
+  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = (destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
@@ -280,6 +266,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         else target.current = null;
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
+        m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
         m.phase += dt * 12;
       }
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
@@ -477,7 +464,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} skating={skating} facing={m.facing} head={karmaHeadColor(karma)} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} skating={skating} facing={m.facing} skateAngle={m.skateAngle} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
