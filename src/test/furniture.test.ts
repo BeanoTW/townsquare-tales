@@ -16,7 +16,7 @@ const old: GameState = {
   heat: 0,
   bank: 0,
   snacks: 0,
-  smokes: 0, skateboard: 0, parkSmokes: 0, parkKidGone: 0,
+  smokes: 0, skateboard: 0, skateboardEquipped: 0, parkSmokes: 0, parkKidGone: 0,
   trainers: 0,
   alarm: 0,
   furniture: 0,
