@@ -307,7 +307,7 @@ function Game() {
       )}
       {!enc && place && !tab && (
         <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0] ?? ""} stations={interiorStations}>
-          {place === "work" ? <EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob} /> : actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
+          {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}
       {result && !enc && <div key={result.message + result.before} role="status" aria-live="polite" className="pointer-events-none absolute inset-x-3 top-24 z-50 mx-auto max-w-sm animate-in fade-in slide-in-from-top-2 duration-200">
