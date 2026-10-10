@@ -133,7 +133,7 @@ const NPCS = [
   { path: [[11, 20.6], [17, 20.6]], color: "var(--town-npc-green)", speed: 0.45 },
 ] as const;
 
-export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { hour: number; house: number; speed?: number; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
@@ -145,6 +145,27 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
     target.current = route.length ? { waypoints: route, enter } : null;
   };
   const keys = useRef(new Set<string>());
+  // Screen-space thumb anchor is created wherever the player presses empty ground.
+  // The pointer id prevents secondary touches from hijacking movement.
+  const joystick = useRef<{ id: number; x: number; y: number; dx: number; dy: number } | null>(null);
+  const [stickVisual, setStickVisual] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
+  const suppressGroundClick = useRef(false);
+  const JOYSTICK_RADIUS = 52;
+  const updateJoystick = (clientX: number, clientY: number) => {
+    const stick = joystick.current;
+    if (!stick) return;
+    const dx = clientX - stick.x;
+    const dy = clientY - stick.y;
+    const distance = Math.hypot(dx, dy);
+    const fraction = distance > JOYSTICK_RADIUS ? JOYSTICK_RADIUS / distance : 1;
+    stick.dx = dx * fraction / JOYSTICK_RADIUS;
+    stick.dy = dy * fraction / JOYSTICK_RADIUS;
+    setStickVisual({ x: stick.x, y: stick.y, dx: stick.dx, dy: stick.dy });
+  };
+  const stopJoystick = () => {
+    joystick.current = null;
+    setStickVisual(null);
+  };
   const [t, setT] = useState(0);
   const [near, setNear] = useState<B | null>(null);
   const nearRef = useRef<B | null>(null);
@@ -187,7 +208,16 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
       if (k.has("s") || k.has("arrowdown")) dy += 1;
       if (k.has("a") || k.has("arrowleft")) dx -= 1;
       if (k.has("d") || k.has("arrowright")) dx += 1;
-      if (!dx && !dy && target.current) {
+      if (!dx && !dy && joystick.current) {
+        const stick = joystick.current;
+        // Screen X and Y align with the world's orthogonal map axes.
+        // Small thumb drift falls inside a dead zone, preventing accidental steps.
+        if (Math.hypot(stick.dx, stick.dy) > 0.16) {
+          dx = stick.dx;
+          dy = stick.dy;
+        }
+      }
+      if (!dx && !dy && !joystick.current && target.current) {
         const waypoint = target.current.waypoints[0];
         if (waypoint) {
           dx = waypoint.x - m.x; dy = waypoint.y - m.y;
@@ -241,6 +271,29 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
     return { x: p.x / TW, y: p.y / TH };
   };
 
+  const onGroundPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (movementMode !== "joystick" || e.pointerType === "mouse" || joystick.current) return;
+    if ((e.target as Element).closest('[data-world-interactive], [data-street-gang], [data-park-kid], [data-encounter]')) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(rect.left + 60, Math.min(rect.right - 60, e.clientX));
+    const y = Math.max(rect.top + 60, Math.min(rect.bottom - 60, e.clientY));
+    joystick.current = { id: e.pointerId, x, y, dx: 0, dy: 0 };
+    suppressGroundClick.current = true;
+    target.current = null;
+    setStickVisual({ x, y, dx: 0, dy: 0 });
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  };
+  const onGroundPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (joystick.current?.id !== e.pointerId) return;
+    updateJoystick(e.clientX, e.clientY);
+  };
+  const onGroundPointerEnd = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (joystick.current?.id !== e.pointerId) return;
+    stopJoystick();
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
   const night = hour >= 19 || hour < 6;
   const dusk = hour >= 17 && hour < 19;
   const m = me.current;
@@ -248,7 +301,7 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
   // depth-sorted drawables
   const items: { key: number; el: React.ReactNode }[] = [];
   bs.forEach((b) => items.push({ key: (b.y + b.d) * 100 + b.x, el: (
-    <g key={b.id} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
+    <g key={b.id} data-world-interactive onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
       <BuildingExterior b={b} night={night} />
     </g>) }));
   TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
@@ -338,7 +391,7 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
     const px=e.x+sway;
     const [sx,sy]=P(px,e.y);
-    items.push({key:e.y*100+px,el:<g key="encounter" className="cursor-pointer" role="button" aria-label={e.hint} onPointerDown={ev=>ev.stopPropagation()} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer" role="button" aria-label={e.hint} onPointerDown={ev=>ev.stopPropagation()} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
         <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
         <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">
@@ -365,7 +418,14 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
   return (
     <div className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
       <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 240} ${cy - 415} 480 800`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
-        onClick={(e) => { const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
+        onPointerDown={onGroundPointerDown}
+        onPointerMove={onGroundPointerMove}
+        onPointerUp={onGroundPointerEnd}
+        onPointerCancel={onGroundPointerEnd}
+        onLostPointerCapture={() => { if (joystick.current) stopJoystick(); }}
+        onClick={(e) => {
+          if (suppressGroundClick.current) { suppressGroundClick.current = false; return; }
+          if (movementMode === "joystick" && e.nativeEvent.detail !== 0 && !(e.nativeEvent as PointerEvent).pointerType?.includes("mouse")) return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
@@ -430,6 +490,17 @@ export function TownMap({ hour, house, speed = 1, karma = 0, onEnter, active, en
         {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
       </svg>
       
+      {stickVisual && (
+        <div data-floating-joystick aria-hidden="true" className="pointer-events-none absolute inset-0 z-20">
+          <div
+            className="absolute grid h-[104px] w-[104px] place-items-center rounded-full border-[3px] border-white/70 bg-slate-900/35 shadow-lg"
+            style={{ left: stickVisual.x, top: stickVisual.y, transform: "translate(-50%, -50%)" }}
+          >
+            <div className="h-12 w-12 rounded-full border-[3px] border-white/90 bg-slate-200/75 shadow-lg"
+              style={{ transform: `translate(${stickVisual.dx * 52}px, ${stickVisual.dy * 52}px)` }} />
+          </div>
+        </div>
+      )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
       <div className="absolute bottom-16 left-3 z-10 w-32 rounded-lg border-2 border-foreground bg-card/95 p-1 shadow-lg sm:bottom-3 sm:w-40" aria-label="Town minimap">
         <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
