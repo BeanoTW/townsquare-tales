@@ -6,7 +6,7 @@ import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
-import { conversation, applyConversation, dailyTownEvent, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
+import { conversation, recordConversation, hasTalkedToday, dailyTownEvent, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import { LocationScene, type Feedback } from "@/components/LocationScene";
 import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
@@ -166,7 +166,6 @@ function Game() {
   const [tab, setTab] = useState<"player" | "inventory" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<Encounter | null>(null);
   const [resident, setResident] = useState<ResidentId | null>(null);
-  const [residentLastTalked, setResidentLastTalked] = useState<Record<string, number>>({});
   const [gangDone, setGangDone] = useState<number | null>(null);
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
@@ -394,12 +393,11 @@ function Game() {
         <Sheet title={conversation(resident,s).title} onClose={() => setResident(null)}>
           <p className="text-lg">{conversation(resident,s).text}</p>
           <p className="text-sm text-muted-foreground">Relationship: {s[RELATION_FIELDS[resident]]} · {s[RELATION_FIELDS[resident]]>=4?"Friends":s[RELATION_FIELDS[resident]]<=-4?"Rivals":"Acquaintances"}</p>
-          {residentLastTalked[resident] === s.day
+          {hasTalkedToday(s,resident)
             ? <p className="text-sm">You've already had a proper chat today. Come back tomorrow.</p>
             : conversation(resident,s).choices.map(choice => (
               <Btn key={choice.label} onClick={() => {
-                setS(current=>applyConversation(current,resident,choice.change,choice.karma));
-                setResidentLastTalked(previous=>({...previous,[resident]:s.day}));
+                setS(current=>recordConversation(current,resident,choice.change,choice.karma));
                 say(choice.reply);
                 setResult({message:choice.reply,success:true,changes:[`Relationship ${choice.change>0?"+":""}${choice.change}`,...(choice.karma?[`Karma ${choice.karma>0?"+":""}${choice.karma}`]:[])]});
                 setResident(null);
