@@ -374,6 +374,63 @@ function Backdrop({
   );
 }
 
+function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
+  if (room.id === "casino") {
+    return (
+      <g data-scene-depth="casino">
+        <rect width="420" height="300" fill="#392b55"/>
+        <path d="M0 0H420L365 168H55Z" fill="#654c82"/>
+        <path d="M0 0L55 168V230L0 300Z" fill="#302744"/>
+        <path d="M420 0L365 168V230L420 300Z" fill="#37274d"/>
+        <path d="M0 300L55 168H365L420 300Z" fill="#4d365f" stroke="#20182e" strokeWidth="5"/>
+        {[178,203,238,278].map((y)=><path key={y} d={`M${55-(y-168)*.417} ${y}H${365+(y-168)*.417}`} stroke="#bb8f62" strokeOpacity=".42" strokeWidth="3"/>)}
+        {[0,105,210,315,420].map((x)=><path key={x} d={`M210 168L${x} 300`} stroke="#bb8f62" strokeOpacity=".36" strokeWidth="2"/>)}
+        <path d="M10 20H410" stroke="#f5bd55" strokeWidth="8" strokeOpacity=".7"/>
+        {[55,355].map((x)=><g key={x}><path d={`M${x} 14V55`} stroke="#e0b77f" strokeWidth="5"/><path d={`M${x-20} 65L${x-10} 48H${x+10}L${x+20} 65Z`} fill="#f9d087" stroke="#4b3150" strokeWidth="3"/><ellipse cx={x} cy={69} rx="18" ry="5" fill="#f4b965" opacity=".35"/></g>)}
+        <rect x="175" y="16" width="83" height="37" rx="7" fill="#312340" stroke="#ffe28e" strokeWidth="4"/>
+        <text x="216" y="42" textAnchor="middle" fontWeight="bold" fontSize="21" fill="#ffdc75">777</text>
+        <ellipse cx="220" cy="270" rx="160" ry="27" fill="#d0a350" opacity=".16"/>
+      </g>
+    );
+  }
+  if (room.id !== "home") return null;
+  const cardboard = house === 0;
+  const rich = house >= 3;
+  const wall = cardboard ? "#9c7957" : house === 1 ? "#d7c8b1" : house === 2 ? "#b8d7c3" : "#eee3cb";
+  const floor = cardboard ? "#897b65" : house === 1 ? "#b28b6d" : house === 2 ? "#a68061" : "#947152";
+  return (
+    <g data-scene-depth={`home-${house}`}>
+      <rect width="420" height="300" fill={wall}/>
+      <path d="M0 0L64 166H356L420 0Z" fill={wall}/>
+      <path d="M0 0L64 166L0 300Z" fill={cardboard?"#796047":"#a38c76"}/>
+      <path d="M420 0L356 166L420 300Z" fill={cardboard?"#86694e":"#b4a58f"}/>
+      <path d="M0 300L64 166H356L420 300Z" fill={floor} stroke="#49392f" strokeWidth="4"/>
+      {[178,215,267].map((y)=><path key={y} d={`M${64-(y-166)*.48} ${y}H${356+(y-166)*.48}`} stroke="#47362c" strokeOpacity=".23" strokeWidth="3"/>)}
+      {[0,140,280,420].map((x)=><path key={x} d={`M210 166L${x} 300`} stroke="#49392f" strokeOpacity=".17" strokeWidth="2"/>)}
+      {cardboard ? (
+        <g>
+          <path d="M9 22L96 33L105 144L20 151Z" fill="#ae8660" stroke="#684d39" strokeWidth="4"/>
+          <path d="M22 52H94M24 82H100M27 109H100" stroke="#785d45" strokeWidth="2" strokeDasharray="3 6"/>
+          <path d="M295 20L398 34L391 145L295 139Z" fill="#b09068" stroke="#6b513c" strokeWidth="4"/>
+          <path d="M330 24L324 139" stroke="#e6c99e" strokeWidth="9" opacity=".8"/>
+          <path d="M144 27L275 23L252 90L163 91Z" fill="#7792a1" stroke="#71573f" strokeWidth="5"/>
+          <path d="M159 37L247 41L233 71H169Z" fill="#a8bfc0" opacity=".6"/>
+          <path d="M196 28V89" stroke="#d4bc8e" strokeWidth="6"/>
+          <text x="210" y="125" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#6d4b38">MAKESHIFT SHELTER</text>
+        </g>
+      ) : (
+        <g>
+          <rect x={rich?157:179} y={rich?18:34} width={rich?109:80} height={rich?112:72} rx="3" fill="#cae4ed" stroke="#705b4b" strokeWidth="7"/>
+          <path d={rich?"M212 18V130M157 74H266":"M219 34V106M179 70H259"} stroke="#705b4b" strokeWidth="5"/>
+          <path d="M24 16H109V63H24Z" fill={rich?"#dbbc78":"#d7ba86"} stroke="#75604b" strokeWidth="5"/>
+          <path d="M35 27L93 52M94 27L36 52" stroke="#967b64" strokeWidth="3"/>
+          {rich && <g><path d="M210 0V34" stroke="#987344" strokeWidth="5"/><path d="M175 36Q210 65 245 36Z" fill="#f3d899" stroke="#876c4c" strokeWidth="4"/><circle cx="210" cy="50" r="8" fill="#fff0b9"/></g>}
+        </g>
+      )}
+    </g>
+  );
+}
+
 /* ---------- Per-room decor. Every object is placed inside its hotspot box. ---------- */
 
 function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: Room): ReactNode {
@@ -1034,6 +1091,7 @@ export function RoomArt({
       aria-label={`${room.title} interior`}
     >
       <Backdrop room={room} pattern={pattern} />
+      <PerspectiveRoom room={room} house={state.house} />
       <g pointerEvents="none">{decorFor(room.id, state, B, room)}</g>
       {visible.map((h) => (
         <Hotspot key={h.id} h={h} selected={selectedId === h.id} onSelect={onSelect} />
