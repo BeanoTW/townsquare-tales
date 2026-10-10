@@ -94,6 +94,12 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
         </svg>
         {hotspots && <>
+          <div className="absolute inset-x-2 top-[18%] bottom-[26%] grid grid-cols-3 gap-2">
+            {hotspots.map((station,i)=><button key={"object-"+station.label} type="button"
+              aria-label={`Interact with ${station.label}`} onClick={()=>setSelected(i)}
+              className="rounded-md border-2 border-transparent bg-transparent focus-visible:border-primary focus-visible:bg-card/50"
+              title={station.hint}><span className="sr-only">{station.label}</span></button>)}
+          </div>
           <div className="absolute inset-x-2 bottom-2 grid grid-cols-3 gap-2">
             {hotspots.map((station,i)=><button key={station.label} type="button"
               aria-pressed={selected===i} onClick={()=>setSelected(i)}
