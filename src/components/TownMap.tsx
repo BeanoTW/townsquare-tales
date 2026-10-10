@@ -112,18 +112,28 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; color?: string; head?: string }) {
+function Stick({ x, y, phase, walking, skating = false, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; color?: string; head?: string }) {
   const [sx, sy] = P(x, y);
-  const s = walking ? Math.sin(phase) * 7 : 0;
+  const s = walking && !skating ? Math.sin(phase) * 7 : 0;
   return (
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
-      <circle cx={0} cy={-40} r={7} fill={head} />
+      {skating && <g data-skateboard stroke="#272737" strokeWidth={2}>
+        <rect x={-19} y={-5} width={38} height={5} rx={2.5} fill="#d99539" />
+        <circle cx={-12} cy={2} r={3} fill="#363846" />
+        <circle cx={12} cy={2} r={3} fill="#363846" />
+      </g>}
+      <circle cx={0} cy={skating ? -39 : -40} r={7} fill={head} />
       <line x1={0} y1={-33} x2={0} y2={-16} />
       <line x1={0} y1={-28} x2={-8 - s / 2} y2={-20 + Math.abs(s) / 3} />
       <line x1={0} y1={-28} x2={8 + s / 2} y2={-20 + Math.abs(s) / 3} />
-      <line x1={0} y1={-16} x2={-s} y2={0} />
-      <line x1={0} y1={-16} x2={s} y2={0} />
+      {skating ? <>
+        <line x1={0} y1={-16} x2={-12} y2={-4} />
+        <line x1={0} y1={-16} x2={11} y2={-4} />
+      </> : <>
+        <line x1={0} y1={-16} x2={-s} y2={0} />
+        <line x1={0} y1={-16} x2={s} y2={0} />
+      </>}
     </g>
   );
 }
@@ -134,7 +144,7 @@ const NPCS = [
   { path: [[11, 20.6], [17, 20.6]], color: "var(--town-npc-green)", speed: 0.45 },
 ] as const;
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
@@ -230,7 +240,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
         const waypoint = target.current.waypoints[0];
         if (waypoint) {
           dx = waypoint.x - m.x; dy = waypoint.y - m.y;
-          if (Math.hypot(dx, dy) < Math.max(0.15, 2.7 * speed * dt)) {
+          if (Math.hypot(dx, dy) < Math.max(0.15, 1.9 * speed * dt)) {
             target.current.waypoints.shift(); dx = dy = 0;
           }
         }
@@ -244,7 +254,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
       const len = Math.hypot(dx, dy);
       m.walking = len > 0;
       if (len) {
-        const sp = 2.7 * speed * dt;
+        const sp = 1.9 * speed * dt;
         const nx = m.x + (dx / len) * sp, ny = m.y + (dy / len) * sp;
         if (!blocked(nx, ny)) { m.x = nx; m.y = ny; }
         else if (!blocked(nx, m.y)) m.x = nx;
@@ -447,7 +457,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} head={karmaHeadColor(karma)} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} skating={skating} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
