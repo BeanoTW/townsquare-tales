@@ -5,31 +5,22 @@ import { parseGame, type GameState } from "@/lib/game-state";
 export const GOD_SAVE_KEY = "sticktown-god-save";
 export const GOD_ENABLED_KEY = "sticktown-god-enabled";
 const MAX_MONEY = 1_000_000_000_000;
-const MAX_STATS = 1_000_000;
+/** Versioned to restart only old, automatically-completed sandbox saves. */
+export const DEV_SAVE_VERSION_KEY = "sticktown-dev-save-version";
+export const DEV_SAVE_VERSION = "2";
 
-/** Powers are reapplied after every successful action to make them genuinely inexhaustible. */
+/** Developer mode supplies test resources, not unlocked progression. */
 export function grantGodPowers(s: GameState): GameState {
   return {
     ...s,
     money: MAX_MONEY,
     bank: MAX_MONEY,
     energy: 100,
-    str: MAX_STATS,
-    int: MAX_STATS,
-    cha: MAX_STATS,
-    xp: MAX_STATS,
-    house: 3,
-    school: 4,
-    job: 4,
-    trainers: 1,
-    alarm: 1,
-    skateboard: 1,
-    skateboardEquipped: 1,
-    furniture: 255,
+    xp: 1_000_000,
   };
 }
 
-/** Time is frozen, costs refunded, and stats remain maxed; actions still execute normally. */
+/** Time and resource costs are bypassed, but career, home, education and equipment still progress normally. */
 export function runGodAction(state: GameState, def: ActionDef, rng: Rng = Math.random): ActionResult {
   const powered = grantGodPowers(state);
   const attempt = runAction({ ...powered, hour: 0 }, def, rng);
