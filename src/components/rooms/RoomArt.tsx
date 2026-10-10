@@ -514,6 +514,23 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
             </g>
           )}
           {ownsFurniture(state.furniture, "sofa") && <Sofa b={B("sofa")} />}
+          {state.house >= 1 && ownsFurniture(state.furniture, "bookshelf") && (
+            <g data-home-bookshelf>
+              <Fill b={B("bookshelf")} fill="#80573e" rx={2}/>
+              {[0,1,2].map(row => <g key={row}>
+                <path d={`M${B("bookshelf").x+4} ${B("bookshelf").y+23+row*23}h35`} stroke="#dbba89" strokeWidth={3}/>
+                {[0,1,2,3].map(book=><rect key={book} x={B("bookshelf").x+6+book*8} y={B("bookshelf").y+4+row*23} width={6} height={17} fill={["#819c85","#ba855d","#728fbd","#d3bf7e"][(row+book)%4]} stroke={INK} strokeWidth={0.7}/>)}
+              </g>)}
+            </g>
+          )}
+          {state.house >= 1 && ownsFurniture(state.furniture, "console") && (
+            <g data-home-console>
+              <R x={B("console").x+3} y={B("console").y+10} w={21} h={17} fill="#383c4f" rx={3} sw={2}/>
+              <circle cx={B("console").x+10} cy={B("console").y+18} r={2} fill="#78ceae"/>
+              <circle cx={B("console").x+18} cy={B("console").y+18} r={2} fill="#d5a9dc"/>
+              <path d={`M${B("console").x+13} ${B("console").y+27}v15`} stroke={INK} strokeWidth={3}/>
+            </g>
+          )}
           {state.house >= 1 && ownsFurniture(state.furniture, "tv") && (
             <g data-home-television>
               <R x={B("television").x+5} y={B("television").y} w={B("television").w-10} h={B("television").h-7} fill="#2a3039" rx={5} sw={3}/>

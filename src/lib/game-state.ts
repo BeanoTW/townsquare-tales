@@ -17,7 +17,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   relMara: [-10, 10], relNox: [-10, 10], relGus: [-10, 10], relIvy: [-10, 10],
   karma: [-1e6, 1e6], house: [0, 3], school: [0, 4],
   job: [0, 4], career: [0, 3], xp: [0, 1000000], heat: [0, 100],
-  bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 63],
+  bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 255],
 };
 
 export function parseGame(raw: string | null, fallback: GameState): GameState {

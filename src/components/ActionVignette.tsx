@@ -10,7 +10,8 @@ export function vignetteForAction(id: string): VignetteKind | null {
   if (["study-desk", "library", "enroll"].includes(id)) return "study";
   if (id === "round") return "drink";
   if (id === "sleep") return "sleep";
-  if (id.startsWith("tv-")) return "tv";
+  if (id.startsWith("tv-") || id.startsWith("game-")) return "tv";
+  if (id.startsWith("read-")) return "study";
   if (["cook", "hot-meal", "eat-snack", "snack", "soup", "breakfast", "fizzy-pop", "shop-sandwich", "shop-coffee"].includes(id)) return "food";
   if (["shift", "lunch-shift", "promote"].includes(id)) return "work";
   if (["slots", "high-dice", "alley-dice"].includes(id)) return "gamble";
