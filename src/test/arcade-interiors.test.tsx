@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocationScene } from "@/components/LocationScene";
-import { runAction } from "@/lib/actions";
+import { bankTransferAction, runAction } from "@/lib/actions";
 import { START } from "@/lib/game-data";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
 import { roomFor } from "@/lib/rooms";
@@ -82,15 +82,35 @@ describe("shop action rules", () => {
   });
 });
 
+describe("bank transfer rules", () => {
+  it("transfers exact amounts in both directions without time or state-schema changes", () => {
+    const state = { ...START, money: 200, bank: 30 };
+    const deposit = runAction(state, bankTransferAction("deposit", 75));
+    expect(deposit.ok).toBe(true);
+    if (!deposit.ok) return;
+    expect(deposit.next).toMatchObject({ money: 125, bank: 105, hour: state.hour });
+    const withdrawal = runAction(deposit.next, bankTransferAction("withdraw", 100));
+    expect(withdrawal.ok).toBe(true);
+    if (withdrawal.ok) expect(withdrawal.next).toMatchObject({ money: 225, bank: 5, day: state.day });
+    expect(runAction(state, bankTransferAction("withdraw", 50)).ok).toBe(false);
+    expect(runAction(state, bankTransferAction("deposit", 0)).ok).toBe(false);
+  });
+});
+
 describe("service encounters", () => {
-  it("shows teller cash and savings plus transactional options", () => {
+  it("supports teller transfers with chosen amounts and quick presets", () => {
     const state = { ...START, money: 120, bank: 80 };
-    render(<LocationScene room={roomFor("bank", state)} state={state} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
+    const onRun = vi.fn();
+    render(<LocationScene room={roomFor("bank", state)} state={state} feedback={null} onRun={onRun} onLeave={vi.fn()} />);
     expect(screen.getByText("$120")).toBeInTheDocument();
     expect(screen.getByText("$80")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Deposit \$50/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "CASH" }));
-    expect(screen.getByRole("button", { name: /Withdraw \$50/ })).toBeInTheDocument();
+    const amount = screen.getByRole("spinbutton", { name: "Amount ($)" });
+    fireEvent.change(amount, { target: { value: "75" } });
+    fireEvent.click(screen.getByRole("button", { name: /Deposit \$75/ }));
+    expect(onRun.mock.calls[0]![0].id).toBe("bank-deposit-75");
+    fireEvent.click(screen.getByRole("button", { name: "All savings" }));
+    expect(amount).toHaveValue(80);
+    expect(screen.getByRole("button", { name: /Withdraw \$80/ })).toBeEnabled();
   });
 
   it("shows education gains as an arcade-style result splash", () => {
