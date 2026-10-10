@@ -33,12 +33,12 @@ describe("furnishings", () => {
       furniture: 0,
     }));
   it("persists and clamps ownership bitmask", () => {
-    expect(parseGame(JSON.stringify({ ...old, furniture: 31 }), old).furniture).toBe(31);
-    expect(parseGame(JSON.stringify({ ...old, furniture: 999 }), old).furniture).toBe(31);
+    expect(parseGame(JSON.stringify({ ...old, furniture: 31 }), old).furniture).toBe(63);
+    expect(parseGame(JSON.stringify({ ...old, furniture: 999 }), old).furniture).toBe(63);
   });
   it("keeps all upgrades independently owned", () => {
     const mask = FURNITURE.reduce((sum, item) => sum | item.bit, 0);
-    expect(mask).toBe(31);
+    expect(mask).toBe(63);
     for (const item of FURNITURE) expect(ownsFurniture(mask, item.id)).toBe(true);
   });
   it("only a purchased bed improves sleeping recovery", () => {
