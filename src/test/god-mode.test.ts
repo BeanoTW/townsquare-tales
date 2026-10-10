@@ -4,10 +4,10 @@ import { grantGodPowers, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { LIFT_WEIGHTS, STUDY_LIBRARY, SLOTS } from "@/lib/actions";
 
 describe("God Mode sandbox", () => {
-  it("maxes resources and progression without mutating the original state", () => {
+  it("boosts developer resources without completing progression", () => {
     const original={...START};
     const god=grantGodPowers(original);
-    expect(god).toMatchObject({money:1e12, bank:1e12, energy:100, str:1e6, int:1e6, cha:1e6, xp:1e6, house:3, school:4, job:4, furniture:255});
+    expect(god).toMatchObject({money:1e12, bank:1e12, energy:100, xp:1e6, str:5, int:5, cha:5, house:0, school:0, job:0, furniture:0, skateboard:0});
     expect(original).toEqual(START);
   });
   it("executes activities repeatedly with infinite time and energy", () => {
@@ -17,12 +17,19 @@ describe("God Mode sandbox", () => {
     if(!first.ok)return;
     expect(first.next.hour).toBe(23);
     expect(first.next.energy).toBe(100);
-    expect(first.next.str).toBe(1e6);
+    expect(first.next.str).toBeGreaterThan(god.str);
     const second=runGodAction(first.next,STUDY_LIBRARY);
     expect(second.ok).toBe(true);
     if(!second.ok)return;
     expect(second.next.hour).toBe(23);
-    expect(second.next.int).toBe(1e6);
+    expect(second.next.int).toBeGreaterThan(first.next.int);
+  });
+  it("does not bypass normal house purchase and job promotion decisions", () => {
+    const developer = grantGodPowers(START);
+    expect(developer.house).toBe(0);
+    expect(developer.job).toBe(0);
+    expect(developer.school).toBe(0);
+    expect(developer.furniture).toBe(0);
   });
   it("keeps wealth unlimited even after gambling losses", () => {
     const result=runGodAction(grantGodPowers(START),SLOTS,()=>0);
