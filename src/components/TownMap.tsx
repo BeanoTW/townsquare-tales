@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { P } from "@/lib/town-projection";
 export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
+import type { EncounterSpot } from "@/lib/world-encounters";
 
 // Upright oblique projection: ground plan matches the minimap; height offsets
 // the roof up and slightly right to reveal front and side walls.
@@ -121,7 +122,7 @@ const NPCS = [
   { path: [[11, 20.6], [17, 20.6]], color: "var(--town-npc-green)", speed: 0.45 },
 ] as const;
 
-export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null }) {
+export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, onEncounter }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
@@ -235,6 +236,28 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
     const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
     items.push({ key: y * 100 + x, el: <Stick key={`n${i}`} x={x} y={y} phase={t * 8} walking color={n.color} /> });
   });
+  if(encounter){
+    const e=encounter;
+    const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
+    const px=e.x+sway;
+    const [sx,sy]=P(px,e.y);
+    items.push({key:e.y*100+px,el:<g key="encounter" className="cursor-pointer" role="button" aria-label={e.hint} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+      <g transform={`translate(${sx} ${sy})`}>
+        <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
+        <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">
+          <circle cy="-42" r="8" fill="#f3d7b8"/>
+          <path d={e.pose==="sitting"?"M0 -34V-19L14 -14M0 -19L-9 -7M0 -19L12 -5":"M0 -34V-17M0 -29L-13 -19M0 -29L12 -22M0 -17L-9 0M0 -17L9 0"}/>
+          <path d="M-6 -32H6L7 -22H-7Z" fill="#906ca6"/>
+        </g>
+        <g transform={`translate(0 ${-72+Math.sin(t*3)*3})`}>
+          <rect x="-19" y="-24" width="38" height="29" rx="12" fill="#fff2d4" stroke="#24202b" strokeWidth="3"/>
+          <text textAnchor="middle" y="-4" fontSize="18" fontWeight="bold" fill="#25202b">{e.icon}</text>
+          <path d="M-3 4L0 12L6 4" fill="#fff2d4" stroke="#24202b" strokeWidth="2"/>
+        </g>
+        <rect x="-30" y="-94" width="60" height="108" fill="transparent" />
+      </g>
+    </g>});
+  }
   items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} /> });
   items.sort((a, b) => a.key - b.key);
 
