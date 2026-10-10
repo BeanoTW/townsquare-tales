@@ -9,12 +9,12 @@ const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join
 
 // Streets have deliberate ends and T-junctions rather than an endless grid.
 export const ROADS = [
-  { x: 9, y: 0, w: 2, d: 30 },       // Main Street: the town's north-south spine
-  { x: 0, y: 8, w: 24, d: 1.8 },     // residential / campus street, ends at East Lane
-  { x: 22, y: 8, w: 2, d: 22 },      // East Lane, stopping at the edge of town
-  { x: 0, y: 18.3, w: 24, d: 1.8 },  // market street: the main shopping T-junction
-  { x: 0, y: 27.3, w: 11, d: 1.7 },  // local access street with an actual end
-  { x: 22, y: 26.5, w: 7, d: 1.7 },  // depot turning street
+  { x: 9, y: 0, w: 2, d: 30 },       // north-south Main Street, only T-junctions
+  { x: 0, y: 7.6, w: 9, d: 1.8 },    // upper west street, joins Main Street
+  { x: 11, y: 12.4, w: 14, d: 1.8 }, // east market street, offset 4.8 tiles
+  { x: 0, y: 19, w: 9, d: 1.8 },     // lower west street, staggered again
+  { x: 11, y: 26, w: 14, d: 1.8 },  // lower east street, offset 7 tiles
+  { x: 23, y: 12.4, w: 2, d: 17.2 }, // east side street with T-junctions
 ] as const;
 
 type Facing = "north" | "south" | "east" | "west";
@@ -30,21 +30,21 @@ const HOUSE_LOOK = [
 export const buildings = (house: number): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   return [
-    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1.1, y: 1.9, w: 3.1, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
-    { facing: "south", id: "gym", label: "Iron Gym", x: 17.8, y: 2.9, w: 3, d: 3.4, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
-    { facing: "south", id: "school", label: "Stick U", x: 12.1, y: 1.8, w: 4, d: 4.2, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
-    { facing: "south", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22.2, w: 3, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
-    { facing: "east", id: "work", label: "MegaCorp", x: 17.4, y: 21.2, w: 3.4, d: 4, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
-    { facing: "west", id: "alley", label: "Dark Alley", x: 25.2, y: 25.2, w: 3, d: 1.1, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
-    { facing: "south", id: "bank", label: "Town Bank", x: 12.3, y: 12.1, w: 3.8, d: 4.1, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
-    { facing: "south", id: "shop", label: "Corner Shop", x: 5.3, y: 2.5, w: 2.5, d: 3.3, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
-    { facing: "south", id: "diner", label: "Fryday Diner", x: 5.4, y: 12.4, w: 2.5, d: 3.8, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
-    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 25.1, y: 2.7, w: 3, d: 3.5, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
-    { facing: "south", id: "furniture", label: "Cosy Corner", x: 17.5, y: 12.3, w: 3.2, d: 3.6, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
-    { facing: "south", id: "casino", label: "Lucky Sevens", x: 5.3, y: 22.2, w: 2.8, d: 4, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
-    { facing: "west", id: "depot", label: "Town Transit", x: 25.2, y: 21.3, w: 3.2, d: 3.1, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
-    { facing: "west", id: "police", label: "Town Police", x: 25.2, y: 12.1, w: 3.1, d: 4, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
-    { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 12.3, w: 3, d: 3.8, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
+    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1.1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "#3b3b3b", win: house > 0 },
+    { facing: "south", id: "gym", label: "Iron Gym", x: 15, y: 8.1, w: 3.3, d: 3.5, h: 70, wall: "#8f9aa6", side: "#6d7884", roof: "#3f4852", sign: "#d6402f", win: true },
+    { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "#b65c43", side: "#8f4331", roof: "#5f6b4a", sign: "#2d4a7a", win: true },
+    { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "#5a3a5e", side: "#432a46", roof: "#2c1c2f", sign: "#e94d8a", win: true },
+    { facing: "north", id: "work", label: "MegaCorp", x: 17.2, y: 15.5, w: 3.7, d: 4, h: 190, wall: "#7aa3bf", side: "#57809c", roof: "#3b5a70", sign: "#1f2d3a", win: true },
+    { facing: "west", id: "alley", label: "Dark Alley", x: 12.3, y: 22.5, w: 2.5, d: 2.8, h: 55, wall: "#4b4642", side: "#36322f", roof: "#262321", sign: "#9b8f3a", win: false },
+    { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "#d5c39b", side: "#9f8969", roof: "#605c56", sign: "#255b45", win: true },
+    { facing: "south", id: "shop", label: "Corner Shop", x: 5.2, y: 2.3, w: 2.5, d: 3.4, h: 48, wall: "#e0b36b", side: "#bd873a", roof: "#6f3c32", sign: "#a02b34", win: true },
+    { facing: "south", id: "diner", label: "Fryday Diner", x: 5.1, y: 13.2, w: 2.8, d: 3.8, h: 55, wall: "#f4b24c", side: "#d77d38", roof: "#a93832", sign: "#c12932", win: true },
+    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 26, y: 13.3, w: 3, d: 3.2, h: 56, wall: "#b1a478", side: "#887c5d", roof: "#5c514b", sign: "#47624b", win: true },
+    { facing: "south", id: "furniture", label: "Cosy Corner", x: 19, y: 8, w: 3.2, d: 3.7, h: 78, wall: "#e8d0a4", side: "#b99871", roof: "#6c5a48", sign: "#a75a38", win: true },
+    { facing: "north", id: "casino", label: "Lucky Sevens", x: 5.2, y: 22, w: 2.8, d: 4, h: 115, wall: "#66519a", side: "#43386c", roof: "#302847", sign: "#e7bb40", win: true },
+    { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 25.6, w: 3, d: 3.1, h: 50, wall: "#91b6bd", side: "#628b91", roof: "#394e56", sign: "#2e6477", win: true },
+    { facing: "west", id: "police", label: "Town Police", x: 26, y: 19.3, w: 3, d: 3.9, h: 90, wall: "#9eacc0", side: "#748498", roof: "#465366", sign: "#234c86", win: true },
+    { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 13, w: 3, d: 4, h: 75, wall: "#dce5d9", side: "#adbea9", roof: "#678676", sign: "#399179", win: true },
   ];
 };
 
@@ -56,8 +56,8 @@ export const door = (b: B) => {
     case "west": return { x: b.x - 0.6, y: b.y + b.d / 2 };
   }
 };
-const TREES = [[0.7,1],[4.5,1.2],[8.1,3],[11.6,1],[16.5,1],[21.2,3],[28.8,6],[1.1,10.8],[8,14],[11.5,11],[21,14],[28.8,17],[1,21],[8.1,24],[12.4,22],[15.6,26.2],[21,27],[28.8,21]] as const;
-const LAMPS = [[3,7.1],[7,7.1],[13,7.1],[20,7.1],[2,17.5],[7,17.5],[15,17.5],[21,17.5],[3,26.6],[7,26.6],[23.7,15],[23.7,24]] as const;
+const TREES = [[.6,1],[4.6,1],[8,3],[11.9,.6],[17,4],[21,4],[28.8,6],[1,11],[7.5,11],[12.2,10],[21.5,16.2],[28.8,18],[1,28],[8,28],[13.7,27.7],[18,24],[21,22],[29,29]] as const;
+const LAMPS = [[2,6.9],[7,6.9],[8.4,10.3],[12,11.8],[20.8,11.8],[2,18.4],[7,18.4],[8.4,22],[12,25.4],[20,25.4],[25.5,16],[25.5,23]] as const;
 
 function Box({ b, night }: { b: B; night: boolean }) {
   const { x, y, w, d, h } = b;
@@ -261,9 +261,9 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
     </g>) }));
   TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
   LAMPS.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
-  const c1 = ((t * 2.2) % 23), c2 = 23 - ((t * 1.7) % 23), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
-  items.push({ key: 8.9 * 100 + c1, el: <Car key="c1" x={c1} y={8.9} dir="x" color="#d94a3a" /> });
-  items.push({ key: 19.2 * 100 + c2, el: <Car key="c2" x={c2} y={19.2} dir="x" color="#3a7bd9" /> });
+  const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
+  items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="#d94a3a" /> });
+  items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="#3a7bd9" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="#e6b83a" /> });
   NPCS.forEach((n, i) => {
     const [[ax, ay], [bx, by]] = n.path;
@@ -284,11 +284,9 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         onPointerDown={(e) => { const p = toTile(e); routeTo({ x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }); }}>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"#83b773","grass")}
-        {/* Mixed neighbourhood greens without artificial rectangular district boundaries. */}
-        {tile(0,0,8.8,7.4,"#8dbd7b","green-northwest")}
-        {tile(11.7,0,10.1,7.3,"#91bd83","green-northeast")}
-        {tile(0,20.7,8.7,6.2,"#7ead75","green-southwest")}
-        {tile(11.8,21.2,9.5,7.4,"#91bf79","green-park")}
+        {/* Plots intermix naturally; there are no imposed rectangular districts. */}
+        {tile(0,0,8.8,7.2,"#8dbd7b","quiet-green")}
+        {tile(11.5,21.5,10.7,8.4,"#91bf79","park-green")}
         {/* Road shoulders do not extend across entire neighbourhoods. */}
         {ROADS.map((r,i) => tile(Math.max(0,r.x-.42),Math.max(0,r.y-.42),
           Math.min(N,r.x+r.w+.42)-Math.max(0,r.x-.42),
@@ -297,27 +295,37 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
         {/* Individual lawns and building setbacks, rather than continuous square paving. */}
         {bs.map(b => tile(Math.max(0,b.x-.15),Math.max(0,b.y-.15),b.w+.3,b.d+.3,
           b.id==="casino" || b.id==="alley"?"#84a16e":"#a3c58b","lot-"+b.id))}
-        {/* Paths connect the side-street plots to their actual street frontages. */}
-        {tile(11.05,5.8,.38,2.4,"#dfd5be","campus-link")}
-        {tile(21,10,.42,8.4,"#dfd5be","east-walk")}
-        {tile(11.1,20.3,.38,6.8,"#dfd5be","park-walk")}
+        {/* Short building approach paths, connected to the closest available road. */}
+        {bs.map(b => {
+          const d=door(b);
+          const r=ROADS.map(road=>{
+            const x=Math.max(road.x,Math.min(road.x+road.w,d.x));
+            const y=Math.max(road.y,Math.min(road.y+road.d,d.y));
+            return {x,y,distance:Math.hypot(d.x-x,d.y-y)};
+          }).sort((a,b)=>a.distance-b.distance)[0];
+          if(!r) return null;
+          return tile(Math.min(d.x,r.x)-.22,Math.min(d.y,r.y)-.22,
+            Math.abs(d.x-r.x)+.44,Math.abs(d.y-r.y)+.44,"#dfd5be","approach-"+b.id);
+        })}
         {/* Central park: not another paved rectangle. */}
-        {tile(12.15,22.1,3.9,5.2,"#a4cb82","park")}
-        <ellipse cx={P(14.5,24.1)[0]} cy={P(14.5,24.1)[1]} rx={38} ry={23} fill="#5aa7c9" stroke="#4086a3" strokeWidth={3} />
-        {tile(13.7,21,0.45,7.2,"#e3d7b7","park-path-ns")}
-        {tile(12.3,25.3,4.3,0.4,"#e3d7b7","park-path-ew")}
+        {tile(15.3,21.4,5.6,3.5,"#a4cb82","park")}
+        <ellipse cx={P(18,23.3)[0]} cy={P(14.5,24.1)[1]} rx={38} ry={23} fill="#5aa7c9" stroke="#4086a3" strokeWidth={3} />
+        {tile(17.6,20.9,0.45,4.3,"#e3d7b7","park-path-ns")}
+        {tile(15.2,23.9,5.5,0.4,"#e3d7b7","park-path-ew")}
         {/* Roads are finite streets with deliberate ends and T-junctions. */}
         {ROADS.map((r,i)=>tile(r.x,r.y,r.w,r.d,"#3d3f44","road-"+i))}
-        {/* Dashed centre markings respect the actual road segments. */}
-        {Array.from({length:15},(_,i)=>i*2+.5).filter(y=>y<7.6||(y>10.2&&y<17.8)||(y>20.5&&y<26.8)).map(y=>tile(9.95,y,.1,.85,"#efd04f","main-dash-"+y))}
-        {[.7,2.7,4.7,6.7,11.6,13.6,15.6,17.6,19.6].map(x=>tile(x,8.84,.85,.1,"#efd04f","upper-dash-"+x))}
-        {[.7,2.7,4.7,6.7,11.6,13.6,15.6,17.6,19.6].map(x=>tile(x,19.12,.85,.1,"#efd04f","market-dash-"+x))}
-        {[.7,2.7,4.7,6.7].map(x=>tile(x,28.11,.85,.1,"#efd04f","lower-dash-"+x))}
-        {[10.5,12.5,14.5,16.5,21.5,23.5,25.5].map(y=>tile(22.95,y,.1,.85,"#efd04f","east-dash-"+y))}
-        {/* Crossings and marked road-end thresholds. */}
-        {[0,1,2,3].map(i=><g key={"cross-"+i}>{tile(8.45,7.85+i*.36,.43,.2,"#f2f2ea","cross-a"+i)}{tile(10.95,18.4+i*.35,.42,.2,"#f2f2ea","cross-b"+i)}</g>)}
-        {tile(23.92,8,.12,1.8,"#efefea","east-kerb-cap")}
-        {tile(0,27.2,8.7,.12,"#e1d9c8","lower-kerb")}
+        {/* Lane paint is generated from each actual street, never a removed grid road. */}
+        {ROADS.map((r,i)=>{
+          const vertical=r.d>r.w;
+          const count=Math.floor((vertical?r.d:r.w)/2.4);
+          return Array.from({length:count},(_,j)=>
+            vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"#efd04f","line-"+i+"-"+j):
+              tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"#efd04f","line-"+i+"-"+j));
+        })}
+        {/* Crossings only where the staggered side roads actually meet the spine. */}
+        {[7.6,12.4,19,26].map((y,i)=>
+          <g key={"crossing-"+i}>{Array.from({length:4},(_,j)=>
+            tile(9.15+j*.44,y-.35,.25,.4,"#f2f2ea","stripe-"+i+"-"+j))}</g>)}
         {/* Every property has a short approach path linking its door to the surrounding pavement. */}
         {bs.map((b) => {
           const d = door(b);
