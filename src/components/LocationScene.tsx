@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { ownsFurniture } from "@/lib/furniture";
 
-type SceneId = "home" | "gym" | "school" | "work" | "bar" | "alley" | "bank" | "shop" | "diner" | "pawn" | "furniture" | "casino" | "depot" | "police" | "clinic";
+type SceneId = "home" | "gym" | "yard" | "school" | "work" | "bar" | "alley" | "bank" | "shop" | "diner" | "pawn" | "furniture" | "casino" | "depot" | "police" | "clinic";
 
 const LOOK: Record<SceneId, { title: string; caption: string; wall: string; floor: string; accent: string; props: string[] }> = {
   home: { title: "Home sweet home", caption: "It isn't much, but the landlord never calls.", wall: "#b8c5a0", floor: "#9d7858", accent: "#8c5844", props: ["BED", "LAMP", "WINDOW"] },
+  yard: { title: "Workers Yard", caption: "Hard hats, early starts, and proper work.", wall: "#bba981", floor: "#79624d", accent: "#d8a63c", props: ["WEIGHTS", "BOARD", "DESK"] },
   gym: { title: "Iron Gym", caption: "No pain, no gain. Refunds not available.", wall: "#8da4af", floor: "#56636b", accent: "#e1a53a", props: ["WEIGHTS", "MIRROR", "POSTER"] },
   school: { title: "Stick U", caption: "An expensive way to become slightly smarter.", wall: "#c9b78e", floor: "#916f55", accent: "#547b62", props: ["BOARD", "BOOKS", "DESK"] },
   work: { title: "MegaCorp", caption: "Your soul is valued. At an hourly rate.", wall: "#aebdcb", floor: "#708393", accent: "#47759b", props: ["DESK", "COMPUTER", "CLOCK"] },
@@ -66,13 +67,13 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
   const home = homes[Math.min(3, Math.max(0, house))]!;
   const wall = id === "home" ? home.wall : scene.wall;
   const floor = id === "home" ? home.floor : scene.floor;
-  return <div className="absolute inset-0 z-20 flex flex-col bg-background/95 font-hand sm:items-center sm:justify-center">
-    <section className="flex h-full w-full flex-col overflow-hidden border-foreground bg-card sm:h-[min(850px,95vh)] sm:max-w-2xl sm:rounded-xl sm:border-2 sm:shadow-2xl">
-      <header className="flex shrink-0 items-center justify-between border-b-2 border-foreground px-4 pb-3 pt-20">
+  return <div className="absolute inset-0 z-20 flex flex-col bg-background font-hand">
+    <section className="relative flex h-full w-full flex-col overflow-hidden bg-card">
+      <header className="z-10 flex shrink-0 items-end justify-between gap-2 border-b-2 border-foreground bg-card px-3 pb-2 pt-[104px] sm:pt-20">
         <div><div className="text-xs uppercase tracking-widest text-muted-foreground">Town Square Tales · Inside</div><h2 className="text-2xl font-bold">{scene.title}</h2></div>
-        <button onClick={onClose} aria-label="Leave building" className="rounded-lg border-2 border-foreground bg-secondary px-4 py-2 text-lg font-bold">← Leave</button>
+        <button onClick={onClose} aria-label="Leave building" className="relative z-10 min-h-11 rounded-lg border-2 border-foreground bg-secondary px-3 py-1 text-base font-bold">← Leave</button>
       </header>
-      <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{height:hotspots?"min(53vh,430px)":"clamp(190px,39vh,365px)",background:wall}}>
+      <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{flex:hotspots?"1 1 0%":"0 0 auto",height:hotspots?undefined:"clamp(190px,39vh,365px)",background:wall}}>
         <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice" className="h-full w-full" role="img" aria-label={`Illustrated interior of ${scene.title}`}>
           <rect width="420" height="230" fill={wall}/><path d="M0 150H420V230H0Z" fill={floor}/>
           <path d="M0 150H420" stroke="#29252a" strokeWidth="5"/>
@@ -94,36 +95,31 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
         </svg>
         {hotspots && <>
-          <div className="absolute inset-x-2 top-[18%] bottom-[26%] grid grid-cols-3 gap-2">
-            {hotspots.map((station,i)=><button key={"object-"+station.label} type="button"
-              aria-label={`Interact with ${station.label}`} onClick={()=>setSelected(i)}
-              className="rounded-md border-2 border-transparent bg-transparent focus-visible:border-primary focus-visible:bg-card/50"
-              title={station.hint}><span className="sr-only">{station.label}</span></button>)}
-          </div>
-          <div className="absolute inset-x-2 bottom-2 grid grid-cols-3 gap-2">
-            {hotspots.map((station,i)=><button key={station.label} type="button"
-              aria-pressed={selected===i} onClick={()=>setSelected(i)}
-              className={`min-h-12 rounded-lg border-2 border-foreground px-1 py-2 text-center text-sm font-bold shadow-md ${selected===i?"bg-primary text-primary-foreground":"bg-card/95"}`}>
-              <span aria-hidden="true">{["🖥️","📋","🚪"][i] ?? "✦"} </span>{station.label}
+          <div className="absolute inset-x-2 top-[12%] bottom-[30%] grid grid-cols-3 gap-2">
+            {hotspots.map((station,i)=><button key={"object-"+station.label} type="button" aria-label={`Interact with ${station.label}`}
+              onClick={()=>setSelected(i)} className="rounded-md border-2 border-transparent bg-transparent focus-visible:border-primary focus-visible:bg-card/50" title={station.hint}>
+              <span className="sr-only">{station.label}</span>
             </button>)}
           </div>
+          <div className="absolute inset-x-2 bottom-3 grid grid-cols-3 gap-2">
+            {hotspots.map((station,i)=><button key={station.label} type="button" aria-pressed={selected===i}
+              onClick={()=>setSelected(selected===i?null:i)}
+              className={`min-h-12 rounded-xl border-2 border-foreground px-1 py-2 text-center text-sm font-bold shadow-md ${selected===i?"bg-primary text-primary-foreground":"bg-card/95"}`}>
+              <span aria-hidden="true">{["🖥️","📋","🚪"][i]??"✦"} </span>{station.label}
+            </button>)}
+          </div>
+          {selected!==null && hotspots[selected] && <div className="absolute inset-x-3 top-3 z-20 mx-auto max-w-lg rounded-xl border-2 border-foreground bg-card/95 p-3 shadow-2xl" style={{maxHeight:"min(48%,340px)",overflowY:"auto"}}>
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <div><h3 className="font-bold text-lg">{hotspots[selected].label}</h3><p className="text-sm text-muted-foreground">{hotspots[selected].hint}</p></div>
+              <button type="button" aria-label="Close actions" onClick={()=>setSelected(null)} className="min-h-10 min-w-10 rounded-lg border-2 border-foreground bg-secondary">✕</button>
+            </div>
+            <div className="grid gap-2">{hotspots[selected].content}</div>
+          </div>}
         </>}
       </div>
-      <div className="shrink-0 border-b border-foreground/20 bg-secondary/60 px-4 py-2 text-base italic">{id === "home" ? home.title + " · " + (furniture ? "Your upgrades are making it feel like yours." : "A fresh start.") : scene.caption}</div>
-      {hotspots ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
-        {selected===null ? <div className="grid gap-2 text-center">
-          <strong className="text-lg">Tap an object to interact</strong>
-          <p className="text-sm text-muted-foreground">Workstations, notices and counters each open their own options. Use Leave to return to town.</p>
-          <div className="grid grid-cols-3 gap-2">{hotspots.map((station,i)=><button type="button" key={station.label} className="min-h-11 rounded-md border-2 border-foreground bg-secondary px-1 text-sm font-bold" onClick={()=>setSelected(i)}>{station.label}</button>)}</div>
-        </div> : <>
-          <div className="mb-2 flex items-center justify-between gap-2"><div><h3 className="text-lg font-bold">{hotspots[selected]?.label}</h3><p className="text-sm text-muted-foreground">{hotspots[selected]?.hint}</p></div><button type="button" aria-label="Close actions" onClick={()=>setSelected(null)} className="min-h-11 min-w-11 rounded-md border-2 border-foreground bg-secondary">✕</button></div>
-          <div className="grid gap-2">{hotspots[selected]?.content}</div>
-        </>}
-        {feedback && <p aria-live="polite" className="mt-2 rounded border border-foreground/30 bg-secondary p-2 text-sm">{feedback}</p>}
-      </div> : <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-        <div className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">What would you like to do?</div>
+      {!hotspots && <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
         <div className="flex flex-col gap-2">{children}</div>
-        {feedback && <p aria-live="polite" className="mt-3 rounded border border-foreground/30 bg-secondary p-2 text-base">{feedback}</p>}
+        {feedback && <p aria-live="polite" className="mt-2 rounded border border-foreground/30 bg-secondary p-2 text-sm">{feedback}</p>}
       </div>}
     </section>
   </div>;
