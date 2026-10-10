@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
+import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -155,6 +156,7 @@ const ENCOUNTERS: {
 function Game() {
   const [s, setS] = useState<S>(START);
   const [saveReady, setSaveReady] = useState(false);
+  const [godMode, setGodMode] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [movementMode, setMovementMode] = useState<"joystick" | "tap">("joystick");
   const [log, setLog] = useState<string[]>([
@@ -172,7 +174,12 @@ function Game() {
 
   // SSR and the initial browser render must agree. Load the save only after hydration.
   useEffect(() => {
-    setS(loadGame(START));
+    const normal = loadGame(START);
+    try {
+      const enabled = window.localStorage.getItem(GOD_ENABLED_KEY) === "true";
+      setGodMode(enabled);
+      setS(enabled ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), normal) : normal);
+    } catch { setS(normal); }
     try {
       setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
     } catch { /* Private browsing still supports the default floating joystick. */ }
@@ -180,8 +187,33 @@ function Game() {
   }, []);
   // Never overwrite a player's existing save with SSR defaults during hydration.
   useEffect(() => {
-    if (saveReady) saveGame(s);
-  }, [s, saveReady]);
+    if (!saveReady) return;
+    if (godMode) {
+      try { window.localStorage.setItem(GOD_SAVE_KEY, JSON.stringify(s)); } catch { /* Session-only sandbox. */ }
+    } else saveGame(s);
+  }, [s, saveReady, godMode]);
+
+  const toggleGodMode = () => {
+    if (godMode) {
+      try {
+        window.localStorage.setItem(GOD_SAVE_KEY, JSON.stringify(s));
+        window.localStorage.setItem(GOD_ENABLED_KEY, "false");
+      } catch { /* Still switches back during this session. */ }
+      setS(loadGame(START));
+      setGodMode(false);
+    } else {
+      saveGame(s);
+      let sandbox = parseGodSave(null, s);
+      try {
+        sandbox = parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s);
+        window.localStorage.setItem(GOD_ENABLED_KEY, "true");
+      } catch { /* Continue with a fresh sandbox if storage is disabled. */ }
+      setS(sandbox);
+      setGodMode(true);
+    }
+    setResult(null);
+    setVignette(null);
+  };
 
   const selectMovement = (mode: "joystick" | "tap") => {
     setMovementMode(mode);
@@ -203,7 +235,7 @@ function Game() {
 
   /** Every interior and town action goes through the same rules and feedback. */
   const perform = (def: ActionDef) => {
-    const outcome = runAction(s, def, Math.random);
+    const outcome = godMode ? runGodAction(s, def, Math.random) : runAction(s, def, Math.random);
     if (!outcome.ok) return notify(outcome.message, false);
     setS(outcome.next);
     notify(outcome.message, true, outcome.hoursUsed, outcome.changes);
@@ -507,6 +539,17 @@ function Game() {
           <p className="text-base text-muted-foreground">
             Move using your chosen control. Tap buildings and characters to interact. Inside, tap an object to act.
           </p>
+          <div className="rounded-lg border-2 border-foreground p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <strong className="text-lg">⚡ God Mode</strong>
+              <span className="text-xs font-bold">{godMode ? "ON" : "OFF"}</span>
+            </div>
+            <p className="mb-2 text-sm">
+              Infinite money, savings, energy and time; maximum strength, intelligence, charm, XP,
+              education, housing and equipment. Uses a separate save, so normal progress is safe.
+            </p>
+            <Btn onClick={toggleGodMode}>{godMode ? "Disable God Mode · Restore normal save" : "Enable God Mode"}</Btn>
+          </div>
           <p className="text-base font-bold">Movement controls</p>
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Movement controls">
             <button type="button" aria-pressed={movementMode === "joystick"} onClick={() => selectMovement("joystick")}
@@ -529,7 +572,10 @@ function Game() {
           <Btn
             onClick={() => {
               if (confirm("Start a new life?")) {
-                setS(START);
+                if (godMode) {
+                  try { window.localStorage.removeItem(GOD_SAVE_KEY); } catch { /* No storage. */ }
+                }
+                setS(godMode ? parseGodSave(null, START) : START);
                 setLog(["New life started."]);
                 setPlace(null);
                 setTab(null);
