@@ -25,6 +25,12 @@ describe("street gang on the top-right green", () => {
     const view = render(<TownMap hour={11} house={0} onEnter={vi.fn()} active={null} />);
     expect(view.getByRole("button", { name: "Approach the street gang" })).toBeInTheDocument();
     expect(view.container.querySelector("[data-street-gang]")).toBeInTheDocument();
+    expect(view.container.querySelector("[data-street-gang] g[transform*=\"scale(0.4)\"]")).toBeInTheDocument();
+  });
+
+  it("shows the bench kid at an ordinary NPC scale", () => {
+    const view = render(<TownMap hour={11} house={0} onEnter={vi.fn()} active={null} kidPresent />);
+    expect(view.container.querySelector("[data-park-kid] g[transform*=\"scale(0.65)\"]")).toBeInTheDocument();
   });
 
   it("always mugs an easy target, with nonnegative money and energy", () => {
