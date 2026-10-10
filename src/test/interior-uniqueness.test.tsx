@@ -14,9 +14,9 @@ describe("mobile arcade interiors", () => {
   it("puts the shop purchase button before the wheel rather than below the fold", () => {
     const view = show("shop");
     const buy = screen.getByRole("button", { name: "BUY · $10" });
-    const wheel = screen.getByLabelText("Product wheel");
+    const shelf = screen.getByLabelText("Corner Shop shelves");
     expect(buy).toBeInTheDocument();
-    expect(Boolean(buy.compareDocumentPosition(wheel) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(Boolean(buy.compareDocumentPosition(shelf) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
     expect(view.container.querySelector(".arcade-purchase-dock")).toContainElement(buy);
   });
 
