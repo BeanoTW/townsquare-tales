@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ActionVignette, vignetteForAction } from "@/components/ActionVignette";
 
@@ -16,14 +16,14 @@ describe("action cutaways", () => {
     expect(vignetteForAction(id)).toBe(expected);
   });
 
-  it("shows actual gains and lets the player skip immediately", () => {
+  it("shows actual gains without asking the player to continue", () => {
     const onDone=vi.fn();
     render(<ActionVignette kind="strength" changes={["Strength: +2","Energy: -20"]} message="Getting stronger." onDone={onDone}/>);
-    expect(screen.getByRole("dialog", {name:"FEEL THE BURN"})).toBeInTheDocument();
+    expect(screen.getByRole("status", {name:"FEEL THE BURN"})).toBeInTheDocument();
     expect(screen.getByText("Strength +2")).toBeInTheDocument();
     expect(screen.getByText("Getting stronger.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", {name:/Tap to continue/}));
-    expect(onDone).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", {name:/Tap to continue/})).not.toBeInTheDocument();
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it("does not invent a stat reward when nothing increased", () => {
