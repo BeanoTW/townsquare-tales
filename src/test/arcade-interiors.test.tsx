@@ -31,13 +31,13 @@ describe("arcade shop", () => {
   it("rotates to an equipment item and prevents unaffordable purchases", () => {
     render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Select Running shoes" }));
-    expect(screen.getByText("Running shoes", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.getAllByText("Running shoes", { selector: "strong" })).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Need $130 more" })).toBeDisabled();
   });
 
   it("keeps retail careers accessible without littering the shop with hotspots", () => {
     render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
-    fireEvent.click(screen.getByRole("tab", { name: /Work here/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Apply for work/ }));
     const jobs = screen.getByRole("tabpanel", { name: "Retail careers" });
     expect(within(jobs).getByText("Shop jobs board")).toBeInTheDocument();
     expect(within(jobs).getByRole("button", { name: /Apply: Shop Assistant/ })).toBeInTheDocument();
