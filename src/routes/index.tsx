@@ -4,6 +4,7 @@ import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
 import { LocationScene } from "@/components/LocationScene";
 import { FURNITURE, ownsFurniture, furnitureBonus, type FurnitureId } from "@/lib/furniture";
+import { CAREERS, currentRole, nextRole, missingRequirements, shiftReward } from "@/lib/careers";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/")({
 });
 
 type S = GameState;
-const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0, trainers: 0, alarm: 0, furniture: 0 };
+const START: S = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0, trainers: 0, alarm: 0, furniture: 0, career: 0, xp: 0 };
 const HOUSES = [
   { name: "Cardboard Box", cost: 0, rest: 50 },
   { name: "Studio Flat", cost: 300, rest: 75 },
@@ -28,14 +29,6 @@ const HOUSES = [
   { name: "Mansion", cost: 15000, rest: 100 },
 ];
 const SCHOOLS = ["Dropout", "High School", "College", "University Degree", "PhD"];
-const JOBS = [
-  { name: "Burger Flipper", pay: 8, int: 0, cha: 0 },
-  { name: "Cashier", pay: 14, int: 15, cha: 10 },
-  { name: "Office Drone", pay: 25, int: 35, cha: 20 },
-  { name: "Manager", pay: 45, int: 60, cha: 45 },
-  { name: "CEO", pay: 100, int: 100, cha: 80 },
-];
-
 const PLACES = [
   { id: "home", label: "Home", x: 8, y: 18 },
   { id: "gym", label: "Gym", x: 38, y: 12 },
@@ -112,8 +105,8 @@ function Game() {
     }
   };
 
-  const job = JOBS[s.job]!;
-  const nextJob = JOBS[s.job + 1]!;
+  const job = currentRole(s);
+  const nextJob = nextRole(s);
   const actions: Record<PlaceId, { label: string; run: () => void }[]> = {
     home: [
       ...(ownsFurniture(s.furniture, "weights") ? [{ label: "Home workout (2h, +2 strength)", run: () => act(2, 18, (p) => [{ str: p.str + 2 }, "Home gym session. +2 strength."]) }] : []),
@@ -137,9 +130,20 @@ function Game() {
         p.money >= (p.school + 1) * 100 ? [{ money: p.money - (p.school + 1) * 100, school: p.school + 1, int: p.int + 10 }, `Graduated: ${SCHOOLS[p.school + 1]}! +10 int`] : "Tuition too high.") }] : []),
     ],
     work: [
-      { label: `Work shift as ${job.name} ($${job.pay * 4}, 4h)`, run: () => act(4, 30, (p) => [{ money: p.money + JOBS[p.job]!.pay * 4, karma: p.karma + 1 }, `Earned $${JOBS[p.job]!.pay * 4}. Honest living.`]) },
-      ...(nextJob ? [{ label: `Ask for promotion (needs ${nextJob.int} int, ${nextJob.cha} cha)`, run: () => act(1, 5, (p) =>
-        p.int >= nextJob.int && p.cha >= nextJob.cha ? [{ job: p.job + 1 }, `Promoted to ${nextJob.name}!`] : "Boss laughs at you.") }] : []),
+      { label: `Work 4h as ${job.name} (${job.pay * 4}, +4 XP)`, run: () => act(4, 30, (p) => {
+        const reward = shiftReward(p);
+        return [{ money: p.money + reward.money, xp: p.xp + reward.xp, karma: p.karma + reward.karma }, `Earned ${reward.money} as ${reward.role}. +4 work XP.`];
+      }) },
+      ...(nextJob ? [{ label: `Request promotion: ${nextJob.name} (${nextJob.pay}/h)`, run: () => act(1, 5, (p) => {
+        const next = nextRole(p);
+        if (!next) return "Already at the top of your profession.";
+        const missing = missingRequirements(p, next);
+        return missing.length ? `Promotion requires: ${missing.join(", ")}.` : [{ job: p.job + 1 }, `Promoted to ${next.name}! Your new wage is ${next.pay}/hour.`];
+      }) }] : []),
+      ...CAREERS.map((career, index) => ({ label: `${index === s.career ? "✓ " : ""}Apply: ${career.name} — ${career.roles[0].name} (${career.roles[0].pay}/h)`, run: () => act(1, 5, (p) => {
+        if (p.career === index) return `You're already working in ${career.name}.`;
+        return [{ career: index, job: 0, xp: Math.floor(p.xp / 4) }, `Hired as ${career.roles[0].name}! Some experience transfers to your new career.`];
+      }) })),
     ],
     bar: [
       { label: "Buy a round ($15, 2h)", run: () => act(2, 10, (p) => p.money >= 15 ? [{ money: p.money - 15, cha: p.cha + 3 }, "Everyone loves you. +3 charm"] : "Can't afford it.") },
@@ -191,7 +195,7 @@ function Game() {
   };
 
   const align = s.karma >= 20 ? "Saint" : s.karma >= 5 ? "Legit" : s.karma > -5 ? "Neutral" : s.karma > -20 ? "Crooked" : "Kingpin";
-  const won = s.house === 3 && s.job === 4;
+  const won = s.house === 3 && s.career === 0 && s.job === 4;
 
   const close = () => { setPlace(null); };
   return (
@@ -236,7 +240,7 @@ function Game() {
             <Stat k="Strength" v={s.str} /><Stat k="Intelligence" v={s.int} />
             <Stat k="Charm" v={s.cha} /><Stat k="Karma" v={`${s.karma} · ${align}`} />
             <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} /><Stat k="Home" v={HOUSES[s.house]!.name} />
-            <Stat k="Job" v={job.name} /><Stat k="School" v={SCHOOLS[s.school]} />
+            <Stat k="Career" v={CAREERS[s.career]?.name ?? "Corporate"} /><Stat k="Job" v={job.name} /><Stat k="Work XP" v={s.xp} /><Stat k="School" v={SCHOOLS[s.school]} />
           </div>
           {s.snacks > 0 && <Btn onClick={() => act(0, 0, (p) => p.snacks > 0 ? [{ snacks: p.snacks - 1, energy: Math.min(100, p.energy + 25) }, "Ate a snack. +25 energy."] : "No snacks left.")}>Eat snack (+25 energy)</Btn>}
         </Sheet>

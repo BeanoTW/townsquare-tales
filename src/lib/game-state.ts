@@ -3,6 +3,7 @@ export type GameState = {
   str: number; int: number; cha: number; karma: number;
   house: number; school: number; job: number; heat: number;
   bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
+  career: number; xp: number;
 };
 
 const KEY = "sticktown";
@@ -10,7 +11,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
   karma: [-1e6, 1e6], house: [0, 3], school: [0, 4],
-  job: [0, 4], heat: [0, 100],
+  job: [0, 4], career: [0, 3], xp: [0, 1000000], heat: [0, 100],
   bank: [0, 1e12], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 31],
 };
 
