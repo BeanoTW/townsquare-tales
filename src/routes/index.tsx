@@ -287,7 +287,7 @@ function Game() {
       {/* top HUD */}
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
         <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} />
-        <div className="pointer-events-auto flex flex-col gap-2">
+        <div className="pointer-events-auto flex shrink-0 flex-row gap-1 sm:gap-2">
           <Icon label="Player" onClick={() => setTab("player")}>👤</Icon>
           <Icon label="Journal" onClick={() => setTab("log")}>📜</Icon>
           <Icon label="Settings" onClick={() => setTab("settings")}>⚙️</Icon>
@@ -353,7 +353,7 @@ function Game() {
 }
 
 function Icon(p: { label: string; onClick: () => void; children: React.ReactNode }) {
-  return <button aria-label={p.label} onClick={p.onClick} className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-card text-xl shadow">{p.children}</button>;
+  return <button aria-label={p.label} onClick={p.onClick} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-foreground bg-card text-base shadow sm:h-11 sm:w-11 sm:text-xl">{p.children}</button>;
 }
 function Sheet(p: { title: string; onClose?: () => void; children: React.ReactNode }) {
   return (
