@@ -81,6 +81,8 @@ function Game() {
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<(typeof ENCOUNTERS)[number] | null>(null);
+  const [pendingDestination, setPendingDestination] = useState<PlaceId | null>(null);
+  const [result, setResult] = useState<{message:string;success:boolean;before:number;after:number} | null>(null);
 
   // SSR and the initial browser render must agree. Load the save only after hydration.
   useEffect(() => { setS(loadGame(START)); setSaveReady(true); }, []);
@@ -89,21 +91,32 @@ function Game() {
 
   const say = (m: string) => setLog((l) => [m, ...l].slice(0, 30));
 
+  const notify = (message:string,success:boolean,hours=0) => {
+    setResult({message,success,before:s.hour,after:Math.min(24,s.hour+hours)});
+    say(message);
+  };
   const act = (hours: number, energy: number, fn: (s: S) => [Partial<S>, string] | string) => {
-    if (s.energy < energy) return say("Too tired. Go home and sleep.");
-    if (s.hour + hours > 24) return say("Too late for that. Go home and sleep.");
+    if (s.energy < energy) return notify(`Not enough energy: need ${energy}, have ${s.energy}. Rest or eat first.`,false);
+    if (s.hour + hours > 24) return notify(`Not enough time: ${hours}h required, only ${24-s.hour}h left today.`,false);
     const r = fn(s);
-    if (typeof r === "string") return say(r);
+    if (typeof r === "string") return notify(r,false);
     const [patch, msg] = r;
     setS((p) => ({ ...p, ...patch, hour: p.hour + hours, energy: Math.max(0, Math.min(100, patch.energy ?? p.energy - energy)) }));
-    say(msg);
+    notify(msg,true,hours);
   };
 
   const walk = (id: PlaceId) => {
-    setPlace(id);
-    if (id !== "home" && lastEncounterDay !== s.day && Math.random() < 0.3) {
+    setResult(null);
+    // Incidents are contextual and happen on the street, before entering a building.
+    // Only one possible encounter per day, and not on every arrival.
+    const eventPlaces: PlaceId[] = ["alley","bar","diner","casino"];
+    if (eventPlaces.includes(id) && lastEncounterDay !== s.day && Math.random() < 0.12) {
+      setPendingDestination(id);
+      setPlace(null);
       setEnc(ENCOUNTERS[Math.floor(Math.random() * ENCOUNTERS.length)]!);
       setLastEncounterDay(s.day);
+    } else {
+      setPlace(id);
     }
   };
 
@@ -225,7 +238,7 @@ function Game() {
       <TownMap hour={s.hour} house={s.house} speed={s.trainers ? 1.35 : 1} active={place} onEnter={(id) => walk(id as PlaceId)} />
 
       {/* top HUD */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+      <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
         <div className="pointer-events-auto min-w-0 max-w-[calc(100%-9rem)] rounded-xl border-2 border-foreground bg-card/95 px-2 py-1 text-sm shadow sm:px-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-bold">
             <span>Day {s.day}</span><span>🕒 {timeLabel(s.hour)}</span><span>${s.money}</span>
@@ -248,9 +261,10 @@ function Game() {
       )}
 
       {enc && (
-        <Sheet title="Random encounter!">
+        <Sheet title="Something happened nearby">
           <p className="text-lg">{enc.text}</p>
-          {enc.choices.map((c) => <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); }}>{c.label}</Btn>)}
+          {enc.choices.map((c) => <Btn key={c.label} onClick={() => { act(0, 0, c.f); setEnc(null); setPendingDestination(null); }}>{c.label}</Btn>)}
+          <Btn onClick={() => {setEnc(null);setPlace(pendingDestination);setPendingDestination(null);}}>Ignore and enter building</Btn>
         </Sheet>
       )}
       {!enc && place && !tab && (
@@ -258,6 +272,16 @@ function Game() {
           {place === "work" ? <EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob} /> : actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}
+      {result && !enc && <div role="status" aria-live="assertive" className="pointer-events-none absolute inset-x-3 top-24 z-50 mx-auto max-w-sm">
+        <div className="pointer-events-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-xl">
+          <div className="flex items-start justify-between gap-2">
+            <strong>{result.success?"✓ Action complete":"! Action unavailable"}</strong>
+            <button onClick={()=>setResult(null)} aria-label="Dismiss result" className="min-h-8 min-w-8 rounded border border-foreground">✕</button>
+          </div>
+          <p className="text-sm">{result.message}</p>
+          {result.success && result.after>result.before && <p className="text-xs font-bold">🕒 {timeLabel(result.before)} → {timeLabel(result.after)} · {result.after-result.before}h used</p>}
+        </div>
+      </div>}
       {tab === "player" && (
         <Sheet title="Player" onClose={() => setTab(null)}>
           {won && <div className="border-2 border-foreground bg-accent p-2 text-center text-xl">🏆 Mansion + CEO in {s.day} days!</div>}
