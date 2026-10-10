@@ -196,9 +196,14 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
+    // Limit expensive React/SVG scene reconciliation to 20 FPS on mobile.
+    // The browser still schedules RAF normally, but most frames do no React work.
     let last = performance.now(), raf = 0;
+    const FRAME_MS = 50;
     const loop = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
+      raf = requestAnimationFrame(loop);
+      if (now - last < FRAME_MS) return;
+      const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       const k = keys.current, m = me.current;
       let dx = 0, dy = 0;
@@ -234,7 +239,6 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
       if (n?.id !== nearRef.current?.id) { nearRef.current = n; setNear(n); }
       setT(now / 1000);
-      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
