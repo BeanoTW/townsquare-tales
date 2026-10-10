@@ -86,17 +86,38 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
             <Prop name={ownsFurniture(furniture, "desk") ? "COMPUTER" : home.basics[2] ?? "WINDOW"} x={167} accent={scene.accent}/>
             {ownsFurniture(furniture, "sofa") && <g transform="translate(0 42) scale(.72)"><Prop name="SOFA" x={295} accent="#ba826a"/></g>}
             {ownsFurniture(furniture, "weights") && <g transform="translate(24 65) scale(.6)"><Prop name="WEIGHTS" x={17} accent="#647d86"/></g>}
+          </> : id === "work" && hotspots ? <>
+            {/* Distinct illustrated interaction points; each hit area belongs to a visible object. */}
+            <g role="button" tabIndex={0} aria-label="Use workstation" className="cursor-pointer outline-none" onClick={()=>setSelected(0)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(0);}}}>
+              <Prop name="COMPUTER" x={18} accent="#6484a6"/>
+              <rect x="15" y="36" width="126" height="130" fill="transparent"/>
+              <text x="76" y="177" fill="#182333" textAnchor="middle" fontSize="14" fontWeight="bold">WORK</text>
+            </g>
+            <g role="button" tabIndex={0} aria-label="View vacancy board" className="cursor-pointer outline-none" onClick={()=>setSelected(1)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(1);}}}>
+              <rect x="156" y="34" width="108" height="99" rx="5" fill="#e1b978" stroke="#25242a" strokeWidth="4"/>
+              <rect x="166" y="44" width="88" height="77" fill="#fff4d6"/>
+              <text x="210" y="61" fontSize="12" fontWeight="bold" fill="#25242a" textAnchor="middle">VACANCIES</text>
+              {[76,92,108].map(y=><path key={y} d={`M174 ${y}H246`} stroke="#6d717c" strokeWidth="3"/>)}
+              <rect x="154" y="30" width="114" height="112" fill="transparent"/>
+            </g>
+            <g role="button" tabIndex={0} aria-label="Visit manager" className="cursor-pointer outline-none" onClick={()=>setSelected(2)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(2);}}}>
+              <rect x="289" y="24" width="112" height="130" rx="3" fill="#53687b" stroke="#25242a" strokeWidth="5"/>
+              <rect x="300" y="37" width="90" height="39" fill="#b4d3db" stroke="#25242a" strokeWidth="3"/>
+              <text x="345" y="61" fontSize="13" fontWeight="bold" textAnchor="middle" fill="#24313d">MANAGER</text>
+              <circle cx="385" cy="113" r="5" fill="#e3ae5c" stroke="#25242a" strokeWidth="2"/>
+              <rect x="285" y="22" width="120" height="142" fill="transparent"/>
+            </g>
           </> : <>
             <Prop name={props[0] ?? "DESK"} x={17} accent={scene.accent}/>
             <Prop name={props[1] ?? "LAMP"} x={285} accent={scene.accent}/>
             <g opacity=".8"><Prop name={props[2] ?? "WINDOW"} x={164} accent={scene.accent}/></g>
           </>}
-          <Person x={225} y={187} shirt={scene.accent}/><Person x={369} y={208} shirt="#e1bb6d"/>
+          {id !== "work" && <><Person x={225} y={187} shirt={scene.accent}/><Person x={369} y={208} shirt="#e1bb6d"/></>}
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
         </svg>
         {hotspots && <>
-          <div className="absolute inset-x-2 top-[16%] bottom-[24%] grid grid-cols-3 gap-2">
-            {hotspots.map((station,i)=><button key={"object-"+station.label} type="button" aria-label={`Interact with ${station.label}`}
+          <div className={`absolute inset-x-2 top-[16%] bottom-[24%] grid grid-cols-3 gap-2 ${id==="work"?"pointer-events-none":""}`}>
+            {hotspots.map((station,i)=><button key={"object-"+station.label} type="button" disabled={id==="work"} aria-label={`Interact with ${station.label}`}
               onClick={()=>setSelected(i)} className="rounded-md border-2 border-transparent bg-transparent focus-visible:border-primary focus-visible:bg-card/50" title={station.hint}>
               <span className="sr-only">{station.label}</span>
             </button>)}
