@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { bankTransferAction, type ActionDef } from "@/lib/actions";
-import { currentRole } from "@/lib/careers";
+import { bankTransferAction, dinerMealAction, HOT_MEAL, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
+import { currentRole, nextRole } from "@/lib/careers";
 import { SCHOOLS } from "@/lib/game-data";
 import type { GameState } from "@/lib/game-state";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
@@ -79,7 +79,11 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
   const good = SHOP_GOODS[selected]!;
   const owned = good.owned(state);
   const available = good.available(state);
+  const employed = state.career === 2;
   const availability = shopAvailability(good, state);
+  const staffSpots = employed
+    ? room.hotspots.filter((h) => h.id === "checkout" || (h.id === "back-office" && nextRole(state)))
+    : room.hotspots.filter((h) => h.id === "shop-board");
 
   function purchase() {
     if (!available) return;
@@ -91,11 +95,25 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
     <>
       <div className="arcade-tabs" role="tablist" aria-label="Corner Shop departments">
         <button type="button" role="tab" aria-selected={view === "goods"} onClick={() => setView("goods")}>🛒 Shop</button>
-        <button type="button" role="tab" aria-selected={view === "jobs"} onClick={() => setView("jobs")}>📋 Work here</button>
+        <button type="button" role="tab" aria-selected={view === "jobs"} onClick={() => setView("jobs")}>{employed ? "📋 Staff desk" : "📋 Apply for work"}</button>
       </div>
       {view === "goods" ? (
         <div className="arcade-shop" role="tabpanel" aria-label="Shop products">
-          <p className="arcade-mini-title">TURN THE WHEEL · TAP AN ITEM</p>
+          <div className="arcade-purchase-dock">
+            <div className="arcade-product-selection">
+              <span className="arcade-product-selected-icon" aria-hidden="true">{good.icon}</span>
+              <div className="arcade-product-selected-copy">
+                <strong>{good.name}</strong>
+                <span>{good.description}</span>
+                {good.id === "snack" && <span>In your bag: {owned}/99</span>}
+                {!good.repeatable && owned > 0 && <span>✓ Already owned</span>}
+              </div>
+            </div>
+            <button className="arcade-buy" type="button" onClick={purchase} disabled={!available}>
+              {available ? `${good.repeatable ? "BUY" : "PURCHASE"} · $${good.price}` : availability}
+            </button>
+          </div>
+          <p className="arcade-mini-title">SPIN THE WHEEL · TAP AN ITEM</p>
           <div className="arcade-wheel" aria-label="Product wheel">
             <div className="arcade-wheel-ring" />
             {SHOP_GOODS.map((entry, index) => {
@@ -123,19 +141,13 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
             <div className="arcade-product-name"><strong>{good.name}</strong><span>{good.category} · {selected + 1}/{SHOP_GOODS.length}</span></div>
             <button type="button" aria-label="Next item" onClick={() => setSelected((selected + 1) % SHOP_GOODS.length)}>▶</button>
           </div>
-          <p className="arcade-product-desc">{good.description}</p>
-          {good.id === "snack" && <p className="arcade-inventory-count">In your bag: <strong>{owned}</strong> / 99</p>}
-          {good.category === "Equipment" && owned > 0 && <p className="arcade-inventory-count">✓ Already owned</p>}
-          <button className="arcade-buy" type="button" onClick={purchase} disabled={!available}>
-            {available ? `${good.repeatable ? "BUY" : "PURCHASE"} · $${good.price}` : availability}
-          </button>
-          <p className="arcade-purchase-hint">{good.repeatable ? "Keep buying while you have cash." : "One-time upgrade."}</p>
         </div>
       ) : (
         <div role="tabpanel" aria-label="Retail careers" className="arcade-job-panel">
-          <p className="arcade-mini-title">STAFF NOTICEBOARD</p>
-          {room.hotspots.filter((h) => h.id !== "shelves").map((hotspot) => {
+          <p className="arcade-mini-title">{employed ? "STAFF ROOM" : "WE'RE HIRING"}</p>
+          {staffSpots.map((hotspot) => {
             const actions = hotspotActions(hotspot, state).filter((a) => a.id !== "buy-shoes" && a.id !== "buy-alarm");
+            if (!actions.length) return null;
             const lines = hotspot.lines?.(state) ?? [];
             return (
               <section className="arcade-job-section" key={hotspot.id}>
@@ -148,6 +160,48 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
         </div>
       )}
     </>
+  );
+}
+
+function DinerCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef) => void }) {
+  const employed = state.career === 1;
+  const [page, setPage] = useState<"menu" | "staff">("menu");
+  const meals = [
+    { icon: "🥣", title: "Soup & bread", description: "Something warm and filling.", action: dinerMealAction("soup") },
+    { icon: "🍳", title: "Fryday special", description: "Our famous hot plate.", action: HOT_MEAL },
+    { icon: "🥓", title: "Big breakfast", description: "The full works.", action: dinerMealAction("breakfast") },
+  ];
+  const staffActions = employed
+    ? [shiftAction(state), ...(nextRole(state) ? [PROMOTE] : [])]
+    : [applyAction(1)];
+
+  return (
+    <div className="diner-screen">
+      <div className="arcade-stats diner-stats"><span>Energy <strong>{state.energy}%</strong></span><span>In your pocket <strong>${state.money}</strong></span></div>
+      <div className="arcade-tabs" role="tablist" aria-label="Fryday Diner menu">
+        <button type="button" role="tab" aria-selected={page === "menu"} onClick={() => setPage("menu")}>🍽️ Food menu</button>
+        <button type="button" role="tab" aria-selected={page === "staff"} onClick={() => setPage("staff")}>{employed ? "🧑‍🍳 Staff room" : "📋 Jobs"}</button>
+      </div>
+      {page === "menu" ? (
+        <div className="diner-menu" role="tabpanel" aria-label="Food menu">
+          <p className="diner-menu-title">TODAY'S SPECIALS</p>
+          {meals.map((meal) => (
+            <div className="diner-menu-item" key={meal.action.id}>
+              <span className="diner-meal-illustration" aria-hidden="true">{meal.icon}</span>
+              <div className="diner-meal-copy"><strong>{meal.title}</strong><span>{meal.description}</span><small>{meal.action.note} · 1h</small></div>
+              <button type="button" disabled={state.money < (meal.action.cost ?? 0) || state.hour + meal.action.hours > 24}
+                onClick={() => onRun(meal.action)}>Buy ${meal.action.cost}</button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="arcade-service-page" role="tabpanel" aria-label="Diner employment">
+          <h3>{employed ? currentRole(state).name : "Work at Fryday Diner"}</h3>
+          {employed && <p className="arcade-subline">Experience: {state.xp} XP · ${currentRole(state).pay}/hour</p>}
+          <div className="arcade-choice-list">{staffActions.map((action) => <ActionChoice key={action.id} action={action} onRun={onRun} />)}</div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -269,9 +323,11 @@ export function ArcadeInterior({ room, state, feedback, onRun, onLeave }: SceneP
           </div>
           {room.id === "shop"
             ? <ShopWheel state={state} onRun={onRun} room={room} />
-            : room.id === "bank"
-              ? <BankCounter state={state} onRun={onRun} />
-              : <ServiceDesk room={room} state={state} feedback={feedback} onRun={onRun} />}
+            : room.id === "diner"
+              ? <DinerCounter state={state} onRun={onRun} />
+              : room.id === "bank"
+                ? <BankCounter state={state} onRun={onRun} />
+                : <ServiceDesk room={room} state={state} feedback={feedback} onRun={onRun} />}
         </section>
       </div>
       <footer className="arcade-footer">
