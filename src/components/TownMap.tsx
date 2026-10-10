@@ -150,6 +150,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
   const joystick = useRef<{ id: number; x: number; y: number; dx: number; dy: number } | null>(null);
   const [stickVisual, setStickVisual] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
   const suppressGroundClick = useRef(false);
+  const joystickDragged = useRef(false);
   const JOYSTICK_RADIUS = 52;
   const updateJoystick = (clientX: number, clientY: number) => {
     const stick = joystick.current;
@@ -273,23 +274,32 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
 
   const onGroundPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (movementMode !== "joystick" || e.pointerType === "mouse" || joystick.current) return;
-    if ((e.target as Element).closest('[data-world-interactive], [data-street-gang], [data-park-kid], [data-encounter]')) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(rect.left + 60, Math.min(rect.right - 60, e.clientX));
     const y = Math.max(rect.top + 60, Math.min(rect.bottom - 60, e.clientY));
     joystick.current = { id: e.pointerId, x, y, dx: 0, dy: 0 };
-    suppressGroundClick.current = true;
-    target.current = null;
+    suppressGroundClick.current = false;
+    joystickDragged.current = false;
     setStickVisual({ x, y, dx: 0, dy: 0 });
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    e.preventDefault();
+    // Delay capture: a short tap must still activate the original target.
   };
   const onGroundPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (joystick.current?.id !== e.pointerId) return;
-    updateJoystick(e.clientX, e.clientY);
+    const origin = joystick.current;
+    const distance = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
+    if (!joystickDragged.current && distance > 9) {
+      joystickDragged.current = true;
+      target.current = null;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    if (joystickDragged.current) {
+      updateJoystick(e.clientX, e.clientY);
+      e.preventDefault();
+    }
   };
   const onGroundPointerEnd = (e: React.PointerEvent<SVGSVGElement>) => {
     if (joystick.current?.id !== e.pointerId) return;
+    if (joystickDragged.current) suppressGroundClick.current = true;
     stopJoystick();
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
   };
@@ -324,7 +334,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     el: (
       <g key="street-gang" role="button" tabIndex={0} aria-label="Approach the street gang"
         className="cursor-pointer" data-street-gang
-        onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT); } }}>
         <g transform={`translate(${gx} ${gy}) scale(0.55)`}>
@@ -367,7 +376,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     items.push({ key: PARK_KID_SPOT.y * 100 + PARK_KID_SPOT.x,
       el: <g key="park-kid" data-park-kid role="button" tabIndex={0} aria-label="Talk to the kid on the park bench"
         className="cursor-pointer"
-        onPointerDown={ev=>ev.stopPropagation()}
         onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
         onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
         <g transform={`translate(${kx} ${ky})`}>
@@ -391,7 +399,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
     const px=e.x+sway;
     const [sx,sy]=P(px,e.y);
-    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer" role="button" aria-label={e.hint} onPointerDown={ev=>ev.stopPropagation()} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer" role="button" aria-label={e.hint} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
         <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
         <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">
@@ -423,8 +431,14 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
         onPointerUp={onGroundPointerEnd}
         onPointerCancel={onGroundPointerEnd}
         onLostPointerCapture={() => { if (joystick.current) stopJoystick(); }}
+        onClickCapture={(e) => {
+          if (suppressGroundClick.current) {
+            suppressGroundClick.current = false;
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
         onClick={(e) => {
-          if (suppressGroundClick.current) { suppressGroundClick.current = false; return; }
           if (movementMode === "joystick" && e.nativeEvent.detail !== 0 && !(e.nativeEvent as PointerEvent).pointerType?.includes("mouse")) return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
