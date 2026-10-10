@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
 import { LocationScene } from "@/components/LocationScene";
+import { EmploymentDesk } from "@/components/EmploymentDesk";
 import { FURNITURE, ownsFurniture, furnitureBonus, type FurnitureId } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole, missingRequirements, shiftReward } from "@/lib/careers";
 
@@ -129,22 +130,7 @@ function Game() {
       ...(SCHOOLS[s.school + 1] ? [{ label: `Enroll: ${SCHOOLS[s.school + 1]} ($${(s.school + 1) * 100}, 4h)`, run: () => act(4, 30, (p) =>
         p.money >= (p.school + 1) * 100 ? [{ money: p.money - (p.school + 1) * 100, school: p.school + 1, int: p.int + 10 }, `Graduated: ${SCHOOLS[p.school + 1]}! +10 int`] : "Tuition too high.") }] : []),
     ],
-    work: [
-      { label: `Work 4h as ${job.name} (${job.pay * 4}, +4 XP)`, run: () => act(4, 30, (p) => {
-        const reward = shiftReward(p);
-        return [{ money: p.money + reward.money, xp: p.xp + reward.xp, karma: p.karma + reward.karma }, `Earned ${reward.money} as ${reward.role}. +4 work XP.`];
-      }) },
-      ...(nextJob ? [{ label: `Request promotion: ${nextJob.name} (${nextJob.pay}/h)`, run: () => act(1, 5, (p) => {
-        const next = nextRole(p);
-        if (!next) return "Already at the top of your profession.";
-        const missing = missingRequirements(p, next);
-        return missing.length ? `Promotion requires: ${missing.join(", ")}.` : [{ job: p.job + 1 }, `Promoted to ${next.name}! Your new wage is ${next.pay}/hour.`];
-      }) }] : []),
-      ...CAREERS.map((career, index) => ({ label: `${index === s.career ? "✓ " : ""}Apply: ${career.name} — ${career.roles[0].name} (${career.roles[0].pay}/h)`, run: () => act(1, 5, (p) => {
-        if (p.career === index) return `You're already working in ${career.name}.`;
-        return [{ career: index, job: 0, xp: Math.floor(p.xp / 4) }, `Hired as ${career.roles[0].name}! Some experience transfers to your new career.`];
-      }) })),
-    ],
+    work: [],
     bar: [
       { label: "Buy a round ($15, 2h)", run: () => act(2, 10, (p) => p.money >= 15 ? [{ money: p.money - 15, cha: p.cha + 3 }, "Everyone loves you. +3 charm"] : "Can't afford it.") },
       { label: "Hit on someone (2h)", run: () => act(2, 10, (p) => Math.random() * 60 < p.cha ? [{ cha: p.cha + 2 }, "They gave you their number! +2 charm"] : [{ cha: p.cha + 1 }, "Rejected. Character building. +1 charm"]) },
@@ -194,6 +180,26 @@ function Game() {
     ],
   };
 
+  const workShift = () => act(4, 30, p => {
+    const reward = shiftReward(p);
+    return [{money:p.money+reward.money,xp:p.xp+reward.xp,karma:p.karma+reward.karma},
+      `Earned ${reward.money} as ${reward.role}. +4 work XP.`];
+  });
+  const requestPromotion = () => act(1, 5, p => {
+    const upcoming=nextRole(p);
+    if(!upcoming)return "Already at the top of your profession.";
+    const missing=missingRequirements(p,upcoming);
+    return missing.length?`Promotion requires: ${missing.join(", ")}.`:
+      [{job:p.job+1},`Promoted to ${upcoming.name}! New wage ${upcoming.pay}/hour.`];
+  });
+  const applyJob = (index:number) => act(1,5,p => {
+    const field=CAREERS[index];
+    if(!field)return "No such vacancy.";
+    if(p.career===index)return `You're already employed in ${field.name}.`;
+    return [{career:index,job:0,xp:Math.floor(p.xp/4)},
+      `Hired as ${field.roles[0].name}! Some experience transferred.`];
+  });
+
   const align = s.karma >= 20 ? "Saint" : s.karma >= 5 ? "Legit" : s.karma > -5 ? "Neutral" : s.karma > -20 ? "Crooked" : "Kingpin";
   const won = s.house === 3 && s.career === 0 && s.job === 4;
 
@@ -227,7 +233,7 @@ function Game() {
       )}
       {!enc && place && !tab && (
         <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0] ?? ""}>
-          {actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
+          {place === "work" ? <EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob} /> : actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}
       {tab === "player" && (
