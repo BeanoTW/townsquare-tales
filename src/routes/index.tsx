@@ -191,6 +191,7 @@ function Game() {
     } catch { setS(normal); }
     try {
       setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
+      setSoundOn(window.localStorage.getItem("sticktown-sounds") !== "false");
     } catch { /* Private browsing still supports the default floating joystick. */ }
     setSaveReady(true);
   }, []);
@@ -227,6 +228,11 @@ function Game() {
   const selectMovement = (mode: "joystick" | "tap") => {
     setMovementMode(mode);
     try { window.localStorage.setItem("sticktown-movement", mode); } catch { /* Preferences stay in memory. */ }
+  };
+  const selectSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    try { window.localStorage.setItem("sticktown-sounds", String(next)); } catch { /* Session preference still works. */ }
   };
   const say = (m: string) => setLog((l) => [m, ...l].slice(0, 30));
 
@@ -371,7 +377,7 @@ function Game() {
         </div>
       </div>
 
-      {log[0] && !place && !enc && !gangMeeting && !resident && !parkKidOpen && !tab && (
+      {log[0] && !result && !place && !enc && !gangMeeting && !resident && !parkKidOpen && !tab && (
         <div className="pointer-events-none absolute inset-x-3 bottom-4 mx-auto max-w-md rounded-sm border-2 border-foreground bg-card/90 px-3 py-1 text-center text-base">
           {log[0]}
         </div>
@@ -605,7 +611,7 @@ function Game() {
               ? "Touch open ground anywhere and drag your thumb. Release to stop. Tapping buildings still works."
               : "Tap open ground to walk there. Drag controls are disabled."}
           </p>
-          <Btn onClick={() => setSoundOn((v) => !v)}>
+          <Btn onClick={selectSound}>
             🔊 Action sounds: {soundOn ? "On" : "Off"}
           </Btn>
           <Btn
