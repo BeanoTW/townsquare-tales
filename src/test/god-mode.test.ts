@@ -29,6 +29,17 @@ describe("God Mode sandbox", () => {
     if(!result.ok)throw Error(result.message);
     expect(result.next.money).toBe(1e12);
   });
+  it("rejects malformed sandbox fields rather than allowing corrupted save values", () => {
+    const restored = parseGodSave(JSON.stringify({
+      ...START, day: -900, hour: 10000, karma: "bad", lastMara: -12, relNox: 500, snacks: 99999,
+    }), START);
+    expect(restored.day).toBe(1);
+    expect(restored.hour).toBe(24);
+    expect(restored.karma).toBe(0);
+    expect(restored.lastMara).toBe(0);
+    expect(restored.relNox).toBe(10);
+    expect(restored.snacks).toBe(99);
+  });
   it("restores powered sandbox records and falls back safely", () => {
     expect(parseGodSave("broken",START).money).toBe(1e12);
     expect(parseGodSave(JSON.stringify({...START,day:7}),START).day).toBe(7);
