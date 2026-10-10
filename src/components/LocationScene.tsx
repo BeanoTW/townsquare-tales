@@ -68,7 +68,7 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
   const floor = id === "home" ? home.floor : scene.floor;
   return <div className="absolute inset-0 z-20 flex flex-col bg-background/95 font-hand sm:items-center sm:justify-center">
     <section className="flex h-full w-full flex-col overflow-hidden border-foreground bg-card sm:h-[min(850px,95vh)] sm:max-w-2xl sm:rounded-xl sm:border-2 sm:shadow-2xl">
-      <header className="flex shrink-0 items-center justify-between border-b-2 border-foreground px-4 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b-2 border-foreground px-4 pb-3 pt-20">
         <div><div className="text-xs uppercase tracking-widest text-muted-foreground">Town Square Tales · Inside</div><h2 className="text-2xl font-bold">{scene.title}</h2></div>
         <button onClick={onClose} aria-label="Leave building" className="rounded-lg border-2 border-foreground bg-secondary px-4 py-2 text-lg font-bold">← Leave</button>
       </header>
