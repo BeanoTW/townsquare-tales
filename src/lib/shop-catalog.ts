@@ -106,11 +106,20 @@ export const SHOP_GOODS: readonly ShopGood[] = [
     owned: (s) => s.alarm,
     available: (s) => !s.alarm && s.money >= 100,
   },
+  {
+    id: "smokes", name: "Smokes (pack of 5)", icon: "🚬", price: 25,
+    description: "Five smokes for your inventory. A dubious purchase.",
+    category: "Consumable", repeatable: true,
+    action: () => ({ id: "buy-smokes", label: "Buy smokes", hours: 0, energy: 0, cost: 25,
+      resolve: (s) => s.money < 25 ? "Need $25." : s.smokes > 94 ? "You cannot carry any more." : ({ patch: { money: s.money-25, smokes: s.smokes+5 }, message: "Five smokes added to your bag." }) }),
+    owned: (s) => s.smokes, available: (s) => s.money >= 25 && s.smokes <= 94,
+  }
 ];
 
 export function shopAvailability(good: ShopGood, state: GameState): string {
   if (!good.repeatable && good.owned(state)) return "Already owned";
   if (good.id === "snack" && state.snacks >= 99) return "Bag full";
+  if (good.id === "smokes" && state.smokes > 94) return "Bag full";
   if (state.money < good.price) return `Need $${good.price - state.money} more`;
   return good.repeatable ? "Buy" : "Purchase";
 }

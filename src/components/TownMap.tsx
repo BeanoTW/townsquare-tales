@@ -6,6 +6,7 @@ export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 import type { EncounterSpot } from "@/lib/world-encounters";
 import { GANG_SPOT } from "@/lib/street-gang";
+import { PARK_KID_SPOT } from "@/lib/park-kid";
 
 // Upright oblique projection: ground plan matches the minimap; height offsets
 // the roof up and slightly right to reveal front and side walls.
@@ -123,7 +124,7 @@ const NPCS = [
   { path: [[11, 20.6], [17, 20.6]], color: "var(--town-npc-green)", speed: 0.45 },
 ] as const;
 
-export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, onEncounter }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void }) {
+export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, onEncounter, kidPresent = true, onKid }: { hour: number; house: number; speed?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void }) {
   const bs = buildings(house);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false });
@@ -131,6 +132,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
   const routeTo = (destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
     const route = findRoute(me.current, destination, bs);
+    if (enter === "kid" && Math.hypot(me.current.x-destination.x,me.current.y-destination.y) < PARK_KID_SPOT.approach) { kidRef.current?.(); return; }
     target.current = route.length ? { waypoints: route, enter } : null;
   };
   const keys = useRef(new Set<string>());
@@ -138,6 +140,10 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
   const [near, setNear] = useState<B | null>(null);
   const nearRef = useRef<B | null>(null);
   const gangApproached = useRef(false);
+  const kidRef = useRef(onKid);
+  kidRef.current = onKid;
+  const kidPresentRef = useRef(kidPresent);
+  kidPresentRef.current = kidPresent;
   const enterRef = useRef(onEnter);
   enterRef.current = onEnter;
 
@@ -183,7 +189,8 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
         if (target.current && target.current.waypoints.length === 0) {
           const id = target.current.enter;
           target.current = null;
-          if (id) enterRef.current(id);
+          if (id === "kid" && kidPresentRef.current) kidRef.current?.();
+          else if (id) enterRef.current(id);
         }
       }
       const len = Math.hypot(dx, dy);
@@ -259,32 +266,64 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT); } }}>
         <g transform={`translate(${gx} ${gy})`}>
-          <ellipse cy="2" rx="67" ry="16" fill="#202329" opacity=".24" />
-          <path d="M-70 4L-56 -13H62L71 5Z" fill="#71674c" stroke="#36342f" strokeWidth="2"/>
-          <path d="M-56 -13V-3M62 -13V-3" stroke="#413f36" strokeWidth="4"/>
-          {[-33, 0, 32].map((dx, i) => (
-            <g key={i} transform={`translate(${dx} ${i === 1 ? -7 : 0})`}
-              stroke="#242431" strokeWidth="3.5" strokeLinecap="round" fill="none">
-              <path d="M-8 -22L-13 0M8 -22L13 0" />
-              <path d="M-8 -51L-14 -24M8 -51L14 -24" />
-              <path d="M-11 -50Q0 -62 11 -50L12 -20H-12Z" fill={["#373344","#363a3e","#5c3942"][i]} />
-              <path d="M-15 -47L-24 -30M15 -47L24 -30" />
-              <circle cy="-64" r="11" fill={["#b88c72","#a17b6d","#ba9874"][i]}/>
-              {i === 1 ? <path d="M-14 -67Q-12 -83 0 -82Q14 -79 14 -67L9 -73H-9Z" fill="#292c39" />
-                : <path d="M-12 -67Q-12 -79 0 -78Q10 -78 12 -67Z" fill="#292c39"/>}
-              <path d="M-8 -65H-2M2 -65H8" stroke="#20222b" strokeWidth="3.5"/>
-              <path d="M-4 -57H4" stroke="#432e35" strokeWidth="2"/>
-            </g>
-          ))}
-          <g transform={`translate(0 ${-119 + Math.sin(t * 2.5) * 2})`}>
-            <rect x="-35" y="-19" width="70" height="28" rx="8" fill="#eee3c4" stroke="#2d2b34" strokeWidth="3"/>
-            <text y="0" textAnchor="middle" fill="#2d2b34" fontWeight="bold" fontSize="15">OI. YOU.</text>
+          {/* A casual hangout on the grass. The seat belongs to the park, not a raised platform. */}
+          <ellipse cx="0" cy="6" rx="62" ry="10" fill="#27372f" opacity=".16"/>
+          <path d="M-49 -20H23M-49 -9H23" stroke="#846b53" strokeWidth="9" strokeLinecap="round"/>
+          <path d="M-44 -9V15M18 -9V15" stroke="#4b4140" strokeWidth="5"/>
+          <g data-gang-sitting transform="translate(-28 -12)" stroke="#272530" strokeWidth="3" fill="none" strokeLinecap="round">
+            <path d="M0 -27V-5L-17 0M-17 0L-25 14M0 -5L13 0L19 15" strokeWidth="5"/>
+            <path d="M-11 -28Q0 -36 11 -28L13 -7H-12Z" fill="#373343"/>
+            <circle cy="-44" r="10" fill="#ae856c"/>
+            <path d="M-11 -47Q-10 -60 4 -56Q15 -53 11 -45" fill="#252837" strokeWidth="5"/>
+            <path d="M-7 -44H-2M2 -44H7M-3 -37H4" strokeWidth="2"/>
           </g>
+          <g data-gang-standing transform="translate(15 -2)" stroke="#272530" strokeWidth="3.5" fill="none" strokeLinecap="round">
+            <path d="M-7 -23L-11 0M8 -23L12 0M-12 -49L-20 -29M12 -49L21 -33" strokeWidth="6"/>
+            <path d="M-11 -53Q0 -62 11 -53L13 -22H-13Z" fill="#383f42"/>
+            <circle cy="-66" r="11" fill="#aa7f6b"/>
+            <path d="M-13 -68Q-11 -84 4 -81Q15 -78 12 -67" fill="#252837" strokeWidth="5"/>
+            <path d="M-7 -65H-2M3 -65H8M-4 -57H4" strokeWidth="2.5"/>
+          </g>
+          <g data-gang-leaning transform="translate(48 0)" stroke="#282632" strokeWidth="3" fill="none" strokeLinecap="round">
+            <path d="M-7 -20L-15 2M5 -20L8 2M-12 -43L-24 -27M10 -43L21 -34" strokeWidth="5"/>
+            <path d="M-11 -45Q-3 -53 12 -43L10 -20H-11Z" fill="#5a3b46"/>
+            <circle cx="1" cy="-56" r="10" fill="#bd977b"/>
+            <path d="M-10 -60Q0 -74 11 -62" stroke="#242735" strokeWidth="6"/>
+            <path d="M-5 -55H0M5 -55H9M-2 -47H5" strokeWidth="2"/>
+          </g>
+          {Math.sin(t*1.3)>0.48 && <g transform="translate(5 -102)">
+            <rect x="-22" y="-15" width="44" height="21" rx="9" fill="#eee1c4" stroke="#302b35" strokeWidth="2.5"/>
+            <text y="0" textAnchor="middle" fontSize="12" fill="#302b35">Oi...</text>
+          </g>}
           <rect x="-75" y="-147" width="150" height="158" fill="transparent"/>
         </g>
       </g>
     ),
   });
+  if (kidPresent) {
+    const [kx, ky] = P(PARK_KID_SPOT.x, PARK_KID_SPOT.y);
+    items.push({ key: PARK_KID_SPOT.y * 100 + PARK_KID_SPOT.x,
+      el: <g key="park-kid" data-park-kid role="button" tabIndex={0} aria-label="Talk to the kid on the park bench"
+        className="cursor-pointer"
+        onPointerDown={ev=>ev.stopPropagation()}
+        onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
+        onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
+        <g transform={`translate(${kx} ${ky})`}>
+          <ellipse cy="5" rx="42" ry="9" fill="#20352b" opacity=".17"/>
+          <path d="M-42 -21H41M-42 -12H41" stroke="#806249" strokeWidth="8" strokeLinecap="round"/>
+          <path d="M-37 -12V11M36 -12V11" stroke="#4d403a" strokeWidth="4"/>
+          <g data-kid-sitting stroke="#292633" strokeWidth="3" strokeLinecap="round" fill="none">
+            <path d="M0 -30V-12L-14 -9L-22 8M0 -12L13 -7L19 8" strokeWidth="5"/>
+            <path d="M-10 -32L10 -32L13 -12H-12Z" fill="#547b68"/>
+            <circle cy="-46" r="10" fill="#dbb38b"/>
+            <path d="M-12 -47Q-12 -62 4 -59L12 -51L-2 -55Z" fill="#3d393d"/>
+            <path d="M-6 -45H-2M3 -45H7M-3 -38H5" strokeWidth="2"/>
+          </g>
+          <path d="M16 8L34 8" stroke="#30313d" strokeWidth="3"/>
+          <rect x="-43" y="-89" width="86" height="113" fill="transparent"/>
+        </g>
+      </g> });
+  }
   if(encounter){
     const e=encounter;
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;

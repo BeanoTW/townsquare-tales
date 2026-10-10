@@ -12,6 +12,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { meetStreetGang, type GangMeeting } from "@/lib/street-gang";
+import { giveParkSmoke } from "@/lib/park-kid";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
 
 export const Route = createFileRoute("/")({
@@ -160,8 +161,9 @@ function Game() {
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<Encounter | null>(null);
-  const [encounterDone, setEncounterDone] = useState<number | null>(null);
   const [gangDone, setGangDone] = useState<number | null>(null);
+  const [parkKidOpen, setParkKidOpen] = useState(false);
+  const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
 
@@ -199,6 +201,10 @@ function Game() {
 
   const walk = (id: PlaceId) => {
     setResult(null);
+    setStrangerLeft(s.day);
+    setEnc(null);
+    setParkKidOpen(false);
+    if (s.parkSmokes >= 15 && !s.parkKidGone) setS(cur => ({ ...cur, parkKidGone: 1 }));
     setPlace(id);
   };
   const approachGang = () => {
@@ -223,7 +229,7 @@ function Game() {
     }
     playActionCue("encounter", soundOn);
   };
-  const encounterSpot = encounterDone === s.day ? null : encounterForDay(s.day);
+  const encounterSpot = strangerLeft === s.day ? null : encounterForDay(s.day);
   const approachEncounter = () => {
     if (!encounterSpot) return;
     setPlace(null);
@@ -240,7 +246,6 @@ function Game() {
     };
     setEnc(ENCOUNTERS[choices[encounterSpot.id] ?? 3] ?? null);
     playActionCue("encounter", soundOn);
-    setEncounterDone(s.day);
   };
 
   const resolveEncounter = (f: (st: S) => [Partial<S>, string]): ActionDef => ({
@@ -276,10 +281,12 @@ function Game() {
       <TownMap
         hour={s.hour}
         house={s.house}
-        speed={s.trainers ? 1.35 : 1}
+        speed={s.trainers ? 1.35 : s.skateboard ? 1.2 : 1}
         active={place}
         encounter={encounterSpot}
         onEncounter={approachEncounter}
+        kidPresent={!s.parkKidGone}
+        onKid={() => { setEnc(null); setGangMeeting(null); setPlace(null); setParkKidOpen(true); }}
         onEnter={(id) => {
           if (id === "gang") approachGang();
           else if (isPlace(id) && id !== "alley") walk(id);
@@ -302,10 +309,30 @@ function Game() {
         </div>
       </div>
 
-      {log[0] && !place && !enc && !gangMeeting && !tab && (
+      {log[0] && !place && !enc && !gangMeeting && !parkKidOpen && !tab && (
         <div className="pointer-events-none absolute inset-x-3 bottom-4 mx-auto max-w-md rounded-sm border-2 border-foreground bg-card/90 px-3 py-1 text-center text-base">
           {log[0]}
         </div>
+      )}
+
+      {parkKidOpen && !place && (
+        <Sheet title="Kid on the park bench" onClose={() => {
+          setParkKidOpen(false);
+          if (s.parkSmokes >= 15) setS(cur=>({...cur,parkKidGone:1}));
+        }}>
+          <p className="text-lg">{s.parkSmokes === 0 ? "Psst. Got a smoke to spare?" : s.parkSmokes >= 15 ? "*cough* I feel really rough. I need to go home." : s.parkSmokes >= 10 ? "*cough* I really should stop..." : s.parkSmokes >= 2 ? "Hey, it’s you again." : "Got another?"}</p>
+          <p className="text-sm">Smokes: {s.smokes} · Handed over: {s.parkSmokes}/15 · Skateboard: {s.skateboard ? "Owned" : "Not yet"}</p>
+          {s.parkSmokes < 15 && <Btn onClick={() => {
+            const outcome = giveParkSmoke(s);
+            if (typeof outcome === "string") { notify(outcome, false); return; }
+            setS(cur => ({...cur,...outcome.patch}));
+            notify(outcome.message, true);
+          }}>Give one smoke</Btn>}
+          <Btn onClick={() => {
+            setParkKidOpen(false);
+            if(s.parkSmokes >= 15) setS(cur=>({...cur,parkKidGone:1}));
+          }}>Leave the bench</Btn>
+        </Sheet>
       )}
 
       {gangMeeting && (
@@ -345,7 +372,7 @@ function Game() {
         </Sheet>
       )}
 
-      {!enc && !gangMeeting && place && !tab && (
+      {!enc && !gangMeeting && !parkKidOpen && place && !tab && (
         <LocationScene
           key={place}
           room={roomFor(place, s)}
@@ -356,7 +383,7 @@ function Game() {
         />
       )}
 
-      {result && !enc && !gangMeeting && !place && (
+      {result && !enc && !gangMeeting && !parkKidOpen && !place && (
         <div
           key={result.message + String(result.timeLine)}
           role="status"
@@ -401,6 +428,8 @@ function Game() {
             <Stat k="Energy" v={`${s.energy}/100`} />
             <Stat k="Bank savings" v={`${s.bank}`} />
             <Stat k="Snacks" v={s.snacks} />
+            <Stat k="Smokes" v={s.smokes} />
+            <Stat k="Skateboard" v={s.skateboard ? "Owned" : "—"} />
             <Stat
               k="Furniture"
               v={`${FURNITURE.filter((item) => ownsFurniture(s.furniture, item.id)).length}/${FURNITURE.length}`}

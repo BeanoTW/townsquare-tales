@@ -10,7 +10,7 @@ afterEach(() => cleanup());
 const shop = () => roomFor("shop", START);
 
 describe("arcade shop", () => {
-  it("shows all six goods on a selectable product wheel with a clerk", () => {
+  it("shows all seven goods on a selectable product wheel with a clerk", () => {
     render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
     expect(screen.getByText("The shopkeeper")).toBeInTheDocument();
     expect(screen.getByLabelText("Product wheel")).toBeInTheDocument();
