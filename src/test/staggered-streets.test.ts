@@ -22,9 +22,9 @@ describe("staggered street plan",()=>{
     const east=ROADS.filter(r=>r.w>r.d&&r.x===11).map(r=>r.y);
     for(const a of west)for(const b of east)expect(Math.abs(a-b)).toBeGreaterThan(2);
   });
-  it("has 16 unobstructed building door routes",()=>{
+  it("has 15 unobstructed building doors, leaving the gang in open terrain",()=>{
     const lots=buildings(0);
-    expect(lots.length).toBe(16);
+    expect(lots.length).toBe(15);
     for(const b of lots){
       const d=door(b);
       expect(isWalkable(d,lots),b.id+" door obstructed").toBe(true);
