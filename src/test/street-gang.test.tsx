@@ -67,7 +67,7 @@ describe("grittier town art", () => {
     for (const id of ["shop", "bar", "pawn", "diner", "bank"] as const) {
       const view = render(<VenueScenery room={roomFor(id, START)} shirt="#675441" title={id} />);
       expect(view.container.querySelector(`[data-character-venue="${id}"]`)).toBeInTheDocument();
-      expect(view.container.querySelector(`[data-expression="${id === "bank" ? "reserved" : "gruff"}"]`)).toBeInTheDocument();
+      expect(view.container.querySelector(`[data-expression="${id === "bank" ? "reserved" : id === "shop" ? "unimpressed" : "gruff"}"]`)).toBeInTheDocument();
       view.unmount();
     }
   });
