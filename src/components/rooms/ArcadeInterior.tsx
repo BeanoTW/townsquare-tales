@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import type { ActionDef } from "@/lib/actions";
+import { bankTransferAction, type ActionDef } from "@/lib/actions";
 import { currentRole } from "@/lib/careers";
 import { SCHOOLS } from "@/lib/game-data";
 import type { GameState } from "@/lib/game-state";
@@ -163,6 +163,43 @@ function StatStrip({ room, state }: { room: Room; state: GameState }) {
   return null;
 }
 
+function BankCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef) => void }) {
+  const [amountText, setAmountText] = useState("50");
+  const amount = Number(amountText);
+  const valid = Number.isSafeInteger(amount) && amount > 0;
+
+  return (
+    <div className="arcade-bank">
+      <div className="arcade-stats">
+        <span>Cash on hand <strong>${state.money}</strong></span>
+        <span>Bank balance <strong>${state.bank}</strong></span>
+      </div>
+      <p className="arcade-mini-title">HOW MUCH WOULD YOU LIKE TO MOVE?</p>
+      <label className="arcade-amount-label" htmlFor="arcade-bank-amount">Amount ($)</label>
+      <input
+        id="arcade-bank-amount"
+        type="number"
+        inputMode="numeric"
+        min="1"
+        step="1"
+        value={amountText}
+        onChange={(event) => setAmountText(event.target.value)}
+        className="arcade-amount-input"
+      />
+      <div className="arcade-quick-amounts" aria-label="Quick amounts">
+        {[50, 100, 250].map((n) => <button type="button" key={n} onClick={() => setAmountText(String(n))}>${n}</button>)}
+        <button type="button" onClick={() => setAmountText(String(state.money))} disabled={state.money <= 0}>All cash</button>
+        <button type="button" onClick={() => setAmountText(String(state.bank))} disabled={state.bank <= 0}>All savings</button>
+      </div>
+      <div className="arcade-bank-actions">
+        <button type="button" disabled={!valid || amount > state.money} onClick={() => onRun(bankTransferAction("deposit", amount))}>⬇ Deposit ${valid ? amount : 0}</button>
+        <button type="button" disabled={!valid || amount > state.bank} onClick={() => onRun(bankTransferAction("withdraw", amount))}>⬆ Withdraw ${valid ? amount : 0}</button>
+      </div>
+      <p className="arcade-subline">Savings earn 0.1% overnight. Transfers are instant and free.</p>
+    </div>
+  );
+}
+
 function ServiceDesk({ room, state, feedback, onRun }: { room: Room; state: GameState; feedback: Feedback | null; onRun: (a: ActionDef) => void }) {
   const [active, setActive] = useState(0);
   const hotspot = room.hotspots[active] ?? room.hotspots[0];
@@ -232,7 +269,9 @@ export function ArcadeInterior({ room, state, feedback, onRun, onLeave }: SceneP
           </div>
           {room.id === "shop"
             ? <ShopWheel state={state} onRun={onRun} room={room} />
-            : <ServiceDesk room={room} state={state} feedback={feedback} onRun={onRun} />}
+            : room.id === "bank"
+              ? <BankCounter state={state} onRun={onRun} />
+              : <ServiceDesk room={room} state={state} feedback={feedback} onRun={onRun} />}
         </section>
       </div>
       <footer className="arcade-footer">
