@@ -124,9 +124,7 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
         {facing === "up" || facing === "down" ? <>
           {/* Top-down deck in perspective: never rotate a side-view board upright. */}
           <ellipse cx={0} cy={-2} rx={7} ry={20} fill="#d99539" stroke="#272737" strokeWidth={2.5}/>
-          <path d="M-4 -14H4M-4 10H4" stroke="#e7c27c" strokeWidth={2}/>
-          <ellipse cx={-8} cy={-13} rx={2.6} ry={4} fill="#363846"/>
-          <ellipse cx={8} cy={13} rx={2.6} ry={4} fill="#363846"/>
+          <path d="M-3 -12H3M-3 8H3" stroke="#e7c27c" strokeWidth={1.5}/>
         </> : <>
           <rect x={-19} y={-5} width={38} height={5} rx={2.5} fill="#d99539" />
           <circle cx={-12} cy={2} r={3} fill="#363846" />
@@ -135,12 +133,11 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
       </g>}
       {skating && (facing === "up" || facing === "down") ? (
         <g data-rider-facing={facing}>
-          {/* Narrow front/back silhouette with feet aligned lengthwise on deck. */}
-          <circle cx={0} cy={-40} r={7} fill={head}/>
-          <path d="M0 -33V-18M0 -28L-6 -23M0 -28L6 -23" strokeWidth={3.5}/>
-          <path d="M0 -18L-3 -12L-2 -6M0 -18L3 -10L2 1" strokeWidth={3.5}/>
-          {facing === "down" && <path d="M-3 -41h6" strokeWidth={2}/>}
-          {facing === "up" && <path d="M-6 -44q6 -5 12 0" strokeWidth={2.5}/>}
+          {/* Foreshortened top-down figure: head, angled shoulders and asymmetric lead/trail arms. */}
+          <ellipse cx={0} cy={-29} rx={8} ry={9} fill={head}/>
+          <path d="M-6 -19Q0 -23 6 -19L5 -11Q0 -8 -5 -11Z" fill={color} strokeWidth={2}/>
+          <path d={facing === "up" ? "M-6 -19L-11 -26L-13 -23M6 -19L11 -12L9 -8" : "M-6 -19L-11 -12L-9 -8M6 -19L11 -26L13 -23"} strokeWidth={3} strokeLinecap="round"/>
+          <path d="M-3 -10L-4 -4M3 -10L4 1" strokeWidth={3} strokeLinecap="round"/>
         </g>
       ) : <>
         <circle cx={0} cy={(skating ? -39 : -40) + breathe} r={7} fill={head} />
