@@ -239,3 +239,4 @@
 @media (prefers-reduced-motion:reduce) {
   .room-sign,.room-stage::before,.room-stage::after {transition:none;animation:none;}
 }
+\n.room-action:disabled { cursor: not-allowed; opacity: .63; background: #ded9d0; transform: none; }\n.room-action-blocked { font-size: .78rem; font-weight: 700; color: #983e36; }\n
