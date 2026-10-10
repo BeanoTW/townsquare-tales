@@ -1,5 +1,5 @@
 import { runAction, type ActionDef, type ActionResult, type Rng } from "@/lib/actions";
-import type { GameState } from "@/lib/game-state";
+import { parseGame, type GameState } from "@/lib/game-state";
 
 /** A separate sandbox save: never overwrite the normal game's progress. */
 export const GOD_SAVE_KEY = "sticktown-god-save";
@@ -48,8 +48,7 @@ export function runGodAction(state: GameState, def: ActionDef, rng: Rng = Math.r
 export function parseGodSave(raw: string | null, fallback: GameState): GameState {
   if (!raw) return grantGodPowers(fallback);
   try {
-    const value = JSON.parse(raw) as Partial<GameState>;
-    return grantGodPowers({ ...fallback, ...value });
+    return grantGodPowers(parseGame(raw, fallback));
   } catch {
     return grantGodPowers(fallback);
   }
