@@ -132,6 +132,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
   const routeTo = (destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
     const route = findRoute(me.current, destination, bs);
+    if (enter === "kid" && Math.hypot(me.current.x-destination.x,me.current.y-destination.y) < PARK_KID_SPOT.approach) { kidRef.current?.(); return; }
     target.current = route.length ? { waypoints: route, enter } : null;
   };
   const keys = useRef(new Set<string>());
@@ -141,6 +142,8 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
   const gangApproached = useRef(false);
   const kidRef = useRef(onKid);
   kidRef.current = onKid;
+  const kidPresentRef = useRef(kidPresent);
+  kidPresentRef.current = kidPresent;
   const enterRef = useRef(onEnter);
   enterRef.current = onEnter;
 
@@ -186,7 +189,8 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
         if (target.current && target.current.waypoints.length === 0) {
           const id = target.current.enter;
           target.current = null;
-          if (id) enterRef.current(id);
+          if (id === "kid" && kidPresentRef.current) kidRef.current?.();
+          else if (id) enterRef.current(id);
         }
       }
       const len = Math.hypot(dx, dy);
@@ -302,8 +306,8 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
       el: <g key="park-kid" data-park-kid role="button" tabIndex={0} aria-label="Talk to the kid on the park bench"
         className="cursor-pointer"
         onPointerDown={ev=>ev.stopPropagation()}
-        onClick={ev=>{ev.stopPropagation();kidRef.current?.();}}
-        onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();kidRef.current?.();}}}>
+        onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
+        onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
         <g transform={`translate(${kx} ${ky})`}>
           <ellipse cy="5" rx="42" ry="9" fill="#20352b" opacity=".17"/>
           <path d="M-42 -21H41M-42 -12H41" stroke="#806249" strokeWidth="8" strokeLinecap="round"/>
