@@ -5,9 +5,14 @@ import { parseGame } from "@/lib/game-state";
 
 describe("park kid and skateboard progression", () => {
   it("changes dialogue on first, second and repeated visits", () => {
-    expect(parkKidDialogue(1)).toMatch(/Thanks/);
-    expect(parkKidDialogue(2)).toMatch(/skateboard/);
-    expect(parkKidDialogue(15)).toMatch(/cough/);
+    expect(parkKidDialogue(1)).toMatch(/Cheers/);
+    expect(parkKidDialogue(2)).toMatch(/board/);
+    expect(parkKidDialogue(15)).toMatch(/head home/);
+  });
+  it("has distinct natural dialogue at every encounter stage", () => {
+    const lines = Array.from({length:16}, (_,i) => parkKidDialogue(i));
+    expect(new Set(lines).size).toBe(16);
+    expect(lines.join(" ")).not.toMatch(/unlocked|handed over|karma decreased/i);
   });
   it("unlocks a skateboard after two smokes and reduces karma every time", () => {
     const first = giveParkSmoke({ ...START, smokes: 5 });
@@ -22,7 +27,7 @@ describe("park kid and skateboard progression", () => {
     const last = giveParkSmoke({ ...START, smokes: 1, parkSmokes: 14, karma: -25 });
     if (typeof last === "string") throw new Error(last);
     expect(last.patch.parkSmokes).toBe(15);
-    expect(last.message).toMatch(/rough/);
+    expect(last.message).toMatch(/head home/);
     expect(giveParkSmoke({ ...START, smokes: 3, parkSmokes: 15 })).toMatch(/gone home/);
     expect(giveParkSmoke({ ...START, smokes: 3, parkKidGone: 1 })).toMatch(/gone home/);
   });
