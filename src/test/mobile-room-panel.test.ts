@@ -6,7 +6,7 @@ describe("mobile interior action tray", () => {
   it("anchors the menu to a full-width bottom tray on narrow phones", () => {
     const fit = fitRect(320, 300);
     expect(panelStyle(box, fit, 320, 300)).toMatchObject({
-      left: 8, right: 8, bottom: 8, width: "auto", maxHeight: 284,
+      left: 8, bottom: 8, width: 304, maxHeight: 284,
     });
   });
   it("keeps menus inside short landscape stages", () => {
