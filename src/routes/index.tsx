@@ -202,6 +202,20 @@ function Game() {
       `Hired as ${field.roles[0].name}! Some experience transferred.`];
   });
 
+  const interiorStations = place === "work" ? [
+    {label:"Workstation",hint:"Clock in and earn wages",content:<button onClick={workShift} className="min-h-12 rounded-lg border-2 border-foreground bg-secondary p-3 text-left">🖥️ Work shift · 4 hours · ${job.pay*4} · +4 XP</button>},
+    {label:"Job board",hint:"Browse jobs and compare careers",content:<EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob}/>},
+    {label:"Manager",hint:"Discuss your next promotion",content:<><p className="text-sm">Next: {nextJob?.name ?? "Top of the ladder"}{nextJob ? ` · ${nextJob.pay}/hour` : ""}</p><p className="text-sm">{nextJob ? (missingRequirements(s,nextJob).join(", ") || "You're eligible!") : "No more promotions available."}</p><button className="min-h-12 rounded-lg border-2 border-foreground bg-secondary p-3 text-left" onClick={requestPromotion}>Ask for promotion · 1 hour</button></>},
+  ] : place === "school" ? [
+    {label:"Library",hint:"Quiet study, free of charge",content:<Btn onClick={actions.school[0].run}>{actions.school[0].label}</Btn>},
+    {label:"Classroom",hint:"Attend lessons and build intelligence",content:<Btn onClick={actions.school[0].run}>{actions.school[0].label}</Btn>},
+    {label:"Admissions",hint:"Qualifications and tuition",content:actions.school[1] ? <Btn onClick={actions.school[1].run}>{actions.school[1].label}</Btn> : <p>You've completed all available qualifications!</p>},
+  ] : place === "shop" ? [
+    {label:"Shelves",hint:"Food and essentials",content:<Btn onClick={actions.shop[0].run}>{actions.shop[0].label}</Btn>},
+    {label:"Sports gear",hint:"Equipment for exploring town",content:<Btn onClick={actions.shop[1].run}>{actions.shop[1].label}</Btn>},
+    {label:"Counter",hint:"Useful everyday items",content:<Btn onClick={actions.shop[2].run}>{actions.shop[2].label}</Btn>},
+  ] : undefined;
+
   const align = s.karma >= 20 ? "Saint" : s.karma >= 5 ? "Legit" : s.karma > -5 ? "Neutral" : s.karma > -20 ? "Crooked" : "Kingpin";
   const won = s.house === 3 && s.career === 0 && s.job === 4;
 
@@ -240,7 +254,7 @@ function Game() {
         </Sheet>
       )}
       {!enc && place && !tab && (
-        <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0] ?? ""}>
+        <LocationScene id={place} house={s.house} furniture={s.furniture} onClose={close} feedback={log[0] ?? ""} stations={interiorStations}>
           {place === "work" ? <EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob} /> : actions[place].map((a) => <Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}
         </LocationScene>
       )}
