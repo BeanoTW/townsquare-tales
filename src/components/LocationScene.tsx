@@ -77,15 +77,15 @@ export function LocationScene({ id, house = 0, furniture = 0, children, onClose,
           <rect x="10" y="10" width="105" height="27" rx="5" fill={scene.accent} stroke="#25242a" strokeWidth="3"/>
           <text x="62" y="29" textAnchor="middle" fill="white" fontWeight="bold" fontSize="14">{id==="home"?["CARDBOARD","STUDIO","HOUSE","MANSION"][house] ?? "HOME":scene.title.toUpperCase().slice(0,13)}</text>
           {id === "home" ? <>
-            <Prop name={ownsFurniture(furniture, "bed") ? "BED" : home.basics[0]} x={17} accent={scene.accent}/>
-            <Prop name={ownsFurniture(furniture, "kitchen") ? "FRIDGE" : home.basics[1]} x={295} accent={scene.accent}/>
-            <Prop name={ownsFurniture(furniture, "desk") ? "COMPUTER" : home.basics[2]} x={167} accent={scene.accent}/>
+            <Prop name={ownsFurniture(furniture, "bed") ? "BED" : home.basics[0] ?? "BED"} x={17} accent={scene.accent}/>
+            <Prop name={ownsFurniture(furniture, "kitchen") ? "FRIDGE" : home.basics[1] ?? "LAMP"} x={295} accent={scene.accent}/>
+            <Prop name={ownsFurniture(furniture, "desk") ? "COMPUTER" : home.basics[2] ?? "WINDOW"} x={167} accent={scene.accent}/>
             {ownsFurniture(furniture, "sofa") && <g transform="translate(0 42) scale(.72)"><Prop name="SOFA" x={295} accent="#ba826a"/></g>}
             {ownsFurniture(furniture, "weights") && <g transform="translate(24 65) scale(.6)"><Prop name="WEIGHTS" x={17} accent="#647d86"/></g>}
           </> : <>
-            <Prop name={props[0]} x={17} accent={scene.accent}/>
-            <Prop name={props[1]} x={285} accent={scene.accent}/>
-            <g opacity=".8"><Prop name={props[2]} x={164} accent={scene.accent}/></g>
+            <Prop name={props[0] ?? "DESK"} x={17} accent={scene.accent}/>
+            <Prop name={props[1] ?? "LAMP"} x={285} accent={scene.accent}/>
+            <g opacity=".8"><Prop name={props[2] ?? "WINDOW"} x={164} accent={scene.accent}/></g>
           </>}
           <Person x={225} y={187} shirt={scene.accent}/><Person x={369} y={208} shirt="#e1bb6d"/>
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
