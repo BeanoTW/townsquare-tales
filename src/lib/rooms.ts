@@ -192,7 +192,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         label: "Television",
         tag: "WATCH",
         hint: "Choose something worth watching",
-        box: { x: 282, y: 26, w: 130, h: 48 },
+        box: { x: 160, y: 26, w: 130, h: 48 },
         when: (st) => st.house >= 1 && ownsFurniture(st.furniture, "tv"),
         actions: () => TV_CHANNELS.map(channel => watchTvAction(channel.id)),
       },
