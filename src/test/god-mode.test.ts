@@ -7,7 +7,7 @@ describe("God Mode sandbox", () => {
   it("maxes resources and progression without mutating the original state", () => {
     const original={...START};
     const god=grantGodPowers(original);
-    expect(god).toMatchObject({money:1e12, bank:1e12, energy:100, str:1e6, int:1e6, cha:1e6, xp:1e6, house:3, school:4, job:4, furniture:31});
+    expect(god).toMatchObject({money:1e12, bank:1e12, energy:100, str:1e6, int:1e6, cha:1e6, xp:1e6, house:3, school:4, job:4, furniture:63});
     expect(original).toEqual(START);
   });
   it("executes activities repeatedly with infinite time and energy", () => {

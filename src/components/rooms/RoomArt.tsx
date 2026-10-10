@@ -514,6 +514,15 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
             </g>
           )}
           {ownsFurniture(state.furniture, "sofa") && <Sofa b={B("sofa")} />}
+          {state.house >= 1 && ownsFurniture(state.furniture, "tv") && (
+            <g data-home-television>
+              <R x={B("television").x+5} y={B("television").y} w={B("television").w-10} h={B("television").h-7} fill="#2a3039" rx={5} sw={3}/>
+              <rect x={B("television").x+11} y={B("television").y+6} width={B("television").w-22} height={B("television").h-19} rx={3} fill="#78b4c5" className="room-flicker"/>
+              <path d={`M${B("television").x+38} ${B("television").y+14}h35m-29 7h22`} stroke="#e9f3ee" strokeWidth={3} opacity=".8"/>
+              <path d={`M${B("television").x+53} ${B("television").y+B("television").h-7}v9m-17 0h34`} stroke={INK} strokeWidth={4}/>
+              <circle cx={B("television").x+B("television").w-12} cy={B("television").y+B("television").h-10} r={2} fill="#ade7a8"/>
+            </g>
+          )}
           {ownsFurniture(state.furniture, "kitchen") && (
             <g>
               <Fill b={B("kitchen")} fill="#d9e5e5" rx={5} />

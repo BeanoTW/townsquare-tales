@@ -25,7 +25,7 @@ export function grantGodPowers(s: GameState): GameState {
     alarm: 1,
     skateboard: 1,
     skateboardEquipped: 1,
-    furniture: 31,
+    furniture: 63,
   };
 }
 

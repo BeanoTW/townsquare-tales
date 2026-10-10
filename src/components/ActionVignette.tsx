@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import "./action-vignette.css";
 
-export type VignetteKind = "strength" | "run" | "study" | "drink" | "sleep" | "food" | "work" | "gamble" | "shady" | "shop" | "social" | "recover" | "travel" | "money";
+export type VignetteKind = "strength" | "run" | "study" | "drink" | "sleep" | "food" | "work" | "gamble" | "shady" | "shop" | "social" | "recover" | "travel" | "money" | "tv";
 
 /** Use action IDs, not button text: translations or label changes won't break scenes. */
 export function vignetteForAction(id: string): VignetteKind | null {
@@ -10,6 +10,7 @@ export function vignetteForAction(id: string): VignetteKind | null {
   if (["study-desk", "library", "enroll"].includes(id)) return "study";
   if (id === "round") return "drink";
   if (id === "sleep") return "sleep";
+  if (id.startsWith("tv-")) return "tv";
   if (["cook", "hot-meal", "eat-snack", "snack", "soup", "breakfast", "fizzy-pop", "shop-sandwich", "shop-coffee"].includes(id)) return "food";
   if (["shift", "lunch-shift", "promote"].includes(id)) return "work";
   if (["slots", "high-dice", "alley-dice"].includes(id)) return "gamble";
@@ -27,7 +28,7 @@ export const VIGNETTE_TITLES: Record<VignetteKind, string> = {
   drink: "BOTTOMS UP", sleep: "LIGHTS OUT", food: "GOOD EATS",
   work: "CLOCKING IN", gamble: "LUCKY DAY?", shady: "QUESTIONABLE CHOICES",
   shop: "NEW GEAR", social: "MAKING FRIENDS", recover: "PATCHING UP",
-  travel: "ON THE MOVE", money: "MONEY TALKS",
+  travel: "ON THE MOVE", money: "MONEY TALKS", tv: "CHANNEL SURFING",
 };
 
 /** Success actions only. Results are computed by runAction, never by artwork. */
@@ -92,6 +93,15 @@ export function ActionVignette({
             <g className="vig-sleep"><circle cx="111" cy="126" r="13" fill="#e9c89e" stroke="#35323a" strokeWidth="3"/><path d="M103 125h5m7 0h5" stroke="#35323a" strokeWidth="2"/></g>
             <path d="M131 151H255V162H129Z" fill="#668ba9"/>
             <text x="210" y="71" fontSize="26" fill="#626eac" fontWeight="bold" className="vig-zzz">Z z z</text>
+          </g>}
+          {kind === "tv" && <g data-vignette-scene="tv">
+            <rect x="68" y="52" width="185" height="111" rx="11" fill="#313443" stroke="#302b36" strokeWidth="6"/>
+            <rect x="80" y="62" width="161" height="82" rx="5" fill="#93c9c4"/>
+            <g className="vig-zzz"><path d="M90 84h50m-48 12h86m-86 12h68" stroke="#f8e7c1" strokeWidth="6" strokeLinecap="round"/><circle cx="207" cy="91" r="15" fill="#e5c26d"/></g>
+            <path d="M158 162v16m-32 0h64" stroke="#302b36" strokeWidth="6" strokeLinecap="round"/>
+            <g className="vig-breathe" stroke="#33313c" strokeWidth="5" strokeLinecap="round" fill="none">
+              <circle cx="34" cy="125" r="13" fill="#edcba5"/><path d="M33 139l7 22m-7-12l30-8m-21 19l-12 17m12-17l27 16"/>
+            </g>
           </g>}
           {kind === "run" && <g data-vignette-scene="run">
             <g className="vig-runner" stroke="#303039" strokeWidth="6" fill="none" strokeLinecap="round">
