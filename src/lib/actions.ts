@@ -194,6 +194,33 @@ export function furnitureAction(id: FurnitureId, s: GameState): ActionDef {
   };
 }
 
+/** Television channels offer small repeatable gains at the cost of time and energy. */
+export const TV_CHANNELS = [
+  { id: "science", name: "Brain Box · science", stat: "int", gain: 2, energy: 8, hours: 2, description: "+2 intelligence" },
+  { id: "fitness", name: "Pump TV · fitness", stat: "str", gain: 1, energy: 12, hours: 2, description: "+1 strength" },
+  { id: "social", name: "Drama Hour · social", stat: "cha", gain: 2, energy: 8, hours: 2, description: "+2 charm" },
+  { id: "career", name: "Business Tonight · career", stat: "xp", gain: 3, energy: 10, hours: 2, description: "+3 work XP" },
+] as const;
+
+export function watchTvAction(id: (typeof TV_CHANNELS)[number]["id"]): ActionDef {
+  const channel = TV_CHANNELS.find(c => c.id === id);
+  if (!channel) throw new Error("Unknown TV channel");
+  return {
+    id: `tv-${channel.id}`,
+    label: channel.name,
+    hours: channel.hours,
+    energy: channel.energy,
+    note: channel.description,
+    resolve: (state) => {
+      if (state.house < 1 || !ownsFurniture(state.furniture, "tv")) return "You need a home and a television first.";
+      return {
+        patch: { [channel.stat]: state[channel.stat] + channel.gain },
+        message: `Watched ${channel.name}. ${channel.description}.`,
+      };
+    },
+  };
+}
+
 /* ---------- Gym & school ---------- */
 
 export const LIFT_WEIGHTS: ActionDef = {
