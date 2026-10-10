@@ -181,17 +181,8 @@ function Game() {
   }, [result]);
 
 
-  // One-time fresh start for the current build: discard legacy progression,
-  // then allow both normal and developer saves to persist as usual.
+  // Load whatever the player has saved. Releases must never erase progress.
   useEffect(() => {
-    try {
-      if (window.localStorage.getItem("sticktown-save-reset-v3") !== "done") {
-        window.localStorage.removeItem("sticktown");
-        window.localStorage.removeItem(GOD_SAVE_KEY);
-        window.localStorage.removeItem(GOD_ENABLED_KEY);
-        window.localStorage.setItem("sticktown-save-reset-v3", "done");
-      }
-    } catch { /* In private browsing we still begin from START. */ }
     const normal = loadGame(START);
     let enabled = false;
     try {
