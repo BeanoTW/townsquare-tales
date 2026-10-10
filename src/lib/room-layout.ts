@@ -22,9 +22,8 @@ export function panelStyle(box: Box, fit: Fit, cw: number, ch: number): CSSPrope
   if (cw <= 600) {
     return {
       left: 8,
-      right: 8,
       bottom: 8,
-      width: "auto",
+      width: cw - 16,
       maxHeight: Math.max(80, ch - 16),
     };
   }
