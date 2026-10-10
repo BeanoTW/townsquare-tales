@@ -179,7 +179,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
   const [t, setT] = useState(0);
   const [near, setNear] = useState<B | null>(null);
   const nearRef = useRef<B | null>(null);
-  const gangApproached = useRef(false);
   const kidRef = useRef(onKid);
   kidRef.current = onKid;
   const kidPresentRef = useRef(kidPresent);
@@ -255,14 +254,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
       }
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
       if (n?.id !== nearRef.current?.id) { nearRef.current = n; setNear(n); }
-      const gangDistance = Math.hypot(m.x - GANG_SPOT.x, m.y - GANG_SPOT.y);
-      if (gangDistance < GANG_SPOT.approach && !gangApproached.current) {
-        gangApproached.current = true;
-        target.current = null;
-        enterRef.current("gang");
-      } else if (gangDistance > GANG_SPOT.approach + 0.8) {
-        gangApproached.current = false;
-      }
       setT(now / 1000);
     };
     raf = requestAnimationFrame(loop);
@@ -363,17 +354,16 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
         <rect x={P(person.x,person.y)[0]-18} y={P(person.x,person.y)[1]-58} width="36" height="68" fill="transparent"/>
       </g> });
   });
-  // A permanent, walk-up gang encounter: three intimidating locals in the north-east green.
-  // Not a building and not a teleported popup; players must actually approach them.
+  // Ordinary people hanging around the north-east green; only tapping them starts an encounter.
   const [gx, gy] = P(GANG_SPOT.x, GANG_SPOT.y);
   items.push({
     key: GANG_SPOT.y * 100 + GANG_SPOT.x,
     el: (
       <g key="street-gang" role="button" tabIndex={0} aria-label="Approach the street gang"
         className="cursor-pointer" data-street-gang
-        onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT); }}
+        onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT, "gang"); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT); } }}>
-        <g transform={`translate(${gx} ${gy}) scale(0.55)`}>
+        <g transform={`translate(${gx} ${gy}) scale(0.4)`}>
           {/* A casual hangout on the grass. The seat belongs to the park, not a raised platform. */}
           <ellipse cx="0" cy="6" rx="62" ry="10" fill="#27372f" opacity=".16"/>
           <path d="M-49 -20H23M-49 -9H23" stroke="#846b53" strokeWidth="9" strokeLinecap="round"/>
@@ -415,7 +405,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
         className="cursor-pointer"
         onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
         onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
-        <g transform={`translate(${kx} ${ky})`}>
+        <g transform={`translate(${kx} ${ky}) scale(0.65)`}>
           <ellipse cy="5" rx="42" ry="9" fill="#20352b" opacity=".17"/>
           <path d="M-42 -21H41M-42 -12H41" stroke="#806249" strokeWidth="8" strokeLinecap="round"/>
           <path d="M-37 -12V11M36 -12V11" stroke="#4d403a" strokeWidth="4"/>
