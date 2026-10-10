@@ -6,7 +6,6 @@ import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
 import { encounterForDay } from "@/lib/world-encounters";
 import { LocationScene } from "@/components/LocationScene";
-import { EmploymentDesk } from "@/components/EmploymentDesk";
 import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole, missingRequirements, shiftReward } from "@/lib/careers";
