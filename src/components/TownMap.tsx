@@ -5,6 +5,7 @@ import { P } from "@/lib/town-projection";
 export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 import type { EncounterSpot } from "@/lib/world-encounters";
+import { GANG_SPOT } from "@/lib/street-gang";
 
 // Upright oblique projection: ground plan matches the minimap; height offsets
 // the roof up and slightly right to reveal front and side walls.
@@ -40,7 +41,6 @@ export const buildings = (house: number): B[] => {
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
     { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "var(--town-bar-wall)", side: "var(--town-bar-side)", roof: "var(--town-bar-roof)", sign: "var(--town-bar-sign)", win: true },
     { facing: "north", id: "work", label: "MegaCorp", x: 17.2, y: 15.5, w: 3.7, d: 4, h: 190, wall: "var(--town-work-wall)", side: "var(--town-work-side)", roof: "var(--town-work-roof)", sign: "var(--town-work-sign)", win: true },
-    { facing: "west", id: "alley", label: "Dark Alley", x: 12.3, y: 22.5, w: 2.5, d: 2.8, h: 55, wall: "var(--town-alley-wall)", side: "var(--town-alley-side)", roof: "var(--town-alley-roof)", sign: "var(--town-alley-sign)", win: false },
     { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "var(--town-bank-wall)", side: "var(--town-bank-side)", roof: "var(--town-bank-roof)", sign: "var(--town-bank-sign)", win: true },
     { facing: "south", id: "shop", label: "Corner Shop", x: 15.25, y: 8.65, w: 2.6, d: 3.0, h: 48, wall: "var(--town-shop-wall)", side: "var(--town-shop-side)", roof: "var(--town-shop-roof)", sign: "var(--town-shop-sign)", win: true },
     { facing: "south", id: "diner", label: "Fryday Diner", x: 5.1, y: 13.2, w: 2.8, d: 3.8, h: 55, wall: "var(--town-diner-wall)", side: "var(--town-diner-side)", roof: "var(--town-diner-roof)", sign: "var(--town-diner-sign)", win: true },
@@ -137,6 +137,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
   const [t, setT] = useState(0);
   const [near, setNear] = useState<B | null>(null);
   const nearRef = useRef<B | null>(null);
+  const gangApproached = useRef(false);
   const enterRef = useRef(onEnter);
   enterRef.current = onEnter;
 
@@ -148,6 +149,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
       const k = e.key.toLowerCase();
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
       if ((k === "e" || k === " " || k === "enter") && nearRef.current) enterRef.current(nearRef.current.id);
+      else if ((k === "e" || k === " " || k === "enter") && Math.hypot(me.current.x - GANG_SPOT.x, me.current.y - GANG_SPOT.y) < GANG_SPOT.approach) enterRef.current("gang");
       keys.current.add(k);
       target.current = null;
     };
@@ -197,6 +199,14 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
       }
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
       if (n?.id !== nearRef.current?.id) { nearRef.current = n; setNear(n); }
+      const gangDistance = Math.hypot(m.x - GANG_SPOT.x, m.y - GANG_SPOT.y);
+      if (gangDistance < GANG_SPOT.approach && !gangApproached.current) {
+        gangApproached.current = true;
+        target.current = null;
+        enterRef.current("gang");
+      } else if (gangDistance > GANG_SPOT.approach + 0.8) {
+        gangApproached.current = false;
+      }
       setT(now / 1000);
     };
     raf = requestAnimationFrame(loop);
@@ -236,6 +246,44 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
     const f = (Math.sin(t * n.speed + i) + 1) / 2;
     const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
     items.push({ key: y * 100 + x, el: <Stick key={`n${i}`} x={x} y={y} phase={t * 8} walking color={n.color} /> });
+  });
+  // A permanent, walk-up gang encounter: three intimidating locals in the north-east green.
+  // Not a building and not a teleported popup; players must actually approach them.
+  const [gx, gy] = P(GANG_SPOT.x, GANG_SPOT.y);
+  items.push({
+    key: GANG_SPOT.y * 100 + GANG_SPOT.x,
+    el: (
+      <g key="street-gang" role="button" tabIndex={0} aria-label="Approach the street gang"
+        className="cursor-pointer" data-street-gang
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT); }}
+        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT); } }}>
+        <g transform={`translate(${gx} ${gy})`}>
+          <ellipse cy="2" rx="67" ry="16" fill="#202329" opacity=".24" />
+          <path d="M-70 4L-56 -13H62L71 5Z" fill="#71674c" stroke="#36342f" strokeWidth="2"/>
+          <path d="M-56 -13V-3M62 -13V-3" stroke="#413f36" strokeWidth="4"/>
+          {[-33, 0, 32].map((dx, i) => (
+            <g key={i} transform={`translate(${dx} ${i === 1 ? -7 : 0})`}
+              stroke="#242431" strokeWidth="3.5" strokeLinecap="round" fill="none">
+              <path d="M-8 -22L-13 0M8 -22L13 0" />
+              <path d="M-8 -51L-14 -24M8 -51L14 -24" />
+              <path d="M-11 -50Q0 -62 11 -50L12 -20H-12Z" fill={["#373344","#363a3e","#5c3942"][i]} />
+              <path d="M-15 -47L-24 -30M15 -47L24 -30" />
+              <circle cy="-64" r="11" fill={["#b88c72","#a17b6d","#ba9874"][i]}/>
+              {i === 1 ? <path d="M-14 -67Q-12 -83 0 -82Q14 -79 14 -67L9 -73H-9Z" fill="#292c39" />
+                : <path d="M-12 -67Q-12 -79 0 -78Q10 -78 12 -67Z" fill="#292c39"/>}
+              <path d="M-8 -65H-2M2 -65H8" stroke="#20222b" strokeWidth="3.5"/>
+              <path d="M-4 -57H4" stroke="#432e35" strokeWidth="2"/>
+            </g>
+          ))}
+          <g transform={`translate(0 ${-119 + Math.sin(t * 2.5) * 2})`}>
+            <rect x="-35" y="-19" width="70" height="28" rx="8" fill="#eee3c4" stroke="#2d2b34" strokeWidth="3"/>
+            <text y="0" textAnchor="middle" fill="#2d2b34" fontWeight="bold" fontSize="15">OI. YOU.</text>
+          </g>
+          <rect x="-75" y="-147" width="150" height="158" fill="transparent"/>
+        </g>
+      </g>
+    ),
   });
   if(encounter){
     const e=encounter;
@@ -325,8 +373,8 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
           const depth = south || north ? 0.65 : 0.66;
           return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
         })}
-        {/* alley grime */}
-        {tile(11.6, 23, .55, 1.5, "var(--town-grime)", "gr")}
+        {/* Street gang occupy the untouched north-east green, away from the shops. */}
+        {tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
@@ -350,6 +398,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
           }}>
           <rect x="12" y="21" width="4.6" height="7" fill="var(--town-mini-park)" />
           {ROADS.map((r,i) => <rect key={"mini-road-"+i} x={r.x} y={r.y} width={r.w} height={r.d} fill="var(--town-mini-road)" />)}
+          <circle cx={GANG_SPOT.x} cy={GANG_SPOT.y} r={0.8} fill="#40343d" stroke="#f2d46f" strokeWidth={0.22}><title>Street gang - approach at your own risk</title></circle>
           {bs.map((b) => <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.d}
             fill={b.sign} stroke="var(--town-paper)" strokeWidth={0.18} rx={0.2}>
             <title>{b.label}</title>
