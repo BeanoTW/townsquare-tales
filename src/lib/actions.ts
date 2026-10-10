@@ -221,6 +221,27 @@ export function watchTvAction(id: (typeof TV_CHANNELS)[number]["id"]): ActionDef
   };
 }
 
+/** Home entertainment is slightly less efficient than specialist venues but has no cash fee. */
+export const HOME_ENTERTAINMENT = [
+  { id: "game-puzzle", label: "Play puzzle games", furniture: "console", stat: "int", gain: 2, hours: 2, energy: 8 },
+  { id: "game-party", label: "Play party games online", furniture: "console", stat: "cha", gain: 2, hours: 2, energy: 10 },
+  { id: "read-fiction", label: "Read a novel", furniture: "bookshelf", stat: "int", gain: 2, hours: 2, energy: 6 },
+  { id: "read-business", label: "Read business books", furniture: "bookshelf", stat: "xp", gain: 3, hours: 2, energy: 8 },
+] as const;
+
+export function homeEntertainmentAction(id: (typeof HOME_ENTERTAINMENT)[number]["id"]): ActionDef {
+  const activity = HOME_ENTERTAINMENT.find(item => item.id === id);
+  if (!activity) throw new Error("Unknown home activity");
+  return {
+    id: activity.id, label: activity.label, hours: activity.hours, energy: activity.energy,
+    note: `+${activity.gain} ${activity.stat === "int" ? "intelligence" : activity.stat === "cha" ? "charm" : "work XP"}`,
+    resolve: (state) => {
+      if (state.house < 1 || !ownsFurniture(state.furniture, activity.furniture)) return "You need a flat and the right equipment first.";
+      return { patch: { [activity.stat]: state[activity.stat] + activity.gain }, message: `${activity.label}. +${activity.gain} ${activity.stat === "int" ? "intelligence" : activity.stat === "cha" ? "charm" : "work XP"}.` };
+    },
+  };
+}
+
 /* ---------- Gym & school ---------- */
 
 export const LIFT_WEIGHTS: ActionDef = {
