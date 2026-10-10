@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocationScene } from "@/components/LocationScene";
-import { isArcadeRoom } from "@/components/rooms/ArcadeInterior";
+import { isArcadeRoom } from "@/lib/arcade-rooms";
 import { fitRect, panelStyle } from "@/lib/room-layout";
 import { START } from "@/lib/game-data";
 import { PLACE_IDS, ROOMS, VIEW, roomFor, visibleHotspots } from "@/lib/rooms";
