@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ownsFurniture } from "@/lib/furniture";
 
 type SceneId = "home" | "gym" | "school" | "work" | "bar" | "alley" | "bank" | "shop" | "diner" | "pawn" | "furniture" | "casino" | "depot" | "police" | "clinic";
@@ -56,7 +56,10 @@ function Prop({ name, x, accent }: { name: string; x: number; accent: string }) 
   }
 }
 
-export function LocationScene({ id, house = 0, furniture = 0, children, onClose, feedback }: { id: string; house?: number; furniture?: number; children: ReactNode; onClose: () => void; feedback?: string }) {
+export type RoomStation = { label: string; hint: string; content: ReactNode };
+export function LocationScene({ id, house = 0, furniture = 0, children, stations, onClose, feedback }: { id: string; house?: number; furniture?: number; children: ReactNode; stations?: RoomStation[]; onClose: () => void; feedback?: string }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const hotspots = stations?.length ? stations : null;
   const scene = LOOK[id as SceneId] ?? LOOK.shop;
   const props = scene.props;
   const homes = [{ wall: "#8c9575", floor: "#806c57", title: "A room with questionable walls", basics: ["BIN","CRATE","LAMP"] }, { wall: "#d6c9ad", floor: "#ad8667", title: "Your first studio flat", basics: ["BED","WINDOW","LAMP"] }, { wall: "#a9c5b0", floor: "#926b4c", title: "Welcome to the suburbs", basics: ["SOFA","WINDOW","LAMP"] }, { wall: "#d9d3c4", floor: "#84674d", title: "The mansion life", basics: ["SOFA","WINDOW","CLOCK"] }];
@@ -69,7 +72,7 @@ export function LocationScene({ id, house = 0, furniture = 0, children, onClose,
         <div><div className="text-xs uppercase tracking-widest text-muted-foreground">Town Square Tales · Inside</div><h2 className="text-2xl font-bold">{scene.title}</h2></div>
         <button onClick={onClose} aria-label="Leave building" className="rounded-lg border-2 border-foreground bg-secondary px-4 py-2 text-lg font-bold">← Leave</button>
       </header>
-      <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{height:"clamp(190px,39vh,365px)",background:wall}}>
+      <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{height:hotspots?"min(53vh,430px)":"clamp(190px,39vh,365px)",background:wall}}>
         <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice" className="h-full w-full" role="img" aria-label={`Illustrated interior of ${scene.title}`}>
           <rect width="420" height="230" fill={wall}/><path d="M0 150H420V230H0Z" fill={floor}/>
           <path d="M0 150H420" stroke="#29252a" strokeWidth="5"/>
@@ -90,13 +93,32 @@ export function LocationScene({ id, house = 0, furniture = 0, children, onClose,
           <Person x={225} y={187} shirt={scene.accent}/><Person x={369} y={208} shirt="#e1bb6d"/>
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
         </svg>
+        {hotspots && <>
+          <div className="absolute inset-x-2 bottom-2 grid grid-cols-3 gap-2">
+            {hotspots.map((station,i)=><button key={station.label} type="button"
+              aria-pressed={selected===i} onClick={()=>setSelected(i)}
+              className={`min-h-12 rounded-lg border-2 border-foreground px-1 py-2 text-center text-sm font-bold shadow-md ${selected===i?"bg-primary text-primary-foreground":"bg-card/95"}`}>
+              <span aria-hidden="true">{["🖥️","📋","🚪"][i] ?? "✦"} </span>{station.label}
+            </button>)}
+          </div>
+        </>}
       </div>
       <div className="shrink-0 border-b border-foreground/20 bg-secondary/60 px-4 py-2 text-base italic">{id === "home" ? home.title + " · " + (furniture ? "Your upgrades are making it feel like yours." : "A fresh start.") : scene.caption}</div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+      {hotspots ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
+        {selected===null ? <div className="grid gap-2 text-center">
+          <strong className="text-lg">Tap an object to interact</strong>
+          <p className="text-sm text-muted-foreground">Workstations, notices and counters each open their own options. Use Leave to return to town.</p>
+          <div className="grid grid-cols-3 gap-2">{hotspots.map((station,i)=><button type="button" key={station.label} className="min-h-11 rounded-md border-2 border-foreground bg-secondary px-1 text-sm font-bold" onClick={()=>setSelected(i)}>{station.label}</button>)}</div>
+        </div> : <>
+          <div className="mb-2 flex items-center justify-between gap-2"><div><h3 className="text-lg font-bold">{hotspots[selected]?.label}</h3><p className="text-sm text-muted-foreground">{hotspots[selected]?.hint}</p></div><button type="button" aria-label="Close actions" onClick={()=>setSelected(null)} className="min-h-11 min-w-11 rounded-md border-2 border-foreground bg-secondary">✕</button></div>
+          <div className="grid gap-2">{hotspots[selected]?.content}</div>
+        </>}
+        {feedback && <p aria-live="polite" className="mt-2 rounded border border-foreground/30 bg-secondary p-2 text-sm">{feedback}</p>}
+      </div> : <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
         <div className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">What would you like to do?</div>
         <div className="flex flex-col gap-2">{children}</div>
         {feedback && <p aria-live="polite" className="mt-3 rounded border border-foreground/30 bg-secondary p-2 text-base">{feedback}</p>}
-      </div>
+      </div>}
     </section>
   </div>;
 }
