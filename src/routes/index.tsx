@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
-import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
+import { DEV_SAVE_VERSION, DEV_SAVE_VERSION_KEY, GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -187,7 +187,17 @@ function Game() {
     try {
       const enabled = window.localStorage.getItem(GOD_ENABLED_KEY) === "true";
       setGodMode(enabled);
-      setS(enabled ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), normal) : normal);
+      // Previous God Mode gave everyone the mansion, CEO job and all equipment.
+      // Migrate that old sandbox to fresh developer resources + normal progress.
+      const version = window.localStorage.getItem(DEV_SAVE_VERSION_KEY);
+      const sandbox = version === DEV_SAVE_VERSION
+        ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), normal)
+        : parseGodSave(null, normal);
+      if (enabled && version !== DEV_SAVE_VERSION) {
+        window.localStorage.setItem(GOD_SAVE_KEY, JSON.stringify(sandbox));
+        window.localStorage.setItem(DEV_SAVE_VERSION_KEY, DEV_SAVE_VERSION);
+      }
+      setS(enabled ? sandbox : normal);
     } catch { setS(normal); }
     try {
       setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
@@ -215,7 +225,10 @@ function Game() {
       saveGame(s);
       let sandbox = parseGodSave(null, s);
       try {
-        sandbox = parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s);
+        sandbox = window.localStorage.getItem(DEV_SAVE_VERSION_KEY) === DEV_SAVE_VERSION
+          ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s)
+          : parseGodSave(null, s);
+        window.localStorage.setItem(DEV_SAVE_VERSION_KEY, DEV_SAVE_VERSION);
         window.localStorage.setItem(GOD_ENABLED_KEY, "true");
       } catch { /* Continue with a fresh sandbox if storage is disabled. */ }
       setS(sandbox);
@@ -587,14 +600,15 @@ function Game() {
           </p>
           <div className="rounded-lg border-2 border-foreground p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <strong className="text-lg">⚡ God Mode</strong>
+              <strong className="text-lg">⚡ Developer Mode</strong>
               <span className="text-xs font-bold">{godMode ? "ON" : "OFF"}</span>
             </div>
             <p className="mb-2 text-sm">
-              Infinite money, savings, energy and time; maximum strength, intelligence, charm, XP,
-              education, housing and equipment. Uses a separate save, so normal progress is safe.
+              Unlimited cash, bank balance, work XP and energy, with time frozen during actions.
+              Houses, jobs, education, skills and equipment stay locked until you earn, buy or unlock them.
+              This is a separate test save; normal progress is safe.
             </p>
-            <Btn onClick={toggleGodMode}>{godMode ? "Disable God Mode · Restore normal save" : "Enable God Mode"}</Btn>
+            <Btn onClick={toggleGodMode}>{godMode ? "Disable Developer Mode · Restore normal save" : "Enable Developer Mode"}</Btn>
           </div>
           <p className="text-base font-bold">Movement controls</p>
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Movement controls">
