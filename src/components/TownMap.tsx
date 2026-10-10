@@ -204,7 +204,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [house, speed]);
 
-  const toTile = (e: React.PointerEvent) => {
+  const toTile = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
     if (!svg) return null;
     const pt = svg.createSVGPoint();
@@ -269,7 +269,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
   return (
     <div className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
       <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 240} ${cy - 415} 480 800`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
-        onPointerDown={(e) => { const p = toTile(e); if (!p) return; routeTo({ x: Math.max(0.3, Math.min(N - 0.3, p.x)), y: Math.max(0.3, Math.min(N - 0.3, p.y)) }); }}>
+        onClick={(e) => { const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
