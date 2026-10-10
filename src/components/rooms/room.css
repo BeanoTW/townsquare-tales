@@ -173,3 +173,69 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* Carry the scene atmosphere into tall phone viewports around the aspect-fit artwork. */
+.room-stage { isolation: isolate; }
+.room-stage::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse 54% 39% at 50% 11%, rgba(255,248,211,.13), transparent 85%),
+    linear-gradient(90deg,rgba(25,24,31,.14),transparent 18%,transparent 82%,rgba(25,24,31,.14));
+}
+.room-stage::after {
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:23%;
+  z-index:0;
+  pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 43px,rgba(21,22,30,.045) 44px 45px),
+    linear-gradient(transparent,rgba(20,19,30,.12));
+}
+.room-art-frame {z-index:1;}
+.room-sign {z-index:2;box-shadow:3px 4px 0 rgba(28,26,33,.18);}
+.room-sign::before,.room-sign::after {
+  content:"";
+  position:absolute;
+  width:2px;height:12px;
+  top:-13px;
+  background:#554a46;
+}
+.room-sign::before {left:18px;}
+.room-sign::after {right:18px;}
+.room-stage .room-panel {z-index:4;}
+
+/* Mood-specific, legible action trays rather than the exact same generic menu. */
+[data-room="casino"] .room-panel {
+  background:#352a45;
+  color:#fff4dc;
+  border-color:#e9c57c;
+  box-shadow:0 12px 30px rgba(16,8,25,.58);
+}
+[data-room="casino"] .room-panel-hint,
+[data-room="casino"] .room-panel-line { color:#e9d3c4; }
+[data-room="casino"] .room-action {
+  background:#64436d;
+  color:#fff7e2;
+  border-color:#e9bb72;
+}
+[data-room="casino"] .room-action-meta,
+[data-room="casino"] .room-action-note { color:#ffdfa7; }
+[data-room="casino"] .room-action:hover,
+[data-room="casino"] .room-action:focus-visible {background:#825281;}
+[data-room="casino"] .room-close {background:#e9c57c;color:#30223b;}
+[data-room="gym"] .room-panel {background:#e4e8e4;border-color:#36464e;}
+[data-room="gym"] .room-action {background:#d2dedb;border-color:#4b6064;}
+[data-room="gym"] .room-action:hover,
+[data-room="gym"] .room-action:focus-visible {background:#f2d27f;}
+[data-room="home"] .room-panel {background:#f8eed8;border-color:#745a45;}
+[data-room="home"] .room-action {background:#f2ddba;border-color:#765a47;}
+[data-room="home"] .room-action:hover,
+[data-room="home"] .room-action:focus-visible {background:#fbe7a4;}
+
+@media (prefers-reduced-motion:reduce) {
+  .room-sign,.room-stage::before,.room-stage::after {transition:none;animation:none;}
+}
