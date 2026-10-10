@@ -15,6 +15,20 @@ export function residentsAt(hour:number): Resident[] {
     return {id:person.id,name:person.name,title:person.title,color:person.color,x,y,mood:hour>=19?"Evening":hour<10?"Morning":"Daytime",hint:"Talk to "+person.name};
   });
 }
+export const LAST_TALKED_FIELDS: Record<ResidentId, "lastMara"|"lastNox"|"lastGus"|"lastIvy"> = {mara:"lastMara",nox:"lastNox",gus:"lastGus",ivy:"lastIvy"};
+export function hasTalkedToday(state: GameState, id: ResidentId): boolean {
+  return state[LAST_TALKED_FIELDS[id]] === state.day;
+}
+export function recordConversation(state: GameState, id: ResidentId, change: number, karma: number): GameState {
+  return {...applyConversation(state,id,change,karma),[LAST_TALKED_FIELDS[id]]:state.day};
+}
+/** Activity icons appear in-world without launching blocking dialogs. */
+export function residentActivity(id: ResidentId, hour:number): string {
+  if (id==="mara") return hour<10?"☕":hour<18?"📦":"🎧";
+  if (id==="nox") return hour<10?"💤":hour<18?"🛹":"👀";
+  if (id==="gus") return hour<10?"📰":hour<18?"🚶":"🍺";
+  return hour<10?"📖":hour<18?"✏️":"🎶";
+}
 export const RELATION_FIELDS: Record<ResidentId, "relMara"|"relNox"|"relGus"|"relIvy"> = {mara:"relMara",nox:"relNox",gus:"relGus",ivy:"relIvy"};
 export function conversation(id: ResidentId, state: GameState): { title:string; text:string; choices:{label:string; change:number; karma:number; reply:string}[] } {
   const rel = state[RELATION_FIELDS[id]];

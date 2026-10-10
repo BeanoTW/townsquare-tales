@@ -6,7 +6,7 @@ export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 import type { EncounterSpot } from "@/lib/world-encounters";
 import { GANG_SPOT } from "@/lib/street-gang";
-import { residentsAt } from "@/lib/living-town";
+import { residentsAt, residentActivity } from "@/lib/living-town";
 import { PARK_KID_SPOT } from "@/lib/park-kid";
 
 // Upright oblique projection: ground plan matches the minimap; height offsets
@@ -343,6 +343,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
         className="cursor-pointer" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
         onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();routeTo(person,"resident:"+person.id);}}}>
         <Stick x={person.x} y={person.y} phase={t*3+i} walking={false} color={person.color}/>
+        <g transform={`translate(${P(person.x,person.y)[0]+16} ${P(person.x,person.y)[1]-33+Math.sin(t*1.4+i)*2})`}>
+          <rect x="-10" y="-13" width="23" height="22" rx="9" fill="#f2e8d4" stroke="#4a454c" strokeWidth="1.5" opacity=".95"/>
+          <text x="1" y="4" fontSize="14" textAnchor="middle">{residentActivity(person.id,hour)}</text>
+        </g>
         <g transform={`translate(${P(person.x,person.y)[0]} ${P(person.x,person.y)[1]-64})`}>
           <rect x="-25" y="-12" width="50" height="17" rx="6" fill="#f1e6d0" stroke="#343039" strokeWidth="2"/>
           <text x="0" y="0" textAnchor="middle" fontSize="11" fill="#33303a" fontWeight="bold">{person.name}</text>
