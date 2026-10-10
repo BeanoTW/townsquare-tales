@@ -16,7 +16,7 @@ export function grantGodPowers(s: GameState): GameState {
     money: MAX_MONEY,
     bank: MAX_MONEY,
     energy: 100,
-    xp: MAX_STATS,
+    xp: 1_000_000,
   };
 }
 
