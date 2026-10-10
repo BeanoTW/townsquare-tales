@@ -8,15 +8,6 @@ import { hotspotActions, type PlaceId, type Room } from "@/lib/rooms";
 import type { Feedback } from "@/components/LocationScene";
 import "./arcade-interior.css";
 
-export const ARCADE_PLACES: readonly PlaceId[] = [
-  "shop", "bank", "school", "work", "yard", "diner", "bar",
-  "pawn", "clinic", "depot", "police", "furniture",
-];
-
-export function isArcadeRoom(id: PlaceId): boolean {
-  return ARCADE_PLACES.includes(id);
-}
-
 type SceneProps = {
   room: Room;
   state: GameState;
@@ -163,7 +154,10 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
 function StatStrip({ room, state }: { room: Room; state: GameState }) {
   if (room.id === "bank") return <div className="arcade-stats"><span>Cash <strong>${state.money}</strong></span><span>Savings <strong>${state.bank}</strong></span></div>;
   if (room.id === "school") return <div className="arcade-stats"><span>Education <strong>{SCHOOLS[state.school] ?? "Dropout"}</strong></span><span>Intelligence <strong>{state.int}</strong></span></div>;
-  if (["work", "yard", "diner"].includes(room.id)) return <div className="arcade-stats"><span>Current role <strong>{currentRole(state).name}</strong></span><span>Work XP <strong>{state.xp}</strong></span></div>;
+  if (["work", "yard", "diner"].includes(room.id)) {
+    const career = room.id === "work" ? 0 : room.id === "yard" ? 3 : 1;
+    return <div className="arcade-stats"><span>Role here <strong>{state.career === career ? currentRole(state).name : "Not employed"}</strong></span><span>Work XP <strong>{state.xp}</strong></span></div>;
+  }
   if (room.id === "clinic" || room.id === "diner") return <div className="arcade-stats"><span>Energy <strong>{state.energy}%</strong></span><span>Cash <strong>${state.money}</strong></span></div>;
   if (room.id === "pawn") return <div className="arcade-stats"><span>Shoes <strong>{state.trainers ? "Owned" : "None"}</strong></span><span>Alarm <strong>{state.alarm ? "Owned" : "None"}</strong></span></div>;
   return null;
