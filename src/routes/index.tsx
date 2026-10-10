@@ -159,7 +159,7 @@ function Game() {
     "Welcome to Stick Town. You live in a box. Good luck.",
   ]);
   const [place, setPlace] = useState<PlaceId | null>(null);
-  const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
+  const [tab, setTab] = useState<"player" | "inventory" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<Encounter | null>(null);
   const [gangDone, setGangDone] = useState<number | null>(null);
   const [parkKidOpen, setParkKidOpen] = useState(false);
@@ -281,7 +281,8 @@ function Game() {
       <TownMap
         hour={s.hour}
         house={s.house}
-        speed={s.trainers ? 1.35 : s.skateboard ? 1.2 : 1}
+        speed={s.skateboard && s.skateboardEquipped ? 1.5 : s.trainers ? 1.35 : 1}
+        karma={s.karma}
         active={place}
         encounter={encounterSpot}
         onEncounter={approachEncounter}
@@ -300,6 +301,7 @@ function Game() {
           <Icon label="Player" onClick={() => setTab("player")}>
             👤
           </Icon>
+          <Icon label="Inventory" onClick={() => setTab("inventory")}>🎒</Icon>
           <Icon label="Journal" onClick={() => setTab("log")}>
             📜
           </Icon>
@@ -416,6 +418,25 @@ function Game() {
         </div>
       )}
 
+      {tab === "inventory" && (
+        <Sheet title="Inventory" onClose={() => setTab(null)}>
+          <p className="text-sm text-muted-foreground">Your belongings and equipped items.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Stat k="🚬 Smokes" v={s.smokes} />
+            <Stat k="🍫 Snacks" v={s.snacks} />
+            <Stat k="⏰ Alarm clock" v={s.alarm ? "Owned" : "—"} />
+            <Stat k="👟 Running shoes" v={s.trainers ? "Owned · 1.35× speed" : "—"} />
+            <Stat k="🛹 Skateboard" v={s.skateboard ? s.skateboardEquipped ? "Equipped · 1.5× speed" : "Owned · Unequipped" : "—"} />
+            <Stat k="🛋️ Furniture" v={`${FURNITURE.filter(item => ownsFurniture(s.furniture, item.id)).length} items`} />
+          </div>
+          {s.skateboard > 0 && (
+            <Btn onClick={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))}>
+              {s.skateboardEquipped ? "Unequip skateboard" : "Equip skateboard"}
+            </Btn>
+          )}
+          {s.snacks > 0 && <Btn onClick={() => perform(EAT_SNACK)}>Eat a snack (+25 energy)</Btn>}
+        </Sheet>
+      )}
       {tab === "player" && (
         <Sheet title="Player" onClose={() => setTab(null)}>
           {won && (
