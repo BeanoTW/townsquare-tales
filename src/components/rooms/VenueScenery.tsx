@@ -112,19 +112,44 @@ function PropsForVenue({ id }: { id: PlaceId }) {
 }
 
 function Employee({ room, shirt }: { room: PlaceId; shirt: string }) {
-  const uniform = ["yard","police","diner","clinic"].includes(room);
-  return <g transform="translate(220 58)" stroke="#302a35" strokeWidth="4" strokeLinecap="round">
+  const gruff = ["shop", "yard", "diner", "bar", "pawn", "depot", "police"].includes(room);
+  const shady = ["bar", "pawn", "shop"].includes(room);
+  const glasses = ["bank", "school"].includes(room);
+  const hat = ["yard", "police", "diner", "clinic"].includes(room);
+  const beard = ["yard", "bar", "pawn"].includes(room);
+  const face = room === "pawn" ? "#ac8469" : room === "bar" ? "#946d59" : room === "yard" ? "#cf9872" : "#e9c59b";
+  return <g data-character-venue={room} data-expression={gruff ? "gruff" : "reserved"}
+    transform="translate(220 58)" stroke="#302a35" strokeWidth="4" strokeLinecap="round">
     <ellipse cy="131" rx="39" ry="7" fill="#302a35" stroke="none" opacity=".18"/>
     <path d="M-26 113L-21 76H21L26 113" fill="#434053"/>
     <path d="M-32 66L-43 99M32 66L43 99" fill="none" strokeWidth="7"/>
     <path d="M-31 57Q0 43 31 57L24 104H-24Z" fill={shirt}/>
-    {room==="diner"&&<path d="M-20 69H20V104H-20Z" fill="#f7efe4" strokeWidth="2"/>}
+    {room==="diner"&&<path d="M-20 69H20V104H-20Z" fill="#eee1ce" strokeWidth="2"/>}
     {room==="clinic"&&<path d="M-20 59L-11 102M20 59L11 102" stroke="#f4faf0" strokeWidth="10"/>}
     {room==="work"&&<path d="M0 55L-6 69L0 88L6 69Z" fill="#f5e3ba" strokeWidth="2"/>}
-    <circle cy="28" r="26" fill="#eac89e"/>
-    {uniform?<path d="M-27 17Q-22 -14 0 -14Q26 -12 27 17L36 23H-36Z" fill={room==="yard"?"#f0c04e":room==="police"?"#314f78":"#f2f4e9"}/>:<path d="M-26 23Q-31 -8 0 -12Q25 -9 27 23Q13 7 -4 7L-24 28Z" fill="#39323a"/>}
-    <circle cx="-8" cy="28" r="2.5" fill="#302a35" stroke="none"/><circle cx="9" cy="28" r="2.5" fill="#302a35" stroke="none"/>
-    <path d="M-9 40Q0 47 9 40" fill="none" stroke="#a57368" strokeWidth="2.5"/>
+    {room==="bar"&&<path d="M-29 70L-8 87L-13 95L-30 82M29 70L8 87L13 95L30 82" fill="#2e2b39" strokeWidth="3"/>}
+    <circle cy="28" r="26" fill={face}/>
+    {beard && <path d="M-19 37Q-16 60 0 57Q16 60 19 37L12 47Q0 54 -12 47Z" fill={room==="yard"?"#5c423a":"#3c343a"} strokeWidth="2"/>}
+    {hat ? <path d="M-27 17Q-22 -14 0 -14Q26 -12 27 17L36 23H-36Z"
+      fill={room==="yard"?"#dca83c":room==="police"?"#314f78":room==="diner"?"#ede2c9":"#f2f4e9"}/>
+      : <path d={room==="pawn" ? "M-27 20Q-28 -17 0 -14Q29 -13 27 20L15 10L0 13L-25 26Z"
+        : room==="bar" ? "M-28 21Q-34 -3 -19 -15Q4 -28 28 -7V23L16 10L0 7L-20 18Z"
+        : "M-26 23Q-31 -8 0 -12Q25 -9 27 23Q13 7 -4 7L-24 28Z"} fill="#39323a"/>}
+    {shady && <path d="M-18 19L-3 24M4 24L18 17" stroke="#322932" strokeWidth="3" fill="none"/>}
+    {gruff ? <g fill="none" stroke="#312a35" strokeWidth="3">
+      <path d="M-16 27L-3 30M4 30L17 25"/>
+      {room==="bar" ? <path d="M-18 29H18" stroke="#282837" strokeWidth="7"/> : <path d="M-11 32H-6M6 32H11" />}
+      <path d={room==="pawn"?"M-9 46Q-2 40 8 46":"M-8 46H8"} strokeWidth="2.5"/>
+    </g> : <g>
+      <circle cx="-9" cy="28" r="2.2" fill="#302a35" stroke="none"/>
+      <circle cx="9" cy="28" r="2.2" fill="#302a35" stroke="none"/>
+      <path d="M-7 43H7" stroke="#956c5f" strokeWidth="2.5"/>
+    </g>}
+    {glasses && <g fill="none" stroke="#3b3c48" strokeWidth="2.5">
+      <circle cx="-9" cy="28" r="9"/><circle cx="9" cy="28" r="9"/><path d="M0 27H0M-19 28L-25 25M19 28L25 25"/>
+    </g>}
+    {room==="pawn"&&<path d="M20 37L26 41" stroke="#6c4141" strokeWidth="3"/>}
+    {room==="depot"&&<path d="M-20 38Q-15 49 -5 50" stroke="#6b6459" strokeWidth="2" fill="none"/>}
   </g>;
 }
 
