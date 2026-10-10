@@ -61,7 +61,7 @@ describe("LocationScene", () => {
 
   it("opens an object from the keyboard in the remaining interactive rooms", () => {
     renderRoom("gym");
-    const rack = screen.getByRole("button", { name: /^Weights rack\\./ });
+    const rack = screen.getByRole("button", { name: /^Weights rack\./ });
     rack.focus();
     fireEvent.keyDown(rack, { key: "Enter" });
     expect(screen.getByRole("dialog", { name: "Weights rack" })).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("LocationScene", () => {
 
   it("closes an object panel on Escape before leaving", () => {
     const { onLeave } = renderRoom("gym");
-    fireEvent.click(screen.getByRole("button", { name: /^Weights rack\\./ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Weights rack\./ }));
     expect(screen.getByRole("dialog", { name: "Weights rack" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
