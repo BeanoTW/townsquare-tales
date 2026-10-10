@@ -439,24 +439,29 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
       const bedOwned = ownsFurniture(state.furniture, "bed");
       return (
         <g>
-          <Window x={196} y={44} w={84} h={62} />
+          {state.house > 0 && <Window x={196} y={44} w={84} h={62} />}
           {bedOwned ? (
-            <Bed b={B("bed")} />
-          ) : (
             <g>
-              <Fill b={B("bed")} fill="#c59b6d" rx={4} />
-              <path
-                d={`M${B("bed").x + 8} ${B("bed").y + 12}L${B("bed").x + 40} ${B("bed").y + 40}`}
-                stroke={INK}
-                strokeWidth={2}
-              />
-              <Label
-                x={B("bed").x + B("bed").w / 2}
-                y={B("bed").y + B("bed").h / 2 + 6}
-                text="BED"
-                size={16}
-                fill={INK}
-              />
+              <path d="M13 142L130 142L145 171H20Z" fill="#64473b" stroke={INK} strokeWidth="4"/>
+              <path d="M13 118H120L138 140H13Z" fill="#f0e6cd" stroke={INK} strokeWidth="4"/>
+              <path d="M16 126H87L106 138H21Z" fill="#c6b5a1"/>
+              <path d="M92 120H122L134 135H105Z" fill="#fff8e7" stroke={INK} strokeWidth="2"/>
+              <path d="M22 157V180M128 159V184" stroke={INK} strokeWidth="7"/>
+            </g>
+          ) : state.house === 0 ? (
+            <g data-makeshift-sleep>
+              <path d="M11 165L37 134H126L146 165L113 191H19Z" fill="#a8815a" stroke={INK} strokeWidth="3"/>
+              <path d="M15 161L39 143H117L136 160L111 176H23Z" fill="#d7bd91" stroke="#785a45" strokeWidth="3"/>
+              <path d="M29 152L57 140H98L121 160L96 173H27Z" fill="#7b8d8c" stroke={INK} strokeWidth="3"/>
+              <path d="M39 150L64 141H95L105 150L85 156H36Z" fill="#e7d7b4" stroke={INK} strokeWidth="2"/>
+              <path d="M11 165L36 175L28 191" stroke="#74573c" strokeWidth="3" fill="none"/>
+              <path d="M117 160L135 153L145 166" stroke="#71533b" strokeWidth="3" fill="none"/>
+            </g>
+          ) : (
+            <g data-basic-mattress>
+              <path d="M13 143L42 119H129L144 145L116 170H18Z" fill="#907b74" stroke={INK} strokeWidth="4"/>
+              <path d="M14 135L40 117H122L138 137L111 153H19Z" fill="#e8d7bc" stroke={INK} strokeWidth="3"/>
+              <path d="M29 130L51 121H92L109 133L89 142H30Z" fill="#b2c6bd"/>
             </g>
           )}
           {ownsFurniture(state.furniture, "weights") && (
@@ -872,48 +877,30 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
       );
     }
     case "casino": {
-      const slots = B("slots"),
-        table = B("high-dice");
-      return (
-        <g>
-          <Neon
-            x={60}
-            y={20}
-            w={300}
-            h={30}
-            text="7 · 7 · 7"
-            color="#f3bd4b"
-            className="room-flicker"
-          />
-          <Fill b={slots} fill="#9c3f69" rx={6} />
-          <R
-            x={slots.x + 18}
-            y={slots.y + 22}
-            w={slots.w - 36}
-            h={44}
-            fill="#f8e1a2"
-            rx={5}
-            sw={2.5}
-          />
-          <Label x={slots.x + slots.w / 2} y={slots.y + 52} text="7 7 7" size={22} fill="#cf4b47" />
-          <circle
-            cx={slots.x + slots.w / 2}
-            cy={slots.y + 94}
-            r={9}
-            fill="#e7bc42"
-            stroke={INK}
-            strokeWidth={2}
-            className="room-flicker"
-          />
-          <Fill
-            b={{ x: table.x, y: table.y + 10, w: table.w, h: table.h - 10 }}
-            fill="#2f7d5a"
-            rx={22}
-          />
-          <R x={table.x + 40} y={table.y + 22} w={14} h={14} fill={PAPER} rx={2} sw={2} />
-          <R x={table.x + 100} y={table.y + 22} w={14} h={14} fill={PAPER} rx={2} sw={2} />
+      const slots = B("slots"), table = B("high-dice");
+      return <g>
+        <g data-slot-machine>
+          <path d={`M${slots.x+15} ${slots.y+18}L${slots.x+38} ${slots.y}H${slots.x+slots.w-4}L${slots.x+slots.w-16} ${slots.y+22}Z`} fill="#bd729c" stroke={INK} strokeWidth={4}/>
+          <path d={`M${slots.x+slots.w-16} ${slots.y+22}L${slots.x+slots.w-4} ${slots.y}V${slots.y+slots.h-22}L${slots.x+slots.w-16} ${slots.y+slots.h}Z`} fill="#5d3156" stroke={INK} strokeWidth={4}/>
+          <R x={slots.x+15} y={slots.y+22} w={slots.w-31} h={slots.h-22} rx={9} fill="#a3437c" sw={4}/>
+          <R x={slots.x+27} y={slots.y+38} w={slots.w-56} h={57} fill="#ffe0a6" rx={6} sw={3}/>
+          <Label x={slots.x+slots.w/2-3} y={slots.y+73} text="7  7  7" size={24} fill="#b53e56"/>
+          <R x={slots.x+38} y={slots.y+107} w={slots.w-83} h={9} fill="#3a2a3b" rx={3} sw={2}/>
+          <circle cx={slots.x+slots.w/2} cy={slots.y+128} r={8} fill="#f5c957" stroke={INK} strokeWidth={3}/>
+          <path d={`M${slots.x+slots.w-5} ${slots.y+65}H${slots.x+slots.w+9}V${slots.y+40}`} stroke="#f2c45c" strokeWidth="5" fill="none"/>
+          <circle cx={slots.x+slots.w+9} cy={slots.y+38} r={7} fill="#f2c45c" stroke={INK} strokeWidth={2}/>
         </g>
-      );
+        <g data-dice-table>
+          <path d={`M${table.x+27} ${table.y+25}V${table.y+99}M${table.x+table.w-27} ${table.y+25}V${table.y+99}`} stroke="#4d3430" strokeWidth={11}/>
+          <ellipse cx={table.x+table.w/2} cy={table.y+45} rx={table.w/2-2} ry={32} fill="#492a35" stroke={INK} strokeWidth={5}/>
+          <ellipse cx={table.x+table.w/2} cy={table.y+34} rx={table.w/2-8} ry={25} fill="#25805f" stroke="#b78b4c" strokeWidth={5}/>
+          <path d={`M${table.x+24} ${table.y+34}Q${table.x+80} ${table.y-7} ${table.x+table.w-24} ${table.y+34}`} fill="none" stroke="#e5c979" strokeWidth={3} strokeDasharray="7 6"/>
+          <R x={table.x+64} y={table.y+16} w={14} h={14} fill="#fff3c7" rx={2} sw={2}/>
+          <R x={table.x+91} y={table.y+31} w={14} h={14} fill="#fff3c7" rx={2} sw={2}/>
+          <circle cx={table.x+69} cy={table.y+22} r={2} fill="#42373d"/>
+          <circle cx={table.x+96} cy={table.y+37} r={2} fill="#42373d"/>
+        </g>
+      </g>;
     }
     case "depot": {
       const board = B("departures"),
