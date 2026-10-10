@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseGame, type GameState } from "@/lib/game-state";
-const start: GameState = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0, trainers: 0, alarm: 0, furniture: 0, career: 0, xp: 0 };
+const start: GameState = { day: 1, hour: 8, energy: 100, money: 20, str: 5, int: 5, cha: 5, karma: 0, house: 0, school: 0, job: 0, heat: 0, bank: 0, snacks: 0,
+  smokes: 0, skateboard: 0, parkSmokes: 0, parkKidGone: 0, trainers: 0, alarm: 0, furniture: 0, career: 0, xp: 0 };
 describe("save recovery", () => {
   it("loads a valid previous save", () => { expect(parseGame(JSON.stringify({...start, money: 400, day: 12}), start).money).toBe(400); });
   it("migrates previous saves without erasing progress", () => {
