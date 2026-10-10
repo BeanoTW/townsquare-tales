@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
-import { DEV_SAVE_VERSION, DEV_SAVE_VERSION_KEY, GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
+import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -181,28 +181,28 @@ function Game() {
   }, [result]);
 
 
-  // SSR and the initial browser render must agree. Load the save only after hydration.
+  // One-time fresh start for the current build: discard legacy progression,
+  // then allow both normal and developer saves to persist as usual.
   useEffect(() => {
-    const normal = loadGame(START);
     try {
-      const enabled = window.localStorage.getItem(GOD_ENABLED_KEY) === "true";
-      setGodMode(enabled);
-      // Previous God Mode gave everyone the mansion, CEO job and all equipment.
-      // Migrate that old sandbox to fresh developer resources + normal progress.
-      const version = window.localStorage.getItem(DEV_SAVE_VERSION_KEY);
-      const sandbox = version === DEV_SAVE_VERSION
-        ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), normal)
-        : parseGodSave(null, normal);
-      if (enabled && version !== DEV_SAVE_VERSION) {
-        window.localStorage.setItem(GOD_SAVE_KEY, JSON.stringify(sandbox));
-        window.localStorage.setItem(DEV_SAVE_VERSION_KEY, DEV_SAVE_VERSION);
+      if (window.localStorage.getItem("sticktown-save-reset-v3") !== "done") {
+        window.localStorage.removeItem("sticktown");
+        window.localStorage.removeItem(GOD_SAVE_KEY);
+        window.localStorage.removeItem(GOD_ENABLED_KEY);
+        window.localStorage.setItem("sticktown-save-reset-v3", "done");
       }
-      setS(enabled ? sandbox : normal);
-    } catch { setS(normal); }
+    } catch { /* In private browsing we still begin from START. */ }
+    const normal = loadGame(START);
+    let enabled = false;
     try {
+      enabled = window.localStorage.getItem(GOD_ENABLED_KEY) === "true";
+    } catch { /* Start in normal mode when storage is unavailable. */ }
+    setGodMode(enabled);
+    try {
+      setS(enabled ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), START) : normal);
       setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
       setSoundOn(window.localStorage.getItem("sticktown-sounds") !== "false");
-    } catch { /* Private browsing still supports the default floating joystick. */ }
+    } catch { setS(enabled ? parseGodSave(null, START) : normal); }
     setSaveReady(true);
   }, []);
   // Never overwrite a player's existing save with SSR defaults during hydration.
@@ -225,10 +225,7 @@ function Game() {
       saveGame(s);
       let sandbox = parseGodSave(null, s);
       try {
-        sandbox = window.localStorage.getItem(DEV_SAVE_VERSION_KEY) === DEV_SAVE_VERSION
-          ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s)
-          : parseGodSave(null, s);
-        window.localStorage.setItem(DEV_SAVE_VERSION_KEY, DEV_SAVE_VERSION);
+        sandbox = parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s);
         window.localStorage.setItem(GOD_ENABLED_KEY, "true");
       } catch { /* Continue with a fresh sandbox if storage is disabled. */ }
       setS(sandbox);

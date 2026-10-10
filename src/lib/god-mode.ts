@@ -5,9 +5,6 @@ import { parseGame, type GameState } from "@/lib/game-state";
 export const GOD_SAVE_KEY = "sticktown-god-save";
 export const GOD_ENABLED_KEY = "sticktown-god-enabled";
 const MAX_MONEY = 1_000_000_000_000;
-/** Versioned to restart only old, automatically-completed sandbox saves. */
-export const DEV_SAVE_VERSION_KEY = "sticktown-dev-save-version";
-export const DEV_SAVE_VERSION = "2";
 
 /** Developer mode supplies test resources, not unlocked progression. */
 export function grantGodPowers(s: GameState): GameState {
