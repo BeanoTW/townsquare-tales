@@ -160,3 +160,13 @@
  .diner-meal-illustration{width:36px;height:36px;font-size:22px}
  .diner-menu-item button{padding:5px}
 }
+
+/* Browsable shelves: all inventory stays visible at once on narrow screens. */
+.arcade-product-shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:12px;margin:8px 6px 13px;border:3px solid #344c68;border-radius:14px;background:repeating-linear-gradient(to bottom,#c6d8cb 0,#c6d8cb 106px,#8c7054 106px,#8c7054 114px);box-shadow:inset 0 2px 9px #28364a33}
+.arcade-shelf-item{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:3px;min-width:0;min-height:100px;padding:8px 3px;background:#fff3d6;border:2px solid #344c68;border-radius:10px;box-shadow:0 4px 0 #665545;cursor:pointer;color:#273e59}
+.arcade-shelf-item.is-selected{outline:3px solid #f8c755;outline-offset:1px;background:#fff9e5}
+.arcade-shelf-item:focus-visible{outline:3px solid #284e9d}
+.arcade-shelf-icon{font-size:27px;line-height:1.2}
+.arcade-shelf-name{font-size:12px;font-weight:900;line-height:1.15;text-align:center;overflow-wrap:anywhere}
+.arcade-shelf-price{font-size:13px;font-weight:900}
+@media(max-width:350px){.arcade-product-shelf{gap:5px;padding:7px}.arcade-shelf-item{min-height:94px}}
