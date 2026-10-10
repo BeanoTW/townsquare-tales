@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
+import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
 import { encounterForDay } from "@/lib/world-encounters";
@@ -167,6 +168,7 @@ function Game() {
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
+  const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
 
   // SSR and the initial browser render must agree. Load the save only after hydration.
   useEffect(() => {
@@ -205,6 +207,8 @@ function Game() {
     if (!outcome.ok) return notify(outcome.message, false);
     setS(outcome.next);
     notify(outcome.message, true, outcome.hoursUsed, outcome.changes);
+    const kind = vignetteForAction(def.id);
+    if (kind) setVignette({ kind, changes: outcome.changes, message: outcome.message });
   };
 
   const walk = (id: PlaceId) => {
@@ -302,6 +306,8 @@ function Game() {
           else if (isPlace(id) && id !== "alley") walk(id);
         }}
       />
+
+      {vignette && <ActionVignette kind={vignette.kind} changes={vignette.changes} message={vignette.message} onDone={() => setVignette(null)} />}
 
       {/* top HUD: always visible, including inside buildings */}
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
