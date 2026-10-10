@@ -121,14 +121,13 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
       {skating ? (
-        <g data-skater-pose data-skate-angle={skateAngle} transform={`translate(0 -22) rotate(${skateAngle})`}>
-          {/* Overhead silhouette: the entire skater and deck turn together, including diagonals. */}
-          <ellipse cx="0" cy="17" rx="5" ry="19" fill="#d99539" stroke="#272737" strokeWidth="2" data-skateboard="deck"/>
-          <path d="M-3 5H3M-3 24H3" stroke="#f3d18d" strokeWidth="1.5"/>
-          <path d="M-4 1L-5 9M4 1L5 12" strokeWidth="3.2" strokeLinecap="round"/>
-          <ellipse cx="0" cy="-3" rx="7" ry="9" fill={color} strokeWidth="2"/>
-          <path d="M-6 -5L-12 -11L-15 -7M6 -5L12 1L10 5" strokeWidth="3.2" strokeLinecap="round"/>
-          <circle cx="0" cy="-14" r="8" fill={head}/>
+        <g data-skater-pose data-skate-angle={skateAngle} transform={`translate(0 -9) rotate(${skateAngle})`}>
+          {/* Genuine overhead sprite: only a short footprint rotates, never a tall standing stickman. */}
+          <ellipse cx="0" cy="4" rx="4.5" ry="15" fill="#ca8a3e" stroke="#272737" strokeWidth="1.8" data-skateboard="deck"/>
+          <path d="M-2 -7H2M-2 14H2" stroke="#f6d496" strokeWidth="1.2"/>
+          <ellipse cx="0" cy="1" rx="7" ry="8" fill={color} strokeWidth="1.5"/>
+          <path d="M-5 -3L-11 -8L-13 -5M5 -3L11 3L10 6" strokeWidth="2.4" strokeLinecap="round"/>
+          <circle cx="0" cy="-3" r="8.5" fill={head} strokeWidth="2"/>
         </g>
       ) : <>
         <circle cx={0} cy={-40 + breathe} r={7} fill={head}/>
