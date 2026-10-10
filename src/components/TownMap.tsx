@@ -241,7 +241,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active, encounter, on
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
     const px=e.x+sway;
     const [sx,sy]=P(px,e.y);
-    items.push({key:e.y*100+px,el:<g key="encounter" className="cursor-pointer" role="button" aria-label={e.hint} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+    items.push({key:e.y*100+px,el:<g key="encounter" className="cursor-pointer" role="button" aria-label={e.hint} onPointerDown={ev=>ev.stopPropagation()} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
         <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
         <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">
