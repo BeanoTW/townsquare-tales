@@ -6,7 +6,7 @@ import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
-import { encounterForDay } from "@/lib/world-encounters";
+import { conversation, applyConversation, dailyTownEvent, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import { LocationScene, type Feedback } from "@/components/LocationScene";
 import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
@@ -165,6 +165,8 @@ function Game() {
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "inventory" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<Encounter | null>(null);
+  const [resident, setResident] = useState<ResidentId | null>(null);
+  const [residentLastTalked, setResidentLastTalked] = useState<Record<string, number>>({});
   const [gangDone, setGangDone] = useState<number | null>(null);
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
@@ -273,7 +275,7 @@ function Game() {
     }
     playActionCue("encounter", soundOn);
   };
-  const encounterSpot = strangerLeft === s.day ? null : encounterForDay(s.day);
+  const encounterSpot = strangerLeft === s.day ? null : dailyTownEvent(s.day,s.hour);
   const approachEncounter = () => {
     if (!encounterSpot) return;
     setPlace(null);
@@ -334,7 +336,11 @@ function Game() {
         kidPresent={!s.parkKidGone}
         onKid={() => { setEnc(null); setGangMeeting(null); setPlace(null); setParkKidOpen(true); }}
         onEnter={(id) => {
-          if (id === "gang") approachGang();
+          if (id.startsWith("resident:")) {
+            const who = id.slice(9) as ResidentId;
+            if (RELATION_FIELDS[who]) { setResident(who); setTab(null); setPlace(null); setResult(null); }
+          }
+          else if (id === "gang") approachGang();
           else if (isPlace(id) && id !== "alley") walk(id);
         }}
       />
@@ -358,7 +364,7 @@ function Game() {
         </div>
       </div>
 
-      {log[0] && !place && !enc && !gangMeeting && !parkKidOpen && !tab && (
+      {log[0] && !place && !enc && !gangMeeting && !resident && !parkKidOpen && !tab && (
         <div className="pointer-events-none absolute inset-x-3 bottom-4 mx-auto max-w-md rounded-sm border-2 border-foreground bg-card/90 px-3 py-1 text-center text-base">
           {log[0]}
         </div>
@@ -384,6 +390,24 @@ function Game() {
         </Sheet>
       )}
 
+      {resident && (
+        <Sheet title={conversation(resident,s).title} onClose={() => setResident(null)}>
+          <p className="text-lg">{conversation(resident,s).text}</p>
+          <p className="text-sm text-muted-foreground">Relationship: {s[RELATION_FIELDS[resident]]} · {s[RELATION_FIELDS[resident]]>=4?"Friends":s[RELATION_FIELDS[resident]]<=-4?"Rivals":"Acquaintances"}</p>
+          {residentLastTalked[resident] === s.day
+            ? <p className="text-sm">You've already had a proper chat today. Come back tomorrow.</p>
+            : conversation(resident,s).choices.map(choice => (
+              <Btn key={choice.label} onClick={() => {
+                setS(current=>applyConversation(current,resident,choice.change,choice.karma));
+                setResidentLastTalked(previous=>({...previous,[resident]:s.day}));
+                say(choice.reply);
+                setResult({message:choice.reply,success:true,changes:[`Relationship ${choice.change>0?"+":""}${choice.change}`,...(choice.karma?[`Karma ${choice.karma>0?"+":""}${choice.karma}`]:[])]});
+                setResident(null);
+              }}>{choice.label}</Btn>
+            ))}
+          <Btn onClick={()=>setResident(null)}>Leave them to it</Btn>
+        </Sheet>
+      )}
       {gangMeeting && (
         <Sheet title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
           <p className="text-lg font-bold">{gangMeeting.message}</p>
@@ -421,7 +445,7 @@ function Game() {
         </Sheet>
       )}
 
-      {!enc && !gangMeeting && !parkKidOpen && place && !tab && (
+      {!enc && !gangMeeting && !resident && !parkKidOpen && place && !tab && (
         <LocationScene
           key={place}
           room={roomFor(place, s)}
@@ -432,7 +456,7 @@ function Game() {
         />
       )}
 
-      {result && !enc && !gangMeeting && !parkKidOpen && !place && (
+      {result && !enc && !gangMeeting && !resident && !parkKidOpen && !place && (
         <div
           key={result.message + String(result.timeLine)}
           role="status"
@@ -508,6 +532,10 @@ function Game() {
             <Stat k="Intelligence" v={s.int} />
             <Stat k="Charm" v={s.cha} />
             <Stat k="Karma" v={`${s.karma} · ${align}`} />
+            <Stat k="Mara friendship" v={s.relMara} />
+            <Stat k="Nox friendship" v={s.relNox} />
+            <Stat k="Gus friendship" v={s.relGus} />
+            <Stat k="Ivy friendship" v={s.relIvy} />
             <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} />
             <Stat k="Home" v={HOUSES[s.house]?.name ?? "Cardboard Box"} />
             <Stat k="Career" v={CAREERS[s.career]?.name ?? "Corporate"} />
