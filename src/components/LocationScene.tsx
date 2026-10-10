@@ -69,12 +69,12 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
   const floor = id === "home" ? home.floor : scene.floor;
   return <div className="absolute inset-0 z-20 flex flex-col bg-background font-hand">
     <section className="relative flex h-full w-full flex-col overflow-hidden bg-card">
-      <header className="z-10 flex shrink-0 items-end justify-between gap-2 border-b-2 border-foreground bg-card px-3 pb-2 pt-[104px] sm:pt-20">
+      <header className="z-10 flex shrink-0 items-end justify-between gap-2 border-b-2 border-foreground bg-card px-3 pb-2 pt-[94px] sm:pt-20">
         <div><div className="text-xs uppercase tracking-widest text-muted-foreground">Town Square Tales · Inside</div><h2 className="text-2xl font-bold">{scene.title}</h2></div>
         <button onClick={onClose} aria-label="Leave building" className="relative z-10 min-h-11 rounded-lg border-2 border-foreground bg-secondary px-3 py-1 text-base font-bold">← Leave</button>
       </header>
       <div className="relative min-h-0 shrink-0 overflow-hidden border-b-2 border-foreground" style={{flex:hotspots?"1 1 0%":"0 0 auto",height:hotspots?undefined:"clamp(190px,39vh,365px)",background:wall}}>
-        <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid slice" className="h-full w-full" role="img" aria-label={`Illustrated interior of ${scene.title}`}>
+        <svg viewBox="0 0 420 230" preserveAspectRatio="xMidYMid meet" className="h-full w-full" role="img" aria-label={`Illustrated interior of ${scene.title}`}>
           <rect width="420" height="230" fill={wall}/><path d="M0 150H420V230H0Z" fill={floor}/>
           <path d="M0 150H420" stroke="#29252a" strokeWidth="5"/>
           <path d="M0 230L155 150H265L420 230" fill="#fff" opacity=".06"/>
@@ -95,20 +95,20 @@ export function LocationScene({ id, house = 0, furniture = 0, children, stations
           <ellipse cx="215" cy="215" rx="180" ry="12" fill="#262329" opacity=".1"/>
         </svg>
         {hotspots && <>
-          <div className="absolute inset-x-2 top-[12%] bottom-[30%] grid grid-cols-3 gap-2">
+          <div className="absolute inset-x-2 top-[16%] bottom-[24%] grid grid-cols-3 gap-2">
             {hotspots.map((station,i)=><button key={"object-"+station.label} type="button" aria-label={`Interact with ${station.label}`}
               onClick={()=>setSelected(i)} className="rounded-md border-2 border-transparent bg-transparent focus-visible:border-primary focus-visible:bg-card/50" title={station.hint}>
               <span className="sr-only">{station.label}</span>
             </button>)}
           </div>
-          <div className="absolute inset-x-2 bottom-3 grid grid-cols-3 gap-2">
+          <div className="absolute inset-x-2 bottom-3 z-10 grid grid-cols-3 gap-2">
             {hotspots.map((station,i)=><button key={station.label} type="button" aria-pressed={selected===i}
               onClick={()=>setSelected(selected===i?null:i)}
               className={`min-h-12 rounded-xl border-2 border-foreground px-1 py-2 text-center text-sm font-bold shadow-md ${selected===i?"bg-primary text-primary-foreground":"bg-card/95"}`}>
               <span aria-hidden="true">{["🖥️","📋","🚪"][i]??"✦"} </span>{station.label}
             </button>)}
           </div>
-          {selected!==null && hotspots[selected] && <div className="absolute inset-x-3 top-3 z-20 mx-auto max-w-lg rounded-xl border-2 border-foreground bg-card/95 p-3 shadow-2xl" style={{maxHeight:"min(48%,340px)",overflowY:"auto"}}>
+          {selected!==null && hotspots[selected] && <div className="absolute inset-x-3 top-3 z-20 mx-auto max-w-lg rounded-xl border-2 border-foreground bg-card/95 p-3 shadow-2xl" style={{maxHeight:"min(60%,380px)",overflowY:"auto"}}>
             <div className="mb-2 flex items-start justify-between gap-2">
               <div><h3 className="font-bold text-lg">{hotspots[selected].label}</h3><p className="text-sm text-muted-foreground">{hotspots[selected].hint}</p></div>
               <button type="button" aria-label="Close actions" onClick={()=>setSelected(null)} className="min-h-10 min-w-10 rounded-lg border-2 border-foreground bg-secondary">✕</button>
