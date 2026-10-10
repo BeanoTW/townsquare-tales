@@ -407,6 +407,27 @@ export function buyAlarmAction(s: GameState): ActionDef {
   };
 }
 
+/** Food is the main interaction at the diner, independent of employment. */
+export function dinerMealAction(id: "soup" | "breakfast"): ActionDef {
+  const meal = id === "soup"
+    ? { label: "Soup & bread", cost: 9, recovery: 22 }
+    : { label: "Big breakfast", cost: 26, recovery: 65 };
+  return {
+    id: `diner-${id}`,
+    label: meal.label,
+    hours: 1,
+    energy: 0,
+    cost: meal.cost,
+    note: `+${meal.recovery} energy`,
+    resolve: (s) => s.money < meal.cost
+      ? `Need ${meal.cost} for ${meal.label.toLowerCase()}.`
+      : {
+          patch: { money: s.money - meal.cost, energy: Math.min(100, s.energy + meal.recovery) },
+          message: `${meal.label} enjoyed! You feel much better.`,
+        },
+  };
+}
+
 export const LUNCH_SHIFT: ActionDef = {
   id: "lunch-shift",
   label: "Lunch rush shift",
