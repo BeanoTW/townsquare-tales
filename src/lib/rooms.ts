@@ -212,7 +212,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         label: "Game console",
         tag: "PLAY",
         hint: "Play some games",
-        box: { x: 266, y: 138, w: 27, h: 52 },
+        box: { x: 42, y: 12, w: 48, h: 42 },
         when: (st) => st.house >= 1 && ownsFurniture(st.furniture, "console"),
         actions: () => HOME_ENTERTAINMENT.filter(a => a.furniture === "console").map(a => homeEntertainmentAction(a.id)),
       },
