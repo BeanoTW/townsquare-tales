@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
 import { DayClock } from "@/components/DayClock";
+import { playActionCue } from "@/lib/action-audio";
 import { encounterForDay } from "@/lib/world-encounters";
 import { LocationScene } from "@/components/LocationScene";
 import { EmploymentDesk } from "@/components/EmploymentDesk";
@@ -53,31 +54,32 @@ const PLACES = [
 type PlaceId = (typeof PLACES)[number]["id"];
 
 const ENCOUNTERS: { text: string; choices: { label: string; f: (s: S) => [Partial<S>, string] }[] }[] = [
-  { text: "A hobo asks for $5.", choices: [
-    { label: "Give $5", f: (s) => s.money >= 5 ? [{ money: s.money - 5, karma: s.karma + 3 }, "He blesses you. +3 karma"] : [{}, "You're broke too. You share a nod."] },
-    { label: "Rob him", f: (s) => [{ money: s.money + 3, karma: s.karma - 5 }, "You took $3 and his dignity. -5 karma"] },
-  ]},
-  { text: "A stranger in a trenchcoat offers a 'hot' watch for $40.", choices: [
-    { label: "Buy it", f: (s) => s.money >= 40 ? (Math.random() < 0.5 ? [{ money: s.money + 60, karma: s.karma - 2 }, "Flipped it for $100!"] : [{ money: s.money - 40 }, "It's plastic. -$40"]) : [{}, "You can't afford it."] },
-    { label: "Report him", f: (s) => [{ karma: s.karma + 4 }, "Cops thank you. +4 karma"] },
-  ]},
-  { text: "A tough guy bumps into you. 'Got a problem?'", choices: [
-    { label: "Fight", f: (s) => s.str >= 25 ? [{ cha: s.cha + 2, money: s.money + 15 }, "You win! He drops $15."] : [{ energy: Math.max(0, s.energy - 30) }, "You get flattened. -30 energy"] },
-    { label: "Talk it out", f: (s) => s.cha >= 20 ? [{ cha: s.cha + 3 }, "You're friends now. +3 charm"] : [{ energy: Math.max(0, s.energy - 15) }, "He slaps you anyway."] },
-  ]},
-  { text: "You find a wallet with $50 in it.", choices: [
-    { label: "Return it", f: (s) => [{ karma: s.karma + 6, cha: s.cha + 1 }, "Owner hugs you. +6 karma"] },
-    { label: "Keep cash", f: (s) => [{ money: s.money + 50, karma: s.karma - 4 }, "+$50, -4 karma"] },
-  ]},
-  { text: "A nerd asks you to help with homework.", choices: [
-    { label: "Help", f: (s) => [{ int: s.int + 2, karma: s.karma + 1 }, "+2 int, +1 karma"] },
-    { label: "Wedgie", f: (s) => [{ str: s.str + 1, karma: s.karma - 3 }, "+1 str, -3 karma. Jerk."] },
-  ]},
+ {text:"The diner owner is short on change and asks for a hand before the lunch rush.",choices:[
+  {label:"Help serve customers (1h)",f:s=>[{money:s.money+15,cha:s.cha+1},"The lunch rush clears. +$15, +1 charm."]},
+  {label:"Say you're busy",f:()=>[{},"You wish the owner luck and carry on."]}]},
+ {text:"A nervous customer outside the shop offers you a suspiciously cheap watch.",choices:[
+  {label:"Buy the watch ($40)",f:s=>s.money>=40?[{money:s.money-40,karma:s.karma-2},"The watch looks real enough. -$40, -2 karma."]:[{},"You need $40 for the watch."]},
+  {label:"Walk away",f:()=>[{},"You leave the stranger to find another customer."]}]},
+ {text:"A bar regular is arguing loudly with a friend. The atmosphere is getting tense.",choices:[
+  {label:"Calm things down",f:s=>[{cha:s.cha+2,karma:s.karma+1},"They settle down. +2 charm, +1 karma."]},
+  {label:"Join the argument",f:s=>[{karma:s.karma-2,cha:s.cha+1},"A spectacular argument. +1 charm, -2 karma."]}]},
+ {text:"Someone has dropped a wallet near the busier shops.",choices:[
+  {label:"Hand it in",f:s=>[{karma:s.karma+3,cha:s.cha+1},"The grateful owner finds you later. +3 karma, +1 charm."]},
+  {label:"Keep the cash",f:s=>[{money:s.money+50,karma:s.karma-4},"You pocket $50. -4 karma."]}]},
+ {text:"A student is struggling with homework outside Stick U.",choices:[
+  {label:"Help them study",f:s=>[{int:s.int+2,karma:s.karma+1},"They finally understand it. +2 intelligence, +1 karma."]},
+  {label:"Trade your notes ($10)",f:s=>[{money:s.money+10,karma:s.karma-1},"Sold your notes. +$10, -1 karma."]}]},
+ {text:"A colleague near MegaCorp has spotted a mistake in a report.",choices:[
+  {label:"Help correct it",f:s=>[{int:s.int+1,cha:s.cha+1},"Report saved. +1 intelligence, +1 charm."]},
+  {label:"Take credit",f:s=>[{cha:s.cha+2,karma:s.karma-2},"The boss is impressed. Your colleague isn't. +2 charm, -2 karma."]}]},
+ {text:"A stranger in the alley offers an off-the-books delivery job.",choices:[
+  {label:"Take the delivery",f:s=>[{money:s.money+65,heat:s.heat+1,karma:s.karma-2},"Paid $65, but the police noticed. +1 heat, -2 karma."]},
+  {label:"Decline",f:()=>[{},"You decide it's not worth the risk."]}]},
 ];
-
 function Game() {
   const [s, setS] = useState<S>(START);
   const [saveReady, setSaveReady] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
   const [lastEncounterDay, setLastEncounterDay] = useState<number | null>(null);
   const [log, setLog] = useState<string[]>(["Welcome to Stick Town. You live in a box. Good luck."]);
   const [place, setPlace] = useState<PlaceId | null>(null);
@@ -95,6 +97,7 @@ function Game() {
 
   const notify = (message:string,success:boolean,hours=0,changes:string[]=[]) => {
     setResult({message,success,before:s.hour,after:Math.min(24,s.hour+hours),changes});
+    playActionCue(success?"success":"failure",soundOn);
     say(message);
   };
   const act = (hours: number, energy: number, fn: (s: S) => [Partial<S>, string] | string) => {
@@ -121,12 +124,9 @@ function Game() {
     if(!encounterSpot)return;
     setPlace(null);setTab(null);setResult(null);
     // Each encounter draws from a situation suited to its location.
-    const pool = encounterSpot.id==="school" ? [4] :
-      encounterSpot.id==="work" ? [2,4] :
-      encounterSpot.id==="alley" ? [1,2] :
-      encounterSpot.id==="bar" ? [2,3] :
-      encounterSpot.id==="shop" ? [0,3] : [0,3];
-    setEnc(ENCOUNTERS[pool[s.day%pool.length]]);
+    const choices:Record<string,number>={diner:0,shop:1,bar:2,school:4,work:5,alley:6};
+    setEnc(ENCOUNTERS[choices[encounterSpot.id] ?? 3]);
+    playActionCue("encounter",soundOn);
     setEncounterDone(s.day);
   };
 
@@ -307,6 +307,7 @@ function Game() {
       {tab === "settings" && (
         <Sheet title="Settings" onClose={() => setTab(null)}>
           <p className="text-base text-muted-foreground">Tap the ground to walk. Tap a building to go inside. On a keyboard, use WASD or arrows and E to enter.</p>
+          <Btn onClick={()=>setSoundOn(v=>!v)}>🔊 Action sounds: {soundOn?"On":"Off"}</Btn>
           <Btn onClick={() => { if (confirm("Start a new life?")) { setS(START); setLastEncounterDay(null); setLog(["New life started."]); setPlace(null); setTab(null); } }}>Restart life</Btn>
         </Sheet>
       )}
