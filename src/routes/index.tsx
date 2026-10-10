@@ -14,7 +14,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { meetStreetGang, type GangMeeting } from "@/lib/street-gang";
-import { giveParkSmoke } from "@/lib/park-kid";
+import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
 
 export const Route = createFileRoute("/")({
@@ -370,12 +370,11 @@ function Game() {
       )}
 
       {parkKidOpen && !place && (
-        <Sheet title="Kid on the park bench" onClose={() => {
+        <Sheet title="Park bench regular" onClose={() => {
           setParkKidOpen(false);
           if (s.parkSmokes >= 15) setS(cur=>({...cur,parkKidGone:1}));
         }}>
-          <p className="text-lg">{s.parkSmokes === 0 ? "Psst. Got a smoke to spare?" : s.parkSmokes >= 15 ? "*cough* I feel really rough. I need to go home." : s.parkSmokes >= 10 ? "*cough* I really should stop..." : s.parkSmokes >= 2 ? "Hey, it’s you again." : "Got another?"}</p>
-          <p className="text-sm">Smokes: {s.smokes} · Handed over: {s.parkSmokes}/15 · Skateboard: {s.skateboard ? "Owned" : "Not yet"}</p>
+          <p className="text-lg">{parkKidDialogue(s.parkSmokes)}</p>
           {s.parkSmokes < 15 && <Btn onClick={() => {
             const outcome = giveParkSmoke(s);
             if (typeof outcome === "string") { notify(outcome, false); return; }
