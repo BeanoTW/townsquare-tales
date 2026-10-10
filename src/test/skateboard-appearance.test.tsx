@@ -9,7 +9,10 @@ describe("skateboard appearance",()=>{
     expect(pose).toBeInTheDocument();
     expect(pose?.getAttribute("transform")).toContain("translate(0 -9)");
     const deck=view.container.querySelector('[data-skateboard="deck"]');
-    expect(deck?.getAttribute("ry")).toBe("15");
+    expect(deck?.getAttribute("rx")).toBe("5.5");
+    expect(deck?.getAttribute("height")).toBe("42");
+    expect(deck?.getAttribute("fill")).toBe("#89949c");
+    expect(pose?.getAttribute("transform")).toContain("rotate(270)");
     expect(pose?.querySelectorAll("circle")).toHaveLength(1);
   });
   it("shows the board only when skating",()=>{
