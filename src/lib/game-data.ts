@@ -25,6 +25,7 @@ export const START: GameState = {
   furniture: 0,
   career: 0,
   xp: 0,
+  gangRep: 0, gangStage: 0,
   relMara: 0, relNox: 0, relGus: 0, relIvy: 0,
   lastMara: 0, lastNox: 0, lastGus: 0, lastIvy: 0,
 };

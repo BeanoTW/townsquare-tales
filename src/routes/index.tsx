@@ -14,6 +14,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { meetStreetGang, type GangMeeting } from "@/lib/street-gang";
+import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
 
@@ -172,6 +173,13 @@ function Game() {
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
   const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
+  // Result cards are transient, unlike dialogue that requires a player decision.
+  useEffect(() => {
+    if (!result) return;
+    const timer = window.setTimeout(() => setResult(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [result]);
+
 
   // SSR and the initial browser render must agree. Load the save only after hydration.
   useEffect(() => {
@@ -415,9 +423,14 @@ function Game() {
             </>
           ) : (
             <>
-              <p className="text-base">You've earned a conversation. They know a few dodgy ways to make a living.</p>
-              <Btn onClick={() => { perform(SELL_GOODS); setGangMeeting(null); }}>Move dodgy goods (2h)</Btn>
-              <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice ($20)</Btn>
+              <p className="text-base">{gangDialogue(s)}</p>
+              {gangAccess(s)==="initiation" && <Btn onClick={() => { perform(gangJob("gang-initiation")); setGangMeeting(null); }}>Hear them out</Btn>}
+              {["probation","trusted"].includes(gangAccess(s)) && <>
+                <Btn onClick={() => { perform(gangJob("gang-lookout")); setGangMeeting(null); }}>Keep watch</Btn>
+                <Btn onClick={() => { perform(gangJob("gang-courier")); setGangMeeting(null); }}>Take a package</Btn>
+                {gangAccess(s)==="trusted" && <Btn onClick={() => { perform(gangJob("gang-fence")); setGangMeeting(null); }}>Meet their buyer</Btn>}
+              </>}
+              <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>
             </>
           )}
