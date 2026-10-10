@@ -1,4 +1,4 @@
-export type FurnitureId = "bed" | "kitchen" | "weights" | "desk" | "sofa" | "tv";
+export type FurnitureId = "bed" | "kitchen" | "weights" | "desk" | "sofa" | "tv" | "console" | "bookshelf";
 export type FurnitureItem = { id: FurnitureId; bit: number; name: string; cost: number; benefit: string };
 export const FURNITURE: FurnitureItem[] = [
   { id: "bed", bit: 1, name: "Proper bed", cost: 180, benefit: "+25 sleep recovery" },
@@ -7,6 +7,8 @@ export const FURNITURE: FurnitureItem[] = [
   { id: "desk", bit: 8, name: "Study desk", cost: 220, benefit: "study intelligence at home" },
   { id: "sofa", bit: 16, name: "Cosy sofa", cost: 300, benefit: "relax to improve charm" },
   { id: "tv", bit: 32, name: "Television", cost: 450, benefit: "watch educational and fitness channels at home" },
+  { id: "console", bit: 64, name: "Game console", cost: 620, benefit: "play brain games and party games" },
+  { id: "bookshelf", bit: 128, name: "Bookshelf", cost: 340, benefit: "read books for intelligence and career XP" },
 ];
 export function ownsFurniture(mask: number, id: FurnitureId): boolean {
   const item = FURNITURE.find((i) => i.id === id);
