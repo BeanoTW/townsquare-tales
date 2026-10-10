@@ -239,7 +239,13 @@ export function ArcadeInterior({ room, state, feedback, onRun, onLeave }: SceneP
         <button type="button" onClick={onLeave} aria-label="Leave building" className="arcade-leave">← Leave</button>
         <div className="arcade-feedback" aria-live="polite">
           {feedback
-            ? <p key={`${feedback.message}-${state.money}`} className={feedback.success ? "arcade-result-success" : "arcade-result-failed"}>{feedback.success ? "✓ " : "! "}{feedback.message}</p>
+            ? <div key={`${feedback.message}-${state.money}`}>
+                <p className={feedback.success ? "arcade-result-success" : "arcade-result-failed"}>{feedback.success ? "✓ " : "! "}{feedback.message}</p>
+                {(feedback.changes.length > 0 || feedback.timeLine) && <div className="arcade-changes">
+                  {feedback.changes.map((change) => <span key={change}>{change}</span>)}
+                  {feedback.timeLine && <span>🕒 {feedback.timeLine}</span>}
+                </div>}
+              </div>
             : <p>Make yourself at home. Just don't touch the till.</p>}
         </div>
       </footer>
