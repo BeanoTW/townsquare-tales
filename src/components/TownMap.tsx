@@ -120,24 +120,40 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
   return (
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
-      {skating && <g data-skateboard data-facing={facing} transform={facing === "up" || facing === "down" ? "rotate(90 0 -3)" : undefined} stroke="#272737" strokeWidth={2}>
-        <rect x={-19} y={-5} width={38} height={5} rx={2.5} fill="#d99539" />
-        <circle cx={-12} cy={2} r={3} fill="#363846" />
-        <circle cx={12} cy={2} r={3} fill="#363846" />
+      {skating && <g data-skateboard data-facing={facing} stroke="#272737" strokeWidth={2}>
+        {facing === "up" || facing === "down" ? <>
+          {/* Top-down deck in perspective: never rotate a side-view board upright. */}
+          <ellipse cx={0} cy={-2} rx={7} ry={20} fill="#d99539" stroke="#272737" strokeWidth={2.5}/>
+          <path d="M-4 -14H4M-4 10H4" stroke="#e7c27c" strokeWidth={2}/>
+          <ellipse cx={-8} cy={-13} rx={2.6} ry={4} fill="#363846"/>
+          <ellipse cx={8} cy={13} rx={2.6} ry={4} fill="#363846"/>
+        </> : <>
+          <rect x={-19} y={-5} width={38} height={5} rx={2.5} fill="#d99539" />
+          <circle cx={-12} cy={2} r={3} fill="#363846" />
+          <circle cx={12} cy={2} r={3} fill="#363846" />
+        </>}
       </g>}
-      <circle cx={0} cy={(skating ? -39 : -40) + breathe} r={7} fill={head} />
-      <line x1={0} y1={-33} x2={0} y2={-16} />
-      {skating && <g data-rider-facing={facing} strokeWidth={2.3}>
-        {(facing === "up" || facing === "down") && <path d={facing === "up" ? "M-4 -37L0 -41L4 -37" : "M-4 -39L0 -35L4 -39"} />}
-      </g>}
-      <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe} />
-      <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe} />
-      {skating ? <>
-        <line x1={0} y1={-16} x2={-12} y2={-4} />
-        <line x1={0} y1={-16} x2={11} y2={-4} />
+      {skating && (facing === "up" || facing === "down") ? (
+        <g data-rider-facing={facing}>
+          {/* Narrow front/back silhouette with feet aligned lengthwise on deck. */}
+          <circle cx={0} cy={-40} r={7} fill={head}/>
+          <path d="M0 -33V-18M0 -28L-6 -23M0 -28L6 -23" strokeWidth={3.5}/>
+          <path d="M0 -18L-3 -12L-2 -6M0 -18L3 -10L2 1" strokeWidth={3.5}/>
+          {facing === "down" && <path d="M-3 -41h6" strokeWidth={2}/>}
+          {facing === "up" && <path d="M-6 -44q6 -5 12 0" strokeWidth={2.5}/>}
+        </g>
+      ) : <>
+        <circle cx={0} cy={(skating ? -39 : -40) + breathe} r={7} fill={head} />
+        <line x1={0} y1={-33} x2={0} y2={-16} />
+        <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe} />
+        <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe} />
+        {skating ? <>
+          <line x1={0} y1={-16} x2={-12} y2={-4} />
+          <line x1={0} y1={-16} x2={11} y2={-4} />
       </> : <>
         <line x1={0} y1={-16} x2={-s} y2={0} />
         <line x1={0} y1={-16} x2={s} y2={0} />
+      </>}
       </>}
     </g>
   );
