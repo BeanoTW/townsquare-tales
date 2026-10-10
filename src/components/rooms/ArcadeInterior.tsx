@@ -6,6 +6,7 @@ import type { GameState } from "@/lib/game-state";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
 import { hotspotActions, type PlaceId, type Room } from "@/lib/rooms";
 import type { Feedback } from "@/components/LocationScene";
+import { VenueScenery } from "@/components/rooms/VenueScenery";
 import "./arcade-interior.css";
 
 type SceneProps = {
@@ -43,32 +44,6 @@ function ActionChoice({ action, onRun }: { action: ActionDef; onRun: (action: Ac
       </span>
       {action.note && <span className="arcade-choice-note">{action.note}</span>}
     </button>
-  );
-}
-
-function CounterBackdrop({ attendant }: { attendant: Attendant }) {
-  return (
-    <div className="arcade-set" aria-hidden="true">
-      <div className="arcade-set-shelf">
-        <span>▣</span><span>▤</span><span>▥</span><span>▣</span>
-      </div>
-      <div className="arcade-set-sign">{attendant.title}</div>
-      <div className="arcade-npc">
-        <svg viewBox="0 0 112 150" role="presentation">
-          <ellipse cx="56" cy="143" rx="42" ry="6" fill="#272332" opacity=".25" />
-          <path d="M30 144L38 101H74L82 144" fill="#343044" stroke="#282532" strokeWidth="5" />
-          <path d="M30 111L21 140M82 111L91 139" stroke="#302d35" strokeWidth="8" strokeLinecap="round" />
-          <path d="M29 83Q56 68 83 83L77 123H35Z" fill={attendant.shirt} stroke="#292633" strokeWidth="5" />
-          <path d="M31 92L16 114M81 92L96 114" fill="none" stroke="#292633" strokeWidth="6" strokeLinecap="round" />
-          <circle cx="56" cy="49" r="28" fill="#f0cb99" stroke="#292633" strokeWidth="5" />
-          <path d="M29 44Q31 12 58 12Q83 10 85 41Q65 29 44 35L28 48Z" fill="#3b3134" stroke="#292633" strokeWidth="3" />
-          <circle cx="47" cy="51" r="2.7" fill="#292633" /><circle cx="66" cy="51" r="2.7" fill="#292633" />
-          <path d="M48 65Q56 70 65 64" stroke="#8b4e44" strokeWidth="2.5" fill="none" />
-        </svg>
-      </div>
-      <div className="arcade-till"><div className="arcade-till-screen">$$$</div></div>
-      <div className="arcade-counter-face" />
-    </div>
   );
 }
 
@@ -309,13 +284,13 @@ export function ArcadeInterior({ room, state, feedback, onRun, onLeave }: SceneP
   } as CSSProperties;
 
   return (
-    <div className="arcade-interior absolute inset-0 z-20 flex flex-col overflow-hidden bg-card font-hand" style={style} data-room={room.id}>
+    <div className={`arcade-interior arcade-room-${room.id} absolute inset-0 z-20 flex flex-col overflow-hidden bg-card font-hand`} style={style} data-room={room.id}>
       <header className="arcade-header">
         <p>Town Square Tales · Inside</p>
         <h2>{room.title}</h2>
       </header>
       <div className="arcade-stage">
-        <CounterBackdrop attendant={attendant} />
+        <VenueScenery room={room} shirt={attendant.shirt} title={attendant.title} />
         <section className="arcade-dialog" aria-label={`${room.title} interaction`}>
           <div className="arcade-dialog-heading">
             <div className="arcade-avatar" aria-hidden="true">{attendant.prop}</div>
