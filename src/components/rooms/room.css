@@ -1,0 +1,175 @@
+/* Interior scene: hotspot affordances, floating panels and ambient motion. */
+
+.room-hotspot {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.room-hotspot .room-outline {
+  fill: rgba(255, 255, 255, 0.14);
+  stroke: #25242a;
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.room-hotspot:hover .room-outline,
+.room-hotspot:focus-visible .room-outline,
+.room-hotspot.is-selected .room-outline {
+  opacity: 1;
+}
+.room-hotspot:focus-visible .room-outline {
+  stroke: #ffd166;
+  stroke-width: 4;
+}
+.room-hotspot.is-selected .room-outline {
+  stroke-dasharray: none;
+}
+
+.room-bob {
+  animation: room-bob 2.4s ease-in-out infinite;
+}
+.room-flicker {
+  animation: room-flicker 3.2s steps(2, end) infinite;
+}
+.room-sway {
+  animation: room-sway 4.5s ease-in-out infinite;
+}
+
+@keyframes room-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes room-flicker {
+  0%,
+  92% {
+    opacity: 1;
+  }
+  93%,
+  96% {
+    opacity: 0.6;
+  }
+  97%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes room-sway {
+  0%,
+  100% {
+    transform: rotate(-1.2deg);
+  }
+  50% {
+    transform: rotate(1.2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-bob,
+  .room-flicker,
+  .room-sway {
+    animation: none;
+  }
+  .room-hotspot .room-outline {
+    transition: none;
+  }
+}
+
+/* Floating action panel over the room; positioned in JS from the hotspot box. */
+.room-panel {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 2px solid #25242a;
+  border-radius: 14px;
+  background: rgba(255, 252, 240, 0.97);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.room-panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.room-panel-hint {
+  font-size: 0.85rem;
+  color: #5b5963;
+}
+.room-panel-line {
+  font-size: 0.85rem;
+  color: #3a3942;
+}
+.room-action {
+  display: flex;
+  min-height: 44px;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 2px solid #25242a;
+  border-radius: 10px;
+  background: #f1e6c8;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.room-action:hover,
+.room-action:focus-visible {
+  background: #ffd166;
+}
+.room-action:active {
+  transform: translateY(1px);
+}
+.room-action-meta {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #4a4855;
+}
+.room-action-note {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #6a6772;
+}
+.room-close {
+  min-width: 40px;
+  min-height: 40px;
+  border: 2px solid #25242a;
+  border-radius: 10px;
+  background: #e6d8ba;
+  font-weight: 700;
+}
+
+/* On short landscape screens, drop the caption so the room gets the height. */
+@media (max-height: 520px) {
+  .room-caption {
+    display: none;
+  }
+}
+
+/* Room sign: painted in the wall band above the artwork when the screen is tall. */
+.room-sign {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border: 2px solid #25242a;
+  border-radius: 6px;
+  background: var(--room-accent, #8c5844);
+  color: #fff8e6;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+}
