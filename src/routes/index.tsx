@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
-import { DEV_SAVE_VERSION, DEV_SAVE_VERSION_KEY, GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
+import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -189,7 +189,6 @@ function Game() {
         window.localStorage.removeItem("sticktown");
         window.localStorage.removeItem(GOD_SAVE_KEY);
         window.localStorage.removeItem(GOD_ENABLED_KEY);
-        window.localStorage.removeItem(DEV_SAVE_VERSION_KEY);
         window.localStorage.setItem("sticktown-save-reset-v3", "done");
       }
     } catch { /* In private browsing we still begin from START. */ }
@@ -226,10 +225,7 @@ function Game() {
       saveGame(s);
       let sandbox = parseGodSave(null, s);
       try {
-        sandbox = window.localStorage.getItem(DEV_SAVE_VERSION_KEY) === DEV_SAVE_VERSION
-          ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s)
-          : parseGodSave(null, s);
-        window.localStorage.setItem(DEV_SAVE_VERSION_KEY, DEV_SAVE_VERSION);
+        sandbox = parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s);
         window.localStorage.setItem(GOD_ENABLED_KEY, "true");
       } catch { /* Continue with a fresh sandbox if storage is disabled. */ }
       setS(sandbox);
