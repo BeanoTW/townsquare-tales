@@ -448,6 +448,7 @@ function Game() {
           key={place}
           room={roomFor(place, s)}
           state={s}
+          godMode={godMode}
           feedback={result}
           onRun={perform}
           onLeave={close}
