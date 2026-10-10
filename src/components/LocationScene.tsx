@@ -140,7 +140,7 @@ function ObjectLocationScene({
 
       <div
         ref={stageRef}
-        className="relative min-h-0 flex-1 overflow-hidden border-y-2 border-foreground"
+        className="room-stage relative min-h-0 flex-1 overflow-hidden border-y-2 border-foreground"
         style={stageStyle}
         onClick={(e) => {
           if (!(e.target as Element).closest("[data-hotspot],[data-panel]")) setSelectedId(null);
@@ -151,7 +151,7 @@ function ObjectLocationScene({
             {room.sign}
           </div>
         )}
-        <div className="absolute" style={{ left: fit.x, top: fit.y, width: fit.w, height: fit.h }}>
+        <div className="room-art-frame absolute" style={{ left: fit.x, top: fit.y, width: fit.w, height: fit.h }}>
           <RoomArt
             room={room}
             state={state}

@@ -79,18 +79,6 @@ function Label({
     </text>
   );
 }
-function Window({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
-  return (
-    <g>
-      <R x={x} y={y} w={w} h={h} fill="#cfe9f2" rx={2} />
-      <path
-        d={`M${x + w / 2} ${y}V${y + h}M${x} ${y + h / 2}H${x + w}`}
-        stroke={INK}
-        strokeWidth={3}
-      />
-    </g>
-  );
-}
 function Plant({ x, y }: { x: number; y: number }) {
   return (
     <g className="room-sway" style={{ transformOrigin: `${x}px ${y + 40}px` }}>
@@ -374,84 +362,108 @@ function Backdrop({
   );
 }
 
+
+/** A square rear wall and vertical corners replace the old inward-collapsing trapezoid. */
+function RoomShell({ back, side, dark, floor, trim }: { back: string; side: string; dark: string; floor: string; trim: string }) {
+  return <g data-room-shell="square" pointerEvents="none">
+    <rect width="420" height="300" fill={side}/>
+    <rect x="34" y="0" width="352" height="170" fill={back} data-back-wall="upright"/>
+    <path d="M0 0H34V170L0 220Z" fill={side}/>
+    <path d="M386 0H420V220L386 170Z" fill={dark}/>
+    <path d="M0 300L34 170H386L420 300Z" fill={floor}/>
+    <path d="M34 0V170H386V0" stroke={trim} strokeOpacity=".5" strokeWidth="3" fill="none"/>
+    <path d="M34 170H386" stroke={trim} strokeOpacity=".55" strokeWidth="5"/>
+    <path d="M23 218H397M11 259H409" stroke={trim} strokeOpacity=".16" strokeWidth="2"/>
+    <path d="M114 170L79 300M210 170V300M306 170L341 300" stroke={trim} strokeOpacity=".11" strokeWidth="2"/>
+    <ellipse cx="210" cy="270" rx="170" ry="24" fill={dark} opacity=".13"/>
+  </g>;
+}
+
+/** Background people and props are scenery only; the existing hotspots stay interactive. */
 function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
-  if (room.id === "casino") {
-    return (
-      <g data-scene-depth="casino">
-        <rect width="420" height="300" fill="#392b55"/>
-        <path d="M0 0H420L365 168H55Z" fill="#654c82"/>
-        <path d="M0 0L55 168V230L0 300Z" fill="#302744"/>
-        <path d="M420 0L365 168V230L420 300Z" fill="#37274d"/>
-        <path d="M0 300L55 168H365L420 300Z" fill="#4d365f" stroke="#20182e" strokeWidth="5"/>
-        {[178,203,238,278].map((y)=><path key={y} d={`M${55-(y-168)*.417} ${y}H${365+(y-168)*.417}`} stroke="#bb8f62" strokeOpacity=".42" strokeWidth="3"/>)}
-        {[0,105,210,315,420].map((x)=><path key={x} d={`M210 168L${x} 300`} stroke="#bb8f62" strokeOpacity=".36" strokeWidth="2"/>)}
-        <path d="M10 20H410" stroke="#f5bd55" strokeWidth="8" strokeOpacity=".7"/>
-        {[55,355].map((x)=><g key={x}><path d={`M${x} 14V55`} stroke="#e0b77f" strokeWidth="5"/><path d={`M${x-20} 65L${x-10} 48H${x+10}L${x+20} 65Z`} fill="#f9d087" stroke="#4b3150" strokeWidth="3"/><ellipse cx={x} cy={69} rx="18" ry="5" fill="#f4b965" opacity=".35"/></g>)}
-        <rect x="175" y="16" width="83" height="37" rx="7" fill="#312340" stroke="#ffe28e" strokeWidth="4"/>
-        <text x="216" y="42" textAnchor="middle" fontWeight="bold" fontSize="21" fill="#ffdc75">777</text>
-        <ellipse cx="220" cy="270" rx="160" ry="27" fill="#d0a350" opacity=".16"/>
-      </g>
-    );
-  }
-  if (room.id === "gym") {
-    return <g data-scene-depth="gym">
-      <rect width="420" height="300" fill="#667b85"/>
-      <path d="M0 0H420L362 164H58Z" fill="#a1bac0"/>
-      <path d="M0 0L58 164L0 300Z" fill="#657f89"/>
-      <path d="M420 0L362 164L420 300Z" fill="#536a76"/>
-      <path d="M0 300L58 164H362L420 300Z" fill="#465560" stroke="#29333a" strokeWidth="5"/>
-      {[174,197,229,269].map(y=><path key={y} d={`M${58-(y-164)*.44} ${y}H${362+(y-164)*.44}`} stroke="#9bafb4" strokeOpacity=".25" strokeWidth="3"/>)}
-      {[0,105,210,315,420].map(x=><path key={x} d={`M210 164L${x} 300`} stroke="#8c9ea5" strokeOpacity=".2" strokeWidth="2"/>)}
-      <path d="M11 17H409" stroke="#29333a" strokeWidth="9"/>
-      <rect x="161" y="18" width="95" height="45" rx="5" fill="#292f39" stroke="#e7bc55" strokeWidth="4"/>
-      <text x="208" y="37" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#f1d37a">IRON GYM</text>
-      <text x="208" y="52" textAnchor="middle" fontSize="9" fill="#e1dfd7">NO EXCUSES</text>
-      <path d="M34 18V105M142 18V105" stroke="#dee4e8" strokeWidth="6"/>
-      <rect x="37" y="20" width="103" height="77" fill="#b8d6da" stroke="#3f535d" strokeWidth="3"/>
-      <path d="M39 52H138" stroke="#8cbdc9" strokeWidth="3"/>
-      <rect x="292" y="24" width="98" height="113" rx="2" fill="#e5d1a0" stroke="#29333a" strokeWidth="4"/>
-      <path d="M309 42L355 118M370 42L323 121" stroke="#b65545" strokeWidth="8"/>
-      <text x="342" y="86" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#2b3038">PUSH</text>
-      <text x="342" y="101" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#2b3038">HARDER</text>
-      <ellipse cx="205" cy="267" rx="174" ry="24" fill="#1f2b33" opacity=".2"/>
-    </g>;
-  }
-  if (room.id !== "home") return null;
-  const cardboard = house === 0;
-  const rich = house >= 3;
-  const wall = cardboard ? "#9c7957" : house === 1 ? "#d7c8b1" : house === 2 ? "#b8d7c3" : "#eee3cb";
-  const floor = cardboard ? "#897b65" : house === 1 ? "#b28b6d" : house === 2 ? "#a68061" : "#947152";
-  return (
-    <g data-scene-depth={`home-${house}`}>
-      <rect width="420" height="300" fill={wall}/>
-      <path d="M0 0L64 166H356L420 0Z" fill={wall}/>
-      <path d="M0 0L64 166L0 300Z" fill={cardboard?"#796047":"#a38c76"}/>
-      <path d="M420 0L356 166L420 300Z" fill={cardboard?"#86694e":"#b4a58f"}/>
-      <path d="M0 300L64 166H356L420 300Z" fill={floor} stroke="#49392f" strokeWidth="4"/>
-      {[178,215,267].map((y)=><path key={y} d={`M${64-(y-166)*.48} ${y}H${356+(y-166)*.48}`} stroke="#47362c" strokeOpacity=".23" strokeWidth="3"/>)}
-      {[0,140,280,420].map((x)=><path key={x} d={`M210 166L${x} 300`} stroke="#49392f" strokeOpacity=".17" strokeWidth="2"/>)}
-      {cardboard ? (
-        <g>
-          <path d="M9 22L96 33L105 144L20 151Z" fill="#ae8660" stroke="#684d39" strokeWidth="4"/>
-          <path d="M22 52H94M24 82H100M27 109H100" stroke="#785d45" strokeWidth="2" strokeDasharray="3 6"/>
-          <path d="M295 20L398 34L391 145L295 139Z" fill="#b09068" stroke="#6b513c" strokeWidth="4"/>
-          <path d="M330 24L324 139" stroke="#e6c99e" strokeWidth="9" opacity=".8"/>
-          <path d="M144 27L275 23L252 90L163 91Z" fill="#7792a1" stroke="#71573f" strokeWidth="5"/>
-          <path d="M159 37L247 41L233 71H169Z" fill="#a8bfc0" opacity=".6"/>
-          <path d="M196 28V89" stroke="#d4bc8e" strokeWidth="6"/>
-          <text x="210" y="125" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#6d4b38">MAKESHIFT SHELTER</text>
-        </g>
-      ) : (
-        <g>
-          <rect x={rich?157:179} y={rich?18:34} width={rich?109:80} height={rich?112:72} rx="3" fill="#cae4ed" stroke="#705b4b" strokeWidth="7"/>
-          <path d={rich?"M212 18V130M157 74H266":"M219 34V106M179 70H259"} stroke="#705b4b" strokeWidth="5"/>
-          <path d="M24 16H109V63H24Z" fill={rich?"#dbbc78":"#d7ba86"} stroke="#75604b" strokeWidth="5"/>
-          <path d="M35 27L93 52M94 27L36 52" stroke="#967b64" strokeWidth="3"/>
-          {rich && <g><path d="M210 0V34" stroke="#987344" strokeWidth="5"/><path d="M175 36Q210 65 245 36Z" fill="#f3d899" stroke="#876c4c" strokeWidth="4"/><circle cx="210" cy="50" r="8" fill="#fff0b9"/></g>}
-        </g>
-      )}
+  if (room.id === "casino") return <g data-scene-depth="casino" pointerEvents="none">
+    <RoomShell back="#5b4674" side="#493659" dark="#32253f" floor="#4a3659" trim="#cfac7d"/>
+    <path d="M34 25H386" stroke="#edba65" strokeWidth="7" opacity=".75"/>
+    {[71,347].map(x=><g key={x}>
+      <path d={"M"+x+" 25V54"} stroke="#e0bb82" strokeWidth="5"/>
+      <path d={"M"+(x-17)+" 67L"+(x-9)+" 51H"+(x+9)+"L"+(x+17)+" 67Z"} fill="#edc381" stroke="#493353" strokeWidth="3"/>
+      <ellipse cx={x} cy="75" rx="37" ry="9" fill="#f3cf8a" opacity=".2"/>
+    </g>)}
+    <rect x="173" y="18" width="77" height="41" rx="7" fill="#32263f" stroke="#ffdd8b" strokeWidth="4"/>
+    <text x="211" y="46" textAnchor="middle" fontWeight="bold" fontSize="24" fill="#f9d978">777</text>
+    {/* A row of older machines makes the casino feel occupied, not like a two-object set. */}
+    {[40,92,318,368].map((x,i)=><g key={x} opacity={i===1||i===2?.55:.78}>
+      <rect x={x} y="93" width="35" height="67" rx="5" fill="#402941" stroke="#2c2138" strokeWidth="3"/>
+      <rect x={x+5} y="102" width="25" height="29" rx="3" fill={i%2?"#a0caba":"#e9b4d4"} stroke="#d9a36c" strokeWidth="2"/>
+      <text x={x+17} y="122" textAnchor="middle" fontSize="15" fontWeight="bold" fill="#a03e66">7</text>
+      <circle cx={x+17} cy="146" r="4" fill="#ffdc85"/>
+    </g>)}
+    <g data-casino-regular transform="translate(330 125)">
+      <ellipse cx="0" cy="40" rx="27" ry="7" fill="#201b2b" opacity=".3"/>
+      <path d="M-24 12Q0 2 23 12L28 41H-30Z" fill="#28232d" stroke="#2a2333" strokeWidth="3"/>
+      <circle cy="-3" r="15" fill="#b18a71" stroke="#29212b" strokeWidth="3"/>
+      <path d="M-15 -5Q-18 -23 1 -22Q19 -21 16 -5L4 -13L-12 -6Z" fill="#302833"/>
+      <path d="M-10 -5L-2 -2M4 -3L11 -6M-5 7H6" stroke="#382a33" strokeWidth="3"/>
     </g>
-  );
+    <ellipse cx="195" cy="265" rx="135" ry="19" fill="#ffd586" opacity=".09"/>
+  </g>;
+
+  if (room.id === "gym") return <g data-scene-depth="gym" pointerEvents="none">
+    <RoomShell back="#a4bcc0" side="#77929a" dark="#546e79" floor="#465763" trim="#a1b7bb"/>
+    <rect x="42" y="29" width="102" height="84" fill="#a6c9d1" stroke="#3c5059" strokeWidth="6"/>
+    <path d="M51 35L71 104M113 36L131 86" stroke="#e5f1f0" strokeOpacity=".5" strokeWidth="7"/>
+    <path d="M148 10H266" stroke="#e9efec" strokeWidth="7" strokeLinecap="round"/>
+    <rect x="158" y="21" width="103" height="42" rx="4" fill="#2b313a" stroke="#e2b857" strokeWidth="4"/>
+    <text x="209" y="42" fontSize="14" fontWeight="bold" fill="#f8d87c" textAnchor="middle">IRON GYM</text>
+    <text x="209" y="55" fontSize="9" fill="#eee5d8" textAnchor="middle">NO EXCUSES</text>
+    <rect x="292" y="27" width="94" height="101" fill="#e3cfa5" stroke="#343e45" strokeWidth="4"/>
+    <path d="M308 44L371 110M372 44L309 110" stroke="#b9564b" strokeWidth="7"/>
+    <text x="340" y="82" fontWeight="bold" fontSize="14" textAnchor="middle" fill="#2b353c">PUSH</text>
+    <text x="340" y="98" fontWeight="bold" fontSize="14" textAnchor="middle" fill="#2b353c">HARDER</text>
+    <g data-gym-trainer transform="translate(204 123)">
+      <ellipse cy="38" rx="28" ry="6" fill="#28333b" opacity=".3"/>
+      <path d="M-20 10L-27 38H27L20 10Z" fill="#3d3d42" stroke="#293039" strokeWidth="4"/>
+      <path d="M-20 16L-29 32M20 16L29 32" stroke="#b99076" strokeWidth="8" strokeLinecap="round"/>
+      <circle cy="-6" r="16" fill="#bf8e73" stroke="#293039" strokeWidth="3"/>
+      <path d="M-16 -7Q-15 -30 5 -24Q19 -21 16 -6L2 -17L-15 -9Z" fill="#252b30"/>
+      <path d="M-11 -7L-3 -3M3 -3L11 -7M-6 5H6" stroke="#332d2f" strokeWidth="3"/>
+    </g>
+    <path d="M271 65V77" stroke="#31363b" strokeWidth="5"/>
+    <rect x="258" y="77" width="26" height="59" rx="11" fill="#7e454b" stroke="#30343c" strokeWidth="4"/>
+    <path d="M259 100H283M259 117H283" stroke="#ad7774" strokeWidth="3"/>
+    <path d="M39 157H107" stroke="#303940" strokeWidth="6"/>
+    {[51,66,81].map((x,i)=><circle key={x} cx={x} cy="154" r={11-i*2} fill="#2d353d" stroke="#aebbc0" strokeWidth="3"/>)}
+  </g>;
+
+  if (room.id !== "home") return null;
+  const cardboard=house===0;
+  const rich=house>=3;
+  const wall=cardboard?"#ad8a68":house===1?"#d9c9b0":house===2?"#b7d3c0":"#eee1c9";
+  return <g data-scene-depth={["home",house].join("-")} pointerEvents="none">
+    <RoomShell back={wall} side={cardboard?"#876a51":"#b4a18e"} dark={cardboard?"#795b46":"#998673"}
+      floor={cardboard?"#91836d":house===1?"#b28b6d":house===2?"#a58060":"#987356"} trim="#745d4c"/>
+    {cardboard?<g>
+      <rect x="39" y="22" width="97" height="140" fill="#b38e69" stroke="#725640" strokeWidth="4"/>
+      <path d="M46 59H132M46 105H132M54 26V154M122 26V154" stroke="#765941" strokeWidth="2" strokeDasharray="4 5" opacity=".7"/>
+      <rect x="296" y="20" width="86" height="140" fill="#b89472" stroke="#785941" strokeWidth="4"/>
+      <path d="M339 23V157" stroke="#e1c99f" strokeWidth="8" opacity=".75"/>
+      <rect x="162" y="24" width="105" height="82" fill="#7597a6" stroke="#74573f" strokeWidth="6"/>
+      <rect x="170" y="33" width="89" height="64" fill="#a5c3ca" opacity=".7"/>
+      <path d="M213 27V104" stroke="#ddc598" strokeWidth="6"/>
+      <path d="M150 111L163 104L178 110M277 130L284 143L274 153" fill="none" stroke="#816650" strokeWidth="3"/>
+      <path d="M181 166L192 140H232L245 166Z" fill="#71604e" stroke="#594638" strokeWidth="3"/>
+      <rect x="195" y="138" width="31" height="17" rx="2" fill="#d2b88c" stroke="#705743" strokeWidth="2"/>
+      <path d="M173 175L187 168M240 166L254 177" stroke="#705640" strokeWidth="3"/>
+    </g>:<g>
+      <rect x={rich?157:176} y={rich?18:35} width={rich?108:85} height={rich?112:79} fill="#c7e1e5" stroke="#79604d" strokeWidth="7"/>
+      <path d={rich?"M211 18V130M157 74H265":"M218 35V114M176 74H261"} stroke="#79604d" strokeWidth="5"/>
+      <rect x="49" y="30" width="81" height="48" fill="#dbc69f" stroke="#866e52" strokeWidth="4"/>
+      <path d="M63 41L116 64M116 41L63 64" stroke="#a78a6d" strokeWidth="3"/>
+      <rect x="299" y="72" width="75" height="84" fill="#a88a69" stroke="#69533e" strokeWidth="4"/>
+      <path d="M306 105H365M306 130H365" stroke="#dac298" strokeWidth="4"/>
+      {rich&&<g><path d="M210 0V31" stroke="#92754b" strokeWidth="4"/><path d="M175 34Q210 62 245 34Z" fill="#f0d18b" stroke="#876d4b" strokeWidth="4"/><circle cx="210" cy="48" r="7" fill="#fff4ba"/></g>}
+    </g>}
+  </g>;
 }
 
 /* ---------- Per-room decor. Every object is placed inside its hotspot box. ---------- */
@@ -462,7 +474,6 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
       const bedOwned = ownsFurniture(state.furniture, "bed");
       return (
         <g>
-          {state.house > 0 && <Window x={196} y={44} w={84} h={62} />}
           {bedOwned ? (
             <g>
               <path d="M13 142L130 142L145 171H20Z" fill="#64473b" stroke={INK} strokeWidth="4"/>
@@ -473,12 +484,13 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
             </g>
           ) : state.house === 0 ? (
             <g data-makeshift-sleep>
-              <path d="M11 165L37 134H126L146 165L113 191H19Z" fill="#a8815a" stroke={INK} strokeWidth="3"/>
-              <path d="M15 161L39 143H117L136 160L111 176H23Z" fill="#d7bd91" stroke="#785a45" strokeWidth="3"/>
-              <path d="M29 152L57 140H98L121 160L96 173H27Z" fill="#7b8d8c" stroke={INK} strokeWidth="3"/>
-              <path d="M39 150L64 141H95L105 150L85 156H36Z" fill="#e7d7b4" stroke={INK} strokeWidth="2"/>
-              <path d="M11 165L36 175L28 191" stroke="#74573c" strokeWidth="3" fill="none"/>
-              <path d="M117 160L135 153L145 166" stroke="#71533b" strokeWidth="3" fill="none"/>
+              <ellipse cx="79" cy="188" rx="73" ry="13" fill="#514638" opacity=".24"/>
+              <path d="M11 168L36 137H122L147 165L116 191H19Z" fill="#84694f" stroke={INK} strokeWidth="3"/>
+              <path d="M15 162L39 141H118L139 160L113 181H22Z" fill="#ccb48a" stroke="#80624a" strokeWidth="3"/>
+              <path d="M24 156L46 145H112L130 162L104 178H24Z" fill="#768b8d" stroke="#38434a" strokeWidth="2"/>
+              <path d="M33 150L54 138H90L111 151L90 162H29Z" fill="#e9dec6" stroke={INK} strokeWidth="2"/>
+              <path d="M33 152Q48 157 66 155" stroke="#cbb9a0" strokeWidth="2" fill="none"/>
+              <path d="M22 173L17 184M119 181L130 188" stroke="#79614b" strokeWidth="3"/>
             </g>
           ) : (
             <g data-basic-mattress>
