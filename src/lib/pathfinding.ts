@@ -41,11 +41,13 @@ export function findRoute(start: Point, goal: Point, obstacles: Obstacle[]): Poi
   let head=0,tail=1; queue[0]=startId;visited[startId]=1;
   let nearest=startId, distance=manhattan(openStart,desired);
   while(head<tail) {
-    const id=queue[head++], x=id%SIZE, y=Math.floor(id/SIZE);
+    const id=queue[head++];
+    if (id === undefined) break;
+    const x=id%SIZE, y=Math.floor(id/SIZE);
     const dist=manhattan({x,y},desired);
     if(dist<distance) { nearest=id;distance=dist; }
     if(dist===0) {nearest=id;break;}
-    for(const [nx,ny] of [[x+1,y],[x-1,y],[x,y+1],[x,y-1]]) {
+    for(const [nx,ny] of [[x+1,y],[x-1,y],[x,y+1],[x,y-1]] as const) {
       if(!permitted(nx,ny))continue;
       const next=key(nx,ny);
       if(visited[next])continue;
@@ -54,13 +56,14 @@ export function findRoute(start: Point, goal: Point, obstacles: Obstacle[]): Poi
   }
   if(nearest===startId) return [];
   const route:Point[]=[];
-  for(let id=nearest;id!==startId;id=parent[id]) {
+  for(let id=nearest;id!==startId;id=parent[id] ?? -1) {
     if(id<0) return [];
     route.push(fromKey(id));
   }
   route.reverse();
   // Keep actual turn points: the last waypoint is the reachable goal.
-  return route.filter((p,i) => i===route.length-1 ||
-    i===0 || (route[i-1].x-p.x !== p.x-route[i+1].x) ||
-             (route[i-1].y-p.y !== p.y-route[i+1].y));
+  return route.filter((p,i) => {
+    const before=route[i-1], after=route[i+1];
+    return !before || !after || before.x-p.x !== p.x-after.x || before.y-p.y !== p.y-after.y;
+  });
 }

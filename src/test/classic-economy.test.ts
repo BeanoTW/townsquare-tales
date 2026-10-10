@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseGame, type GameState } from "@/lib/game-state";
-const fallback: GameState = {day:1,hour:8,energy:100,money:20,str:5,int:5,cha:5,karma:0,house:0,school:0,job:0,heat:0,bank:0,snacks:0,trainers:0,alarm:0};
+const fallback: GameState = {day:1,hour:8,energy:100,money:20,str:5,int:5,cha:5,karma:0,house:0,school:0,job:0,heat:0,bank:0,snacks:0,trainers:0,alarm:0,furniture:0};
 describe("classic economy persistence", () => {
   it("migrates old saves with no economy fields", () => {
     const old = JSON.stringify({day:7,money:500,house:1});
