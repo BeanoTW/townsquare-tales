@@ -332,7 +332,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   // depth-sorted drawables
   const items: { key: number; el: React.ReactNode }[] = [];
   bs.forEach((b) => items.push({ key: (b.y + b.d) * 100 + b.x, el: (
-    <g key={b.id} data-world-interactive onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
+    <g key={b.id} data-world-interactive role="button" tabIndex={0} aria-label={`Enter ${b.label}`} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();routeTo(door(b),b.id);}}} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
       <BuildingExterior b={b} night={night} />
     </g>) }));
   TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
@@ -376,7 +376,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       <g key="street-gang" role="button" tabIndex={0} aria-label="Approach the street gang"
         className="cursor-pointer" data-street-gang
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT, "gang"); }}
-        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT); } }}>
+        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT, "gang"); } }}>
         <g transform={`translate(${gx} ${gy}) scale(0.4)`}>
           {/* A casual hangout on the grass. The seat belongs to the park, not a raised platform. */}
           <ellipse cx="0" cy="6" rx="62" ry="10" fill="#27372f" opacity=".16"/>
@@ -440,7 +440,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
     const px=e.x+sway;
     const [sx,sy]=P(px,e.y);
-    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer" role="button" aria-label={e.hint} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();onEncounter?.();}}} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
         <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
         <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">
