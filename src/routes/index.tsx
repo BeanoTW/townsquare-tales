@@ -155,6 +155,7 @@ function Game() {
   const [s, setS] = useState<S>(START);
   const [saveReady, setSaveReady] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+  const [movementMode, setMovementMode] = useState<"joystick" | "tap">("joystick");
   const [log, setLog] = useState<string[]>([
     "Welcome to Stick Town. You live in a box. Good luck.",
   ]);
@@ -170,6 +171,9 @@ function Game() {
   // SSR and the initial browser render must agree. Load the save only after hydration.
   useEffect(() => {
     setS(loadGame(START));
+    try {
+      setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
+    } catch { /* Private browsing still supports the default floating joystick. */ }
     setSaveReady(true);
   }, []);
   // Never overwrite a player's existing save with SSR defaults during hydration.
@@ -177,6 +181,10 @@ function Game() {
     if (saveReady) saveGame(s);
   }, [s, saveReady]);
 
+  const selectMovement = (mode: "joystick" | "tap") => {
+    setMovementMode(mode);
+    try { window.localStorage.setItem("sticktown-movement", mode); } catch { /* Preferences stay in memory. */ }
+  };
   const say = (m: string) => setLog((l) => [m, ...l].slice(0, 30));
 
   const notify = (message: string, success: boolean, hours = 0, changes: string[] = []) => {
@@ -279,6 +287,7 @@ function Game() {
   return (
     <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
       <TownMap
+        movementMode={movementMode}
         hour={s.hour}
         house={s.house}
         speed={s.skateboard && s.skateboardEquipped ? 1.5 : s.trainers ? 1.35 : 1}
@@ -490,8 +499,23 @@ function Game() {
       {tab === "settings" && (
         <Sheet title="Settings" onClose={() => setTab(null)}>
           <p className="text-base text-muted-foreground">
-            Tap the ground to walk. Tap a building to go inside. In a building, tap an object to
-            act. Escape closes a panel, then leaves.
+            Move using your chosen control. Tap buildings and characters to interact. Inside, tap an object to act.
+          </p>
+          <p className="text-base font-bold">Movement controls</p>
+          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Movement controls">
+            <button type="button" aria-pressed={movementMode === "joystick"} onClick={() => selectMovement("joystick")}
+              className={`min-h-12 rounded border-2 border-foreground p-2 font-bold ${movementMode === "joystick" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+              Floating joystick
+            </button>
+            <button type="button" aria-pressed={movementMode === "tap"} onClick={() => selectMovement("tap")}
+              className={`min-h-12 rounded border-2 border-foreground p-2 font-bold ${movementMode === "tap" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+              Tap to walk
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {movementMode === "joystick"
+              ? "Touch open ground anywhere and drag your thumb. Release to stop. Tapping buildings still works."
+              : "Tap open ground to walk there. Drag controls are disabled."}
           </p>
           <Btn onClick={() => setSoundOn((v) => !v)}>
             🔊 Action sounds: {soundOn ? "On" : "Off"}
