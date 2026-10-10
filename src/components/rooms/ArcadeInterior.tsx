@@ -19,18 +19,18 @@ type SceneProps = {
 
 type Attendant = { title: string; name: string; greeting: string; shirt: string; accent: string; prop: string };
 const STAFF: Partial<Record<PlaceId, Attendant>> = {
-  shop: { title: "CORNER SHOP", name: "The shopkeeper", greeting: "Welcome in! Take a spin, have a look. No refunds on eaten snacks.", shirt: "#a63f38", accent: "#e0c176", prop: "🏷️" },
-  bank: { title: "TOWN BANK", name: "Bank teller", greeting: "Good day. Your money is in capable hands. Probably.", shirt: "#426c59", accent: "#c9dcbb", prop: "💵" },
-  school: { title: "STICK U", name: "Admissions officer", greeting: "The price of knowledge is on the board. The debt is yours.", shirt: "#547b62", accent: "#e5ca86", prop: "📚" },
-  work: { title: "MEGACORP", name: "Receptionist", greeting: "Welcome to MegaCorp. Your time is extremely valuable to us.", shirt: "#47759b", accent: "#d2deeb", prop: "💼" },
-  yard: { title: "WORKERS YARD", name: "Site foreman", greeting: "Morning! Boots on. The job won't build itself.", shirt: "#c48f35", accent: "#f3d281", prop: "🦺" },
-  diner: { title: "FRYDAY DINER", name: "Counter cook", greeting: "Grab a booth, grab a bite. The grill's already hot.", shirt: "#c94f4a", accent: "#f9d5ad", prop: "🍳" },
-  bar: { title: "THE TIPSY STICK", name: "Bartender", greeting: "What'll it be? Good company costs extra.", shirt: "#83416f", accent: "#d9a7d5", prop: "🍹" },
-  pawn: { title: "ODDITIES PAWN", name: "Pawn broker", greeting: "Show me what you've got. I might be interested.", shirt: "#8a7145", accent: "#d9ce9c", prop: "💎" },
-  clinic: { title: "PATCH UP CLINIC", name: "Doctor", greeting: "You look terrible. Luckily, we accept cash.", shirt: "#69a89d", accent: "#dbefe1", prop: "🩹" },
-  depot: { title: "TOWN TRANSIT", name: "Ticket clerk", greeting: "Next departure? We'll let you know when there's one.", shirt: "#366c7b", accent: "#c2e0e3", prop: "🚌" },
-  police: { title: "TOWN POLICE", name: "Desk sergeant", greeting: "Keep your nose clean. We've got paperwork to do.", shirt: "#355e88", accent: "#c4d0df", prop: "👮" },
-  furniture: { title: "COSY CORNER", name: "Sales assistant", greeting: "Make your home a home. We deliver immediately.", shirt: "#ad735b", accent: "#f0d9bc", prop: "🛋️" },
+  shop: { title: "CORNER SHOP", name: "The shopkeeper", greeting: "What d’you want? Prices are on the shelf. Don’t waste my time.", shirt: "#a63f38", accent: "#e0c176", prop: "🏷️" },
+  bank: { title: "TOWN BANK", name: "Bank teller", greeting: "Cash or savings? Make it quick. There’s a queue.", shirt: "#426c59", accent: "#c9dcbb", prop: "💵" },
+  school: { title: "STICK U", name: "Admissions officer", greeting: "You want qualifications? Better be ready to work for them.", shirt: "#547b62", accent: "#e5ca86", prop: "📚" },
+  work: { title: "MEGACORP", name: "Receptionist", greeting: "Clock in, hit your targets, and try not to annoy management.", shirt: "#47759b", accent: "#d2deeb", prop: "💼" },
+  yard: { title: "WORKERS YARD", name: "Site foreman", greeting: "Hard hat on. If you’re here to stand about, get lost.", shirt: "#c48f35", accent: "#f3d281", prop: "🦺" },
+  diner: { title: "FRYDAY DINER", name: "Counter cook", greeting: "You eating or just staring at the menu? I’ve got orders waiting.", shirt: "#c94f4a", accent: "#f9d5ad", prop: "🍳" },
+  bar: { title: "THE TIPSY STICK", name: "Bartender", greeting: "Order something or clear the bar. We don’t run a charity.", shirt: "#83416f", accent: "#d9a7d5", prop: "🍹" },
+  pawn: { title: "ODDITIES PAWN", name: "Pawn broker", greeting: "Put it on the counter. I’ll tell you what it’s actually worth.", shirt: "#8a7145", accent: "#d9ce9c", prop: "💎" },
+  clinic: { title: "PATCH UP CLINIC", name: "Doctor", greeting: "You look rough. Sit down; tell me what happened.", shirt: "#69a89d", accent: "#dbefe1", prop: "🩹" },
+  depot: { title: "TOWN TRANSIT", name: "Ticket clerk", greeting: "No, I don’t know when the next bus is. Neither does the driver.", shirt: "#366c7b", accent: "#c2e0e3", prop: "🚌" },
+  police: { title: "TOWN POLICE", name: "Desk sergeant", greeting: "You again? Keep out of trouble and we won’t have a problem.", shirt: "#355e88", accent: "#c4d0df", prop: "👮" },
+  furniture: { title: "COSY CORNER", name: "Sales assistant", greeting: "You buying furniture or just scuffing the showroom floor?", shirt: "#ad735b", accent: "#f0d9bc", prop: "🛋️" },
 };
 
 function ActionChoice({ action, onRun }: { action: ActionDef; onRun: (action: ActionDef) => void }) {

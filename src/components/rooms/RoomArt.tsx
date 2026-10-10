@@ -393,6 +393,29 @@ function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
       </g>
     );
   }
+  if (room.id === "gym") {
+    return <g data-scene-depth="gym">
+      <rect width="420" height="300" fill="#667b85"/>
+      <path d="M0 0H420L362 164H58Z" fill="#a1bac0"/>
+      <path d="M0 0L58 164L0 300Z" fill="#657f89"/>
+      <path d="M420 0L362 164L420 300Z" fill="#536a76"/>
+      <path d="M0 300L58 164H362L420 300Z" fill="#465560" stroke="#29333a" strokeWidth="5"/>
+      {[174,197,229,269].map(y=><path key={y} d={`M${58-(y-164)*.44} ${y}H${362+(y-164)*.44}`} stroke="#9bafb4" strokeOpacity=".25" strokeWidth="3"/>)}
+      {[0,105,210,315,420].map(x=><path key={x} d={`M210 164L${x} 300`} stroke="#8c9ea5" strokeOpacity=".2" strokeWidth="2"/>)}
+      <path d="M11 17H409" stroke="#29333a" strokeWidth="9"/>
+      <rect x="161" y="18" width="95" height="45" rx="5" fill="#292f39" stroke="#e7bc55" strokeWidth="4"/>
+      <text x="208" y="37" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#f1d37a">IRON GYM</text>
+      <text x="208" y="52" textAnchor="middle" fontSize="9" fill="#e1dfd7">NO EXCUSES</text>
+      <path d="M34 18V105M142 18V105" stroke="#dee4e8" strokeWidth="6"/>
+      <rect x="37" y="20" width="103" height="77" fill="#b8d6da" stroke="#3f535d" strokeWidth="3"/>
+      <path d="M39 52H138" stroke="#8cbdc9" strokeWidth="3"/>
+      <rect x="292" y="24" width="98" height="113" rx="2" fill="#e5d1a0" stroke="#29333a" strokeWidth="4"/>
+      <path d="M309 42L355 118M370 42L323 121" stroke="#b65545" strokeWidth="8"/>
+      <text x="342" y="86" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#2b3038">PUSH</text>
+      <text x="342" y="101" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#2b3038">HARDER</text>
+      <ellipse cx="205" cy="267" rx="174" ry="24" fill="#1f2b33" opacity=".2"/>
+    </g>;
+  }
   if (room.id !== "home") return null;
   const cardboard = house === 0;
   const rich = house >= 3;
@@ -495,33 +518,36 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
         </g>
       );
     }
-    case "gym":
-      return (
-        <g>
-          <R x={200} y={18} w={206} h={44} fill="#cde6ea" rx={4} />
-          <Lamp x={390} y={70} />
-          <Shelves
-            b={{ x: 24, y: 96, w: 160, h: 94 }}
-            body="#505863"
-            colors={["#505863", "#e1a53a"]}
-          />
-          <R x={226} y={170} w={160} h={20} fill="#3b4348" rx={3} />
-          <Fill
-            b={{ x: B("track").x, y: B("track").y, w: B("track").w, h: 36 }}
-            fill="#505863"
-            rx={4}
-          />
-          <R
-            x={B("track").x + 14}
-            y={B("track").y + 36}
-            w={B("track").w - 28}
-            h={18}
-            fill="#25242a"
-            rx={3}
-            sw={2}
-          />
-        </g>
-      );
+    case "gym": {
+      const rack = B("rack");
+      const track = B("track");
+      return <g data-gym-equipment>
+        {/* Grounded plate-loaded squat rack with steel posts and depth. */}
+        <path d={`M${rack.x+18} ${rack.y+14}L${rack.x+33} ${rack.y}H${rack.x+rack.w-5}L${rack.x+rack.w-19} ${rack.y+14}Z`}
+          fill="#b0b8bd" stroke={INK} strokeWidth={4}/>
+        <path d={`M${rack.x+18} ${rack.y+14}V${rack.y+rack.h-6}M${rack.x+rack.w-19} ${rack.y+14}V${rack.y+rack.h-6}`}
+          stroke="#333c45" strokeWidth={9}/>
+        <path d={`M${rack.x+24} ${rack.y+34}H${rack.x+rack.w-21}`} stroke="#ced5d7" strokeWidth={7}/>
+        <path d={`M${rack.x+30} ${rack.y+42}H${rack.x+rack.w-32}`} stroke="#333c45" strokeWidth={4}/>
+        {[0,1,2].map(n=><g key={n}>
+          <ellipse cx={rack.x+38+n*38} cy={rack.y+64} rx={12+n%2*3} ry={20+n%2*4} fill={["#272d37","#bf9140","#465f6d"][n]} stroke={INK} strokeWidth={3}/>
+          <circle cx={rack.x+38+n*38} cy={rack.y+64} r={3} fill="#e2ded0"/>
+        </g>)}
+        <path d={`M${rack.x+18} ${rack.y+rack.h-5}L${rack.x+31} ${rack.y+rack.h-17}H${rack.x+rack.w-8}`}
+          fill="none" stroke="#aab3b7" strokeWidth={6}/>
+        {/* 3D running machine, roller and handrail; belt narrows to the back. */}
+        <path d={`M${track.x+19} ${track.y+track.h-5}L${track.x+48} ${track.y+66}H${track.x+track.w-25}L${track.x+track.w-4} ${track.y+track.h-5}Z`}
+          fill="#252d37" stroke={INK} strokeWidth={4}/>
+        <path d={`M${track.x+34} ${track.y+track.h-15}L${track.x+56} ${track.y+73}H${track.x+track.w-38}L${track.x+track.w-20} ${track.y+track.h-15}Z`}
+          fill="#5a6670" stroke="#9ea7ae" strokeWidth={3}/>
+        <path d={`M${track.x+32} ${track.y+60}V${track.y+17}H${track.x+track.w-35}V${track.y+60}`}
+          fill="none" stroke="#343a43" strokeWidth={7}/>
+        <path d={`M${track.x+26} ${track.y+54}H${track.x+track.w-28}`} stroke="#b1bcc1" strokeWidth={6}/>
+        <rect x={track.x+track.w/2-24} y={track.y+8} width={48} height={28} rx={5} fill="#383e48" stroke={INK} strokeWidth={3}/>
+        <rect x={track.x+track.w/2-17} y={track.y+13} width={34} height={16} rx={2} fill="#8dd1c6"/>
+        <text x={track.x+track.w/2} y={track.y+25} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#2e5052">RUN</text>
+      </g>;
+    }
     case "yard": {
       const site = B("site"),
         board = B("trades-board"),

@@ -10,7 +10,8 @@ import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
-import { EAT_SNACK, runAction, type ActionDef } from "@/lib/actions";
+import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
+import { meetStreetGang, type GangMeeting } from "@/lib/street-gang";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
 
 export const Route = createFileRoute("/")({
@@ -160,6 +161,8 @@ function Game() {
   const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<Encounter | null>(null);
   const [encounterDone, setEncounterDone] = useState<number | null>(null);
+  const [gangDone, setGangDone] = useState<number | null>(null);
+  const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
 
   // SSR and the initial browser render must agree. Load the save only after hydration.
@@ -197,6 +200,28 @@ function Game() {
   const walk = (id: PlaceId) => {
     setResult(null);
     setPlace(id);
+  };
+  const approachGang = () => {
+    if (gangDone === s.day || gangMeeting) {
+      notify("The crew have had enough of you for today. Clear off.", false);
+      return;
+    }
+    setPlace(null);
+    setTab(null);
+    setResult(null);
+    const meeting = meetStreetGang(s, Math.random);
+    setGangDone(s.day);
+    setGangMeeting(meeting);
+    if (meeting.hostile) {
+      // Consequences are immediate: dismissing the encounter can't undo the mugging.
+      perform({
+        id: "gang-mugging", label: "Street mugging", hours: 0, energy: 0,
+        resolve: () => ({ patch: meeting.patch, message: meeting.message }),
+      });
+    } else {
+      notify(meeting.message, true);
+    }
+    playActionCue("encounter", soundOn);
   };
   const encounterSpot = encounterDone === s.day ? null : encounterForDay(s.day);
   const approachEncounter = () => {
@@ -256,7 +281,8 @@ function Game() {
         encounter={encounterSpot}
         onEncounter={approachEncounter}
         onEnter={(id) => {
-          if (isPlace(id)) walk(id);
+          if (id === "gang") approachGang();
+          else if (isPlace(id) && id !== "alley") walk(id);
         }}
       />
 
@@ -276,10 +302,29 @@ function Game() {
         </div>
       </div>
 
-      {log[0] && !place && !enc && !tab && (
+      {log[0] && !place && !enc && !gangMeeting && !tab && (
         <div className="pointer-events-none absolute inset-x-3 bottom-4 mx-auto max-w-md rounded-sm border-2 border-foreground bg-card/90 px-3 py-1 text-center text-base">
           {log[0]}
         </div>
+      )}
+
+      {gangMeeting && (
+        <Sheet title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
+          <p className="text-lg font-bold">{gangMeeting.message}</p>
+          {gangMeeting.hostile ? (
+            <>
+              <p className="text-base">They laugh as you stagger off. Build your charm or strength before coming back.</p>
+              <Btn onClick={() => setGangMeeting(null)}>Fine. I'm leaving.</Btn>
+            </>
+          ) : (
+            <>
+              <p className="text-base">You've earned a conversation. They know a few dodgy ways to make a living.</p>
+              <Btn onClick={() => { perform(SELL_GOODS); setGangMeeting(null); }}>Move dodgy goods (2h)</Btn>
+              <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice ($20)</Btn>
+              <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>
+            </>
+          )}
+        </Sheet>
       )}
 
       {enc && (
@@ -300,7 +345,7 @@ function Game() {
         </Sheet>
       )}
 
-      {!enc && place && !tab && (
+      {!enc && !gangMeeting && place && !tab && (
         <LocationScene
           key={place}
           room={roomFor(place, s)}
@@ -311,7 +356,7 @@ function Game() {
         />
       )}
 
-      {result && !enc && !place && (
+      {result && !enc && !gangMeeting && !place && (
         <div
           key={result.message + String(result.timeLine)}
           role="status"
