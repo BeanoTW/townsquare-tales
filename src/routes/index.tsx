@@ -342,6 +342,7 @@ function Game() {
         hour={s.hour}
         house={s.house}
         speed={s.skateboard && s.skateboardEquipped ? 1.5 : s.trainers ? 1.35 : 1}
+        skating={Boolean(s.skateboard && s.skateboardEquipped)}
         karma={s.karma}
         active={place}
         encounter={encounterSpot}
