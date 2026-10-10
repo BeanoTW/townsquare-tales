@@ -4,19 +4,33 @@ import type { GameState } from "@/lib/game-state";
 export const PARK_KID_SPOT = { x: 13.2, y: 23.6, approach: 1.1 } as const;
 export const PARK_SMOKE_LIMIT = 15;
 
-export function parkKidDialogue(given: number): string {
-  if (given <= 0) return "Psst. Got a smoke to spare?";
-  if (given === 1) return "Thanks, mate.";
-  if (given === 2) return "You're cool, man. Here, have my skateboard.";
-  if (given < 6) return "Cheers. You really keep coming back, eh?";
-  if (given < 10) return "Another? I've probably had enough already.";
-  if (given < PARK_SMOKE_LIMIT) return "*cough* Mate, my chest is killing me. Seriously...";
-  return "*cough, cough* I feel really rough. I'm getting out of here.";
+const BENCH_DIALOGUE = [
+  "Evening. Don't suppose you've got a minute?",
+  "Cheers. Been a long old day.",
+  "Hey, take my old board. It's just gathering dust at home.",
+  "Back again? You're becoming a familiar face.",
+  "Some days I just sit here watching the world go by.",
+  "Saw quite the argument outside the pub earlier.",
+  "I keep meaning to find somewhere else to hang out.",
+  "You've got a knack for turning up at strange times.",
+  "I used to skate all round this town. Different times.",
+  "Think I've spent far too long on this bench today.",
+  "I'm not feeling particularly great, actually.",
+  "I'll be alright. Just need a minute.",
+  "Perhaps I ought to head home soon.",
+  "Everything seems to be catching up with me.",
+  "I should've called it a day ages ago.",
+  "That's enough for me. I think I'll head home.",
+] as const;
+
+export function parkKidDialogue(stage: number): string {
+  const index = Math.max(0, Math.min(BENCH_DIALOGUE.length - 1, Math.trunc(stage)));
+  return BENCH_DIALOGUE[index] ?? BENCH_DIALOGUE[0];
 }
 
 export function giveParkSmoke(s: GameState): { patch: Partial<GameState>; message: string } | string {
   if (s.parkKidGone || s.parkSmokes >= PARK_SMOKE_LIMIT) return "He's gone home. The bench is empty.";
-  if (s.smokes < 1) return "No smokes in your inventory. The kid shrugs.";
+  if (s.smokes < 1) return "You check your pockets. The regular shrugs.";
   const given = s.parkSmokes + 1;
   return {
     patch: {
@@ -26,6 +40,6 @@ export function giveParkSmoke(s: GameState): { patch: Partial<GameState>; messag
       skateboardEquipped: given >= 2 ? 1 : s.skateboardEquipped,
       karma: s.karma - (given >= 10 ? 3 : given >= 5 ? 2 : 1),
     },
-    message: parkKidDialogue(given) + (given === 2 ? " Skateboard unlocked!" : "") + " Karma decreased.",
+    message: parkKidDialogue(given),
   };
 }

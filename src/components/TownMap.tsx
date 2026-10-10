@@ -401,7 +401,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
   if (kidPresent) {
     const [kx, ky] = P(PARK_KID_SPOT.x, PARK_KID_SPOT.y);
     items.push({ key: PARK_KID_SPOT.y * 100 + PARK_KID_SPOT.x,
-      el: <g key="park-kid" data-park-kid role="button" tabIndex={0} aria-label="Talk to the kid on the park bench"
+      el: <g key="park-kid" data-park-kid role="button" tabIndex={0} aria-label="Talk to the park bench regular"
         className="cursor-pointer"
         onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
         onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
