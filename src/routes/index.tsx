@@ -79,14 +79,18 @@ const ENCOUNTERS: { text: string; choices: { label: string; f: (s: S) => [Partia
 ];
 
 function Game() {
-  const [s, setS] = useState<S>(() => loadGame(START));
+  const [s, setS] = useState<S>(START);
+  const [saveReady, setSaveReady] = useState(false);
   const [lastEncounterDay, setLastEncounterDay] = useState<number | null>(null);
   const [log, setLog] = useState<string[]>(["Welcome to Stick Town. You live in a box. Good luck."]);
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<(typeof ENCOUNTERS)[number] | null>(null);
 
-  useEffect(() => { saveGame(s); }, [s]);
+  // SSR and the initial browser render must agree. Load the save only after hydration.
+  useEffect(() => { setS(loadGame(START)); setSaveReady(true); }, []);
+  // Never overwrite a player’s existing save with SSR defaults during hydration.
+  useEffect(() => { if (saveReady) saveGame(s); }, [s, saveReady]);
 
   const say = (m: string) => setLog((l) => [m, ...l].slice(0, 30));
 
