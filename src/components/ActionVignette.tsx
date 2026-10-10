@@ -43,7 +43,7 @@ export function ActionVignette({
   const gains = changes.filter(change => /\+\d/.test(change) && /Strength|Intelligence|Charm|Energy|Cash|Work XP|Karma/.test(change));
   const headline = gains.slice(0, 2).map(c => c.replace(": ", " ")).join("   ") || changes.find(c => /-\d/.test(c))?.replace(": ", " ") || "ACTION COMPLETE";
   return (
-    <div data-action-vignette={kind} className={"action-vignette action-vignette-"+kind} role="dialog" aria-modal="true" aria-label={VIGNETTE_TITLES[kind]} onClick={onDone}>
+    <div data-action-vignette={kind} className={"action-vignette action-vignette-"+kind} role="status" aria-label={VIGNETTE_TITLES[kind]}>
       <div className="action-vignette-card">
         <div className="action-vignette-title">{VIGNETTE_TITLES[kind]}</div>
         <svg viewBox="0 0 320 218" role="img" aria-label={kind+" animation"} className="action-vignette-svg">
@@ -132,7 +132,6 @@ export function ActionVignette({
         </svg>
         <div className="action-vignette-gain" aria-live="polite">{headline}</div>
         <p className="action-vignette-message">{message}</p>
-        <button type="button" onClick={e => { e.stopPropagation(); onDone(); }} className="action-vignette-skip">Tap to continue ›</button>
       </div>
     </div>
   );
