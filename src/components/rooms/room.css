@@ -25,11 +25,6 @@
 .room-hotspot.is-selected .room-outline {
   stroke-dasharray: none;
 }
-/* Character interaction should open dialogue, not draw a box around a person.
-   Keep focus indication for keyboard users on ordinary objects. */
-.room-hotspot[data-character-venue] .room-outline {
-  opacity: 0;
-}
 @media (prefers-reduced-motion: reduce) {
   .room-bob, .room-flicker, .room-sway {
     animation: none;
