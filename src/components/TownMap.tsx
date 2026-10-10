@@ -6,6 +6,7 @@ export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 import type { EncounterSpot } from "@/lib/world-encounters";
 import { GANG_SPOT } from "@/lib/street-gang";
+import { residentsAt } from "@/lib/living-town";
 import { PARK_KID_SPOT } from "@/lib/park-kid";
 
 // Upright oblique projection: ground plan matches the minimap; height offsets
@@ -335,11 +336,19 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
-  NPCS.forEach((n, i) => {
-    const [[ax, ay], [bx, by]] = n.path;
-    const f = (Math.sin(t * n.speed + i) + 1) / 2;
-    const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
-    items.push({ key: y * 100 + x, el: <Stick key={`n${i}`} x={x} y={y} phase={t * 8} walking color={n.color} /> });
+  // The same named locals appear at different places as the day progresses.
+  residentsAt(hour).forEach((person, i) => {
+    items.push({ key: person.y*100+person.x,
+      el: <g key={person.id} role="button" tabIndex={0} data-resident={person.id} aria-label={"Talk to "+person.name}
+        className="cursor-pointer" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
+        onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();routeTo(person,"resident:"+person.id);}}}>
+        <Stick x={person.x} y={person.y} phase={t*3+i} walking={false} color={person.color}/>
+        <g transform={`translate(${P(person.x,person.y)[0]} ${P(person.x,person.y)[1]-64})`}>
+          <rect x="-25" y="-12" width="50" height="17" rx="6" fill="#f1e6d0" stroke="#343039" strokeWidth="2"/>
+          <text x="0" y="0" textAnchor="middle" fontSize="11" fill="#33303a" fontWeight="bold">{person.name}</text>
+        </g>
+        <rect x={P(person.x,person.y)[0]-18} y={P(person.x,person.y)[1]-58} width="36" height="68" fill="transparent"/>
+      </g> });
   });
   // A permanent, walk-up gang encounter: three intimidating locals in the north-east green.
   // Not a building and not a teleported popup; players must actually approach them.
