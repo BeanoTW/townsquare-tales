@@ -37,6 +37,7 @@ const SCHOOLS = ["Dropout", "High School", "College", "University Degree", "PhD"
 const PLACES = [
   { id: "home", label: "Home", x: 8, y: 18 },
   { id: "gym", label: "Gym", x: 38, y: 12 },
+  { id: "yard", label: "Workers Yard", x: 0, y: 0 },
   { id: "school", label: "School", x: 70, y: 16 },
   { id: "work", label: "Work", x: 12, y: 62 },
   { id: "bar", label: "Bar", x: 44, y: 58 },
@@ -146,6 +147,7 @@ function Game() {
       ...(HOUSES[s.house + 1]! ? [{ label: `Buy ${HOUSES[s.house + 1]!.name} ($${HOUSES[s.house + 1]!.cost})`, run: () => act(0, 0, (p) =>
         p.money >= HOUSES[p.house + 1]!.cost ? [{ money: p.money - HOUSES[p.house + 1]!.cost, house: p.house + 1 }, `You moved into a ${HOUSES[p.house + 1]!.name}!`] : "Not enough cash.") }] : []),
     ],
+    yard: [],
     gym: [
       { label: "Lift weights ($5, 2h)", run: () => act(2, 20, (p) => p.money >= 5 ? [{ money: p.money - 5, str: p.str + 3 }, "+3 strength. Swole."] : "Gym costs $5.") },
       { label: "Jog outside (free, 2h)", run: () => act(2, 25, (p) => [{ str: p.str + 1 }, "+1 strength."]) },
@@ -225,19 +227,55 @@ function Game() {
       `Hired as ${field.roles[0].name}! Some experience transferred.`];
   });
 
-  const interiorStations = place === "work" ? [
-    {label:"Workstation",hint:"Clock in and earn wages",content:<button onClick={workShift} className="min-h-12 rounded-lg border-2 border-foreground bg-secondary p-3 text-left">🖥️ Work shift · 4 hours · ${job.pay*4} · +4 XP</button>},
-    {label:"Job board",hint:"Browse jobs and compare careers",content:<EmploymentDesk player={s} onShift={workShift} onPromotion={requestPromotion} onApply={applyJob}/>},
-    {label:"Manager",hint:"Discuss your next promotion",content:<><p className="text-sm">Next: {nextJob?.name ?? "Top of the ladder"}{nextJob ? ` · ${nextJob.pay}/hour` : ""}</p><p className="text-sm">{nextJob ? (missingRequirements(s,nextJob).join(", ") || "You're eligible!") : "No more promotions available."}</p><button className="min-h-12 rounded-lg border-2 border-foreground bg-secondary p-3 text-left" onClick={requestPromotion}>Ask for promotion · 1 hour</button></>},
-  ] : place === "school" ? [
-    {label:"Library",hint:"Quiet study, free of charge",content:<Btn onClick={actions.school[0].run}>{actions.school[0].label}</Btn>},
-    {label:"Classroom",hint:"Attend lessons and build intelligence",content:<Btn onClick={actions.school[0].run}>{actions.school[0].label}</Btn>},
-    {label:"Admissions",hint:"Qualifications and tuition",content:actions.school[1] ? <Btn onClick={actions.school[1].run}>{actions.school[1].label}</Btn> : <p>You've completed all available qualifications!</p>},
-  ] : place === "shop" ? [
-    {label:"Shelves",hint:"Food and essentials",content:<Btn onClick={actions.shop[0].run}>{actions.shop[0].label}</Btn>},
-    {label:"Sports gear",hint:"Equipment for exploring town",content:<Btn onClick={actions.shop[1].run}>{actions.shop[1].label}</Btn>},
-    {label:"Counter",hint:"Useful everyday items",content:<Btn onClick={actions.shop[2].run}>{actions.shop[2].label}</Btn>},
-  ] : undefined;
+  // Careers are local: only the employer for a field advertises its vacancies.
+  const application = (career:number) => {
+    const field=CAREERS[career];
+    return <div className="grid gap-2">
+      <div className="rounded-lg bg-secondary p-2">
+        <strong>{field.name} · {field.roles[0].name}</strong>
+        <p className="text-sm">${field.roles[0].pay}/hour · 1h application</p>
+      </div>
+      <Btn onClick={()=>applyJob(career)}>{s.career===career?"Already employed in this field":"Apply for this position"}</Btn>
+    </div>;
+  };
+  const careerManager = (career:number) => s.career!==career ?
+    <p className="text-sm">Apply for a job here before requesting promotions.</p> :
+    <div className="grid gap-2">
+      <strong>Current: {job.name} · ${job.pay}/hour</strong>
+      <p className="text-sm">{nextJob ? `Next: ${nextJob.name} · ${nextJob.pay}/hour` : "You're at the top of this career."}</p>
+      {nextJob && <p className="text-sm">{missingRequirements(s,nextJob).join(", ") || "All requirements met!"}</p>}
+      <Btn onClick={requestPromotion}>Request promotion · 1h</Btn>
+    </div>;
+  const shiftStation = (career:number) => s.career===career ?
+    <div className="grid gap-2"><p className="text-sm">{job.name} · ${job.pay}/hour</p><Btn onClick={workShift}>Work 4h · +${job.pay*4} · +4 XP</Btn></div> :
+    <p className="text-sm">You're employed elsewhere. Check the vacancy board to join this workplace.</p>;
+  const jobStations = (career:number,shiftLabel:string) => [
+    {label:shiftLabel,hint:"Your current shift",content:shiftStation(career)},
+    {label:"Vacancies",hint:`Join the ${CAREERS[career].name} career`,content:application(career)},
+    {label:"Manager",hint:"Progress and promotions",content:careerManager(career)}
+  ];
+  const interiorStations = place==="work" ? jobStations(0,"Workstation") :
+    place==="yard" ? jobStations(3,"Job site") :
+    place==="diner" ? jobStations(1,"Kitchen") :
+    place==="shop" ? [
+      {label:"Shelves",hint:"Snacks and essentials",content:<Btn onClick={actions.shop[0].run}>{actions.shop[0].label}</Btn>},
+      {label:"Shop jobs",hint:"Retail vacancies",content:application(2)},
+      {label:"Counter",hint:"Equipment and career progression",content:<div className="grid gap-2">
+        <Btn onClick={actions.shop[1].run}>{actions.shop[1].label}</Btn>
+        <Btn onClick={actions.shop[2].run}>{actions.shop[2].label}</Btn>
+        {careerManager(2)}
+      </div>}
+    ] :
+    place==="school" ? [
+      {label:"Library",hint:"Study independently",content:<Btn onClick={actions.school[0].run}>{actions.school[0].label}</Btn>},
+      {label:"Classroom",hint:"Classes and qualifications",content:actions.school[1] ? <Btn onClick={actions.school[1].run}>{actions.school[1].label}</Btn> : <p>All available qualifications completed.</p>},
+      {label:"Admissions",hint:"Education and careers",content:<p className="text-sm">Qualifications unlock opportunities around town. Look for vacancy posters at each workplace.</p>},
+    ] :
+    place==="bank" ? [
+      {label:"Teller",hint:"Manage savings",content:<div className="grid gap-2">{actions.bank.slice(0,2).map(a=><Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}</div>},
+      {label:"ATM",hint:"Withdraw money",content:<div className="grid gap-2">{actions.bank.slice(2).map(a=><Btn key={a.label} onClick={a.run}>{a.label}</Btn>)}</div>},
+      {label:"Careers",hint:"Professional opportunities",content:<div className="grid gap-2"><p className="text-sm">Corporate careers are currently handled through MegaCorp's vacancy board.</p></div>},
+    ] : undefined;
 
   const align = s.karma >= 20 ? "Saint" : s.karma >= 5 ? "Legit" : s.karma > -5 ? "Neutral" : s.karma > -20 ? "Crooked" : "Kingpin";
   const won = s.house === 3 && s.career === 0 && s.job === 4;
