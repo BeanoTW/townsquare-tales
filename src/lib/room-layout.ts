@@ -17,6 +17,17 @@ export function fitRect(cw: number, ch: number): Fit {
  * room, and keeps it inside the stage. Only the panel itself ever scrolls.
  */
 export function panelStyle(box: Box, fit: Fit, cw: number, ch: number): CSSProperties {
+  // On phones, use a predictable bottom action tray rather than a tiny
+  // floating menu that can end up clipped at the edge of the room.
+  if (cw <= 600) {
+    return {
+      left: 8,
+      right: 8,
+      bottom: 8,
+      width: "auto",
+      maxHeight: Math.max(80, ch - 16),
+    };
+  }
   const sx = fit.w / VIEW.w;
   const sy = fit.h / VIEW.h;
   const left = fit.x + box.x * sx;
