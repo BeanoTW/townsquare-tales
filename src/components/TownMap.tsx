@@ -356,7 +356,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   residentsAt(hour).forEach((person, i) => {
     items.push({ key: person.y*100+person.x,
       el: <g key={person.id} role="button" tabIndex={0} data-resident={person.id} aria-label={"Talk to "+person.name}
-        className="cursor-pointer" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
+        className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
         onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();routeTo(person,"resident:"+person.id);}}}>
         <Stick x={person.x} y={person.y} phase={t*3+i} walking={false} idle color={person.color}/>
         <g transform={`translate(${P(person.x,person.y)[0]+16} ${P(person.x,person.y)[1]-33+Math.sin(t*1.4+i)*2})`}>
@@ -376,7 +376,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     key: GANG_SPOT.y * 100 + GANG_SPOT.x,
     el: (
       <g key="street-gang" role="button" tabIndex={0} aria-label="Approach the street gang"
-        className="cursor-pointer" data-street-gang
+        className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" data-street-gang
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT, "gang"); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT, "gang"); } }}>
         <g transform={`translate(${gx} ${gy}) scale(0.4)`}>
@@ -418,7 +418,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const [kx, ky] = P(PARK_KID_SPOT.x, PARK_KID_SPOT.y);
     items.push({ key: PARK_KID_SPOT.y * 100 + PARK_KID_SPOT.x,
       el: <g key="park-kid" data-park-kid role="button" tabIndex={0} aria-label="Talk to the park bench regular"
-        className="cursor-pointer"
+        className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80"
         onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
         onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
         <g transform={`translate(${kx} ${ky}) scale(0.65)`}>
@@ -442,7 +442,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
     const px=e.x+sway;
     const [sx,sy]=P(px,e.y);
-    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();onEncounter?.();}}} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();onEncounter?.();}}} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
         <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
         <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">

@@ -25,6 +25,12 @@
 .room-hotspot.is-selected .room-outline {
   stroke-dasharray: none;
 }
+@media (prefers-reduced-motion: reduce) {
+  .room-bob, .room-flicker, .room-sway {
+    animation: none;
+  }
+}
+
 
 .room-bob {
   animation: room-bob 2.4s ease-in-out infinite;
