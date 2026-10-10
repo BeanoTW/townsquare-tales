@@ -67,3 +67,5 @@
 @keyframes arcade-buy-pop{0%{scale:.72;opacity:.65}58%{scale:1.16;opacity:1}100%{scale:1;opacity:1}}
 @media(max-height:650px){.arcade-dialog{margin-top:92px}.arcade-set{height:145px}.arcade-set-sign{top:6px}.arcade-header{padding-top:92px}}
 @media(prefers-reduced-motion:reduce){.arcade-npc,.arcade-purchase-pop,.arcade-levelup,.arcade-result-success{animation:none}.arcade-wheel-item{transition:none}}
+.arcade-changes{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.arcade-changes span{border-radius:4px;padding:2px 4px;background:#deebda;color:#294638;font-size:10px;font-weight:900}
