@@ -50,7 +50,7 @@ describe("mobile arcade interiors", () => {
 });
 
 describe("depth and housing progression", () => {
-  const draw = (id: "home" | "casino", state = START) => {
+  const draw = (id: "home" | "casino" | "gym", state = START) => {
     const room = roomFor(id, state);
     return render(<RoomArt room={room} state={state} visible={visibleHotspots(room, state)} selectedId={null} onSelect={vi.fn()} />);
   };
