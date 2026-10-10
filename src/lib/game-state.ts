@@ -4,6 +4,7 @@ export type GameState = {
   house: number; school: number; job: number; heat: number;
   bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
   career: number; xp: number;
+  gangRep: number; gangStage: number;
   relMara: number; relNox: number; relGus: number; relIvy: number;
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
   smokes: number; skateboard: number; skateboardEquipped: number; parkSmokes: number; parkKidGone: number;
@@ -11,6 +12,7 @@ export type GameState = {
 
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
+  gangRep: [0, 100], gangStage: [0, 2],
   day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
   lastMara: [0, 100000], lastNox: [0, 100000], lastGus: [0, 100000], lastIvy: [0, 100000],
