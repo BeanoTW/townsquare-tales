@@ -113,17 +113,19 @@ function PropsForVenue({ id }: { id: PlaceId }) {
 
 function Employee({ room, shirt }: { room: PlaceId; shirt: string }) {
   const gruff = ["shop", "yard", "diner", "bar", "pawn", "depot", "police"].includes(room);
+  const emo = room === "shop";
   const shady = ["bar", "pawn", "shop"].includes(room);
   const glasses = ["bank", "school"].includes(room);
   const hat = ["yard", "police", "diner", "clinic"].includes(room);
   const beard = ["yard", "bar", "pawn"].includes(room);
   const face = room === "pawn" ? "#ac8469" : room === "bar" ? "#946d59" : room === "yard" ? "#cf9872" : "#e9c59b";
-  return <g data-character-venue={room} data-expression={gruff ? "gruff" : "reserved"}
+  return <g data-character-venue={room} data-expression={emo ? "unimpressed" : gruff ? "gruff" : "reserved"}
     transform="translate(220 58)" stroke="#302a35" strokeWidth="4" strokeLinecap="round">
     <ellipse cy="131" rx="39" ry="7" fill="#302a35" stroke="none" opacity=".18"/>
     <path d="M-26 113L-21 76H21L26 113" fill="#434053"/>
     <path d="M-32 66L-43 99M32 66L43 99" fill="none" strokeWidth="7"/>
     <path d="M-31 57Q0 43 31 57L24 104H-24Z" fill={shirt}/>
+    {emo && <g data-emo-clerk><path d="M-30 62L-23 51H24L32 66L27 101H-28Z" fill="#34313e" strokeWidth="3"/><path d="M-3 55L-7 83M4 55L8 83" stroke="#bfb1c9" strokeWidth="2"/><path d="M-15 84H17" stroke="#5b5169" strokeWidth="2"/></g>}
     {room==="diner"&&<path d="M-20 69H20V104H-20Z" fill="#eee1ce" strokeWidth="2"/>}
     {room==="clinic"&&<path d="M-20 59L-11 102M20 59L11 102" stroke="#f4faf0" strokeWidth="10"/>}
     {room==="work"&&<path d="M0 55L-6 69L0 88L6 69Z" fill="#f5e3ba" strokeWidth="2"/>}
@@ -135,6 +137,7 @@ function Employee({ room, shirt }: { room: PlaceId; shirt: string }) {
       : <path d={room==="pawn" ? "M-27 20Q-28 -17 0 -14Q29 -13 27 20L15 10L0 13L-25 26Z"
         : room==="bar" ? "M-28 21Q-34 -3 -19 -15Q4 -28 28 -7V23L16 10L0 7L-20 18Z"
         : "M-26 23Q-31 -8 0 -12Q25 -9 27 23Q13 7 -4 7L-24 28Z"} fill="#39323a"/>}
+    {emo && <g><path d="M-25 18Q-30 -15 -1 -20Q30 -19 27 15L20 11L-7 31L-25 29Z" fill="#25232b" strokeWidth="2"/><path d="M-18 26L-2 20M8 23L21 20" stroke="#201f27" strokeWidth="3"/><circle cx="25" cy="34" r="2.5" fill="#d5dbe5" strokeWidth="1.5"/><path d="M-9 48Q0 45 9 48" stroke="#593e44" strokeWidth="2.5" fill="none"/></g>}
     {shady && <path d="M-18 19L-3 24M4 24L18 17" stroke="#322932" strokeWidth="3" fill="none"/>}
     {gruff ? <g fill="none" stroke="#312a35" strokeWidth="3">
       <path d="M-16 27L-3 30M4 30L17 25"/>
@@ -155,12 +158,15 @@ function Employee({ room, shirt }: { room: PlaceId; shirt: string }) {
 
 export function VenueScenery({ room, shirt, title }: Props) {
   return <div className={`arcade-set arcade-set-${room.id}`} aria-hidden="true">
-    <svg className="venue-world" viewBox="0 0 420 210" preserveAspectRatio="xMidYMid slice">
+    <svg className="venue-world" data-room-shell="square" viewBox="0 0 420 210" preserveAspectRatio="xMidYMid slice">
+      {/* Upright rear wall and parallel corners: consistent with playable room scenes. */}
       <rect width="420" height="210" fill={room.palette.wall}/>
-      <path d="M0 0L70 113H350L420 0" fill={room.palette.wall} stroke="#3a323c" strokeOpacity=".35" strokeWidth="3"/>
-      <path d="M0 210L70 113H350L420 210Z" fill={room.palette.floor} stroke="#38303a" strokeWidth="4"/>
-      <path d="M70 113L0 210M350 113L420 210M210 113V210" fill="none" stroke="#39313a" strokeOpacity=".24" strokeWidth="3"/>
-      {[151,179].map((y)=><path key={y} d={`M${70-(y-113)*.73} ${y}H${350+(y-113)*.73}`} stroke="#39313a" strokeOpacity=".17" strokeWidth="3"/>)}
+      <rect x="30" width="360" height="125" fill={room.palette.wall} data-back-wall="upright"/>
+      <path d="M0 0H30V125L0 210Z" fill="#2b2833" fillOpacity=".12"/>
+      <path d="M390 0H420V210L390 125Z" fill="#2b2833" fillOpacity=".2"/>
+      <path d="M0 210L30 125H390L420 210Z" fill={room.palette.floor} stroke="#38303a" strokeWidth="3"/>
+      <path d="M30 0V125H390V0" stroke="#39313a" strokeOpacity=".28" strokeWidth="3" fill="none"/>
+      <path d="M22 162H398M11 187H409M118 125L90 210M210 125V210M302 125L330 210" stroke="#39313a" strokeOpacity=".13" strokeWidth="2" fill="none"/>
       <PropsForVenue id={room.id}/>
       <Employee room={room.id} shirt={shirt}/>
       <path d="M155 162L181 148H285L310 162V195H155Z" fill={room.palette.accent} stroke="#302a35" strokeWidth="4"/>
