@@ -40,7 +40,7 @@ describe("arcade shop", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Work here/ }));
     const jobs = screen.getByRole("tabpanel", { name: "Retail careers" });
     expect(within(jobs).getByText("Shop jobs board")).toBeInTheDocument();
-    expect(within(jobs).getByRole("button", { name: /Work 4h shift/ })).toBeInTheDocument();
+    expect(within(jobs).getByRole("button", { name: /Apply: Shop Assistant/ })).toBeInTheDocument();
   });
 });
 
