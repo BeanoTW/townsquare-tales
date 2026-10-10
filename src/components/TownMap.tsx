@@ -302,7 +302,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
           return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
         })}
         {/* alley grime */}
-        {tile(15.5, 13, 1, 1, "var(--town-grime)", "gr")}
+        {tile(11.6, 23, .55, 1.5, "var(--town-grime)", "gr")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
@@ -314,7 +314,6 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
       <div className="absolute bottom-16 left-3 z-10 w-32 rounded-lg border-2 border-foreground bg-card/95 p-1 shadow-lg sm:bottom-3 sm:w-40" aria-label="Town minimap">
         <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
           <span>🗺️ Town map</span>
-          <span className="text-[10px] font-normal text-muted-foreground">Tap to walk</span>
         </div>
         <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded bg-town-grass" role="img" aria-label="Overhead map showing buildings and your location"
           onPointerDown={(e) => {
@@ -337,7 +336,7 @@ export function TownMap({ hour, house, speed = 1, onEnter, active }: { hour: num
       </div>
 
       {near && (
-        <Button onClick={() => onEnter(near.id)} className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-xl text-primary-foreground">
+        <Button onClick={() => onEnter(near.id)} className="absolute bottom-64 left-1/2 max-w-[calc(100%-24px)] -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-lg text-primary-foreground sm:bottom-24">
           Enter {near.label} <span className="hidden sm:inline">(E)</span>
         </Button>
       )}
