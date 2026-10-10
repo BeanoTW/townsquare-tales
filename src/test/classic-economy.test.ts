@@ -21,6 +21,7 @@ const fallback: GameState = {
   furniture: 0,
   career: 0,
   xp: 0,
+  relMara: 0, relNox: 0, relGus: 0, relIvy: 0,
 };
 describe("classic economy persistence", () => {
   it("migrates old saves with no economy fields", () => {
