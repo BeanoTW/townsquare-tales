@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import "./action-vignette.css";
 
 export type VignetteKind = "strength" | "run" | "study" | "drink" | "sleep" | "food" | "work" | "gamble" | "shady" | "shop" | "social" | "recover" | "travel" | "money" | "tv";
@@ -16,7 +16,7 @@ export function vignetteForAction(id: string): VignetteKind | null {
   if (["shift", "lunch-shift", "promote"].includes(id)) return "work";
   if (["slots", "high-dice", "alley-dice"].includes(id)) return "gamble";
   if (["mug", "sell-goods", "gang-mugging"].includes(id)) return "shady";
-  if (["buy-house", "buy-shoes", "buy-alarm", "buy-smokes", "furniture", "sell-shoes", "sell-alarm"].includes(id) || id.startsWith("buy-")) return "shop";
+  if (["buy-house", "buy-shoes", "buy-alarm", "buy-smokes", "furniture", "sell-shoes", "sell-alarm"].includes(id) || id.startsWith("buy-") || id.startsWith("furniture-")) return "shop";
   if (["chat-up", "relax", "encounter"].includes(id)) return "social";
   if (["recovery"].includes(id)) return "recover";
   if (["departures"].includes(id)) return "travel";
@@ -38,10 +38,14 @@ export function ActionVignette({
 }: {
   kind: VignetteKind; changes: string[]; message: string; onDone: () => void;
 }) {
+  // The parent rerenders after each save; changing callback identity must not
+  // restart the animation's countdown or leave it visible indefinitely.
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
   useEffect(() => {
-    const timer = window.setTimeout(onDone, 1850);
+    const timer = window.setTimeout(() => doneRef.current(), 1850);
     return () => window.clearTimeout(timer);
-  }, [onDone]);
+  }, [kind, message]);
   const gains = changes.filter(change => /\+\d/.test(change) && /Strength|Intelligence|Charm|Energy|Cash|Work XP|Karma/.test(change));
   const headline = gains.slice(0, 2).map(c => c.replace(": ", " ")).join("   ") || changes.find(c => /-\d/.test(c))?.replace(": ", " ") || "ACTION COMPLETE";
   return (
