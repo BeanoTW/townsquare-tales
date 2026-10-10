@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocationScene } from "@/components/LocationScene";
+import { isArcadeRoom } from "@/lib/arcade-rooms";
 import { fitRect, panelStyle } from "@/lib/room-layout";
 import { START } from "@/lib/game-data";
 import { PLACE_IDS, ROOMS, VIEW, roomFor, visibleHotspots } from "@/lib/rooms";
@@ -20,10 +21,12 @@ describe("LocationScene", () => {
     for (const id of PLACE_IDS) {
       const { room, unmount } = renderRoom(id);
       expect(screen.getByRole("heading", { level: 2, name: room.title })).toBeInTheDocument();
-      for (const h of visibleHotspots(room, START)) {
-        expect(
-          screen.getByRole("button", { name: new RegExp(`^${h.label}\\.`) }),
-        ).toBeInTheDocument();
+      if (isArcadeRoom(id)) {
+        expect(screen.getByRole("region", { name: `${room.title} interaction` })).toBeInTheDocument();
+      } else {
+        for (const h of visibleHotspots(room, START)) {
+          expect(screen.getByRole("button", { name: new RegExp(`^${h.label}\\.`) })).toBeInTheDocument();
+        }
       }
       unmount();
     }
@@ -56,12 +59,12 @@ describe("LocationScene", () => {
     expect(screen.getByRole("dialog", { name: "Running machine" })).toBeInTheDocument();
   });
 
-  it("opens an object from the keyboard", () => {
-    renderRoom("bank");
-    const teller = screen.getByRole("button", { name: /^Teller window\./ });
-    teller.focus();
-    fireEvent.keyDown(teller, { key: "Enter" });
-    expect(screen.getByRole("dialog", { name: "Teller window" })).toBeInTheDocument();
+  it("opens an object from the keyboard in the remaining interactive rooms", () => {
+    renderRoom("gym");
+    const rack = screen.getByRole("button", { name: /^Weights rack\./ });
+    rack.focus();
+    fireEvent.keyDown(rack, { key: "Enter" });
+    expect(screen.getByRole("dialog", { name: "Weights rack" })).toBeInTheDocument();
   });
 
   it("leaves with the Leave button and Escape", () => {
@@ -70,10 +73,10 @@ describe("LocationScene", () => {
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
 
-  it("closes the panel on Escape before leaving the building", () => {
-    const { onLeave } = renderRoom("clinic");
-    fireEvent.click(screen.getByRole("button", { name: /^Treatment bed\./ }));
-    expect(screen.getByRole("dialog", { name: "Treatment bed" })).toBeInTheDocument();
+  it("closes an object panel on Escape before leaving", () => {
+    const { onLeave } = renderRoom("gym");
+    fireEvent.click(screen.getByRole("button", { name: /^Weights rack\./ }));
+    expect(screen.getByRole("dialog", { name: "Weights rack" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(onLeave).not.toHaveBeenCalled();

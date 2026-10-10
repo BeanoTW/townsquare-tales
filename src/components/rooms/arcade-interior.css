@@ -1,0 +1,80 @@
+.arcade-interior{color:#222435}
+.arcade-header{position:relative;z-index:1;flex-shrink:0;padding:104px 14px 8px;background:#fbf5e9;border-bottom:3px solid #272431}
+.arcade-header p{color:#616274;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.arcade-header h2{font-size:clamp(22px,6vw,30px);line-height:1.15;font-weight:900}
+.arcade-stage{position:relative;min-height:0;flex:1 1 0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;background:linear-gradient(180deg,var(--arcade-wall) 0 42%,var(--arcade-floor) 42% 100%);scrollbar-width:thin}
+.arcade-stage::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.3;background:repeating-linear-gradient(90deg,transparent 0 40px,#29273316 41px 43px)}
+.arcade-set{position:absolute;left:50%;top:0;height:183px;width:min(620px,100%);transform:translateX(-50%);overflow:hidden;pointer-events:none}
+.arcade-set-shelf{position:absolute;top:24px;left:12px;display:flex;gap:5px;height:56px;padding:8px 10px;align-items:end;border:4px solid #302a37;border-radius:4px;color:#f8d47b;font-size:27px;background:#7d6757}
+.arcade-set-sign{position:absolute;top:12px;right:16px;padding:4px 12px;border:3px solid #282630;border-radius:5px;font-size:13px;font-weight:900;letter-spacing:.08em;background:var(--arcade-accent);color:#fff8e6;box-shadow:3px 4px 0 #28263033}
+.arcade-npc{position:absolute;width:105px;height:142px;bottom:12px;left:49%;transform:translateX(-50%);animation:arcade-breath 2.6s ease-in-out infinite}
+.arcade-npc svg{height:100%;width:100%}
+.arcade-counter-face{position:absolute;bottom:-6px;left:0;right:0;height:56px;border-top:12px solid #d9b17a;border-bottom:5px solid #282630;background:repeating-linear-gradient(90deg,#9a725a 0 38px,#aa8068 38px 42px)}
+.arcade-till{position:absolute;bottom:32px;left:64%;z-index:1;width:64px;height:42px;border:4px solid #282630;border-radius:4px;background:#dbd7c6}
+.arcade-till-screen{margin:5px;padding:2px;border-radius:2px;background:#a5cbb3;color:#285542;font-size:13px;font-weight:900;text-align:center}
+.arcade-dialog{position:relative;z-index:2;box-sizing:border-box;width:min(450px,calc(100% - 22px));margin:122px auto 18px;border:3px solid #183966;border-radius:9px;padding:9px;background:#72a1e8;color:#17315e;box-shadow:0 6px 0 #183966,0 12px 28px #1a203c4b}
+.arcade-dialog-heading{display:flex;gap:9px;align-items:center;padding:5px 6px 9px;border-bottom:2px solid #244d82}
+.arcade-avatar{display:grid;width:44px;min-width:44px;height:44px;place-items:center;border:2px solid #244d82;border-radius:5px;background:var(--arcade-service-colour);font-size:25px}
+.arcade-speaker{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.arcade-greeting{font-size:12px;font-weight:600;line-height:1.25}
+.arcade-tabs{display:flex;gap:5px;margin:9px 2px}
+.arcade-tabs button{flex:1 1 0;min-width:0;min-height:37px;border:2px solid #224574;border-radius:5px;padding:5px;color:#183b6a;background:#b4d2fa;font-size:12px;font-weight:900;line-height:1.1}
+.arcade-tabs button[aria-selected="true"]{background:#f6df87;color:#312741;box-shadow:inset 0 -3px 0 #aa832f}
+.arcade-mini-title{margin:2px 0 5px;font-size:11px;font-weight:900;text-align:center;letter-spacing:.12em}
+.arcade-shop{text-align:center}
+.arcade-wheel{position:relative;width:min(214px,70vw);height:min(214px,70vw);margin:0 auto;border-radius:50%;background:radial-gradient(circle,#f4e5a6 0 28%,#5587cc 29% 55%,#315a94 56% 60%,#a9cdf2 61% 100%);box-shadow:inset 0 0 0 3px #183966,0 3px 7px #123a7755}
+.arcade-wheel-ring{position:absolute;inset:11%;border:2px dashed #f9ebad;border-radius:50%;opacity:.65}
+.arcade-wheel-item{position:absolute;display:grid;width:43px;height:43px;place-items:center;border:2px solid #25314a;border-radius:50%;background:#f9e4a5;font-size:22px;transform:translate(-50%,-50%);transition:left 280ms ease,top 280ms ease,scale 150ms ease;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.arcade-wheel-item.is-selected{background:#fff5d8;border-color:#192f64;outline:3px solid #fdcc47;z-index:2;scale:1.12}
+.arcade-wheel-centre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;width:64px;height:64px;place-items:center;border:3px solid #233b71;border-radius:50%;background:#ffedc3;font-size:36px;pointer-events:none}
+.arcade-purchase-pop{animation:arcade-buy-pop 380ms ease-out}
+.arcade-wheel-nav{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-top:8px}
+.arcade-wheel-nav button{min-width:42px;min-height:40px;border:2px solid #224574;border-radius:5px;background:#f1dc8d;font-weight:900}
+.arcade-product-name{display:grid;gap:0;min-width:0}
+.arcade-product-name strong{font-size:16px}
+.arcade-product-name span{font-size:11px}
+.arcade-product-desc{min-height:30px;margin:5px auto 3px;font-size:12px;line-height:1.2}
+.arcade-inventory-count{margin-bottom:4px;font-size:12px;font-weight:700}
+.arcade-buy{display:block;width:100%;min-height:44px;margin-top:7px;border:3px solid #1f3e62;border-radius:5px;background:#ffe083;color:#25324c;box-shadow:inset 0 -4px 0 #d6a64a;font-size:16px;font-weight:900;letter-spacing:.06em}
+.arcade-buy:disabled{background:#adb5c4;color:#3f4656;box-shadow:none}
+.arcade-buy:active:not(:disabled){transform:translateY(2px)}
+.arcade-purchase-hint{margin:5px 0 0;font-size:11px;opacity:.85}
+.arcade-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:9px 0}
+.arcade-stats span{display:grid;gap:2px;padding:8px;border:2px solid #224574;border-radius:5px;background:#b8d4f1;font-size:11px;text-align:center}
+.arcade-stats strong{font-size:15px}
+.arcade-service-tabs{flex-wrap:wrap}
+.arcade-service-tabs button{flex:1 1 80px}
+.arcade-service-page{padding:9px;border:2px solid #224574;border-radius:5px;background:#a8c8ef}
+.arcade-service-page h3,.arcade-job-section h3{font-weight:900;font-size:17px}
+.arcade-subline{font-size:12px;line-height:1.3;margin:3px 0}
+.arcade-choice-list{display:grid;gap:7px;margin-top:8px}
+.arcade-choice{display:flex;min-height:45px;width:100%;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:3px 8px;padding:7px 9px;border:2px solid #294675;border-radius:5px;background:#e6effc;text-align:left}
+.arcade-choice:focus-visible,.arcade-wheel-item:focus-visible,.arcade-tabs button:focus-visible{outline:3px solid #ffcf53;outline-offset:1px}
+.arcade-choice-label{font-size:13px;font-weight:900}
+.arcade-choice-cost{font-size:11px;font-weight:700}
+.arcade-choice-note{flex:1 1 100%;color:#4a5770;font-size:11px}
+.arcade-empty{font-size:12px}
+.arcade-job-panel{max-height:min(49vh,320px);overflow-y:auto;scrollbar-width:thin}
+.arcade-job-section{padding:7px;border-bottom:1px solid #365487}
+.arcade-levelup{display:grid;gap:2px;padding:7px;border:2px solid #d6a631;background:#ffefba;text-align:center;font-size:16px;font-weight:900;animation:arcade-buy-pop 400ms ease-out}
+.arcade-levelup span{font-size:12px}
+.arcade-footer{display:flex;flex-shrink:0;gap:9px;align-items:center;padding:8px 10px max(9px,env(safe-area-inset-bottom));border-top:3px solid #272431;background:#fffaf0;min-height:62px}
+.arcade-leave{flex-shrink:0;min-width:86px;min-height:44px;padding:7px 10px;border:2px solid #272431;border-radius:5px;background:#efdda8;font-weight:900}
+.arcade-feedback{min-width:0;max-height:64px;overflow-y:auto;font-size:12px;font-weight:700;line-height:1.25}
+.arcade-result-success{color:#25623d;animation:arcade-buy-pop 300ms ease-out}
+.arcade-result-failed{color:#aa2929}
+@keyframes arcade-breath{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
+@keyframes arcade-buy-pop{0%{scale:.72;opacity:.65}58%{scale:1.16;opacity:1}100%{scale:1;opacity:1}}
+@media(max-height:650px){.arcade-dialog{margin-top:92px}.arcade-set{height:145px}.arcade-set-sign{top:6px}.arcade-header{padding-top:92px}}
+@media(prefers-reduced-motion:reduce){.arcade-npc,.arcade-purchase-pop,.arcade-levelup,.arcade-result-success{animation:none}.arcade-wheel-item{transition:none}}
+.arcade-changes{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.arcade-changes span{border-radius:4px;padding:2px 4px;background:#deebda;color:#294638;font-size:10px;font-weight:900}
+.arcade-bank{display:grid;gap:8px;padding:5px 2px}
+.arcade-amount-label{font-size:13px;font-weight:900}
+.arcade-amount-input{width:100%;min-height:48px;padding:8px 12px;border:3px solid #274775;border-radius:5px;background:#f3f5df;font-size:22px;font-weight:900;text-align:center;color:#182d51}
+.arcade-quick-amounts{display:flex;flex-wrap:wrap;gap:6px}
+.arcade-quick-amounts button{flex:1 1 65px;min-height:38px;padding:6px;border:2px solid #234a7a;border-radius:5px;background:#deebfa;font-size:12px;font-weight:900}
+.arcade-quick-amounts button:disabled{opacity:.45}
+.arcade-bank-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.arcade-bank-actions button{min-height:52px;border:3px solid #1e4672;border-radius:6px;background:#ffde88;font-size:14px;font-weight:900}
+.arcade-bank-actions button:disabled{background:#b3bfd1;opacity:.6}
