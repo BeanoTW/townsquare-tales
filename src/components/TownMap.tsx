@@ -129,7 +129,7 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
       <line x1={0} y1={-33} x2={0} y2={-16} />
       {skating && <g data-rider-facing={facing} strokeWidth={2.3}>
         {(facing === "up" || facing === "down") && <path d={facing === "up" ? "M-4 -37L0 -41L4 -37" : "M-4 -39L0 -35L4 -39"} />}
-      </g>
+      </g>}
       <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe} />
       <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe} />
       {skating ? <>
