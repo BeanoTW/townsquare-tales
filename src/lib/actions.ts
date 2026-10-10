@@ -275,6 +275,31 @@ export const CHAT_UP: ActionDef = {
       : { patch: { cha: s.cha + 1 }, message: "Rejected. Character building. +1 charm" },
 };
 
+/** Any whole-dollar transfer amount, without changing the save schema. */
+export function bankTransferAction(kind: "deposit" | "withdraw", amount: number): ActionDef {
+  return {
+    id: `bank-${kind}-${amount}`,
+    label: `${kind === "deposit" ? "Deposit" : "Withdraw"} ${amount}`,
+    hours: 0,
+    energy: 0,
+    resolve: (s) => {
+      if (!Number.isSafeInteger(amount) || amount <= 0) return "Enter a positive whole-dollar amount.";
+      if (kind === "deposit") {
+        if (s.money < amount) return "Not enough cash to deposit.";
+        return {
+          patch: { money: s.money - amount, bank: s.bank + amount },
+          message: `Deposited ${amount}. Your savings are growing.`,
+        };
+      }
+      if (s.bank < amount) return "Not enough savings to withdraw.";
+      return {
+        patch: { bank: s.bank - amount, money: s.money + amount },
+        message: `Withdrew ${amount}. Cash ready to spend.`,
+      };
+    },
+  };
+}
+
 export const DEPOSIT_50: ActionDef = {
   id: "deposit-50",
   label: "Deposit $50",
