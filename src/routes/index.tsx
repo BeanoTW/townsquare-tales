@@ -4,7 +4,8 @@ import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { TownMap } from "@/components/TownMap";
 import { LocationScene } from "@/components/LocationScene";
 import { EmploymentDesk } from "@/components/EmploymentDesk";
-import { FURNITURE, ownsFurniture, furnitureBonus, type FurnitureId } from "@/lib/furniture";
+import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
+import { FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole, missingRequirements, shiftReward } from "@/lib/careers";
 
 export const Route = createFileRoute("/")({
@@ -114,9 +115,10 @@ function Game() {
       ...(ownsFurniture(s.furniture, "desk") ? [{ label: "Study at desk (2h, +2 intelligence)", run: () => act(2, 12, (p) => [{ int: p.int + 2 }, "Quiet study session. +2 intelligence."]) }] : []),
       ...(ownsFurniture(s.furniture, "kitchen") ? [{ label: "Cook at home (1h, $5, +40 energy)", run: () => act(1, 0, (p) => p.money >= 5 ? [{ money: p.money - 5, energy: Math.min(100, p.energy + 40) }, "Homemade dinner! +40 energy."] : "Need $5 for ingredients.") }] : []),
       ...(ownsFurniture(s.furniture, "sofa") ? [{ label: "Relax on your sofa (1h, +2 charm)", run: () => act(1, 0, (p) => [{ cha: p.cha + 2 }, "You feel surprisingly sociable. +2 charm."]) }] : []),
-      { label: `Sleep (+${Math.min(100, HOUSES[s.house]!.rest + furnitureBonus(s.furniture, "sleep"))} energy)`, run: () => {
-        setS((p) => ({ ...p, day: p.day + 1, hour: p.alarm ? 7 : 8, bank: Math.min(1e12, p.bank + Math.floor(p.bank * 0.001)), energy: Math.min(100, p.energy + HOUSES[p.house]!.rest + furnitureBonus(p.furniture, "sleep")), heat: Math.max(0, p.heat - 1) }));
-        say(`Day ${s.day + 1}. You wake up in your ${HOUSES[s.house]!.name}.`);
+      { label: `Sleep · wake around ${timeLabel(sleepOutcome(s).hour)}`, run: () => {
+        const rested = sleepOutcome(s);
+        setS((p) => ({ ...p, ...sleepOutcome(p), day: p.day + 1, bank: Math.min(1e12, p.bank + Math.floor(p.bank * 0.001)), heat: Math.max(0, p.heat - 1) }));
+        say(`Day ${s.day + 1}. You wake at ${timeLabel(rested.hour)} in your ${HOUSES[s.house]!.name} with ${rested.energy} energy.`);
       }},
       ...(HOUSES[s.house + 1]! ? [{ label: `Buy ${HOUSES[s.house + 1]!.name} ($${HOUSES[s.house + 1]!.cost})`, run: () => act(0, 0, (p) =>
         p.money >= HOUSES[p.house + 1]!.cost ? [{ money: p.money - HOUSES[p.house + 1]!.cost, house: p.house + 1 }, `You moved into a ${HOUSES[p.house + 1]!.name}!`] : "Not enough cash.") }] : []),
@@ -210,9 +212,15 @@ function Game() {
 
       {/* top HUD */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-        <div className="pointer-events-auto flex items-center gap-3 rounded-full border-2 border-foreground bg-card px-3 py-1 text-lg shadow">
-          <span>☀ {s.hour}:00</span><span>${s.money}</span>
-          <span className="flex items-center gap-1">⚡<span className="h-2 w-14 overflow-hidden rounded-full bg-muted"><span className="block h-full bg-primary" style={{ width: `${s.energy}%` }} /></span></span>
+        <div className="pointer-events-auto min-w-0 max-w-[calc(100%-9rem)] rounded-xl border-2 border-foreground bg-card/95 px-2 py-1 text-sm shadow sm:px-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-bold">
+            <span>Day {s.day}</span><span>🕒 {timeLabel(s.hour)}</span><span>${s.money}</span>
+            <span>⚡ {s.energy}%</span>
+          </div>
+          <div className="mt-1 flex gap-[2px]" role="progressbar" aria-label="Hours elapsed today" aria-valuemin={0} aria-valuemax={24} aria-valuenow={s.hour}>
+            {Array.from({length:24},(_,i)=><span key={i} className={`h-[6px] min-w-0 flex-1 rounded-[1px] ${i < s.hour ? (i >= 19 || i < 6 ? "bg-indigo-600" : i >= 16 ? "bg-orange-500" : "bg-primary") : "bg-muted"}`} />)}
+          </div>
+          <div className="text-[10px] text-muted-foreground">{Math.max(0,24-s.hour)}h remaining · actions advance time</div>
         </div>
         <div className="pointer-events-auto flex flex-col gap-2">
           <Icon label="Player" onClick={() => setTab("player")}>👤</Icon>
