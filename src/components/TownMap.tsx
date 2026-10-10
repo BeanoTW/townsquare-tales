@@ -11,9 +11,9 @@ const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join
 export const ROADS = [
   { x: 9, y: 0, w: 2, d: 30 },       // north-south Main Street, only T-junctions
   { x: 0, y: 7.6, w: 9, d: 1.8 },    // upper west street, joins Main Street
-  { x: 11, y: 12.4, w: 14, d: 1.8 }, // east market street, offset 4.8 tiles
+  { x: 11, y: 12.4, w: 12, d: 1.8 }, // east market street, offset 4.8 tiles
   { x: 0, y: 19, w: 9, d: 1.8 },     // lower west street, staggered again
-  { x: 11, y: 26, w: 14, d: 1.8 },  // lower east street, offset 7 tiles
+  { x: 11, y: 26, w: 12, d: 1.8 },  // lower east street, offset 7 tiles
   { x: 23, y: 12.4, w: 2, d: 17.2 }, // east side street with T-junctions
 ] as const;
 
