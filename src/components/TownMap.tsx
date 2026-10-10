@@ -154,6 +154,7 @@ function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "
         <line x1={0} y1={-16} x2={-s} y2={0} />
         <line x1={0} y1={-16} x2={s} y2={0} />
       </>}
+      </>}
     </g>
   );
 }
