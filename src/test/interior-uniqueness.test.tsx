@@ -68,6 +68,25 @@ describe("depth and housing progression", () => {
     expect(view.container.querySelector("[data-makeshift-sleep]")).not.toBeInTheDocument();
   });
 
+  it("keeps casino, gym and housing rear walls upright, with distinct background characters", () => {
+    for (const id of ["casino", "gym", "home"] as const) {
+      const view = draw(id);
+      const wall = view.container.querySelector('[data-room-shell="square"] [data-back-wall="upright"]');
+      expect(wall).toHaveAttribute("x", "34");
+      expect(wall).toHaveAttribute("width", "352");
+      expect(view.container.querySelector('[data-room-shell="square"]')).toBeInTheDocument();
+      if (id === "casino") expect(view.container.querySelector("[data-casino-regular]")).toBeInTheDocument();
+      if (id === "gym") expect(view.container.querySelector("[data-gym-trainer]")).toBeInTheDocument();
+      view.unmount();
+    }
+  });
+
+  it("keeps grumpy service characters and square walls in the corner shop", () => {
+    const view = show("shop");
+    expect(view.container.querySelector('[data-character-venue="shop"][data-expression="unimpressed"] [data-emo-clerk]')).toBeInTheDocument();
+    expect(view.container.querySelector('.arcade-set-shop [data-back-wall="upright"]')).toBeInTheDocument();
+  });
+
   it("builds the casino as a perspective room with solid slot-machine and dice-table geometry", () => {
     const view = draw("casino");
     expect(view.container.querySelector('[data-scene-depth="casino"]')).toBeInTheDocument();
