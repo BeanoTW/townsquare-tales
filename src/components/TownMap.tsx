@@ -150,7 +150,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
   // The pointer id prevents secondary touches from hijacking movement.
   const joystick = useRef<{ id: number; x: number; y: number; dx: number; dy: number } | null>(null);
   const [stickVisual, setStickVisual] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
-  const suppressGroundClick = useRef(false);
+  const suppressGroundClickUntil = useRef(0);
   const joystickDragged = useRef(false);
   const removeJoystickListeners = useRef<(() => void) | null>(null);
   const JOYSTICK_RADIUS = 52;
@@ -279,7 +279,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     const x = e.clientX, y = e.clientY;
     joystick.current = { id: e.pointerId, x, y, dx: 0, dy: 0 };
     joystickDragged.current = false;
-    suppressGroundClick.current = false;
+    // Capture on the persistent SVG root so moving scenery cannot steal a drag.
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* Window listeners remain a fallback. */ }
     setStickVisual({ x, y, dx: 0, dy: 0 });
 
     // Follow the gesture from window level. The game camera, SVG objects and
@@ -298,16 +299,19 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     };
     const end = (event: PointerEvent) => {
       if (joystick.current?.id !== event.pointerId) return;
-      if (joystickDragged.current) suppressGroundClick.current = true;
+      if (joystickDragged.current) suppressGroundClickUntil.current = performance.now() + 350;
+      try {
+        if (svgRef.current?.hasPointerCapture(event.pointerId)) svgRef.current.releasePointerCapture(event.pointerId);
+      } catch { /* Pointer may already be released or cancelled. */ }
       stopJoystick();
     };
-    window.addEventListener("pointermove", move, { passive: false });
-    window.addEventListener("pointerup", end);
-    window.addEventListener("pointercancel", end);
+    window.addEventListener("pointermove", move, { capture: true, passive: false });
+    window.addEventListener("pointerup", end, true);
+    window.addEventListener("pointercancel", end, true);
     removeJoystickListeners.current = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", end);
-      window.removeEventListener("pointercancel", end);
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", end, true);
+      window.removeEventListener("pointercancel", end, true);
     };
   };
 
@@ -455,8 +459,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
       <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 240} ${cy - 415} 480 800`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={onGroundPointerDown}
         onClickCapture={(e) => {
-          if (suppressGroundClick.current) {
-            suppressGroundClick.current = false;
+          if (performance.now() < suppressGroundClickUntil.current) {
+            suppressGroundClickUntil.current = 0;
             e.preventDefault();
             e.stopPropagation();
           }
