@@ -145,12 +145,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     target.current = route.length ? { waypoints: route, enter } : null;
   };
   const keys = useRef(new Set<string>());
-  // Screen-space thumb anchor is created wherever the player presses empty ground.
+  // Screen-space thumb anchor appears at any touch point, including over buildings.
   // The pointer id prevents secondary touches from hijacking movement.
   const joystick = useRef<{ id: number; x: number; y: number; dx: number; dy: number } | null>(null);
   const [stickVisual, setStickVisual] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
   const suppressGroundClick = useRef(false);
   const joystickDragged = useRef(false);
+  const removeJoystickListeners = useRef<(() => void) | null>(null);
   const JOYSTICK_RADIUS = 52;
   const updateJoystick = (clientX: number, clientY: number) => {
     const stick = joystick.current;
@@ -164,9 +165,16 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     setStickVisual({ x: stick.x, y: stick.y, dx: stick.dx, dy: stick.dy });
   };
   const stopJoystick = () => {
+    removeJoystickListeners.current?.();
+    removeJoystickListeners.current = null;
     joystick.current = null;
+    joystickDragged.current = false;
     setStickVisual(null);
   };
+  useEffect(() => () => {
+    removeJoystickListeners.current?.();
+    removeJoystickListeners.current = null;
+  }, []);
   const [t, setT] = useState(0);
   const [near, setNear] = useState<B | null>(null);
   const nearRef = useRef<B | null>(null);
@@ -274,34 +282,41 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
 
   const onGroundPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (movementMode !== "joystick" || e.pointerType === "mouse" || joystick.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(rect.left + 60, Math.min(rect.right - 60, e.clientX));
-    const y = Math.max(rect.top + 60, Math.min(rect.bottom - 60, e.clientY));
+    if (e.isPrimary === false) return;
+    // Anchor to the real touch point, not a clamped position that jumps near edges.
+    const x = e.clientX, y = e.clientY;
     joystick.current = { id: e.pointerId, x, y, dx: 0, dy: 0 };
-    suppressGroundClick.current = false;
     joystickDragged.current = false;
+    suppressGroundClick.current = false;
     setStickVisual({ x, y, dx: 0, dy: 0 });
-    // Delay capture: a short tap must still activate the original target.
-  };
-  const onGroundPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (joystick.current?.id !== e.pointerId) return;
-    const origin = joystick.current;
-    const distance = Math.hypot(e.clientX - origin.x, e.clientY - origin.y);
-    if (!joystickDragged.current && distance > 9) {
-      joystickDragged.current = true;
-      target.current = null;
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    }
-    if (joystickDragged.current) {
-      updateJoystick(e.clientX, e.clientY);
-      e.preventDefault();
-    }
-  };
-  const onGroundPointerEnd = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (joystick.current?.id !== e.pointerId) return;
-    if (joystickDragged.current) suppressGroundClick.current = true;
-    stopJoystick();
-    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+
+    // Follow the gesture from window level. The game camera, SVG objects and
+    // buildings can change under the thumb without interrupting movement.
+    const move = (event: PointerEvent) => {
+      const origin = joystick.current;
+      if (!origin || event.pointerId !== origin.id) return;
+      if (!joystickDragged.current && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 9) {
+        joystickDragged.current = true;
+        target.current = null;
+      }
+      if (joystickDragged.current) {
+        updateJoystick(event.clientX, event.clientY);
+        if (event.cancelable) event.preventDefault();
+      }
+    };
+    const end = (event: PointerEvent) => {
+      if (joystick.current?.id !== event.pointerId) return;
+      if (joystickDragged.current) suppressGroundClick.current = true;
+      stopJoystick();
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    removeJoystickListeners.current = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
   };
 
   const night = hour >= 19 || hour < 6;
@@ -427,10 +442,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, kar
     <div className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
       <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 240} ${cy - 415} 480 800`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={onGroundPointerDown}
-        onPointerMove={onGroundPointerMove}
-        onPointerUp={onGroundPointerEnd}
-        onPointerCancel={onGroundPointerEnd}
-        onLostPointerCapture={() => { if (joystick.current) stopJoystick(); }}
         onClickCapture={(e) => {
           if (suppressGroundClick.current) {
             suppressGroundClick.current = false;
