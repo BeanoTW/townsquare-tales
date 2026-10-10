@@ -112,9 +112,11 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, skating = false, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; color?: string; head?: string }) {
+function Stick({ x, y, phase, walking, skating = false, idle = false, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; color?: string; head?: string }) {
   const [sx, sy] = P(x, y);
   const s = walking && !skating ? Math.sin(phase) * 7 : 0;
+  const breathe = idle ? Math.sin(phase * 0.55) * 1.2 : 0;
+  const gesture = idle ? Math.sin(phase * 0.8) * 2.2 : 0;
   return (
     <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
       <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
@@ -123,10 +125,10 @@ function Stick({ x, y, phase, walking, skating = false, color = "var(--town-play
         <circle cx={-12} cy={2} r={3} fill="#363846" />
         <circle cx={12} cy={2} r={3} fill="#363846" />
       </g>}
-      <circle cx={0} cy={skating ? -39 : -40} r={7} fill={head} />
+      <circle cx={0} cy={(skating ? -39 : -40) + breathe} r={7} fill={head} />
       <line x1={0} y1={-33} x2={0} y2={-16} />
-      <line x1={0} y1={-28} x2={-8 - s / 2} y2={-20 + Math.abs(s) / 3} />
-      <line x1={0} y1={-28} x2={8 + s / 2} y2={-20 + Math.abs(s) / 3} />
+      <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe} />
+      <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe} />
       {skating ? <>
         <line x1={0} y1={-16} x2={-12} y2={-4} />
         <line x1={0} y1={-16} x2={11} y2={-4} />
@@ -356,7 +358,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       el: <g key={person.id} role="button" tabIndex={0} data-resident={person.id} aria-label={"Talk to "+person.name}
         className="cursor-pointer" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
         onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();routeTo(person,"resident:"+person.id);}}}>
-        <Stick x={person.x} y={person.y} phase={t*3+i} walking={false} color={person.color}/>
+        <Stick x={person.x} y={person.y} phase={t*3+i} walking={false} idle color={person.color}/>
         <g transform={`translate(${P(person.x,person.y)[0]+16} ${P(person.x,person.y)[1]-33+Math.sin(t*1.4+i)*2})`}>
           <rect x="-10" y="-13" width="23" height="22" rx="9" fill="#f2e8d4" stroke="#4a454c" strokeWidth="1.5" opacity=".95"/>
           <text x="1" y="4" fontSize="14" textAnchor="middle">{residentActivity(person.id,hour)}</text>
