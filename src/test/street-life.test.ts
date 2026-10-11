@@ -79,3 +79,24 @@ describe("physical encounters", () => {
     expect(residentBark("ivy",START,"skating",1)).not.toBe(residentBark("ivy",START,"skating",0));
   });
 });
+
+describe("physical street actions",()=>{
+  it("charges newspaper costs once per day across saves",()=>{
+    const first=runAction({...START,money:10,hour:12},streetAction("newspaper"));
+    if(!first.ok)throw Error(first.message);
+    expect(first.next.money).toBe(8);expect(first.next.hour).toBe(12.25);expect(first.next.int).toBe(6);
+    const loaded=parseGame(JSON.stringify(first.next),START);
+    expect(runAction(loaded,streetAction("newspaper")).ok).toBe(false);
+    expect(runAction({...loaded,day:2},streetAction("newspaper")).ok).toBe(true);
+  });
+  it("rejects purchases with no money or insufficient remaining time",()=>{
+    expect(runAction({...START,money:0},streetAction("newspaper")).ok).toBe(false);
+    expect(runAction({...START,hour:24},streetAction("newspaper")).ok).toBe(false);
+  });
+  it("charges a little energy for kicking litter without cash, karma or stat farming",()=>{
+    const result=runAction(START,streetAction("litter"));
+    if(!result.ok)throw Error(result.message);
+    expect(result.next).toEqual({...START,energy:99});
+    expect(runAction({...START,energy:0},streetAction("litter")).ok).toBe(false);
+  });
+});

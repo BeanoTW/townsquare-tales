@@ -121,22 +121,27 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string }) {
+function Stick({ x, y, phase, walking, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
   const [sx, sy] = P(x, y);
   return <g transform={`translate(${sx},${sy})`}>
     {skating && <g data-skater-pose data-skate-angle={skateAngle} transform={`rotate(${skateAngle+180})`}>
       <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
       <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
     </g>}
-    <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking && !skating} angle={skating ? 0 : (skateAngle + 180) % 360}/>
+    <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={(walking && !skating) || feedback === "bin"} angle={skating ? 0 : (skateAngle + 180) % 360}/>
+    {feedback === "vending" && <g data-drinking-feedback transform="translate(14 -10)"><path d="M-3 -4h7l-1 9h-5Z" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -4v-5l3-2" stroke="var(--town-ink)" fill="none"/></g>}
+    {feedback === "bin" && <text data-search-feedback x="15" y="-25" fontSize="15" fill="var(--town-ink)">?</text>}
+    {feedback === "newspaper" && <g data-reading-feedback transform="translate(0 7)"><rect x="-8" y="-4" width="16" height="11" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -3v9m-6-7h4m4 0h4m-12 4h4m4 0h4" stroke="var(--town-ink)" strokeWidth=".7"/></g>}
   </g>;
 }
 
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
+  const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const bs = useMemo(() => buildings(house), [house]);
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
   const seatedUntil = useRef(0);
+  const streetFeedback = useRef<{id:StreetObjectId;until:number}|null>(null);
   const streetRef = useRef(onStreet); streetRef.current = onStreet;
   const encounterRef = useRef({encounter,onEncounter}); encounterRef.current = {encounter,onEncounter};
   const pausedRef = useRef(paused); pausedRef.current = paused;
@@ -144,8 +149,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const nearStreetRef = useRef<StreetObjectId | null>(null);
   const useStreet = useCallback((id: StreetObjectId) => {
     const object = STREET_OBJECTS.find(o=>o.id===id);
+    if (performance.now()/1000 < (streetFeedback.current?.until ?? 0)) return;
     if (!object || Math.hypot(me.current.x-object.x,me.current.y-object.y)>1.15 || pausedRef.current) return;
-    if (streetRef.current?.(id) && id === "bench") seatedUntil.current = performance.now()/1000+3;
+    if (streetRef.current?.(id)) {
+      const until=performance.now()/1000+2;
+      streetFeedback.current={id,until};
+      if(id === "bench") seatedUntil.current=until;
+    }
   }, []);
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
@@ -161,7 +171,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     if(Math.hypot(me.current.x-encounter.x,me.current.y-encounter.y)<1.5) onEncounter?.();
     else routeTo(encounter,"encounter");
   };
-  const selectResident = useCallback((id: string, p: Point) => routeTo(p,"resident:"+id), [routeTo]);
+  const selectResident = useCallback((id: string, p: Point) => {
+    if(pausedRef.current)return;
+    if(Math.hypot(me.current.x-p.x,me.current.y-p.y)<1.5) enterRef.current("resident:"+id);
+    else routeTo(p,"resident:"+id);
+  }, [routeTo]);
   const selectObject = useCallback((id: StreetObjectId) => {
     const object=STREET_OBJECTS.find(o=>o.id===id); if(!object)return;
     if(Math.hypot(me.current.x-object.x,me.current.y-object.y)<1.15)useStreet(id);
@@ -433,7 +447,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={m.phase} walking={m.walking} skating={skating} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={karmaHeadColor(karma)} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
@@ -515,7 +529,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
-        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} />
+        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} />
         {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
       </svg>
       
