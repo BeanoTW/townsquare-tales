@@ -9,11 +9,13 @@ export type GameState = {
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
   smokes: number; skateboard: number; skateboardEquipped: number; parkSmokes: number; parkKidGone: number;
   streetSearchDay?: number;
+  streetMaraIncidents?: number; streetNoxIncidents?: number; streetGusIncidents?: number; streetIvyIncidents?: number;
 };
 
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
   streetSearchDay: [0, 100000],
+  streetMaraIncidents: [0, 1000003], streetNoxIncidents: [0, 1000003], streetGusIncidents: [0, 1000003], streetIvyIncidents: [0, 1000003],
   gangRep: [0, 100], gangStage: [0, 2],
   day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
-import { streetAction, type StreetObjectId } from "@/lib/street-life";
+import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
 import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -342,6 +342,7 @@ function Game() {
     <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
       <TownMap
         state={s}
+        onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
         paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette)}
         onStreet={(id: StreetObjectId) => {
           const outcome=godMode ? runGodAction(s,streetAction(id),Math.random) : runAction(s,streetAction(id),Math.random);
