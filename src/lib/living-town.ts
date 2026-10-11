@@ -56,7 +56,7 @@ export function dailyTownEvent(day:number,hour:number):TownEvent|null {
     {id:"diner",title:"Lunch rush",hint:"Someone needs help outside the diner",x:8.5,y:16.8,icon:"?",pose:"standing"},
     {id:"bar",title:"Argument by the pub",hint:"An argument is brewing",x:3.8,y:20.9,icon:"!",pose:"sitting"},
     {id:"school",title:"Forgotten homework",hint:"A student needs help",x:11.4,y:6.5,icon:"?",pose:"standing"},
-    {id:"work",title:"Workplace rumour",hint:"Someone wants a word",x:16.6,y:20.2,icon:"…",pose:"pacing"},
+    {id:"work",title:"Workplace rumour",hint:"Someone wants a word",x:15.8,y:23.2,icon:"…",pose:"pacing"},
     {id:"shop",title:"A dodgy offer",hint:"Someone has an offer outside the shop",x:5.4,y:6.7,icon:"?",pose:"standing"},
   ];
   const event=events[(day*7+Math.floor(day/3))%events.length]!;
