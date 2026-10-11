@@ -8,7 +8,8 @@ import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
-import { conversation, recordConversation, hasTalkedToday, dailyTownEvent, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
+import { availableStreetEvent, streetEncounter, type StreetEncounter } from "@/lib/street-encounters";
+import { conversation, recordConversation, hasTalkedToday, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import { LocationScene, type Feedback } from "@/components/LocationScene";
 import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
@@ -42,120 +43,6 @@ export const Route = createFileRoute("/")({
 });
 
 type S = GameState;
-type Encounter = { text: string; choices: { label: string; f: (s: S) => [Partial<S>, string] }[] };
-
-const ENCOUNTERS: {
-  text: string;
-  choices: { label: string; f: (s: S) => [Partial<S>, string] }[];
-}[] = [
-  {
-    text: "The diner owner is short on change and asks for a hand before the lunch rush.",
-    choices: [
-      {
-        label: "Help serve customers (1h)",
-        f: (s) => [
-          { money: s.money + 15, cha: s.cha + 1 },
-          "The lunch rush clears. +$15, +1 charm.",
-        ],
-      },
-      { label: "Say you're busy", f: () => [{}, "You wish the owner luck and carry on."] },
-    ],
-  },
-  {
-    text: "A nervous customer outside the shop offers you a suspiciously cheap watch.",
-    choices: [
-      {
-        label: "Buy the watch ($40)",
-        f: (s) =>
-          s.money >= 40
-            ? [
-                { money: s.money - 40, karma: s.karma - 2 },
-                "The watch looks real enough. -$40, -2 karma.",
-              ]
-            : [{}, "You need $40 for the watch."],
-      },
-      { label: "Walk away", f: () => [{}, "You leave the stranger to find another customer."] },
-    ],
-  },
-  {
-    text: "A bar regular is arguing loudly with a friend. The atmosphere is getting tense.",
-    choices: [
-      {
-        label: "Calm things down",
-        f: (s) => [{ cha: s.cha + 2, karma: s.karma + 1 }, "They settle down. +2 charm, +1 karma."],
-      },
-      {
-        label: "Join the argument",
-        f: (s) => [
-          { karma: s.karma - 2, cha: s.cha + 1 },
-          "A spectacular argument. +1 charm, -2 karma.",
-        ],
-      },
-    ],
-  },
-  {
-    text: "Someone has dropped a wallet near the busier shops.",
-    choices: [
-      {
-        label: "Hand it in",
-        f: (s) => [
-          { karma: s.karma + 3, cha: s.cha + 1 },
-          "The grateful owner finds you later. +3 karma, +1 charm.",
-        ],
-      },
-      {
-        label: "Keep the cash",
-        f: (s) => [{ money: s.money + 50, karma: s.karma - 4 }, "You pocket $50. -4 karma."],
-      },
-    ],
-  },
-  {
-    text: "A student is struggling with homework outside Stick U.",
-    choices: [
-      {
-        label: "Help them study",
-        f: (s) => [
-          { int: s.int + 2, karma: s.karma + 1 },
-          "They finally understand it. +2 intelligence, +1 karma.",
-        ],
-      },
-      {
-        label: "Trade your notes ($10)",
-        f: (s) => [{ money: s.money + 10, karma: s.karma - 1 }, "Sold your notes. +$10, -1 karma."],
-      },
-    ],
-  },
-  {
-    text: "A colleague near MegaCorp has spotted a mistake in a report.",
-    choices: [
-      {
-        label: "Help correct it",
-        f: (s) => [{ int: s.int + 1, cha: s.cha + 1 }, "Report saved. +1 intelligence, +1 charm."],
-      },
-      {
-        label: "Take credit",
-        f: (s) => [
-          { cha: s.cha + 2, karma: s.karma - 2 },
-          "The boss is impressed. Your colleague isn't. +2 charm, -2 karma.",
-        ],
-      },
-    ],
-  },
-  {
-    text: "A stranger in the alley offers an off-the-books delivery job.",
-    choices: [
-      {
-        label: "Take the delivery",
-        f: (s) => [
-          { money: s.money + 65, heat: s.heat + 1, karma: s.karma - 2 },
-          "Paid $65, but the police noticed. +1 heat, -2 karma.",
-        ],
-      },
-      { label: "Decline", f: () => [{}, "You decide it's not worth the risk."] },
-    ],
-  },
-];
-
 function Game() {
   const [s, setS] = useState<S>(START);
   const [saveReady, setSaveReady] = useState(false);
@@ -167,7 +54,7 @@ function Game() {
   ]);
   const [place, setPlace] = useState<PlaceId | null>(null);
   const [tab, setTab] = useState<"player" | "inventory" | "log" | "settings" | null>(null);
-  const [enc, setEnc] = useState<Encounter | null>(null);
+  const [enc, setEnc] = useState<StreetEncounter | null>(null);
   const [resident, setResident] = useState<ResidentId | null>(null);
   const [gangDone, setGangDone] = useState<number | null>(null);
   const [parkKidOpen, setParkKidOpen] = useState(false);
@@ -254,11 +141,12 @@ function Game() {
   /** Every interior and town action goes through the same rules and feedback. */
   const perform = (def: ActionDef) => {
     const outcome = godMode ? runGodAction(s, def, Math.random) : runAction(s, def, Math.random);
-    if (!outcome.ok) return notify(outcome.message, false);
+    if (!outcome.ok) { notify(outcome.message, false); return false; }
     setS(outcome.next);
     notify(outcome.message, true, outcome.hoursUsed, outcome.changes);
     const kind = vignetteForAction(def.id);
     if (kind) setVignette({ kind, changes: outcome.changes, message: outcome.message });
+    return true;
   };
 
   const walk = (id: PlaceId) => {
@@ -291,35 +179,15 @@ function Game() {
     }
     playActionCue("encounter", soundOn);
   };
-  const encounterSpot = strangerLeft === s.day ? null : dailyTownEvent(s.day,s.hour);
+  const encounterSpot = strangerLeft === s.day ? null : availableStreetEvent(s);
   const approachEncounter = () => {
     if (!encounterSpot) return;
     setPlace(null);
     setTab(null);
     setResult(null);
-    // Each encounter draws from a situation suited to its location.
-    const choices: Record<string, number> = {
-      diner: 0,
-      shop: 1,
-      bar: 2,
-      school: 4,
-      work: 5,
-      alley: 6,
-    };
-    setEnc(ENCOUNTERS[choices[encounterSpot.id] ?? 3] ?? null);
+    setEnc(streetEncounter(encounterSpot,s));
     playActionCue("encounter", soundOn);
   };
-
-  const resolveEncounter = (f: (st: S) => [Partial<S>, string]): ActionDef => ({
-    id: "encounter",
-    label: "Encounter",
-    hours: 0,
-    energy: 0,
-    resolve: (st) => {
-      const [patch, message] = f(st);
-      return { patch, message };
-    },
-  });
 
   const job = currentRole(s);
   const nextJob = nextRole(s);
@@ -459,21 +327,22 @@ function Game() {
       )}
 
       {enc && (
-        <Sheet title={encounterSpot?.title ?? "A town encounter"}>
+        <div role="dialog" aria-label={enc.title} className="absolute inset-x-3 bottom-3 z-30 mx-auto max-h-[65dvh] max-w-md overflow-y-auto rounded-md border-2 border-foreground bg-card p-3 shadow-lg">
+          <h2 className="text-lg font-bold">{enc.title}</h2>
           <p className="text-lg">{enc.text}</p>
+          {result && <p role="status" className="my-2 text-sm">{result.message}</p>}
           {enc.choices.map((c) => (
             <Btn
               key={c.label}
               onClick={() => {
-                perform(resolveEncounter(c.f));
-                setEnc(null);
+                if(perform(c)) setEnc(null);
               }}
             >
               {c.label}
             </Btn>
           ))}
           <Btn onClick={() => setEnc(null)}>Walk away</Btn>
-        </Sheet>
+        </div>
       )}
 
       {!enc && !gangMeeting && !resident && !parkKidOpen && place && !tab && (
