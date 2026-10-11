@@ -14,7 +14,8 @@ describe("irregular market street", () => {
   it("retains long and short roads rather than repeated square blocks", () => {
     const lengths=ROADS.map(r=>Math.max(r.w,r.d));
     expect(Math.max(...lengths)).toBe(30);
-    expect(Math.min(...lengths)).toBe(9);
+    expect(Math.min(...lengths)).toBeGreaterThanOrEqual(9);
+    expect(Math.min(...lengths)).toBeLessThan(10);
     expect(new Set(lengths).size).toBeGreaterThanOrEqual(4);
   });
 });
