@@ -9,6 +9,7 @@ export type GameState = {
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
   smokes: number; skateboard: number; skateboardEquipped: number; parkSmokes: number; parkKidGone: number;
   parkSkateDay?: number; parkHoopDay?: number; parkHideDay?: number; gangResponseDay?: number;
+  basketBest?: number; skateBest?: number; dartsBest?: number; dartsRewardDay?: number;
   weapon?: number; tillRobberyDay?: number;
   streetSearchDay?: number;
   residentFavour?: number; residentFavourStage?: number; residentFavourDeadline?: number; residentFavourLastDay?: number;
@@ -22,6 +23,7 @@ export type GameState = {
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
   parkSkateDay:[0,100000],parkHoopDay:[0,100000],parkHideDay:[0,100000],gangResponseDay:[0,100000],
+  basketBest: [0, 5], skateBest: [0, 4], dartsBest: [0, 540], dartsRewardDay: [0, 100000],
   weapon: [0, 2], tillRobberyDay: [0, 100000],
   streetSearchDay: [0, 100000],
   residentFavour:[0,4],residentFavourStage:[0,1],residentFavourDeadline:[0,2400030],residentFavourLastDay:[0,100000],
@@ -49,7 +51,7 @@ export function parseGame(raw: string | null, fallback: GameState): GameState {
       const n = (value as Record<string, unknown>)[k];
       if (typeof n !== "number" || !Number.isFinite(n)) continue;
       const [min, max] = ranges[k];
-      result[k] = Math.max(min, Math.min(max, k === "hour" || k === "residentFavourDeadline" ? n : Math.trunc(n)));
+      result[k] = Math.max(min, Math.min(max, k === "hour" || k === "residentFavourDeadline" || k === "skateBest" ? n : Math.trunc(n)));
     }
     if (!("skateboardEquipped" in (value as Record<string, unknown>))) result.skateboardEquipped = result.skateboard;
     return result;
