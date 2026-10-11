@@ -28,9 +28,11 @@ export function streetAction(id: StreetObjectId): ActionDef {
 export const SPEECH_SECONDS = 4.5;
 export const SPEECH_COOLDOWN = 22;
 export type ReactionContext = "passing" | "blocked" | "skating" | "idle";
-export function residentBark(id: ResidentId, s: GameState, context: ReactionContext): string {
-  if (context === "skating") return { mara: "Oi! Watch the board!", nox: "Try that again. I dare you.", gus: "Nearly spilled my bloody pint!", ivy: "Watch where you're going!" }[id];
-  if (context === "blocked") return { mara: "Some of us have jobs. Move.", nox: "I'm not moving, mate.", gus: "Not a car park, is it?", ivy: "Sorry. Could I get past?" }[id];
+export function residentBark(id: ResidentId, s: GameState, context: ReactionContext, variation = 0): string {
+  if (context === "blocked" || context === "skating") {
+    const lines = REACTION_LINES[id][context];
+    return lines[variation % lines.length] ?? lines[0]!;
+  }
   if (s.heat >= 30) return id === "nox" ? "Coppers about. Act normal." : id === "ivy" ? "Please don't involve me." : "You brought trouble with you.";
   if (id === "nox" && s.gangRep >= 20) return "You're with the crew. Alright.";
   if (s[RELATION_FIELDS[id]] <= -4) return id === "nox" ? "Keep moving, mate." : "Oh brilliant. You again.";
@@ -91,4 +93,62 @@ export function pigeonOffset(distance: number, elapsed: number, index: number) {
   const scatter = distance < 1.5;
   const radius = scatter ? 1.2 : 0.15;
   return { x: Math.cos(elapsed * (scatter ? 2 : .3) + index * 2.1) * radius, y: Math.sin(elapsed * (scatter ? 2 : .3) + index * 2.1) * radius, scatter };
+}
+/** Runtime encounters are edge-triggered, never a proximity tax. */
+export type PhysicalReaction = "yield" | "refuse" | "dodge" | "complain";
+export type EncounterMemory = {
+  armed: boolean; cooldownUntil: number; activeUntil: number; recoveryUntil: number;
+  blockedFor: number; sequence: number; kind: PhysicalReaction | null; target: Point | null;
+};
+export const newEncounterMemory = (): EncounterMemory => ({
+  armed: true, cooldownUntil: 0, activeUntil: 0, recoveryUntil: 0,
+  blockedFor: 0, sequence: 0, kind: null, target: null,
+});
+const REACTION_LINES = {
+  mara: { blocked: ["Some of us have jobs. Move.", "My shift died. Let me bury it.", "Queue elsewhere. I'm off duty."], skating: ["Oi! Watch the board!", "My obituary won't say wheels.", "Customer service ends here."] },
+  nox: { blocked: ["I'm not moving, mate.", "Find another pavement.", "You've picked a weird hill."], skating: ["Try that again. I dare you.", "Nice board. Shame about you.", "That better be your last lap."] },
+  gus: { blocked: ["Not a car park, is it?", "My pint won't mourn itself.", "I've outlived shorter queues."], skating: ["Nearly spilled my bloody pint!", "Nearly met my late uncle.", "Heard quieter funeral carts."] },
+  ivy: { blocked: ["Sorry. Could I get past?", "This isn't a group project.", "I'll cite you as an obstacle."], skating: ["Watch where you're going!", "Statistically, that was stupid.", "I haven't revised for death."] },
+} as const;
+export function updateEncounter(memory: EncounterMemory, actor: StreetActor, me: Point,
+  velocity: Point, skating: boolean, personality: string, now: number, dt: number): ReactionContext | null {
+  const dx = actor.x-me.x, dy = actor.y-me.y, distance = Math.hypot(dx,dy);
+  if (distance > 2.1) { memory.armed = true; memory.blockedFor = 0; }
+  if (now < memory.recoveryUntil || now < memory.cooldownUntil || !memory.armed) return null;
+  const next = actor.path[0];
+  const onRoute = next && distance < .85 &&
+    (me.x-actor.x)*(next.x-actor.x)+(me.y-actor.y)*(next.y-actor.y) > 0;
+  memory.blockedFor = onRoute ? memory.blockedFor + dt : 0;
+  const speed = Math.hypot(velocity.x,velocity.y);
+  const approaching = dx*velocity.x+dy*velocity.y > speed*distance*.55;
+  const nearMiss = skating && speed > 1 && approaching && distance < 1.35;
+  const yielding = !skating && speed > .2 && approaching && distance < 1.05;
+  const blocked = memory.blockedFor >= 2;
+  if (!nearMiss && !yielding && !blocked) return null;
+  memory.kind = nearMiss ? "dodge" : blocked ? "complain" :
+    personality === "nox" || personality === "mara" || personality === "worker" ? "refuse" : "yield";
+  memory.armed = false; memory.sequence++; memory.blockedFor = 0;
+  memory.activeUntil = now + 1.6; memory.recoveryUntil = now + 3;
+  memory.cooldownUntil = now + SPEECH_COOLDOWN;
+  memory.target = null;
+  return nearMiss ? "skating" : blocked ? "blocked" : "passing";
+}
+/** Pick one fixed lateral destination; route through the existing navigation grid. */
+export function reactionTarget(actor: StreetActor, me: Point, lots: Obstacle[]): Point | null {
+  const next = actor.path[0];
+  const dx = next ? next.x-actor.x : actor.x-me.x;
+  const dy = next ? next.y-actor.y : actor.y-me.y;
+  const length = Math.hypot(dx,dy) || 1;
+  const candidates = [-1,1].map(sign => ({x:actor.x-sign*dy/length*.65,y:actor.y+sign*dx/length*.65}));
+  return candidates.filter(p => isWalkable(p,lots) && Math.hypot(p.x-me.x,p.y-me.y)>.8)
+    .sort((a,b)=>Math.hypot(b.x-me.x,b.y-me.y)-Math.hypot(a.x-me.x,a.y-me.y))[0] ?? null;
+}
+const INCIDENT_FIELDS = {mara:"streetMaraIncidents",nox:"streetNoxIncidents",gus:"streetGusIncidents",ivy:"streetIvyIncidents"} as const;
+/** Three separated disruptive encounters before one point lost, capped once per resident/day. */
+export function recordStreetIncident(s: GameState, id: ResidentId): GameState {
+  const field = INCIDENT_FIELDS[id], stamp = s[field] ?? 0;
+  const count = Math.floor(stamp/10) === s.day ? stamp%10 : 0;
+  if (count >= 3) return s;
+  const relation = RELATION_FIELDS[id];
+  return {...s,[field]:s.day*10+count+1,...(count===2 ? {[relation]:Math.max(-10,s[relation]-1)} : {})};
 }

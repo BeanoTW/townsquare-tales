@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { parseGame } from "@/lib/game-state";
 import { START } from "@/lib/game-data";
 import { runAction } from "@/lib/actions";
-import { streetAction, residentBark, ambientVisible, pigeonOffset } from "@/lib/street-life";
+import { streetAction, residentBark, ambientVisible, pigeonOffset, newEncounterMemory, updateEncounter, makeActor, moveActor, reactionTarget, recordStreetIncident } from "@/lib/street-life";
 
 describe("street life integration", () => {
   it("lets bench rests advance time and restore energy", () => {
@@ -30,5 +31,51 @@ describe("street life integration", () => {
     expect(ambientVisible("patrol", 12)).toBe(false);
     expect(pigeonOffset(0, 2, 0).scatter).toBe(true);
     expect(pigeonOffset(10, 2, 0).scatter).toBe(false);
+  });
+});
+
+describe("physical encounters", () => {
+  const actor = () => ({...makeActor({x:5,y:5},[]),path:[{x:8,y:5}]});
+  it("does not harass a stationary nearby player or someone beside the route", () => {
+    const m=newEncounterMemory(), a=actor();
+    for(let i=0;i<500;i++) expect(updateEncounter(m,a,{x:5,y:5.5},{x:0,y:0},true,"ivy",i*.1,.1)).toBeNull();
+  });
+  it("dodges a fast approaching board but not one moving away", () => {
+    const m=newEncounterMemory(), a=actor();
+    expect(updateEncounter(m,a,{x:4,y:5},{x:-2,y:0},true,"ivy",0,.1)).toBeNull();
+    expect(updateEncounter(m,a,{x:4,y:5},{x:2,y:0},true,"ivy",0,.1)).toBe("skating");
+    expect(m.kind).toBe("dodge");
+    for(let i=1;i<400;i++) expect(updateEncounter(m,a,{x:4,y:5},{x:2,y:0},true,"ivy",i*.1,.1)).toBeNull();
+    updateEncounter(m,a,{x:1,y:5},{x:0,y:0},true,"ivy",41,.1);
+    expect(updateEncounter(m,a,{x:4,y:5},{x:2,y:0},true,"ivy",42,.1)).toBe("skating");
+  });
+  it("requires two seconds of actual route blocking and differentiates personalities", () => {
+    const m=newEncounterMemory(), a=actor();
+    for(let i=0;i<19;i++) expect(updateEncounter(m,a,{x:5.5,y:5},{x:0,y:0},false,"mara",i*.1,.1)).toBeNull();
+    expect(updateEncounter(m,a,{x:5.5,y:5},{x:0,y:0},false,"mara",2,.1)).toBe("blocked");
+    const ivy=newEncounterMemory(), nox=newEncounterMemory();
+    updateEncounter(ivy,a,{x:4,y:5},{x:1,y:0},false,"ivy",0,.1);
+    updateEncounter(nox,a,{x:4,y:5},{x:1,y:0},false,"nox",0,.1);
+    expect(ivy.kind).toBe("yield"); expect(nox.kind).toBe("refuse");
+  });
+  it("keeps sidesteps on walkable ground and movement bounded", () => {
+    const a=actor(), lots=[{x:4,y:5.4,w:2,d:2}];
+    const target=reactionTarget(a,{x:4.5,y:5},lots)!;
+    expect(target.y).toBeLessThan(5);
+    moveActor(a,target,lots,.1);
+    expect(Math.hypot(a.x-5,a.y-5)).toBeLessThanOrEqual(.081);
+  });
+  it("forgives isolated accidents and persists a bounded repeated-annoyance penalty", () => {
+    let s=recordStreetIncident(START,"mara");
+    expect(s.relMara).toBe(0);
+    s=recordStreetIncident(s,"mara"); expect(s.relMara).toBe(0);
+    s=recordStreetIncident(s,"mara"); expect(s.relMara).toBe(-1);
+    s=parseGame(JSON.stringify(s),START);
+    expect(recordStreetIncident(s,"mara")).toEqual(s);
+    expect(recordStreetIncident({...s,day:2},"mara").relMara).toBe(-1);
+    expect(parseGame(JSON.stringify(START),START).relMara).toBe(0);
+  });
+  it("rotates personality-specific complaint lines", () => {
+    expect(residentBark("ivy",START,"skating",1)).not.toBe(residentBark("ivy",START,"skating",0));
   });
 });

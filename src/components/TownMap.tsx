@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StreetLife, type ResidentPositions } from "@/components/StreetLife";
 import { STREET_OBJECTS, type StreetObjectId } from "@/lib/street-life";
 import { START } from "@/lib/game-data";
+import type { ResidentId } from "@/lib/living-town";
 import type { GameState } from "@/lib/game-state";
 import { BuildingExterior, type BuildingLot } from "@/components/BuildingExterior";
 import { Button } from "@/components/ui/button";
@@ -131,7 +132,7 @@ function Stick({ x, y, phase, walking, skating = false, pose = "standing", skate
   </g>;
 }
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
   const bs = useMemo(() => buildings(house), [house]);
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
@@ -504,7 +505,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
-        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} />
+        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} />
         {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
       </svg>
       

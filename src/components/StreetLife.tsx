@@ -1,22 +1,23 @@
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { OverheadPerson } from "@/components/OverheadPerson";
 import { P } from "@/lib/town-projection";
-import { residentsAt, type ResidentId } from "@/lib/living-town";
+import { residentsAt, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import type { GameState } from "@/lib/game-state";
 import { isWalkable, type Point, type Obstacle } from "@/lib/pathfinding";
-import { AMBIENT_ROUTES, ambientVisible, makeActor, moveActor, PIGEON_FLOCKS, pigeonOffset, residentBark, routineGoal, SPEECH_COOLDOWN, SPEECH_SECONDS, STREET_OBJECTS, yieldsToPlayer, type StreetActor, type StreetObjectId } from "@/lib/street-life";
+import { AMBIENT_ROUTES, ambientVisible, makeActor, moveActor, PIGEON_FLOCKS, pigeonOffset, residentBark, routineGoal, SPEECH_COOLDOWN, SPEECH_SECONDS, STREET_OBJECTS, newEncounterMemory, updateEncounter, reactionTarget, type EncounterMemory, type StreetActor, type StreetObjectId } from "@/lib/street-life";
 
 type Player = Point & { walking: boolean };
 export type ResidentPositions = Partial<Record<ResidentId, StreetActor>>;
-export function StreetLife({ player, positions, lots, state, skating, paused, onResident, onObject }: {
+export function StreetLife({ player, positions, lots, state, skating, paused, onResident, onObject, onIncident }: {
   player: MutableRefObject<Player>; positions: MutableRefObject<ResidentPositions>; lots: Obstacle[];
-  state: GameState; skating: boolean; paused: boolean; onResident: (id: ResidentId, p: Point) => void; onObject: (id: StreetObjectId) => void;
+  state: GameState; skating: boolean; paused: boolean; onResident: (id: ResidentId, p: Point) => void; onObject: (id: StreetObjectId) => void; onIncident?: ((id: ResidentId) => void) | undefined;
 }) {
   const groups = useRef<Record<string, SVGGElement | null>>({});
   const birds = useRef<Record<string, SVGGElement | null>>({});
   const extras = useRef<Record<string, StreetActor>>({});
-  const config = useRef({ state, skating, paused, lots });
-  config.current = { state, skating, paused, lots };
+  const memories = useRef<Record<string, EncounterMemory>>({});
+  const config = useRef({ state, skating, paused, lots, onIncident });
+  config.current = { state, skating, paused, lots, onIncident };
   const [speech, setSpeech] = useState<{ id: string; text: string; x: number; y: number } | null>(null);
   const cooldown = useRef<Record<string, number>>({});
   const selectedUntil = useRef<Record<string, number>>({});
@@ -24,12 +25,15 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0, last = performance.now(), nextSpeech = 0, speechUntil = 0, visibleId = "";
     const frightened: Record<string, number> = {};
+    let previous = {x:player.current.x,y:player.current.y};
     const update = (now: number) => {
       raf = requestAnimationFrame(update);
       if (now - last < (reduced ? 100 : 50)) return;
       const dt = Math.min(.1, (now-last)/1000); last = now;
       const seconds = now / 1000, { state: s, lots: obstacles, skating: board, paused: frozen } = config.current;
       const me = player.current;
+      const velocity = {x:(me.x-previous.x)/dt,y:(me.y-previous.y)/dt};
+      previous = {x:me.x,y:me.y};
       if (speechUntil && seconds > speechUntil) { setSpeech(null); speechUntil = 0; visibleId = ""; }
       const speak = (id: string, text: string, actor: Point) => {
         // Only a single bubble, near the camera centre and clear of the HUD.
@@ -50,25 +54,30 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
             actor.trip++;
             actor.pauseUntil = seconds + 10 + (schedule.id === "gus" ? 8 : 0);
           }
-          if (obstructed && yieldsToPlayer(schedule.id)) {
-            const side = {x:actor.x + (actor.x >= me.x ? .65 : -.65), y:actor.y};
-            if (isWalkable(side, obstacles)) moveActor(actor, side, obstacles, dt);
-          } else moveActor(actor, goal, obstacles, dt, obstructed || seconds < actor.pauseUntil);
+          const memory = memories.current[schedule.id] ??= newEncounterMemory();
+          const context = updateEncounter(memory,actor,me,velocity,board,schedule.id === "nox" && s.gangRep >= 20 ? "ally" : schedule.id,seconds,dt);
+          if (context) {
+            if (memory.kind === "yield" || memory.kind === "dodge") memory.target = reactionTarget(actor,me,obstacles);
+            speak(schedule.id,residentBark(schedule.id,s,context,memory.sequence-1),actor);
+            if (context === "blocked" || context === "skating") config.current.onIncident?.(schedule.id);
+          }
+          if (seconds < memory.activeUntil && memory.target) moveActor(actor,memory.target,obstacles,dt);
+          else moveActor(actor,goal,obstacles,dt,obstructed || seconds < actor.pauseUntil || seconds < memory.recoveryUntil);
+          // Friends may greet on a fresh approach, never continually while standing nearby.
+          if (distance < 1.8 && memory.armed && seconds >= memory.cooldownUntil && s[RELATION_FIELDS[schedule.id]] >= 4) {
+            speak(schedule.id,residentBark(schedule.id,s,"passing"),actor);
+            memory.cooldownUntil = seconds + SPEECH_COOLDOWN;
+          }
         } else actor.walking = false;
-        // Walking residents keep their travel heading. Only stationary residents glance toward the player.
-        if (distance < 1.8) {
-          if (!actor.walking) actor.angle = Math.atan2(me.x-actor.x, -(me.y-actor.y))*180/Math.PI;
-          if (board && me.walking && distance < 1.35) speak(schedule.id, residentBark(schedule.id,s,"skating"),actor);
-          else if (obstructed) speak(schedule.id,residentBark(schedule.id,s,"blocked"),actor);
-          else speak(schedule.id,residentBark(schedule.id,s,"passing"),actor);
-        }
+        if (distance < 1.8 && !actor.walking) actor.angle = Math.atan2(me.x-actor.x, -(me.y-actor.y))*180/Math.PI;
         if (group) {
           const [x,y] = P(actor.x,actor.y); group.setAttribute("transform",`translate(${x} ${y})`);
+          group.setAttribute("data-reaction",seconds < (memories.current[schedule.id]?.activeUntil ?? 0) ? memories.current[schedule.id]?.kind ?? "" : "");
           group.setAttribute("data-walking",String(actor.walking));
           group.setAttribute("data-world-x",String(actor.x)); group.setAttribute("data-world-y",String(actor.y));
           const body = group.querySelector("[data-body-heading]"); body?.setAttribute("transform",`rotate(${actor.angle})`);
           const arms = group.querySelector("[data-person-arms]");
-          arms?.setAttribute("transform",`rotate(${!reduced && (actor.walking || distance < 1.35) ? Math.sin(seconds*5)*9 : 0} 0 -7)`);
+          arms?.setAttribute("transform",`rotate(${!reduced && (actor.walking || seconds < (memories.current[schedule.id]?.activeUntil ?? 0)) ? Math.sin(seconds*5)*9 : 0} 0 -7)`);
           const sitting = schedule.id === "gus" && Math.hypot(actor.x-8,actor.y-10.8)<.65 && !actor.walking;
           const legs = group.querySelector("[data-resting-legs]"); legs?.setAttribute("visibility",sitting ? "visible" : "hidden");
           group.setAttribute("data-resting",String(sitting));
@@ -86,12 +95,20 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
         const actor = extras.current[route.id] ?? makeActor(stops[0],obstacles); extras.current[route.id] = actor;
         if (actor.path.length === 0 && seconds >= actor.pauseUntil) { actor.trip++; actor.pauseUntil=seconds+6; }
         const distance = Math.hypot(actor.x-me.x,actor.y-me.y);
-        if (!frozen) moveActor(actor,stops[actor.trip%2] ?? stops[0],obstacles,dt, distance<.8 || seconds<actor.pauseUntil);
-        else actor.walking = false;
+        const memory = memories.current[route.id] ??= newEncounterMemory();
+        if (!frozen) {
+          const context = updateEncounter(memory,actor,me,velocity,board,route.id,seconds,dt);
+          if(context) {
+            if(memory.kind === "yield" || memory.kind === "dodge") memory.target = reactionTarget(actor,me,obstacles);
+            speak(route.id,context === "skating" ? "Oi! Watch where you're going!" : context === "blocked" ? "Somewhere else to stand?" : route.line,actor);
+          }
+          if(seconds < memory.activeUntil && memory.target) moveActor(actor,memory.target,obstacles,dt);
+          else moveActor(actor,stops[actor.trip%2] ?? stops[0],obstacles,dt,distance<.8 || seconds<actor.pauseUntil || seconds<memory.recoveryUntil);
+        } else actor.walking = false;
         const [x,y] = P(actor.x,actor.y); group.setAttribute("transform",`translate(${x} ${y})`);
         group.querySelector("[data-body-heading]")?.setAttribute("transform",`rotate(${actor.angle})`);
         group.querySelector("[data-person-arms]")?.setAttribute("transform",`rotate(${!reduced && actor.walking ? Math.sin(seconds*5)*9 : 0} 0 -7)`);
-        if (distance < 1.5) speak(route.id,route.id === "patrol" && s.heat >= 30 ? "You. We're watching." : board && me.walking ? "Oi! Watch where you're going!" : route.line,actor);
+
       }
       PIGEON_FLOCKS.forEach((flock, index) => {
         const distance = Math.hypot(flock.x-me.x,flock.y-me.y);
