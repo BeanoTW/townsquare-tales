@@ -8,10 +8,12 @@ export type GameState = {
   relMara: number; relNox: number; relGus: number; relIvy: number;
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
   smokes: number; skateboard: number; skateboardEquipped: number; parkSmokes: number; parkKidGone: number;
+  streetSearchDay?: number;
 };
 
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
+  streetSearchDay: [0, 100000],
   gangRep: [0, 100], gangStage: [0, 2],
   day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
@@ -32,7 +34,7 @@ export function parseGame(raw: string | null, fallback: GameState): GameState {
       const n = (value as Record<string, unknown>)[k];
       if (typeof n !== "number" || !Number.isFinite(n)) continue;
       const [min, max] = ranges[k];
-      result[k] = Math.max(min, Math.min(max, Math.trunc(n)));
+      result[k] = Math.max(min, Math.min(max, k === "hour" ? n : Math.trunc(n)));
     }
     if (!("skateboardEquipped" in (value as Record<string, unknown>))) result.skateboardEquipped = result.skateboard;
     return result;

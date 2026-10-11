@@ -2,3 +2,10 @@
 - [x] Preserve irregular streets and arrange a three-building market row.
 - [x] Add distinctive architecture and props to all destinations.
 - [x] Verify movement, entrances, mobile framing and existing tests.
+ 
+# Living town phase 1
+- [ ] Add contextual resident speech, glances, gestures and pedestrian reactions.
+- [ ] Add routed routines, loitering, commuters and time-of-day personalities.
+- [ ] Add reactive pigeons, street details and subtle business activity.
+- [ ] Add nearby bench, bin and vending interactions with compatible saves.
+- [ ] Validate existing gameplay, new rules and playable outdoor flows.

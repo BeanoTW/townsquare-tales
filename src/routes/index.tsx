@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
+import { Button } from "@/components/ui/button";
+import { streetAction, type StreetObjectId } from "@/lib/street-life";
 import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -21,13 +23,13 @@ import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Stick Town — Level Up, Go Legit or Go Crooked" },
+      { title: "Town Square Tales — A Living Stick Town" },
       {
         name: "description",
         content:
           "A tiny stick-figure life sim. Train, study, work or hustle. Upgrade your house and meet strange people around town.",
       },
-      { property: "og:title", content: "Stick Town" },
+      { property: "og:title", content: "Town Square Tales — A Living Stick Town" },
       {
         property: "og:description",
         content: "Train, study, work or hustle. A tiny stick-figure life sim.",
@@ -339,6 +341,15 @@ function Game() {
   return (
     <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
       <TownMap
+        state={s}
+        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette)}
+        onStreet={(id: StreetObjectId) => {
+          const outcome=godMode ? runGodAction(s,streetAction(id),Math.random) : runAction(s,streetAction(id),Math.random);
+          if(outcome.ok)setS(outcome.next);
+          setResult(null);say(outcome.message);
+          playActionCue(outcome.ok ? "success" : "failure",soundOn);
+          return outcome.ok;
+        }}
         movementMode={movementMode}
         hour={s.hour}
         house={s.house}
@@ -405,7 +416,8 @@ function Game() {
       )}
 
       {resident && (
-        <Sheet title={conversation(resident,s).title} onClose={() => setResident(null)}>
+        <div role="dialog" aria-label={conversation(resident,s).title} className="absolute inset-x-3 bottom-3 z-30 mx-auto max-w-md rounded-md border-2 border-foreground bg-card p-3 shadow-lg">
+          <div className="flex items-start justify-between gap-2"><h2 className="text-lg font-bold">{conversation(resident,s).title}</h2><Button size="icon" variant="ghost" aria-label="Close conversation" onClick={()=>setResident(null)}>✕</Button></div>
           <p className="text-lg">{conversation(resident,s).text}</p>
           <p className="text-sm text-muted-foreground">Relationship: {s[RELATION_FIELDS[resident]]} · {s[RELATION_FIELDS[resident]]>=4?"Friends":s[RELATION_FIELDS[resident]]<=-4?"Rivals":"Acquaintances"}</p>
           {hasTalkedToday(s,resident)
@@ -418,8 +430,8 @@ function Game() {
                 setResident(null);
               }}>{choice.label}</Btn>
             ))}
-          <Btn onClick={()=>setResident(null)}>Leave them to it</Btn>
-        </Sheet>
+          <div className="mt-2"><Button variant="ghost" onClick={()=>setResident(null)}>Leave them to it</Button></div>
+        </div>
       )}
       {gangMeeting && (
         <Sheet title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
