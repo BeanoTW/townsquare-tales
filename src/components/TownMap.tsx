@@ -51,7 +51,7 @@ export const buildings = (house: number): B[] => {
     { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
     { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "var(--town-bar-wall)", side: "var(--town-bar-side)", roof: "var(--town-bar-roof)", sign: "var(--town-bar-sign)", win: true },
-    { facing: "north", id: "work", label: "MegaCorp", x: 17.2, y: 15.5, w: 3.7, d: 4, h: 190, wall: "var(--town-work-wall)", side: "var(--town-work-side)", roof: "var(--town-work-roof)", sign: "var(--town-work-sign)", win: true },
+    { facing: "west", id: "work", label: "MegaCorp", x: 16.5, y: 21.0, w: 3.7, d: 4, h: 190, wall: "var(--town-work-wall)", side: "var(--town-work-side)", roof: "var(--town-work-roof)", sign: "var(--town-work-sign)", win: true },
     { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "var(--town-bank-wall)", side: "var(--town-bank-side)", roof: "var(--town-bank-roof)", sign: "var(--town-bank-sign)", win: true },
     { facing: "south", id: "shop", label: "Corner Shop", x: 15.25, y: 8.05, w: 2.6, d: 3.0, h: 48, wall: "var(--town-shop-wall)", side: "var(--town-shop-side)", roof: "var(--town-shop-roof)", sign: "var(--town-shop-sign)", win: true },
     { facing: "south", id: "diner", label: "Fryday Diner", x: 5.1, y: 13.2, w: 2.8, d: 3.8, h: 55, wall: "var(--town-diner-wall)", side: "var(--town-diner-side)", roof: "var(--town-diner-roof)", sign: "var(--town-diner-sign)", win: true },
@@ -518,7 +518,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {tile(0,0,N,N,"var(--town-grass)","grass")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
         {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
-        {tile(11.5,21.5,10.7,8.4,"var(--town-park-lawn)","park-green")}
+        {tile(25.5,7.5,4.2,4.8,"var(--town-park-lawn)","park-green")}
         {/* Road shoulders do not extend across entire neighbourhoods. */}
         {ROADS.map((r,i) => tile(Math.max(0,r.x-.58),Math.max(0,r.y-.58),
           Math.min(N,r.x+r.w+.58)-Math.max(0,r.x-.58),
@@ -540,10 +540,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             Math.abs(d.x-r.x)+.44,Math.abs(d.y-r.y)+.44,"var(--town-approach)","approach-"+b.id);
         })}
         {/* Central park: not another paved rectangle. */}
-        {tile(15.3,21.4,5.6,3.5,"var(--town-park)","park")}
-        <ellipse cx={P(18,23.3)[0]} cy={P(14.5,24.1)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
-        {tile(17.6,20.9,0.45,4.3,"var(--town-park-path)","park-path-ns")}
-        {tile(15.2,23.9,5.5,0.4,"var(--town-park-path)","park-path-ew")}
+        {tile(25.5,8.1,4.1,4.0,"var(--town-park)","park")}
+        <ellipse cx={P(28.1,10.2)[0]} cy={P(28.1,10.2)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
+        {tile(27.5,8.0,0.45,4.3,"var(--town-park-path)","park-path-ns")}
+        {tile(25.5,10.3,4.1,0.4,"var(--town-park-path)","park-path-ew")}
         {/* Roads are finite streets with deliberate ends and T-junctions. */}
         {ROADS.map((r,i)=>tile(r.x,r.y,r.w,r.d,"var(--town-asphalt)","road-"+i))}
         {/* Lane paint is generated from each actual street, never a removed grid road. */}
