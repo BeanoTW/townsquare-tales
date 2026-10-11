@@ -11,31 +11,42 @@ const ink = "var(--town-ink)", paper = "var(--town-paper)", glass = "var(--town-
 
 export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean }) {
   const { x, y, w, d, h, id } = b;
-  const roofPoint = P(x + w / 2, y + d / 2, h);
+  // Landmarks have a stronger upward setback than everyday shopfronts.
+  // This shifts only their raised geometry, never the ground footprint.
+  const landmark = ["work", "casino", "bar"].includes(id);
+  const H = (a: number, c: number, z = 0) => {
+    const p = P(a, c, z);
+    return [p[0] - (landmark ? z * .09 : 0), p[1] - (landmark ? z * .15 : 0)] as const;
+  };
+  const roofPoint = H(x + w / 2, y + d / 2, h);
   const horizontal = b.facing === "north" || b.facing === "south";
   const fy = b.facing === "north" ? y : y + d;
   const fx = b.facing === "west" ? x : x + w;
   // The frontage follows the actual doorway, including west-facing shops.
-  const F = (u: number, z: number) => horizontal ? P(x + u * w, fy, z) : P(fx, y + u * d, z);
+  const F = (u: number, z: number) => horizontal ? H(x + u * w, fy, z) : H(fx, y + u * d, z);
   const frontWidth = horizontal ? w * 48 : d * 36;
   // The visible return wall has its own glazing: not just a blank roof-side wedge.
   // Use the adjacent south or west face, whichever isn't the main entrance.
   const sideFacing = horizontal ? "west" : "south";
   const sideF = (u: number, z: number) => sideFacing === "west"
-    ? P(x, y + d*u, z)
-    : P(x + w*u, y+d, z);
+    ? H(x, y + d*u, z)
+    : H(x + w*u, y+d, z);
   const sidePanel = (a: number, c: number, low: number, high: number, fill: string) =>
     <polygon data-side-window points={points([sideF(a,low),sideF(c,low),sideF(c,high),sideF(a,high)])} fill={fill} stroke={ink} strokeWidth="1.6" />;
   const panel = (a: number, c: number, low: number, high: number, fill: string) => <polygon points={points([F(a, low), F(c, low), F(c, high), F(a, high)])} fill={fill} stroke={ink} strokeWidth="1.3" />;
   const peaked = ["home", "school", "furniture", "bank"].includes(id) && h > 20;
-  const canopy = ["shop", "diner", "pawn", "bar", "furniture", "depot", "clinic"].includes(id);
+  const canopy = ["shop", "diner", "bar", "furniture", "clinic"].includes(id);
+  const wallSign = ["police", "depot", "pawn"].includes(id);
   const [sx, sy] = F(.5, Math.min(h - 5, 42));
   const [px, py] = F(.83, 0);
   const signText = id === "home" ? b.label : b.label;
   const signWidth = Math.max(70, Math.min(frontWidth + 18, signText.length * 7 + 12));
+  const plaqueHeight = Math.min(h - 6, 39);
+  const plaqueLow = plaqueHeight - 22;
+  const plaqueMid = F(.5, (plaqueLow + plaqueHeight) / 2);
   return <g data-building={id} strokeLinejoin="round">
-    <polygon points={points([P(x+.15,y+.1),P(x+w+.38,y+.1),P(x+w+.38,y+d+.35),P(x+.15,y+d+.35)])} fill={ink} opacity=".15" />
-    {[[P(x,y),P(x+w,y),P(x+w,y,h),P(x,y,h)], [P(x,y),P(x,y+d),P(x,y+d,h),P(x,y,h)], [P(x+w,y),P(x+w,y+d),P(x+w,y+d,h),P(x+w,y,h)], [P(x,y+d),P(x+w,y+d),P(x+w,y+d,h),P(x,y+d,h)]].map((face,i)=><polygon key={i} points={points(face)} fill={(i===0&&b.facing==="north")||(i===1&&b.facing==="west")||(i===2&&b.facing==="east")||(i===3&&b.facing==="south")?b.wall:b.side} stroke={ink} strokeWidth="1.8"/>)}
+    <polygon points={points([H(x+.15,y+.1),H(x+w+.38,y+.1),H(x+w+.38,y+d+.35),H(x+.15,y+d+.35)])} fill={ink} opacity=".15" />
+    {[[H(x,y),H(x+w,y),H(x+w,y,h),H(x,y,h)], [H(x,y),H(x,y+d),H(x,y+d,h),H(x,y,h)], [H(x+w,y),H(x+w,y+d),H(x+w,y+d,h),H(x+w,y,h)], [H(x,y+d),H(x+w,y+d),H(x+w,y+d,h),H(x,y+d,h)]].map((face,i)=><polygon key={i} points={points(face)} fill={(i===0&&b.facing==="north")||(i===1&&b.facing==="west")||(i===2&&b.facing==="east")||(i===3&&b.facing==="south")?b.wall:b.side} stroke={ink} strokeWidth="1.8"/>)}
     {b.win && Array.from({length:Math.max(1,Math.floor((h-20)/30))},(_,r)=><g key={r}>{[.12,.29,.7,.87].map(u=><g key={u}>{panel(u-.055,u+.055,18+r*30,32+r*30,night?"var(--town-window-lit)":glass)}<path d={`M${F(u,18+r*30).join(" ")}L${F(u,32+r*30).join(" ")}`} stroke={paper} strokeWidth="1" opacity=".55"/></g>)}</g>)}
     {/* Windows and the main entry are drawn on their respective actual walls. */}
     {b.win && sideFacing !== b.facing && h > 35 && <g data-building-return-wall={id}>
@@ -44,12 +55,17 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
     </g>}
     {panel(.43,.57,0,25,night?"var(--town-window-lit)":glass)}
     {id==="gym" && panel(.08,.35,2,17,glass)}
+    {wallSign && <g data-mounted-sign={id}>
+      {panel(.1,.9,plaqueLow,plaqueHeight,b.sign)}
+      <text x={plaqueMid[0]} y={plaqueMid[1]+4} fill={paper} textAnchor="middle"
+        fontSize={id==="pawn"?10:11} fontWeight="bold" stroke="none">{b.label}</text>
+    </g>}
     {id==="diner" && <g>{panel(.04,.37,2,23,glass)}{panel(.65,.96,2,23,glass)}{[.08,.2,.32,.68,.8,.92].map(u=><circle key={u} cx={F(u,4)[0]} cy={F(u,4)[1]} r="2" fill={b.sign}/>)}</g>}
     {id==="bank" && [.15,.3,.7,.85].map(u=><g key={u}><path d={`M${F(u,3).join(" ")}L${F(u,h-12).join(" ")}`} stroke={paper} strokeWidth="8"/><path d={`M${F(u-.035,3).join(" ")}L${F(u+.035,3).join(" ")}`} stroke={ink} strokeWidth="3"/></g>)}
     {id==="work" && [45,80,115,150].map(z=><path key={z} d={`M${F(0,z).join(" ")}L${F(1,z).join(" ")}`} stroke={paper} opacity=".65" strokeWidth="2"/>)}
     {id==="alley" && <g transform={`translate(${sx-24},${sy+9}) rotate(-9)`}><text fill="var(--town-graffiti)" fontSize="17" fontWeight="bold">NO COPS</text><path d="M0 5L68 2" stroke="var(--town-graffiti)" strokeWidth="3"/></g>}
-    <polygon points={points([P(x,y,h),P(x+w,y,h),P(x+w,y+d,h),P(x,y+d,h)])} fill={b.roof} stroke={ink} strokeWidth="1.8"/>
-    {peaked ? <g><polygon points={points([P(x-.1,y-.1,h),P(x+w/2,y-.1,h+30),P(x+w/2,y+d+.1,h+30),P(x-.1,y+d+.1,h)])} fill={b.roof} stroke={ink} strokeWidth="1.8"/><polygon points={points([P(x+w/2,y-.1,h+30),P(x+w+.1,y-.1,h),P(x+w+.1,y+d+.1,h),P(x+w/2,y+d+.1,h+30)])} fill={b.sign} stroke={ink} strokeWidth="1.8"/>{[.25,.5,.75].map(u=><path key={u} d={`M${P(x+w/2,y+d*u,h+30).join(" ")}L${P(x+w,y+d*u,h).join(" ")}`} stroke={ink} opacity=".3"/>)}</g>:<polygon points={points([P(x+.13,y+.13,h+5),P(x+w-.13,y+.13,h+5),P(x+w-.13,y+d-.13,h+5),P(x+.13,y+d-.13,h+5)])} fill="none" stroke={b.side} strokeWidth="5"/>}
+    <polygon points={points([H(x,y,h),H(x+w,y,h),H(x+w,y+d,h),H(x,y+d,h)])} fill={b.roof} stroke={ink} strokeWidth="1.8"/>
+    {peaked ? <g><polygon points={points([H(x-.1,y-.1,h),H(x+w/2,y-.1,h+30),H(x+w/2,y+d+.1,h+30),H(x-.1,y+d+.1,h)])} fill={b.roof} stroke={ink} strokeWidth="1.8"/><polygon points={points([H(x+w/2,y-.1,h+30),H(x+w+.1,y-.1,h),H(x+w+.1,y+d+.1,h),H(x+w/2,y+d+.1,h+30)])} fill={b.sign} stroke={ink} strokeWidth="1.8"/>{[.25,.5,.75].map(u=><path key={u} d={`M${H(x+w/2,y+d*u,h+30).join(" ")}L${H(x+w,y+d*u,h).join(" ")}`} stroke={ink} opacity=".3"/>)}</g>:<polygon points={points([H(x+.13,y+.13,h+5),H(x+w-.13,y+.13,h+5),H(x+w-.13,y+d-.13,h+5),H(x+.13,y+d-.13,h+5)])} fill="none" stroke={b.side} strokeWidth="5"/>}
     <g transform={`translate(${roofPoint[0]},${roofPoint[1]})`}>
       {id==="home" && (h<20?<g stroke={ink}><path d="M-45 -15L-9 12L18 -14M-9 12V39" fill="none" strokeWidth="2"/><rect x="15" y="-16" width="25" height="14" fill={paper}/><text x="27" y="-5" textAnchor="middle" fontSize="9">HOME</text></g>:<g><rect x="23" y="-34" width="13" height="29" fill={b.wall} stroke={ink}/><path d="M23 -34H36" stroke={ink} strokeWidth="4"/></g>)}
       {id==="school" && <g><rect x="-17" y="-40" width="34" height="32" fill={b.wall} stroke={ink}/><path d="M-22 -40L0 -59L22 -40Z" fill={b.roof} stroke={ink}/><circle cy="-25" r="11" fill={paper} stroke={ink}/><path d="M0 -33V-25L6 -22" stroke={ink} fill="none" strokeWidth="2"/><path d="M0 -59V-82L24 -77L0 -69" fill={b.sign} stroke={ink}/></g>}
@@ -68,7 +84,7 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
       {id==="alley" && <g><rect x="-30" y="-4" width="34" height="14" fill={b.side} stroke={ink}/><path d="M-27 0H0M-27 5H0M17 12V-16H33V12M21 -16V-27H29V-16" stroke={ink} fill="none" strokeWidth="2"/></g>}
     </g>
     {canopy && <g transform={`translate(${sx},${sy+12})`}><path d={`M${-frontWidth*.44} 0H${frontWidth*.44}L${frontWidth*.48} 14H${-frontWidth*.48}Z`} fill={paper} stroke={ink} strokeWidth="1.5"/>{Array.from({length:7},(_,i)=><path key={i} d={`M${-frontWidth*.44+i*frontWidth*.126} 1l2 12`} stroke={b.sign} strokeWidth={frontWidth*.058}/>)}<path d={`M${-frontWidth*.48} 14H${frontWidth*.48}`} stroke={ink}/></g>}
-    {h>20 && <g transform={`translate(${sx},${sy-7})`}><rect x={-signWidth/2} y="-18" width={signWidth} height="23" rx="2" fill={b.sign} stroke={ink} strokeWidth="1.5"/><text textAnchor="middle" y="-2" fontSize={Math.min(14,(signWidth-10)/signText.length*1.85)} fill={paper} fontWeight="bold">{signText}</text></g>}
+    {h>20 && !wallSign && <g transform={`translate(${sx},${sy-7})`}><rect x={-signWidth/2} y="-18" width={signWidth} height="23" rx="2" fill={b.sign} stroke={ink} strokeWidth="1.5"/><text textAnchor="middle" y="-2" fontSize={Math.min(14,(signWidth-10)/signText.length*1.85)} fill={paper} fontWeight="bold">{signText}</text></g>}
     <g transform={`translate(${px+13},${py+15})`}>
       {["shop","diner","bar","pawn","furniture"].includes(id) && <g transform="rotate(5)"><path d="M-12 3L-8 -26H12L16 3M-8 -26L-15 3" fill={b.sign} stroke={ink} strokeWidth="2"/><text x="2" y="-15" textAnchor="middle" fontSize="8" fill={paper}>{id==="diner"?"COFFEE":id==="pawn"?"WE BUY":id==="furniture"?"SALE":"OPEN"}</text><path d="M-4 -9H8M-4 -5H8" stroke={paper}/></g>}
       {id==="alley" && <g><rect x="-13" y="-24" width="32" height="21" fill="var(--town-bin)" stroke={ink}/><path d="M-17 -24H22M-7 -19H13" stroke={ink} strokeWidth="3"/><circle cx="-5" r="3" fill={ink}/><circle cx="13" r="3" fill={ink}/></g>}
