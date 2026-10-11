@@ -1,3 +1,4 @@
+import { OverheadPerson } from "@/components/OverheadPerson";
 import { useEffect, useRef, useState } from "react";
 import { BuildingExterior, type BuildingLot } from "@/components/BuildingExterior";
 import { Button } from "@/components/ui/button";
@@ -113,33 +114,15 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
-function Stick({ x, y, phase, walking, skating = false, idle = false, facing = "right", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string }) {
+function Stick({ x, y, phase, walking, skating = false, skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)" }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string }) {
   const [sx, sy] = P(x, y);
-  const s = walking && !skating ? Math.sin(phase) * 7 : 0;
-  const breathe = idle ? Math.sin(phase * 0.55) * 1.2 : 0;
-  const gesture = idle ? Math.sin(phase * 0.8) * 2.2 : 0;
-  return (
-    <g transform={`translate(${sx},${sy})`} stroke={color} strokeWidth={3} strokeLinecap="round" fill="none">
-      <ellipse cx={0} cy={0} rx={10} ry={4} fill="var(--town-shadow)" opacity={0.25} stroke="none" />
-      {skating ? (
-        <g data-skater-pose data-skate-angle={skateAngle} transform={`translate(0 -9) rotate(${skateAngle + 180})`}>
-          {/* Genuine overhead sprite: only a short footprint rotates, never a tall standing stickman. */}
-          <rect x="-5.5" y="-23" width="11" height="42" rx="5.5" fill="#89949c" stroke="#30343c" strokeWidth="1.8" data-skateboard="deck"/>
-          <path d="M-3 -16H3M-3 13H3" stroke="#cbd0d2" strokeWidth="1.2"/>
-          <ellipse cx="0" cy="1" rx="7" ry="8" fill={color} strokeWidth="1.5"/>
-          <path d="M-5 -3L-11 -8L-13 -5M5 -3L11 3L10 6" strokeWidth="2.4" strokeLinecap="round"/>
-          <circle cx="0" cy="-3" r="8.5" fill={head} strokeWidth="2"/>
-        </g>
-      ) : <>
-        <circle cx={0} cy={-40 + breathe} r={7} fill={head}/>
-        <line x1={0} y1={-33} x2={0} y2={-16}/>
-        <line x1={0} y1={-28} x2={-8 - s / 2 - gesture} y2={-20 + Math.abs(s) / 3 + breathe}/>
-        <line x1={0} y1={-28} x2={8 + s / 2 + gesture} y2={-20 + Math.abs(s) / 3 - breathe}/>
-        <line x1={0} y1={-16} x2={-s} y2={0}/>
-        <line x1={0} y1={-16} x2={s} y2={0}/>
-      </>}
-    </g>
-  );
+  return <g transform={`translate(${sx},${sy})`}>
+    {skating && <g data-skater-pose data-skate-angle={skateAngle} transform={`rotate(${skateAngle+180})`}>
+      <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
+      <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
+    </g>}
+    <OverheadPerson head={head} outline={color} phase={phase} moving={walking}/>
+  </g>;
 }
 
 const NPCS = [
@@ -415,37 +398,14 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" data-street-gang
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT, "gang"); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT, "gang"); } }}>
-        <g transform={`translate(${gx} ${gy}) scale(0.4)`}>
-          {/* A casual hangout on the grass. The seat belongs to the park, not a raised platform. */}
-          <ellipse cx="0" cy="6" rx="62" ry="10" fill="#27372f" opacity=".16"/>
-          <path d="M-49 -20H23M-49 -9H23" stroke="#846b53" strokeWidth="9" strokeLinecap="round"/>
-          <path d="M-44 -9V15M18 -9V15" stroke="#4b4140" strokeWidth="5"/>
-          <g data-gang-sitting transform="translate(-28 -12)" stroke="#272530" strokeWidth="3" fill="none" strokeLinecap="round">
-            <path d="M0 -27V-5L-17 0M-17 0L-25 14M0 -5L13 0L19 15" strokeWidth="5"/>
-            <path d="M-11 -28Q0 -36 11 -28L13 -7H-12Z" fill="#373343"/>
-            <circle cy="-44" r="10" fill="#ae856c"/>
-            <path d="M-11 -47Q-10 -60 4 -56Q15 -53 11 -45" fill="#252837" strokeWidth="5"/>
-            <path d="M-7 -44H-2M2 -44H7M-3 -37H4" strokeWidth="2"/>
-          </g>
-          <g data-gang-standing transform="translate(15 -2)" stroke="#272530" strokeWidth="3.5" fill="none" strokeLinecap="round">
-            <path d="M-7 -23L-11 0M8 -23L12 0M-12 -49L-20 -29M12 -49L21 -33" strokeWidth="6"/>
-            <path d="M-11 -53Q0 -62 11 -53L13 -22H-13Z" fill="#383f42"/>
-            <circle cy="-66" r="11" fill="#aa7f6b"/>
-            <path d="M-13 -68Q-11 -84 4 -81Q15 -78 12 -67" fill="#252837" strokeWidth="5"/>
-            <path d="M-7 -65H-2M3 -65H8M-4 -57H4" strokeWidth="2.5"/>
-          </g>
-          <g data-gang-leaning transform="translate(48 0)" stroke="#282632" strokeWidth="3" fill="none" strokeLinecap="round">
-            <path d="M-7 -20L-15 2M5 -20L8 2M-12 -43L-24 -27M10 -43L21 -34" strokeWidth="5"/>
-            <path d="M-11 -45Q-3 -53 12 -43L10 -20H-11Z" fill="#5a3b46"/>
-            <circle cx="1" cy="-56" r="10" fill="#bd977b"/>
-            <path d="M-10 -60Q0 -74 11 -62" stroke="#242735" strokeWidth="6"/>
-            <path d="M-5 -55H0M5 -55H9M-2 -47H5" strokeWidth="2"/>
-          </g>
-          {Math.sin(t*1.3)>0.48 && <g transform="translate(5 -102)">
-            <rect x="-22" y="-15" width="44" height="21" rx="9" fill="#eee1c4" stroke="#302b35" strokeWidth="2.5"/>
-            <text y="0" textAnchor="middle" fontSize="12" fill="#302b35">Oi...</text>
-          </g>}
-          <rect x="-75" y="-147" width="150" height="158" fill="transparent"/>
+        <g transform={`translate(${gx} ${gy})`}>
+          <ellipse cx="0" cy="8" rx="45" ry="7" fill="#27372f" opacity=".14"/>
+          <path d="M-30 -8h22" stroke="#846b53" strokeWidth="5" strokeLinecap="round"/>
+          <g data-gang-sitting transform="translate(-20 0)"><OverheadPerson head="#ae856c" outline="#292735" phase={t} /></g>
+          <g data-gang-standing transform="translate(8 -10)"><OverheadPerson head="#aa7f6b" outline="#292735" phase={t+2} moving/></g>
+          <g data-gang-leaning transform="translate(30 0)"><OverheadPerson head="#bd977b" outline="#332c35" phase={t+4}/></g>
+          {Math.sin(t*1.3)>.48 && <g transform="translate(4 -42)"><rect x="-21" y="-17" width="42" height="20" rx="8" fill="#eee1c4" stroke="#302b35" strokeWidth="2"/><text y="-3" textAnchor="middle" fontSize="11" fill="#302b35">Oi...</text></g>}
+          <rect x="-45" y="-55" width="94" height="73" fill="transparent"/>
         </g>
       </g>
     ),
@@ -457,19 +417,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80"
         onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
         onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
-        <g transform={`translate(${kx} ${ky}) scale(0.65)`}>
-          <ellipse cy="5" rx="42" ry="9" fill="#20352b" opacity=".17"/>
-          <path d="M-42 -21H41M-42 -12H41" stroke="#806249" strokeWidth="8" strokeLinecap="round"/>
-          <path d="M-37 -12V11M36 -12V11" stroke="#4d403a" strokeWidth="4"/>
-          <g data-kid-sitting stroke="#292633" strokeWidth="3" strokeLinecap="round" fill="none">
-            <path d="M0 -30V-12L-14 -9L-22 8M0 -12L13 -7L19 8" strokeWidth="5"/>
-            <path d="M-10 -32L10 -32L13 -12H-12Z" fill="#547b68"/>
-            <circle cy="-46" r="10" fill="#dbb38b"/>
-            <path d="M-12 -47Q-12 -62 4 -59L12 -51L-2 -55Z" fill="#3d393d"/>
-            <path d="M-6 -45H-2M3 -45H7M-3 -38H5" strokeWidth="2"/>
-          </g>
-          <path d="M16 8L34 8" stroke="#30313d" strokeWidth="3"/>
-          <rect x="-43" y="-89" width="86" height="113" fill="transparent"/>
+        <g transform={`translate(${kx} ${ky})`}>
+          <path d="M-24 -8h48M-24 -2h48" stroke="#806249" strokeWidth="5" strokeLinecap="round"/>
+          <path d="M-20 -2v12M20 -2v12" stroke="#4d403a" strokeWidth="3"/>
+          <g data-kid-sitting><OverheadPerson head="#dbb38b" outline="#292633"/></g>
+          <rect x="-28" y="-36" width="56" height="52" fill="transparent"/>
         </g>
       </g> });
   }
@@ -480,18 +432,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const [sx,sy]=P(px,e.y);
     items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();onEncounter?.();}}} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
-        <ellipse cy="2" rx="12" ry="4" opacity=".2" fill="#16131e"/>
-        <g stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round" fill="none">
-          <circle cy="-42" r="8" fill="#f3d7b8"/>
-          <path d={e.pose==="sitting"?"M0 -34V-19L14 -14M0 -19L-9 -7M0 -19L12 -5":"M0 -34V-17M0 -29L-13 -19M0 -29L12 -22M0 -17L-9 0M0 -17L9 0"}/>
-          <path d="M-6 -32H6L7 -22H-7Z" fill="#906ca6"/>
-        </g>
-        <g transform={`translate(0 ${-72+Math.sin(t*3)*3})`}>
+        <OverheadPerson head="#f3d7b8" outline="#3c3043" phase={t} moving={e.pose==="pacing"}/>
+        <g transform={`translate(0 ${-36+Math.sin(t*3)*2})`}>
           <rect x="-19" y="-24" width="38" height="29" rx="12" fill="#fff2d4" stroke="#24202b" strokeWidth="3"/>
           <text textAnchor="middle" y="-4" fontSize="18" fontWeight="bold" fill="#25202b">{e.icon}</text>
           <path d="M-3 4L0 12L6 4" fill="#fff2d4" stroke="#24202b" strokeWidth="2"/>
         </g>
-        <rect x="-30" y="-94" width="60" height="108" fill="transparent" />
+        <rect x="-22" y="-62" width="44" height="78" fill="transparent" />
       </g>
     </g>});
   }
