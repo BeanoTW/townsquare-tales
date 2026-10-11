@@ -121,6 +121,12 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   );
 }
 
+/** Keep the circular head, not its ground contact point, centred in the viewport. */
+export function playerCameraViewBox(x: number, y: number): string {
+  const [cx, cy] = P(x, y);
+  return `${cx - 165} ${cy - 7 - 275} 330 550`;
+}
+
 function Stick({ x, y, phase, walking, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
   const [sx, sy] = P(x, y);
   return <g transform={`translate(${sx},${sy})`}>
@@ -463,7 +469,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
 
   return (
     <div data-town-paused={paused} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
-      <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 165} ${cy - 275} 330 550`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
+      <svg ref={svgRef} viewBox={playerCameraViewBox(m.x, m.y)} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={e=>{if(!pausedRef.current)onGroundPointerDown(e);}}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {

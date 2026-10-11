@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { P, buildings, door } from "@/components/TownMap";
+import { P, buildings, door, playerCameraViewBox } from "@/components/TownMap";
 describe("upright oblique town projection", () => {
   it("keeps east-west streets horizontal", () => {
     const a=P(3,8.5), b=P(22,8.5);
@@ -20,6 +20,16 @@ describe("upright oblique town projection", () => {
       if (b.facing === "south") expect(threshold.y).toBeGreaterThan(b.y+b.d);
       if (b.facing === "east") expect(threshold.x).toBeGreaterThan(b.x+b.w);
       if (b.facing === "west") expect(threshold.x).toBeLessThan(b.x);
+    }
+  });
+  it("keeps the visible player head centred when travelling north and south", () => {
+    for (const y of [2, 9, 16, 25]) {
+      const x = 10;
+      const parts = playerCameraViewBox(x, y).split(" ").map(Number);
+      const left = parts[0]!, top = parts[1]!, width = parts[2]!, height = parts[3]!;
+      const [px, py] = P(x, y);
+      expect(left + width / 2).toBe(px);
+      expect(top + height / 2).toBe(py - 7);
     }
   });
 });
