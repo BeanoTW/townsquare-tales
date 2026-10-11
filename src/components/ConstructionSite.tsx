@@ -1,3 +1,4 @@
+import { OverheadPerson } from "@/components/OverheadPerson";
 import "./construction-site.css";
 import { P } from "@/lib/town-projection";
 
@@ -105,16 +106,12 @@ export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
         <path d="M-42 -40v32M42 -40v32" stroke="#535751" strokeWidth="4"/>
       </g>
     </g>
-    {/* Crew move between material stacks, with clearly different hard hats. */}
+    {/* Same stature and overhead silhouette as the player, with subtle helmet markings. */}
     {[[17.3,20.8,"#d7ab38"],[20.8,18.7,"#eac763"]].map(([wx,wy,hat],i)=>{
       const [px,py]=P(Number(wx),Number(wy));
       return <g key={i} data-construction-worker transform={`translate(${px} ${py})`}>
-        <ellipse cy="3" rx="11" ry="4" fill="#343936" opacity=".2"/>
         <g className={i===0?"construction-worker-carry":"construction-worker-hammer"}>
-          <path d="M0 -14v-24M0 -27l-9 8M0 -27l9 8M0 -14l-7 16M0 -14l7 16" stroke="#394043" strokeWidth="3.5" strokeLinecap="round"/>
-          <rect x="-7" y="-36" width="14" height="19" fill={i===0?"#d9803c":"#6d8395"} stroke="#384042" strokeWidth="2"/>
-          <circle cy="-46" r="9" fill="#dbb089" stroke="#384042" strokeWidth="2"/>
-          <path d="M-10 -49q10-12 20 0v3h-20Z" fill={String(hat)} stroke="#384042" strokeWidth="1.5"/>
+          <OverheadPerson head="#dbb089" outline="#394043" hat={String(hat)} moving phase={i*2}/>
         </g>
       </g>;
     })}
@@ -123,13 +120,9 @@ export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
       className="cursor-pointer" onClick={e=>{e.stopPropagation();onForeman();}}
       onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();onForeman();}}}>
       <g transform={`translate(${fx} ${fy})`}>
-        <ellipse cy="3" rx="13" ry="5" fill="#383c34" opacity=".2"/>
-        <path d="M0 -15v-23m0 9l-11 8m11-8l11 6M0 -15l-9 17m9-17l9 17" stroke="#303137" strokeWidth="4" strokeLinecap="round"/>
-        <path d="M-8 -36h16v17h-16z" fill="#e88b2e" stroke="#303137" strokeWidth="2"/>
-        <circle cy="-47" r="10" fill="#e1ae83" stroke="#303137" strokeWidth="2"/>
-        <path d="M-11 -51q11-14 22 0v4h-22Z" fill="#f2c846" stroke="#303137" strokeWidth="2"/>
-        <rect x="13" y="-27" width="10" height="14" rx="1" fill="#d3c8aa" stroke="#343a3d" strokeWidth="2"/>
-        <rect x="-24" y="-91" width="49" height="104" fill="transparent"/>
+        <OverheadPerson head="#e1ae83" outline="#303137" hat="#f2c846"/>
+        <rect x="10" y="-15" width="8" height="11" rx="1" fill="#d3c8aa" stroke="#343a3d" strokeWidth="1.5"/>
+        <rect x="-22" y="-38" width="44" height="55" fill="transparent"/>
       </g>
     </g>
   </g>;
