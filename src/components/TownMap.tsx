@@ -603,7 +603,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               y: Math.max(0.3, Math.min(N - 0.3, (e.clientY - bounds.top) / bounds.height * N)),
             });
           }}>
-          <rect x="12" y="21" width="4.6" height="7" fill="var(--town-mini-park)" />
+          <rect x="25.5" y="8.1" width="4.1" height="4" fill="var(--town-mini-park)" />
           {ROADS.map((r,i) => <rect key={"mini-road-"+i} x={r.x} y={r.y} width={r.w} height={r.d} fill="var(--town-mini-road)" />)}
           <circle cx={GANG_SPOT.x} cy={GANG_SPOT.y} r={0.8} fill="#40343d" stroke="#f2d46f" strokeWidth={0.22}><title>Street gang - approach at your own risk</title></circle>
           {bs.map((b) => <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.d}
