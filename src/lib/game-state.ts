@@ -15,6 +15,8 @@ export type GameState = {
   streetNewsDay?: number;
   streetEncounterDay?: number;
   streetMaraIncidents?: number; streetNoxIncidents?: number; streetGusIncidents?: number; streetIvyIncidents?: number;
+  /** Lifetime casino totals (money won / money lost) per game. Old saves default to 0. */
+  bjWon: number; bjLost: number; slotWon: number; slotLost: number;
 };
 
 const KEY = "sticktown";
@@ -34,6 +36,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   karma: [-1e6, 1e6], house: [0, 3], school: [0, 4],
   job: [0, 4], career: [0, 3], xp: [0, 1000000], heat: [0, 100],
   bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 255],
+  bjWon: [0, 1e12], bjLost: [0, 1e12], slotWon: [0, 1e12], slotLost: [0, 1e12],
 };
 
 export function parseGame(raw: string | null, fallback: GameState): GameState {

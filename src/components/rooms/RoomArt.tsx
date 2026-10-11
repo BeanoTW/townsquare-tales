@@ -963,7 +963,7 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
       );
     }
     case "casino": {
-      const slots = B("slots"), table = B("high-dice");
+      const slots = B("slots"), table = B("high-dice"), bj = B("blackjack");
       return <g>
         <g data-slot-machine>
           <path d={`M${slots.x+15} ${slots.y+18}L${slots.x+38} ${slots.y}H${slots.x+slots.w-4}L${slots.x+slots.w-16} ${slots.y+22}Z`} fill="#bd729c" stroke={INK} strokeWidth={4}/>
@@ -976,6 +976,13 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
           <path d={`M${slots.x+slots.w-5} ${slots.y+65}H${slots.x+slots.w+9}V${slots.y+40}`} stroke="#f2c45c" strokeWidth="5" fill="none"/>
           <circle cx={slots.x+slots.w+9} cy={slots.y+38} r={7} fill="#f2c45c" stroke={INK} strokeWidth={2}/>
         </g>
+        <g data-blackjack-table>
+          <Figure x={bj.x + 26} y={bj.y + bj.h - 2} shirt="#cf4b47" />
+          <Fill b={{ x: bj.x, y: bj.y + 24, w: bj.w, h: bj.h - 24 }} fill="#2f7d5a" rx={26} />
+          <R x={bj.x + 54} y={bj.y + 34} w={16} h={22} fill={PAPER} rx={2} sw={2} />
+          <R x={bj.x + 76} y={bj.y + 34} w={16} h={22} fill={PAPER} rx={2} sw={2} />
+        </g>
+        <Figure x={slots.x + slots.w + 26} y={190} shirt="#25242a" hood />
         <g data-dice-table>
           <path d={`M${table.x+27} ${table.y+25}V${table.y+99}M${table.x+table.w-27} ${table.y+25}V${table.y+99}`} stroke="#4d3430" strokeWidth={11}/>
           <ellipse cx={table.x+table.w/2} cy={table.y+45} rx={table.w/2-2} ry={32} fill="#492a35" stroke={INK} strokeWidth={5}/>

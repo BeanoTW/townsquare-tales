@@ -28,7 +28,6 @@ import {
   SELL_SHOES,
   shiftAction,
   sleepAction,
-  SLOTS,
   STUDY_DESK,
   STUDY_LIBRARY,
   TV_CHANNELS,
@@ -41,6 +40,8 @@ import {
   enrollAction,
   type ActionDef,
 } from "@/lib/actions";
+import { CASINO_CHATTER } from "@/lib/casino-lines";
+import { lifetime, money, signed, type CasinoGame } from "@/lib/casino";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
 import type { GameState } from "@/lib/game-state";
 import { ownsFurniture } from "@/lib/furniture";
@@ -82,6 +83,8 @@ export type Hotspot = {
   /** Plain-language status lines shown in the panel. */
   lines?: (s: GameState) => string[];
   actions?: (s: GameState) => ActionDef[];
+  /** Tapping opens this full-screen minigame instead of a panel. */
+  launch?: "blackjack" | "slots";
 };
 export type Palette = { wall: string; floor: string; accent: string };
 export type Room = {
@@ -92,6 +95,13 @@ export type Room = {
   sign: string;
   palette: Palette;
   hotspots: Hotspot[];
+  /** Ambient lines rotated in the footer while the player looks around. */
+  chatter?: readonly string[];
+};
+
+const casinoRecord = (game: CasinoGame, s: GameState): string[] => {
+  const r = lifetime(s, game);
+  return [`Lifetime: won ${money(r.won)}, lost ${money(r.lost)}, net ${signed(r.net)}.`];
 };
 
 const employed = (s: GameState, career: number) => s.career === career;
@@ -628,14 +638,25 @@ export const ROOMS: Record<PlaceId, Room> = {
     caption: "The house always wins. But you're feeling lucky.",
     sign: "LUCKY 7s",
     palette: { wall: "#493866", floor: "#312744", accent: "#f3bd4b" },
+    chatter: CASINO_CHATTER,
     hotspots: [
       {
         id: "slots",
         label: "Slot machine",
-        tag: "SPIN",
-        hint: "One spin, one hour",
+        tag: "SLOTS",
+        hint: "Pull the lever. Statistically unwise.",
         box: { x: 20, y: 50, w: 160, h: 140 },
-        actions: () => [SLOTS],
+        launch: "slots",
+        lines: (s) => casinoRecord("slots", s),
+      },
+      {
+        id: "blackjack",
+        label: "Blackjack table",
+        tag: "21",
+        hint: "Beat the dealer. He's unimpressed.",
+        box: { x: 236, y: 66, w: 164, h: 60 },
+        launch: "blackjack",
+        lines: (s) => casinoRecord("blackjack", s),
       },
       {
         id: "high-dice",

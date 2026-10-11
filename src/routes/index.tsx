@@ -12,7 +12,10 @@ import { playActionCue } from "@/lib/action-audio";
 import { RESIDENT_FAVOURS, activeFavour, favourChoices, favourObjective, favourVisitAction } from "@/lib/resident-favours";
 import { availableStreetEvent, streetEncounter, type StreetEncounter } from "@/lib/street-encounters";
 import { conversation, recordConversation, hasTalkedToday, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
+import { BlackjackGame } from "@/components/casino/BlackjackGame";
+import { SlotsGame } from "@/components/casino/SlotsGame";
 import { LocationScene, type Feedback } from "@/components/LocationScene";
+import { MIN_BET, canSit, type CasinoGame } from "@/lib/casino";
 import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole } from "@/lib/careers";
@@ -62,6 +65,7 @@ function Game() {
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
+  const [game, setGame] = useState<CasinoGame | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
   const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
   // Result cards are transient, unlike dialogue that requires a player decision.
@@ -151,6 +155,15 @@ function Game() {
     return true;
   };
 
+  /** Casino tables and machines: refuse politely before opening if the player can't sit down or bet. */
+  const launchGame = (g: CasinoGame) => {
+    const seat = canSit(s);
+    if (!seat.ok) return notify(seat.message, false);
+    if (s.money < MIN_BET) return notify(`You need at least $${MIN_BET} to sit down.`, false);
+    setResult(null);
+    setGame(g);
+  };
+
   const walk = (id: PlaceId) => {
     setResult(null);
     setStrangerLeft(s.day);
@@ -203,6 +216,7 @@ function Game() {
   const won = s.house === 3 && s.career === 0 && s.job === 4;
 
   const close = () => {
+    setGame(null);
     setPlace(null);
   };
   return (
@@ -245,14 +259,14 @@ function Game() {
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
         <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} />
         <div className="pointer-events-auto flex shrink-0 flex-row gap-1 sm:gap-2">
-          <Icon label="Player" onClick={() => setTab("player")}>
+          <Icon disabled={game !== null} label="Player" onClick={() => setTab("player")}>
             👤
           </Icon>
-          <Icon label="Inventory" onClick={() => setTab("inventory")}>🎒</Icon>
-          <Icon label="Journal" onClick={() => setTab("log")}>
+          <Icon disabled={game !== null} label="Inventory" onClick={() => setTab("inventory")}>🎒</Icon>
+          <Icon disabled={game !== null} label="Journal" onClick={() => setTab("log")}>
             📜
           </Icon>
-          <Icon label="Settings" onClick={() => setTab("settings")}>
+          <Icon disabled={game !== null} label="Settings" onClick={() => setTab("settings")}>
             ⚙️
           </Icon>
         </div>
@@ -365,7 +379,33 @@ function Game() {
           feedback={result}
           onRun={perform}
           onLeave={close}
+          onLaunch={launchGame}
+          paused={game !== null}
         />
+      )}
+
+      {!enc && place === "casino" && game && (
+        <>
+          {game === "blackjack" ? (
+            <BlackjackGame
+              state={s}
+              onChange={setS}
+              onExit={() => {
+                setGame(null);
+                notify("You step away from the table.", true);
+              }}
+            />
+          ) : (
+            <SlotsGame
+              state={s}
+              onChange={setS}
+              onExit={() => {
+                setGame(null);
+                notify("You step away from the machine.", true);
+              }}
+            />
+          )}
+        </>
       )}
 
       {result && !enc && !gangMeeting && !resident && !parkKidOpen && !place && (
@@ -533,10 +573,11 @@ function Game() {
   );
 }
 
-function Icon(p: { label: string; onClick: () => void; children: React.ReactNode }) {
+function Icon(p: { disabled?: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       aria-label={p.label}
+      disabled={p.disabled}
       onClick={p.onClick}
       className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-foreground bg-card text-base shadow sm:h-11 sm:w-11 sm:text-xl"
     >

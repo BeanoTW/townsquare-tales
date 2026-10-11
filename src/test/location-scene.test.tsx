@@ -138,3 +138,50 @@ describe("layout helpers", () => {
     expect(style.top).toBeUndefined();
   });
 });
+
+describe("Lucky Sevens launch points", () => {
+  it("opens the minigames straight from the table and the machine", () => {
+    const onLaunch = vi.fn();
+    const room = roomFor("casino", START);
+    render(
+      <LocationScene
+        room={room}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+        onLaunch={onLaunch}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Blackjack table\./ }));
+    expect(onLaunch).toHaveBeenLastCalledWith("blackjack");
+    fireEvent.click(screen.getByRole("button", { name: /^Slot machine\./ }));
+    expect(onLaunch).toHaveBeenLastCalledWith("slots");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("shows ambient casino chatter and keeps the tables reachable", () => {
+    renderRoom("casino");
+    expect(screen.getByTestId("chatter")).toBeInTheDocument();
+    expect(visibleHotspots(roomFor("casino", START), START).map((h) => h.id)).toEqual(
+      expect.arrayContaining(["slots", "blackjack", "high-dice"]),
+    );
+  });
+
+  it("ignores Escape while a minigame is open on top", () => {
+    const onLeave = vi.fn();
+    const room = roomFor("casino", START);
+    render(
+      <LocationScene
+        room={room}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={onLeave}
+        paused
+      />,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onLeave).not.toHaveBeenCalled();
+  });
+});

@@ -9,7 +9,7 @@ import { WalkableShop } from "@/components/rooms/WalkableShop";
 import { isWalkableShop } from "@/lib/walkable-shops";
 import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { isArcadeRoom } from "@/lib/arcade-rooms";
-import { VIEW, visibleHotspots, type Box, type Room } from "@/lib/rooms";
+import { VIEW, visibleHotspots, type Box, type Room, type Hotspot } from "@/lib/rooms";
 
 export type Feedback = { message: string; success: boolean; changes: string[]; timeLine?: string };
 
@@ -20,6 +20,8 @@ function ObjectLocationScene({
   onRun,
   onLeave,
   godMode = false,
+  onLaunch,
+  paused = false,
 }: {
   room: Room;
   state: GameState;
@@ -27,6 +29,10 @@ function ObjectLocationScene({
   godMode?: boolean;
   onRun: (a: ActionDef) => void;
   onLeave: () => void;
+  /** Open a full-screen minigame from a hotspot (e.g. the casino tables). */
+  onLaunch?: ((game: NonNullable<Hotspot["launch"]>) => void) | undefined;
+  /** A minigame is open on top: stop reacting to Escape. */
+  paused?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [size, setSize] = useState<Size>({ w: 0, h: 0 });
@@ -48,6 +54,7 @@ function ObjectLocationScene({
 
   // Escape closes the panel first, then leaves the room.
   useEffect(() => {
+    if (paused) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (selectedId) setSelectedId(null);
@@ -55,7 +62,15 @@ function ObjectLocationScene({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, onLeave]);
+  }, [selectedId, onLeave, paused]);
+
+  const [chatterIdx, setChatterIdx] = useState(0);
+  const chatter = room.chatter;
+  useEffect(() => {
+    if (!chatter || chatter.length < 2) return;
+    const id = window.setInterval(() => setChatterIdx((i) => (i + 1) % chatter.length), 6500);
+    return () => window.clearInterval(id);
+  }, [chatter]);
 
   const visible = visibleHotspots(room, state);
   const selected = visible.find((h) => h.id === selectedId) ?? null;
@@ -105,7 +120,15 @@ function ObjectLocationScene({
             state={state}
             visible={visible}
             selectedId={selectedId}
-            onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+            onSelect={(id) => {
+              const spot = visible.find((h) => h.id === id);
+              if (spot?.launch && onLaunch) {
+                setSelectedId(null);
+                onLaunch(spot.launch);
+                return;
+              }
+              setSelectedId((cur) => (cur === id ? null : id));
+            }}
           />
         </div>
         {selected && (
@@ -151,7 +174,18 @@ function ObjectLocationScene({
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground">Tap an object to see what you can do.</p>
+            <div>
+              <p className="text-muted-foreground">Tap an object to see what you can do.</p>
+              {chatter && (
+                <p
+                  aria-live="off"
+                  className="mt-0.5 text-xs italic text-muted-foreground"
+                  data-testid="chatter"
+                >
+                  {chatter[chatterIdx % chatter.length]}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </footer>

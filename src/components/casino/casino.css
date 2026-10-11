@@ -1,0 +1,372 @@
+/* Lucky Sevens table and machine styling. Colours follow the casino room palette. */
+.cz-root {
+  --cz-gold: #f3bd4b;
+  --cz-ink: #25242a;
+  --cz-purple: #312744;
+}
+.cz-btn {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 2px solid var(--cz-ink);
+  border-radius: 12px;
+  background: #f1e6c8;
+  color: var(--cz-ink);
+  font-weight: 700;
+  font-size: 1rem;
+  touch-action: manipulation;
+}
+.cz-btn:hover:not(:disabled),
+.cz-btn:focus-visible {
+  background: var(--cz-gold);
+}
+.cz-btn:disabled {
+  opacity: 0.45;
+}
+.cz-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.cz-btn-primary {
+  background: var(--cz-gold);
+}
+
+/* Felt */
+.bj-felt {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.12), transparent 65%), #1f6b49;
+  border: 3px solid #5b3b22;
+  border-radius: 28px 28px 80px 80px / 28px 28px 60px 60px;
+  box-shadow:
+    inset 0 0 0 3px rgba(243, 189, 75, 0.45),
+    0 6px 0 rgba(0, 0, 0, 0.25);
+}
+.bj-arc {
+  color: rgba(243, 189, 75, 0.55);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Cards */
+.bj-card {
+  position: relative;
+  width: 54px;
+  height: 78px;
+  flex: none;
+  perspective: 600px;
+}
+.bj-card + .bj-card {
+  margin-left: -24px;
+}
+.bj-card-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 420ms ease;
+}
+.bj-card.is-down .bj-card-inner {
+  transform: rotateY(180deg);
+}
+.bj-face,
+.bj-back {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--cz-ink);
+  border-radius: 7px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.bj-face {
+  background: #fffdf5;
+  font-weight: 800;
+  line-height: 1;
+}
+.bj-face .corner {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: 0.95rem;
+  text-align: center;
+}
+.bj-face .corner small {
+  display: block;
+  font-size: 0.9rem;
+}
+.bj-face .pip {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  font-size: 1.6rem;
+}
+.bj-red {
+  color: #c0392b;
+}
+.bj-black {
+  color: var(--cz-ink);
+}
+.bj-back {
+  transform: rotateY(180deg);
+  background: repeating-linear-gradient(45deg, #8c3a63 0 6px, #6a2547 6px 12px);
+  box-shadow: inset 0 0 0 3px #fffdf5;
+}
+.bj-deal {
+  animation: bj-deal 380ms ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes bj-deal {
+  from {
+    opacity: 0;
+    transform: translate(60px, -70px) rotate(14deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Chips */
+.bj-chip {
+  display: inline-flex;
+  width: 50px;
+  height: 50px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 3px dashed rgba(255, 255, 255, 0.85);
+  outline: 2px solid var(--cz-ink);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  touch-action: manipulation;
+}
+.bj-chip:disabled {
+  opacity: 0.35;
+}
+.bj-chip:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.bj-chip-10 {
+  background: #3b6fb6;
+}
+.bj-chip-50 {
+  background: #c0392b;
+}
+.bj-chip-100 {
+  background: #2d2d33;
+}
+.bj-chip-500 {
+  background: #7a3fa0;
+}
+.bj-stake {
+  display: inline-flex;
+  align-items: center;
+}
+.bj-stake .bj-chip {
+  width: 30px;
+  height: 30px;
+  margin-left: -6px;
+  font-size: 0.6rem;
+  border-width: 2px;
+}
+.bj-stake .bj-chip:first-child {
+  margin-left: 0;
+}
+
+/* Result banner */
+.bj-banner {
+  animation: bj-banner 320ms ease-out both;
+  animation-delay: 700ms;
+}
+@keyframes bj-banner {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Slot cabinet */
+.sl-cabinet {
+  position: relative;
+  border: 4px solid var(--cz-ink);
+  border-radius: 22px;
+  background: linear-gradient(#9c3f69, #7a2d52);
+  padding: 16px 56px 14px 14px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+}
+.sl-bulbs {
+  position: absolute;
+  inset: 5px;
+  border-radius: 18px;
+  pointer-events: none;
+  border: 4px dotted #ffe08a;
+  animation: sl-chase 1.1s steps(2, end) infinite;
+}
+.sl-cabinet.is-winning .sl-bulbs {
+  animation-duration: 0.35s;
+}
+@keyframes sl-chase {
+  0% {
+    border-color: #ffe08a;
+  }
+  50% {
+    border-color: #cf4b47;
+  }
+  100% {
+    border-color: #ffe08a;
+  }
+}
+.sl-window {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border: 3px solid var(--cz-ink);
+  border-radius: 12px;
+  background: #1e1a28;
+}
+.sl-reel {
+  position: relative;
+  flex: 1;
+  height: var(--cell-h);
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fffdf5;
+  border: 2px solid var(--cz-ink);
+}
+.sl-reel-col {
+  will-change: transform;
+}
+.sl-cell {
+  display: flex;
+  height: calc(var(--cell-h) / 3);
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.7rem;
+  color: var(--cz-ink);
+}
+.sl-cell.is-bar {
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+}
+.sl-cell.is-seven {
+  color: #cf4b47;
+  font-size: 2.2rem;
+}
+.sl-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 0;
+  border-top: 3px solid #cf4b47;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.sl-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0.28),
+    transparent 30%,
+    transparent 70%,
+    rgba(0, 0, 0, 0.28)
+  );
+  border-radius: 8px;
+}
+.sl-lever {
+  position: absolute;
+  right: 8px;
+  top: 22%;
+  width: 40px;
+  height: 120px;
+  touch-action: manipulation;
+}
+.sl-lever .stick {
+  position: absolute;
+  left: 15px;
+  top: 22px;
+  width: 8px;
+  height: 80px;
+  background: #cfcfd6;
+  border: 2px solid var(--cz-ink);
+  border-radius: 4px;
+  transform-origin: 50% 100%;
+  transition: transform 200ms ease;
+}
+.sl-lever .knob {
+  position: absolute;
+  left: 8px;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #cf4b47;
+  border: 2px solid var(--cz-ink);
+}
+.sl-lever.is-pulled .stick {
+  transform: scaleY(0.4);
+}
+.sl-lever.is-pulled .knob {
+  transform: translateY(46px);
+}
+.sl-lever .knob {
+  transition: transform 200ms ease;
+}
+.sl-win-row {
+  background: rgba(243, 189, 75, 0.25);
+  outline: 2px solid var(--cz-gold);
+}
+
+.cz-dealer-bubble {
+  position: relative;
+  border: 2px solid var(--cz-ink);
+  border-radius: 12px;
+  background: #fffdf5;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.cz-dealer-bubble::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 14px;
+  border: 5px solid transparent;
+  border-right-color: var(--cz-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bj-deal,
+  .bj-banner {
+    animation: none;
+  }
+  .bj-card-inner,
+  .sl-lever .stick,
+  .sl-lever .knob {
+    transition: none;
+  }
+  .sl-bulbs {
+    animation: none;
+  }
+}
+@media (max-height: 640px) {
+  .bj-card {
+    width: 46px;
+    height: 66px;
+  }
+  .bj-card + .bj-card {
+    margin-left: -20px;
+  }
+}
+
+@media (max-height: 760px) {
+  .bj-arc {
+    display: none;
+  }
+}
