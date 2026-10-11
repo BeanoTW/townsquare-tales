@@ -1,7 +1,7 @@
 import type { GameState } from "@/lib/game-state";
 
 /** One recurring park character; dialogue escalates and consequences persist in the save. */
-export const PARK_KID_SPOT = { x: 13.2, y: 23.6, approach: 1.1 } as const;
+export const PARK_KID_SPOT = { x: 26.4, y: 10.1, approach: 1.1 } as const;
 export const PARK_SMOKE_LIMIT = 15;
 
 const BENCH_DIALOGUE = [
