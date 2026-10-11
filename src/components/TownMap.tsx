@@ -26,12 +26,12 @@ const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join
 
 // Streets have deliberate ends and T-junctions rather than an endless grid.
 export const ROADS = [
-  { x: 9, y: 0, w: 2, d: 30 },       // north-south Main Street, only T-junctions
-  { x: 0, y: 7.6, w: 9, d: 1.8 },    // upper west street, joins Main Street
-  { x: 11, y: 12.4, w: 12, d: 1.8 }, // east market street, offset 4.8 tiles
-  { x: 0, y: 19, w: 9, d: 1.8 },     // lower west street, staggered again
-  { x: 11, y: 26, w: 12, d: 1.8 },  // lower east street, offset 7 tiles
-  { x: 23, y: 12.4, w: 2, d: 17.2 }, // east side street with T-junctions
+  { x: 8.6, y: 0, w: 2.8, d: 30 },       // north-south Main Street, only T-junctions
+  { x: 0, y: 7.4, w: 9.1, d: 2.2 },    // upper west street, joins Main Street
+  { x: 11.1, y: 12.2, w: 12.2, d: 2.2 }, // east market street, offset 4.8 tiles
+  { x: 0, y: 18.8, w: 9.1, d: 2.2 },     // lower west street, staggered again
+  { x: 11.1, y: 25.8, w: 12.2, d: 2.2 },  // lower east street, offset 7 tiles
+  { x: 22.6, y: 12.2, w: 2.8, d: 17.4 }, // east side street with T-junctions
 ] as const;
 
 type B = BuildingLot;
@@ -520,9 +520,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
         {tile(11.5,21.5,10.7,8.4,"var(--town-park-lawn)","park-green")}
         {/* Road shoulders do not extend across entire neighbourhoods. */}
-        {ROADS.map((r,i) => tile(Math.max(0,r.x-.42),Math.max(0,r.y-.42),
-          Math.min(N,r.x+r.w+.42)-Math.max(0,r.x-.42),
-          Math.min(N,r.y+r.d+.42)-Math.max(0,r.y-.42),
+        {ROADS.map((r,i) => tile(Math.max(0,r.x-.58),Math.max(0,r.y-.58),
+          Math.min(N,r.x+r.w+.58)-Math.max(0,r.x-.58),
+          Math.min(N,r.y+r.d+.58)-Math.max(0,r.y-.58),
           "var(--town-pavement)","kerb-"+i))}
         {/* Individual lawns and building setbacks, rather than continuous square paving. */}
         {bs.map(b => tile(Math.max(0,b.x-.15),Math.max(0,b.y-.15),b.w+.3,b.d+.3,
@@ -555,9 +555,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
         })}
         {/* Crossings only where the staggered side roads actually meet the spine. */}
-        {[7.6,12.4,19,26].map((y,i)=>
+        {[7.4,12.2,18.8,25.8].map((y,i)=>
           <g key={"crossing-"+i}>{Array.from({length:4},(_,j)=>
-            tile(9.15+j*.44,y-.35,.25,.4,"var(--town-crossing)","stripe-"+i+"-"+j))}</g>)}
+            tile(8.85+j*.62,y-.35,.34,.4,"var(--town-crossing)","stripe-"+i+"-"+j))}</g>)}
         {/* Every property has a short approach path linking its door to the surrounding pavement. */}
         {bs.map((b) => {
           const d = door(b);
