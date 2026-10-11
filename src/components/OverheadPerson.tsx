@@ -16,8 +16,8 @@ export function OverheadPerson({ head = "#f0d5b7", outline = "#222530", phase = 
     </g>}
     <g transform={`rotate(${angle})`} data-body-heading>
       {moving && <g data-walking-feet stroke={outline} strokeWidth="3" strokeLinecap="round">
-        {/* Keep both five-unit footsteps outside the head silhouette, one ahead and one behind. */}
-        <path d={leadingLeft ? "M-10 0L-11 -5M10 0L11 5" : "M-10 0L-11 5M10 0L11 -5"}/>
+        {/* Match the overhead reference: short leading and trailing stubs, not side legs. */}
+        <path d={leadingLeft ? "M1 -16L2 -20M-1 2L-2 6" : "M-1 -16L-2 -20M1 2L2 6"}/>
       </g>}
       <path d={`M-7 -7 Q-13 ${-5+sway} -13 0 M7 -7 Q13 ${-5-sway} 13 0`}
         stroke={outline} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
