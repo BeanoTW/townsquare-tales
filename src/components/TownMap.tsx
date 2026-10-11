@@ -138,6 +138,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const positions = useRef<ResidentPositions>({});
   const seatedUntil = useRef(0);
   const streetRef = useRef(onStreet); streetRef.current = onStreet;
+  const encounterRef = useRef({encounter,onEncounter}); encounterRef.current = {encounter,onEncounter};
   const pausedRef = useRef(paused); pausedRef.current = paused;
   const [nearStreet, setNearStreet] = useState<StreetObjectId | null>(null);
   const nearStreetRef = useRef<StreetObjectId | null>(null);
@@ -155,6 +156,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     if (enter === "kid" && Math.hypot(me.current.x-destination.x,me.current.y-destination.y) < PARK_KID_SPOT.approach) { kidRef.current?.(); return; }
     target.current = route.length ? { waypoints: route, enter } : null;
   }, [bs]);
+  const selectEncounter = () => {
+    if (!encounter || pausedRef.current) return;
+    if(Math.hypot(me.current.x-encounter.x,me.current.y-encounter.y)<1.5) onEncounter?.();
+    else routeTo(encounter,"encounter");
+  };
   const selectResident = useCallback((id: string, p: Point) => routeTo(p,"resident:"+id), [routeTo]);
   const selectObject = useCallback((id: StreetObjectId) => {
     const object=STREET_OBJECTS.find(o=>o.id===id); if(!object)return;
@@ -257,6 +263,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           const id = target.current.enter;
           target.current = null;
           if (id === "kid" && kidPresentRef.current) kidRef.current?.();
+          else if (id === "encounter") {
+            const current = encounterRef.current;
+            if(current.encounter && Math.hypot(current.encounter.x-m.x,current.encounter.y-m.y)<1.5) current.onEncounter?.();
+          }
           else if (id?.startsWith("street:")) useStreet(id.slice(7) as StreetObjectId);
           else if (id?.startsWith("resident:")) {
             const resident=positions.current[id.slice(9) as keyof ResidentPositions];
@@ -411,7 +421,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const sway=e.pose==="pacing"?Math.sin(t*1.8)*.32:0;
     const px=e.x+sway;
     const [sx,sy]=P(px,e.y);
-    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();onEncounter?.();}}} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
+    items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();selectEncounter();}}} onClick={ev=>{ev.stopPropagation();selectEncounter();}}>
       <g transform={`translate(${sx} ${sy})`}>
         <OverheadPerson head="#f3d7b8" outline="#3c3043" phase={t} moving={e.pose==="pacing"} pose={e.pose==="sitting"?"sitting":"standing"}/>
         <g transform={`translate(0 ${-36+Math.sin(t*3)*2})`}>

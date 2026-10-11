@@ -38,11 +38,12 @@ export function conversation(id: ResidentId, state: GameState): { title:string; 
     gus:["Don't know you, pal.","Sit yourself down. It's been a long day.","There you are! I saved you a story."],
     ivy:["Sorry, I'm trying to concentrate.","Oh, hello again. Got a minute?","I was hoping I'd run into you!"],
   };
-  const text=opening[id][rel>=4?2:rel>=1?1:0] ?? "Alright?";
+  const base=opening[id][rel>=4?2:rel>=1?1:0] ?? "Alright?";
+  const text = state.heat >= 30 ? (id === "nox" ? "Coppers love you. Unfortunately, so does their paperwork." : id === "ivy" ? "Please leave me out of whatever your current legal situation is." : id === "mara" ? "I handle returns. Not getaway plans." : "Not here, pal. I prefer my stories without witness statements.") : id === "nox" && state.gangRep >= 20 ? "Crew member. Alright. Your reputation got here before you." : base;
   const person=RESIDENTS.find(p=>p.id===id);
   return {title:(person?.name ?? id)+" · "+(person?.title ?? "Resident"),text,choices:[
-    {label:"Have a friendly chat",change:1,karma:0,reply:id==="mara"?"Mara manages half a smile. Progress.":id==="nox"?"Nox nods approvingly.":id==="gus"?"Gus launches into a story about the old town.":"Ivy looks up from her notes and laughs."},
-    {label:"Offer to help",change:2,karma:1,reply:"You lend a hand. They remember the gesture. +1 karma."},
+    {label:"Have a friendly chat",change:1,karma:0,reply:id==="mara"?"Mara manages half a smile. Progress.":id==="nox"?"Nox nods approvingly.":id==="gus"?"Gus tells you about a funeral where the buffet got a better review than the deceased.":"Ivy explains why your bad week is statistically unremarkable. Somehow, it helps."},
+    {label:"Offer to help",change:2,karma:1,reply:id==="mara"?"Mara: 'You helped without asking for a manager. Disturbing.' +1 karma.":id==="nox"?"Nox: 'Useful. Keep that up.' +1 karma.":id==="gus"?"Gus: 'A good deed. We should drink until it wears off.' +1 karma.":"Ivy: 'Thank you. I was considering a very formal panic.' +1 karma."},
     {label:"Be rude",change:-2,karma:-1,reply:"They won't forget that in a hurry. -1 karma."},
   ]};
 }
@@ -54,11 +55,12 @@ export type TownEvent = { id:string; title:string; hint:string; x:number; y:numb
 export function dailyTownEvent(day:number,hour:number):TownEvent|null {
   if(day<2 || day%3===0)return null;
   const events:TownEvent[]=[
-    {id:"diner",title:"Lunch rush",hint:"Someone needs help outside the diner",x:8.5,y:16.8,icon:"?",pose:"standing"},
+    {id:"diner",title:"Shopping disaster",hint:"Mara has dropped her shopping",x:8.5,y:16.8,icon:"?",pose:"standing"},
     {id:"bar",title:"Argument by the pub",hint:"An argument is brewing",x:3.8,y:20.9,icon:"!",pose:"sitting"},
     {id:"school",title:"Forgotten homework",hint:"A student needs help",x:11.4,y:6.5,icon:"?",pose:"standing"},
+    {id:"wallet",title:"Lost wallet",hint:"A wallet lies on the pavement",x:21.8,y:15.3,icon:"?",pose:"standing"},
     {id:"work",title:"Workplace rumour",hint:"Someone wants a word",x:11.7,y:22.1,icon:"…",pose:"pacing"},
-    {id:"shop",title:"A dodgy offer",hint:"Someone has an offer outside the shop",x:5.4,y:6.7,icon:"?",pose:"standing"},
+    {id:"shop",title:"A dodgy offer",hint:"Nox has a suspicious offer",x:25.7,y:10.3,icon:"?",pose:"standing"},
   ];
   const event=events[(day*7+Math.floor(day/3))%events.length];
   if(!event)return null;
