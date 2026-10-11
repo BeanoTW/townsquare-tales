@@ -32,4 +32,14 @@ describe("upright oblique town projection", () => {
       expect(top + height / 2).toBe(py - 7);
     }
   });
+  it("centres uphill and downhill skating on the combined board and rider", () => {
+    const [, groundY] = P(10, 14);
+    const centre = (angle: number) => {
+      const parts = playerCameraViewBox(10, 14, true, angle).split(" ").map(Number);
+      return parts[1]! + parts[3]! / 2;
+    };
+    expect(centre(0)).toBe(groundY + 5);
+    expect(centre(180)).toBe(groundY - 5);
+    expect(centre(90)).toBeCloseTo(groundY);
+  });
 });
