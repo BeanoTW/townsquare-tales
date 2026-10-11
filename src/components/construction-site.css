@@ -1,0 +1,5 @@
+.construction-crane-jib{animation:site-crane 9s ease-in-out infinite;transform-box:fill-box;transform-origin:25% 22%}
+.construction-digger-arm{animation:site-excavate 3.8s ease-in-out infinite;transform-box:fill-box;transform-origin:10% 60%}
+@keyframes site-crane{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@keyframes site-excavate{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
+@media(prefers-reduced-motion:reduce){.construction-crane-jib,.construction-digger-arm{animation:none}}
