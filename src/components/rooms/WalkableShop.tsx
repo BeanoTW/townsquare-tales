@@ -19,6 +19,7 @@ import {
   type ShopId,
 } from "@/lib/walkable-shops";
 import { ShopCatalogPanel } from "@/components/rooms/ShopCatalogPanel";
+import { DINER_MEALS } from "@/lib/diner-menu";
 import { hotspotActions } from "@/lib/rooms";
 import type { Point } from "@/lib/pathfinding";
 
@@ -60,13 +61,31 @@ export function WalkableShop({
     [selectedId, setSelected] = useState<string | null>(null);
   const [pickedGood, setPickedGood] = useState("snack");
   const reduced = useRef(false);
-  const visible = visibleHotspots(room, state);
+  const visible = visibleHotspots(room, state).filter(
+    (h) =>
+      id !== "diner" ||
+      (((h.id !== "kitchen" && h.id !== "booth") || state.career === 1) &&
+        (h.id !== "hiring" || state.career !== 1)),
+  );
   const selected = visible.find((h) => h.id === selectedId);
   const near = interactionFixtures.find(
     (f) => fixtureNear(player, f) && visible.some((h) => h.id === hotspotId(f.id)),
   );
   const staff = STAFF[id]!;
-  const panel = selected;
+  const panel =
+    selected && id === "diner" && selected.id === "counter"
+      ? {
+          ...selected,
+          label: "Food menu",
+          hint: "Order at the counter · three meals · 1h",
+          actions: () =>
+            DINER_MEALS.map((m) => ({
+              ...m.action,
+              label: m.title,
+              note: `${m.description} ${m.action.note ?? ""}`,
+            })),
+        }
+      : selected;
   const control = useRef({ selectedId, onLeave, visible, near });
   control.current = { selectedId, onLeave, visible, near };
   const open = (target: string) => {
@@ -252,34 +271,43 @@ export function WalkableShop({
           }}
         >
           <ShopShell shop={id} />
-          {SHOP_AISLES[id].map((f) => (
-            <g
-              key={f.id}
-              role="button"
-              tabIndex={0}
-              aria-label="Browse the grocery aisle"
-              onClick={(e) => {
-                e.stopPropagation();
-                open(f.id);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+          {fixtures
+            .filter((f) => !visible.some((h) => h.id === f.id))
+            .map((f) => (
+              <ShopFitting key={f.id} fixture={f} shop={id} />
+            ))}
+          {SHOP_AISLES[id].map((f) =>
+            f.id !== "aisle" ? (
+              <ShopFitting key={f.id} fixture={f} shop={id} />
+            ) : (
+              <g
+                key={f.id}
+                role="button"
+                tabIndex={0}
+                aria-label="Browse the grocery aisle"
+                onClick={(e) => {
                   e.stopPropagation();
                   open(f.id);
-                }
-              }}
-            >
-              <ShopFitting fixture={f} shop={id} />
-              <rect
-                x={f.x * 24 - 6}
-                y={f.y * 24 - 6}
-                width={f.w * 24 + 12}
-                height={f.d * 24 + 12}
-                fill="transparent"
-              />
-            </g>
-          ))}
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    open(f.id);
+                  }
+                }}
+              >
+                <ShopFitting fixture={f} shop={id} />
+                <rect
+                  x={f.x * 24 - 6}
+                  y={f.y * 24 - 6}
+                  width={f.w * 24 + 12}
+                  height={f.d * 24 + 12}
+                  fill="transparent"
+                />
+              </g>
+            ),
+          )}
           {fixtures
             .filter((f) => visible.some((h) => h.id === f.id))
             .map((f) => {
@@ -378,6 +406,24 @@ export function WalkableShop({
               EXIT
             </text>
           </g>
+          {(id === "diner" || id === "bar") && (
+            <g
+              data-interior-patron
+              transform={id === "diner" ? "translate(72 201)" : "translate(333 267)"}
+              pointerEvents="none"
+            >
+              <OverheadPerson
+                pose="sitting"
+                outline="var(--town-npc-green)"
+                angle={id === "diner" ? 90 : 270}
+              />
+              <title>
+                {id === "diner"
+                  ? "Regular: Breakfast is cheaper than therapy."
+                  : "Pub regular: Only staying for one. A historic lie."}
+              </title>
+            </g>
+          )}
           <g
             transform={`translate(${player.x * 24} ${player.y * 24})`}
             data-shop-player
@@ -427,6 +473,9 @@ export function WalkableShop({
                 maxHeight: "75%",
                 overflowY: "auto",
               }}
+              unavailable={(a) =>
+                a.cost && state.money < a.cost ? `Need $${a.cost} (have $${state.money})` : null
+              }
               onRun={onRun}
               onClose={() => setSelected(null)}
             />

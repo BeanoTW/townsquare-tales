@@ -1,7 +1,9 @@
+import { HospitalityFitting } from "@/components/rooms/HospitalityFittings";
 import type { ShopFixture, ShopId } from "@/lib/walkable-shops";
 
 /** Furniture keeps its collision footprint; shallow faces add depth without changing projection. */
 export function ShopFitting({ fixture: f, shop }: { fixture: ShopFixture; shop: ShopId }) {
+  if (shop === "diner" || shop === "bar") return <HospitalityFitting fixture={f} venue={shop} />;
   const w = f.w * 24,
     h = f.d * 24;
   const counter = f.id === "checkout" || f.id === "pawn-counter" || f.id === "catalogue";
@@ -270,11 +272,17 @@ export function ShopShell({ shop }: { shop: ShopId }) {
         width="384"
         height="312"
         rx="2"
-        fill={shop === "pawn" ? "var(--shop-pawn-floor)" : "var(--shop-floor)"}
+        fill={
+          shop === "bar"
+            ? "var(--pub-floor)"
+            : shop === "pawn"
+              ? "var(--shop-pawn-floor)"
+              : "var(--shop-floor)"
+        }
         stroke="var(--town-ink)"
         strokeWidth="3"
       />
-      {shop === "shop" ? (
+      {shop === "shop" || shop === "diner" ? (
         <g stroke="var(--shop-tile-line)" opacity=".35">
           {Array.from({ length: 16 }, (_, i) => (
             <path key={i} d={`M${24 + i * 24} 24v312`} />
@@ -298,7 +306,11 @@ export function ShopShell({ shop }: { shop: ShopId }) {
           ? "OPEN · REGRETTABLY"
           : shop === "pawn"
             ? "NO HAUNTED RETURNS"
-            : "SHOWROOM · NO NAPS"}
+            : shop === "diner"
+              ? "COOK STILL ALIVE"
+              : shop === "bar"
+                ? "LAST ORDERS. AGAIN."
+                : "SHOWROOM · NO NAPS"}
       </text>
       <rect
         x="191"

@@ -17,19 +17,17 @@ function renderRoom(id: (typeof PLACE_IDS)[number], onRun = vi.fn(), onLeave = v
 }
 
 describe("LocationScene", () => {
-  it("renders every interior without a runtime error", () => {
-    for (const id of PLACE_IDS) {
-      const { room, unmount } = renderRoom(id);
-      expect(screen.getByRole("heading", { level: 2, name: room.title })).toBeInTheDocument();
-      if (isArcadeRoom(id)) {
-        expect(screen.getByRole("region", { name: `${room.title} interaction` })).toBeInTheDocument();
-      } else {
-        for (const h of visibleHotspots(room, START)) {
-          expect(screen.getByRole("button", { name: new RegExp(`^${h.label}\\.`) })).toBeInTheDocument();
-        }
-      }
-      unmount();
-    }
+  it.each(PLACE_IDS)("renders the %s interior without a runtime error", (id) => {
+    const { room, unmount } = renderRoom(id);
+    expect(screen.getByRole("heading", { level: 2, name: room.title })).toBeInTheDocument();
+    if (isArcadeRoom(id))
+      expect(screen.getByRole("region", { name: `${room.title} interaction` })).toBeInTheDocument();
+    else
+      for (const h of visibleHotspots(room, START))
+        expect(
+          screen.getByRole("button", { name: new RegExp(`^${h.label}\\.`) }),
+        ).toBeInTheDocument();
+    unmount();
   });
 
   it("opens a floating panel when an object is tapped, showing duration and cost", () => {

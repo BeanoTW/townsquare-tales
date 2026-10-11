@@ -15,6 +15,7 @@ import {
   moveShopPlayer,
 } from "@/lib/walkable-shops";
 import { isWalkable } from "@/lib/pathfinding";
+import { DINER_MEALS } from "@/lib/diner-menu";
 import { SHOP_GOODS } from "@/lib/shop-catalog";
 import { runAction } from "@/lib/actions";
 
@@ -44,7 +45,10 @@ function clock() {
       });
   };
 }
-function enter(id: "shop" | "pawn" | "furniture" = "shop", state: GameState = START) {
+function enter(
+  id: "shop" | "pawn" | "furniture" | "diner" | "bar" = "shop",
+  state: GameState = START,
+) {
   const run = vi.fn(),
     leave = vi.fn();
   const view = render(
@@ -111,6 +115,86 @@ describe("walkable shop navigation", () => {
       }
       view.unmount();
     }
+  });
+  it("keeps all hospitality approaches and exits reachable for staff and visitors", () => {
+    for (const id of ["diner", "bar"] as const) {
+      const goals = [...SHOP_LAYOUTS[id].map((f) => f.approach), SHOP_EXIT];
+      for (const goal of goals) {
+        const route = shopRoute(id, SHOP_ENTRY, goal);
+        expect(route.at(-1)).toEqual(goal);
+        let prev = SHOP_ENTRY;
+        for (const point of route) {
+          const n = Math.max(1, Math.ceil(Math.hypot(point.x - prev.x, point.y - prev.y) * 20));
+          for (let step = 0; step <= n; step++)
+            expect(
+              isWalkable(
+                {
+                  x: prev.x + ((point.x - prev.x) * step) / n,
+                  y: prev.y + ((point.y - prev.y) * step) / n,
+                },
+                shopObstacles(id),
+              ),
+            ).toBe(true);
+          prev = point;
+        }
+      }
+    }
+    expect(isWalkable({ x: 12, y: 6 }, shopObstacles("bar"))).toBe(true);
+  });
+  it("serves all three existing diner meals at the counter without exposing staff actions to visitors", () => {
+    const step = clock(),
+      state = { ...START, money: 100 },
+      view = enter("diner", state);
+    expect(screen.queryByRole("button", { name: /^Kitchen pass\./ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Manager's booth\./ })).not.toBeInTheDocument();
+    expect(view.container.querySelectorAll("[data-diner-booth]")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: /^Counter\./ }));
+    step(180);
+    const panel = screen.getByRole("dialog", { name: "Food menu" });
+    for (const meal of DINER_MEALS) {
+      fireEvent.click(within(panel).getByRole("button", { name: meal.title }));
+      expect(runAction(state, view.run.mock.calls.at(-1)![0], () => 0)).toEqual(
+        runAction(state, meal.action, () => 0),
+      );
+    }
+    expect(screen.queryByRole("button", { name: /Work 4h shift/ })).not.toBeInTheDocument();
+  });
+  it("keeps applications and staff progression at their physical stations", () => {
+    const step = clock(),
+      guest = enter("diner");
+    fireEvent.click(screen.getByRole("button", { name: /^Hiring board\./ }));
+    step(180);
+    expect(screen.getByRole("button", { name: /Apply: Kitchen Porter/ })).toBeInTheDocument();
+    guest.unmount();
+    const state = { ...START, career: 1, xp: 100 },
+      staff = enter("diner", state);
+    expect(screen.queryByRole("button", { name: /^Hiring board\./ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Kitchen pass\./ }));
+    step(180);
+    fireEvent.click(screen.getByRole("button", { name: /Work 4h shift/ }));
+    expect(staff.run).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Close panel" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Manager's booth\./ }));
+    step(180);
+    expect(screen.getByRole("button", { name: /Request promotion/ })).toBeInTheDocument();
+  });
+  it("supports pub rounds and social actions while keeping tables solid and the dance floor open", () => {
+    const step = clock(),
+      view = enter("bar", { ...START, money: 100 });
+    expect(view.container.querySelector("[data-pub-taps]")).toBeInTheDocument();
+    expect(view.container.querySelectorAll("[data-pub-table]")).toHaveLength(2);
+    expect(isWalkable({ x: 3, y: 9 }, shopObstacles("bar"))).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: /^Bar counter\./ }));
+    step(180);
+    const round = within(screen.getByRole("dialog", { name: "Bar counter" }))
+      .getAllByRole("button")
+      .find((b) => b.getAttribute("aria-label") !== "Close panel")!;
+    fireEvent.click(round);
+    expect(view.run).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Close panel" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Dance floor\./ }));
+    step(180);
+    expect(screen.getByRole("dialog", { name: "Dance floor" })).toBeInTheDocument();
   });
   it("blocks keyboard movement into furniture and walls", () => {
     expect(moveShopPlayer("shop", { x: 5.5, y: 5 }, { x: -0.4, y: 0 })).toEqual({ x: 5.5, y: 5 });

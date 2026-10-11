@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocationScene } from "@/components/LocationScene";
+import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { RoomArt } from "@/components/rooms/RoomArt";
 import { START } from "@/lib/game-data";
 import { PLACE_IDS, roomFor, visibleHotspots } from "@/lib/rooms";
@@ -27,7 +28,15 @@ describe("mobile arcade interiors", () => {
   });
 
   it("defaults to an actual diner food menu, hiding work shifts and promotions from non-staff", () => {
-    show("diner");
+    render(
+      <ArcadeInterior
+        room={roomFor("diner", START)}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
     const menu = screen.getByRole("tabpanel", { name: "Food menu" });
     expect(within(menu).getAllByRole("button", { name: /^Buy \$/ })).toHaveLength(3);
     fireEvent.click(screen.getByRole("tab", { name: /Jobs/ }));
@@ -37,7 +46,16 @@ describe("mobile arcade interiors", () => {
   });
 
   it("shows staff actions only after joining hospitality", () => {
-    show("diner", { ...START, career: 1 });
+    const state = { ...START, career: 1 };
+    render(
+      <ArcadeInterior
+        room={roomFor("diner", state)}
+        state={state}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("tab", { name: /Staff room/ }));
     expect(screen.getByRole("button", { name: /Work 4h shift/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Request promotion/ })).toBeInTheDocument();
@@ -61,7 +79,7 @@ describe("mobile arcade interiors", () => {
     ] as const;
     for (const id of places) {
       const view = show(id);
-      if (id === "shop" || id === "pawn" || id === "furniture") {
+      if (id === "shop" || id === "pawn" || id === "furniture" || id === "diner" || id === "bar") {
         expect(view.container.querySelector("[data-walkable-shop]")).toBeInTheDocument();
         expect(view.container.querySelectorAll("[data-shop-fixture]").length).toBeGreaterThan(1);
       } else {
