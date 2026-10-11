@@ -6,14 +6,23 @@ import { findRoute, isWalkable, nearestWalkable, type Point, type Obstacle } fro
 export const STREET_OBJECTS = [
   { id: "bench", x: 8, y: 10.8, label: "Sit on bench · 30m · +8 energy", kind: "bench" },
   { id: "bin", x: 8, y: 11.7, label: "Search rubbish bin · 30m", kind: "bin" },
+  { id: "newspaper", x:8.1, y:17.9, label:"Read the town paper · $2 · 15m · +1 intelligence", kind:"newspaper" },
+  { id: "litter", x:21.6, y:15.2, label:"Kick litter · 1 energy", kind:"litter" },
   { id: "vending", x: 11.4, y: 10.8, label: "Buy vending drink · $3 · +12 energy", kind: "vending" },
 ] as const;
 export type StreetObjectId = typeof STREET_OBJECTS[number]["id"];
 export function streetAction(id: StreetObjectId): ActionDef {
   return {
     id: `street-${id}`, label: STREET_OBJECTS.find(o => o.id === id)?.label ?? id,
-    hours: id === "vending" ? 0 : 0.5, energy: 0, cost: id === "vending" ? 3 : 0,
+    hours: id === "vending" || id === "litter" ? 0 : id === "newspaper" ? .25 : .5, energy: id === "litter" ? 1 : 0, cost: id === "vending" ? 3 : id === "newspaper" ? 2 : 0,
     resolve: (s, rng) => {
+      if (id === "litter") return {patch:{},message:"The receipt tumbles away. You've defeated a minor administrative threat. -1 energy."};
+      if (id === "newspaper") {
+        if(s.streetNewsDay===s.day) return "Read today's paper already. The town hasn't improved since.";
+        if(s.money<2) return "Need $2 for the paper.";
+        const rumours=["MegaCorp denies replacing staff with stationery. The stapler remains silent.","Gus reports a haunted pub stool. Sources describe him as 'Gus'.","Police advise against sealed parcels. Nox advises against advice."];
+        return {patch:{money:s.money-2,int:s.int+1,streetNewsDay:s.day},message:`${rumours[s.day%rumours.length]} Intelligence +1 · cash -$2 · 15m.`};
+      }
       if (id === "bench") return { patch: { energy: Math.min(100, s.energy + 8) }, message: "A quiet sit. Even the pigeons judge you. +8 energy · 30m." };
       if (id === "vending") return s.money < 3 ? "Need $3 for a drink." : { patch: { money: s.money - 3, energy: Math.min(100, s.energy + 12) }, message: "Clunk. A suspiciously warm drink. +12 energy · -$3." };
       if (s.streetSearchDay === s.day) return "Already searched today. Still rubbish.";

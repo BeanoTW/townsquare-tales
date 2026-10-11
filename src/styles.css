@@ -292,3 +292,7 @@
 @keyframes town-receipt-drift { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(9px,-3px) rotate(12deg); } }
 [data-town-paused="true"] *, [data-construction-site][data-active="false"] * { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .town-receipt { animation: none; } }
+
+.town-litter-kicked { animation: town-litter-kick 1.8s ease-out both; }
+@keyframes town-litter-kick { 0% { transform: translateX(0) rotate(0deg); } 40%,75% { transform: translateX(20px) rotate(100deg); } 100% { transform: translateX(0) rotate(0deg); } }
+@media (prefers-reduced-motion: reduce) { .town-litter-kicked { animation: none; } }

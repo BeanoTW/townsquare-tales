@@ -559,7 +559,7 @@ function Btn(p: { onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       onClick={p.onClick}
-      className="text-left text-lg border-2 border-foreground px-3 py-1 rounded-sm bg-secondary hover:bg-primary hover:text-primary-foreground"
+      className="min-h-11 text-left text-lg border-2 border-foreground px-3 py-1 rounded-sm bg-secondary hover:bg-primary hover:text-primary-foreground"
     >
       {p.children}
     </button>
