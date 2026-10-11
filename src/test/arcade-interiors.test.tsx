@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocationScene } from "@/components/LocationScene";
+import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { bankTransferAction, runAction } from "@/lib/actions";
 import { START } from "@/lib/game-data";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
@@ -11,16 +12,33 @@ const shop = () => roomFor("shop", START);
 
 describe("arcade shop", () => {
   it("shows all seven goods on a selectable product wheel with a clerk", () => {
-    render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
+    render(
+      <ArcadeInterior
+        room={shop()}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
     expect(screen.getByText("The shopkeeper")).toBeInTheDocument();
     expect(screen.getByLabelText("Corner Shop shelves")).toBeInTheDocument();
-    for (const good of SHOP_GOODS) expect(screen.getByRole("button", { name: `Browse ${good.name}` })).toBeInTheDocument();
+    for (const good of SHOP_GOODS)
+      expect(screen.getByRole("button", { name: `Browse ${good.name}` })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "BUY · $10" })).toBeEnabled();
   });
 
   it("keeps consumables purchasable in one session without closing the shop", () => {
     const onRun = vi.fn();
-    render(<LocationScene room={shop()} state={START} feedback={null} onRun={onRun} onLeave={vi.fn()} />);
+    render(
+      <ArcadeInterior
+        room={shop()}
+        state={START}
+        feedback={null}
+        onRun={onRun}
+        onLeave={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "BUY · $10" }));
     fireEvent.click(screen.getByRole("button", { name: "BUY · $10" }));
     expect(onRun).toHaveBeenCalledTimes(2);
@@ -29,14 +47,30 @@ describe("arcade shop", () => {
   });
 
   it("rotates to an equipment item and prevents unaffordable purchases", () => {
-    render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
+    render(
+      <ArcadeInterior
+        room={shop()}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Browse Running shoes" }));
     expect(screen.getAllByText("Running shoes").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByRole("button", { name: "Need $130 more" })).toBeDisabled();
   });
 
   it("keeps retail careers accessible without littering the shop with hotspots", () => {
-    render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
+    render(
+      <ArcadeInterior
+        room={shop()}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("tab", { name: /Apply for work/ }));
     const jobs = screen.getByRole("tabpanel", { name: "Retail careers" });
     expect(within(jobs).getByText("Shop jobs board")).toBeInTheDocument();
@@ -91,7 +125,8 @@ describe("bank transfer rules", () => {
     expect(deposit.next).toMatchObject({ money: 125, bank: 105, hour: state.hour });
     const withdrawal = runAction(deposit.next, bankTransferAction("withdraw", 100));
     expect(withdrawal.ok).toBe(true);
-    if (withdrawal.ok) expect(withdrawal.next).toMatchObject({ money: 225, bank: 5, day: state.day });
+    if (withdrawal.ok)
+      expect(withdrawal.next).toMatchObject({ money: 225, bank: 5, day: state.day });
     expect(runAction(state, bankTransferAction("withdraw", 50)).ok).toBe(false);
     expect(runAction(state, bankTransferAction("deposit", 0)).ok).toBe(false);
   });
@@ -101,7 +136,15 @@ describe("service encounters", () => {
   it("supports teller transfers with chosen amounts and quick presets", () => {
     const state = { ...START, money: 120, bank: 80 };
     const onRun = vi.fn();
-    render(<LocationScene room={roomFor("bank", state)} state={state} feedback={null} onRun={onRun} onLeave={vi.fn()} />);
+    render(
+      <LocationScene
+        room={roomFor("bank", state)}
+        state={state}
+        feedback={null}
+        onRun={onRun}
+        onLeave={vi.fn()}
+      />,
+    );
     expect(screen.getByText("$120")).toBeInTheDocument();
     expect(screen.getByText("$80")).toBeInTheDocument();
     const amount = screen.getByRole("spinbutton", { name: "Amount ($)" });
@@ -114,13 +157,29 @@ describe("service encounters", () => {
   });
 
   it("shows education gains as an arcade-style result splash", () => {
-    render(<LocationScene room={roomFor("school", START)} state={START} feedback={{ message: "+1 intelligence", success: true, changes: ["Intelligence: +1"] }} onRun={vi.fn()} onLeave={vi.fn()} />);
+    render(
+      <LocationScene
+        room={roomFor("school", START)}
+        state={START}
+        feedback={{ message: "+1 intelligence", success: true, changes: ["Intelligence: +1"] }}
+        onRun={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
     expect(screen.getByText(/INTELLIGENCE INCREASED!/)).toBeInTheDocument();
   });
 
   it("keeps the Leave control available", () => {
     const onLeave = vi.fn();
-    render(<LocationScene room={shop()} state={START} feedback={null} onRun={vi.fn()} onLeave={onLeave} />);
+    render(
+      <LocationScene
+        room={shop()}
+        state={START}
+        feedback={null}
+        onRun={vi.fn()}
+        onLeave={onLeave}
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Leave building" }));
     expect(onLeave).toHaveBeenCalledOnce();
   });

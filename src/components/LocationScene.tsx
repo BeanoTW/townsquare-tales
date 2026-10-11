@@ -3,87 +3,15 @@ import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
+import { ActionPanel } from "@/components/rooms/ActionPanel";
+export { actionBlockReason } from "@/components/rooms/ActionPanel";
+import { WalkableShop } from "@/components/rooms/WalkableShop";
+import { isWalkableShop } from "@/lib/walkable-shops";
 import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { isArcadeRoom } from "@/lib/arcade-rooms";
-import {
-  VIEW,
-  hotspotActions,
-  visibleHotspots,
-  type Box,
-  type Hotspot,
-  type Room,
-} from "@/lib/rooms";
+import { VIEW, visibleHotspots, type Box, type Room } from "@/lib/rooms";
 
 export type Feedback = { message: string; success: boolean; changes: string[]; timeLine?: string };
-
-function actionMeta(a: ActionDef) {
-  const parts = [
-    a.hours ? `${a.hours}h` : "No time",
-    a.energy ? `−${a.energy} energy` : "No energy",
-  ];
-  if (a.cost) parts.push(`$${a.cost}`);
-  return parts.join(" · ");
-}
-
-export function actionBlockReason(state: GameState, action: ActionDef, godMode = false): string | null {
-  if (godMode) return null;
-  if (state.energy < action.energy) return `Need ${action.energy} energy (have ${state.energy})`;
-  if (state.hour + action.hours > 24) return `Not enough time left today (${24 - state.hour}h available)`;
-  return null;
-}
-
-function ActionPanel({
-  hotspot,
-  state,
-  godMode,
-  style,
-  onRun,
-  onClose,
-}: {
-  hotspot: Hotspot;
-  state: GameState;
-  godMode: boolean;
-  style: CSSProperties;
-  onRun: (a: ActionDef) => void;
-  onClose: () => void;
-}) {
-  const actions = hotspotActions(hotspot, state);
-  const lines = hotspot.lines?.(state) ?? [];
-  return (
-    <div role="dialog" aria-label={hotspot.label} className="room-panel" style={style} data-panel>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="room-panel-title">{hotspot.label}</p>
-          <p className="room-panel-hint">{hotspot.hint}</p>
-        </div>
-        <button type="button" aria-label="Close panel" onClick={onClose} className="room-close">
-          ✕
-        </button>
-      </div>
-      {lines.map((line) => (
-        <p key={line} className="room-panel-line">
-          {line}
-        </p>
-      ))}
-      {actions.map((a) => {
-        const blocked = actionBlockReason(state, a, godMode);
-        return (
-          <button key={a.id} type="button" className="room-action" disabled={blocked !== null}
-            aria-label={blocked ? `${a.label}: ${blocked}` : a.label} onClick={() => onRun(a)}>
-            <span>{a.label}</span>
-            <span className="room-action-meta">{actionMeta(a)}</span>
-            {blocked
-              ? <span className="room-action-blocked">{blocked}</span>
-              : a.note && <span className="room-action-note">{a.note}</span>}
-          </button>
-        );
-      })}
-      {actions.length === 0 && lines.length === 0 && (
-        <p className="room-panel-line">Nothing to do here yet.</p>
-      )}
-    </div>
-  );
-}
 
 function ObjectLocationScene({
   room,
@@ -168,7 +96,10 @@ function ObjectLocationScene({
             {room.sign}
           </div>
         )}
-        <div className="room-art-frame absolute" style={{ left: fit.x, top: fit.y, width: fit.w, height: fit.h }}>
+        <div
+          className="room-art-frame absolute"
+          style={{ left: fit.x, top: fit.y, width: fit.w, height: fit.h }}
+        >
           <RoomArt
             room={room}
             state={state}
@@ -227,8 +158,13 @@ function ObjectLocationScene({
     </div>
   );
 }
- 
+
 /** Arcade counters for service locations; object scenes for home, training and the street. */
 export function LocationScene(props: Parameters<typeof ObjectLocationScene>[0]) {
-  return isArcadeRoom(props.room.id) ? <ArcadeInterior {...props} /> : <ObjectLocationScene {...props} />;
+  if (isWalkableShop(props.room.id)) return <WalkableShop key={props.room.id} {...props} />;
+  return isArcadeRoom(props.room.id) ? (
+    <ArcadeInterior {...props} />
+  ) : (
+    <ObjectLocationScene {...props} />
+  );
 }

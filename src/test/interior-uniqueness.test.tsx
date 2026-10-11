@@ -8,16 +8,22 @@ import { PLACE_IDS, roomFor, visibleHotspots } from "@/lib/rooms";
 afterEach(() => cleanup());
 
 const show = (id: (typeof PLACE_IDS)[number], state = START) =>
-  render(<LocationScene room={roomFor(id, state)} state={state} feedback={null} onRun={vi.fn()} onLeave={vi.fn()} />);
+  render(
+    <LocationScene
+      room={roomFor(id, state)}
+      state={state}
+      feedback={null}
+      onRun={vi.fn()}
+      onLeave={vi.fn()}
+    />,
+  );
 
 describe("mobile arcade interiors", () => {
-  it("puts the shop purchase button before the wheel rather than below the fold", () => {
+  it("opens the corner shop as a walkable room with reachable fixtures", () => {
     const view = show("shop");
-    const buy = screen.getByRole("button", { name: "BUY · $10" });
-    const shelf = screen.getByLabelText("Corner Shop shelves");
-    expect(buy).toBeInTheDocument();
-    expect(Boolean(buy.compareDocumentPosition(shelf) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
-    expect(view.container.querySelector(".arcade-purchase-dock")).toContainElement(buy);
+    expect(view.container.querySelector("[data-walkable-shop]")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Shop shelves\./ })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("defaults to an actual diner food menu, hiding work shifts and promotions from non-staff", () => {
@@ -39,11 +45,29 @@ describe("mobile arcade interiors", () => {
   });
 
   it("shows twelve different stage settings with venue-specific art", () => {
-    const places = ["shop", "diner", "bank", "school", "work", "yard", "bar", "pawn", "clinic", "depot", "police", "furniture"] as const;
+    const places = [
+      "shop",
+      "diner",
+      "bank",
+      "school",
+      "work",
+      "yard",
+      "bar",
+      "pawn",
+      "clinic",
+      "depot",
+      "police",
+      "furniture",
+    ] as const;
     for (const id of places) {
       const view = show(id);
-      expect(view.container.querySelector(`.arcade-set-${id} .venue-world`)).toBeInTheDocument();
-      expect(view.container.querySelector(`.arcade-room-${id}`)).toBeInTheDocument();
+      if (id === "shop" || id === "pawn" || id === "furniture") {
+        expect(view.container.querySelector("[data-walkable-shop]")).toBeInTheDocument();
+        expect(view.container.querySelectorAll("[data-shop-fixture]").length).toBeGreaterThan(1);
+      } else {
+        expect(view.container.querySelector(`.arcade-set-${id} .venue-world`)).toBeInTheDocument();
+        expect(view.container.querySelector(`.arcade-room-${id}`)).toBeInTheDocument();
+      }
       view.unmount();
     }
   });
@@ -52,7 +76,15 @@ describe("mobile arcade interiors", () => {
 describe("depth and housing progression", () => {
   const draw = (id: "home" | "casino" | "gym", state = START) => {
     const room = roomFor(id, state);
-    return render(<RoomArt room={room} state={state} visible={visibleHotspots(room, state)} selectedId={null} onSelect={vi.fn()} />);
+    return render(
+      <RoomArt
+        room={room}
+        state={state}
+        visible={visibleHotspots(room, state)}
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    );
   };
 
   it("draws an actual cardboard sleeping mat, not a labelled placeholder bed", () => {
@@ -71,24 +103,33 @@ describe("depth and housing progression", () => {
   it("keeps casino, gym and housing rear walls upright, with distinct background characters", () => {
     for (const id of ["casino", "gym", "home"] as const) {
       const view = draw(id);
-      const wall = view.container.querySelector('[data-room-shell="square"] [data-back-wall="upright"]');
+      const wall = view.container.querySelector(
+        '[data-room-shell="square"] [data-back-wall="upright"]',
+      );
       expect(wall).toHaveAttribute("x", "34");
       expect(wall).toHaveAttribute("width", "352");
       expect(view.container.querySelector('[data-room-shell="square"]')).toBeInTheDocument();
-      if (id === "casino") expect(view.container.querySelector("[data-casino-regular]")).toBeInTheDocument();
+      if (id === "casino")
+        expect(view.container.querySelector("[data-casino-regular]")).toBeInTheDocument();
       if (id === "gym") {
         expect(view.container.querySelector("[data-gym-trainer]")).toBeInTheDocument();
-        expect(view.container.querySelector('[data-gym-patron="weights"] .gym-lifter-arms')).toBeInTheDocument();
-        expect(view.container.querySelector('[data-gym-patron="treadmill"] .gym-runner')).toBeInTheDocument();
+        expect(
+          view.container.querySelector('[data-gym-patron="weights"] .gym-lifter-arms'),
+        ).toBeInTheDocument();
+        expect(
+          view.container.querySelector('[data-gym-patron="treadmill"] .gym-runner'),
+        ).toBeInTheDocument();
       }
       view.unmount();
     }
   });
 
-  it("keeps grumpy service characters and square walls in the corner shop", () => {
+  it("keeps the grumpy shopkeeper in the top-down corner shop", () => {
     const view = show("shop");
-    expect(view.container.querySelector('[data-character-venue="shop"][data-expression="unimpressed"] [data-emo-clerk]')).toBeInTheDocument();
-    expect(view.container.querySelector('.arcade-set-shop [data-back-wall="upright"]')).toBeInTheDocument();
+    expect(
+      view.container.querySelector("[data-shop-attendant] [data-overhead-person]"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Don’t waste my time/)).toBeInTheDocument();
   });
 
   it("builds the casino as a perspective room with solid slot-machine and dice-table geometry", () => {
