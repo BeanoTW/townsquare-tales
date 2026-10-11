@@ -28,6 +28,10 @@ export const START: GameState = {
   gangRep: 0, gangStage: 0,
   relMara: 0, relNox: 0, relGus: 0, relIvy: 0,
   lastMara: 0, lastNox: 0, lastGus: 0, lastIvy: 0,
+  bjWon: 0,
+  bjLost: 0,
+  slotWon: 0,
+  slotLost: 0,
 };
 
 export const HOUSES = [
