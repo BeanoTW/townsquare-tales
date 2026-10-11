@@ -132,11 +132,11 @@ export function playerCameraViewBox(x: number, y: number, skating = false, _skat
 function Stick({ x, y, phase, walking, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
   const [sx, sy] = P(x, y);
   return <g transform={`translate(${sx},${sy})`}>
-    {skating && <g data-skater-pose data-skate-angle={0}>
+    {skating ? <g data-skater-pose data-skate-angle={skateAngle} transform={`rotate(${skateAngle + 180})`}>
       <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
       <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
-    </g>}
-    <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={(walking && !skating) || feedback === "bin"} angle={skating ? 0 : (skateAngle + 180) % 360}/>
+      <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={false} angle={0}/>
+    </g> : <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking || feedback === "bin"} angle={(skateAngle + 180) % 360}/>}
     {feedback === "vending" && <g data-drinking-feedback transform="translate(14 -10)"><path d="M-3 -4h7l-1 9h-5Z" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -4v-5l3-2" stroke="var(--town-ink)" fill="none"/></g>}
     {feedback === "bin" && <text data-search-feedback x="15" y="-25" fontSize="15" fill="var(--town-ink)">?</text>}
     {feedback === "newspaper" && <g data-reading-feedback transform="translate(0 7)"><rect x="-8" y="-4" width="16" height="11" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -3v9m-6-7h4m4 0h4m-12 4h4m4 0h4" stroke="var(--town-ink)" strokeWidth=".7"/></g>}
