@@ -55,8 +55,9 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
             if (isWalkable(side, obstacles)) moveActor(actor, side, obstacles, dt);
           } else moveActor(actor, goal, obstacles, dt, obstructed || seconds < actor.pauseUntil);
         } else actor.walking = false;
+        // Walking residents keep their travel heading. Only stationary residents glance toward the player.
         if (distance < 1.8) {
-          actor.angle = Math.atan2(me.x-actor.x, -(me.y-actor.y))*180/Math.PI;
+          if (!actor.walking) actor.angle = Math.atan2(me.x-actor.x, -(me.y-actor.y))*180/Math.PI;
           if (board && me.walking && distance < 1.35) speak(schedule.id, residentBark(schedule.id,s,"skating"),actor);
           else if (obstructed) speak(schedule.id,residentBark(schedule.id,s,"blocked"),actor);
           else speak(schedule.id,residentBark(schedule.id,s,"passing"),actor);
@@ -86,8 +87,10 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
         if (actor.path.length === 0 && seconds >= actor.pauseUntil) { actor.trip++; actor.pauseUntil=seconds+6; }
         const distance = Math.hypot(actor.x-me.x,actor.y-me.y);
         if (!frozen) moveActor(actor,stops[actor.trip%2] ?? stops[0],obstacles,dt, distance<.8 || seconds<actor.pauseUntil);
+        else actor.walking = false;
         const [x,y] = P(actor.x,actor.y); group.setAttribute("transform",`translate(${x} ${y})`);
         group.querySelector("[data-body-heading]")?.setAttribute("transform",`rotate(${actor.angle})`);
+        group.querySelector("[data-person-arms]")?.setAttribute("transform",`rotate(${!reduced && actor.walking ? Math.sin(seconds*5)*9 : 0} 0 -7)`);
         if (distance < 1.5) speak(route.id,route.id === "patrol" && s.heat >= 30 ? "You. We're watching." : board && me.walking ? "Oi! Watch where you're going!" : route.line,actor);
       }
       PIGEON_FLOCKS.forEach((flock, index) => {
