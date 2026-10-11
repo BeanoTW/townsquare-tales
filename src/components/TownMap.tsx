@@ -570,6 +570,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           const depth = south || north ? 0.65 : 0.66;
           return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
         })}
+        <ConstructionSite onForeman={() => routeTo(door(bs.find(b=>b.id==="yard")!), "yard")} />
         {/* Street gang occupy the untouched north-east green, away from the shops. */}
         {tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
