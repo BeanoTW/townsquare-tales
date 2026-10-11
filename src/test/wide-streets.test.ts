@@ -8,8 +8,19 @@ describe("wider town roads", () => {
     expect(main.w).toBeGreaterThanOrEqual(2.7);
     expect(ROADS[5]!.w).toBeGreaterThanOrEqual(2.7);
     for (const road of ROADS.slice(1,5)) {
-      expect(road.d).toBeGreaterThanOrEqual(2.2);
+      expect(road.d).toBeGreaterThanOrEqual(2.8);
       expect(road.x < main.x+main.w && road.x+road.w > main.x || road.x < ROADS[5]!.x+ROADS[5]!.w && road.x+road.w > ROADS[5]!.x).toBe(true);
+    }
+  });
+  it("leaves shopfronts and the workers yard outside the widened carriageways", () => {
+    const lots=buildings(0);
+    for (const id of ["gym","shop","furniture","yard"]) {
+      const b=lots.find(item=>item.id===id)!;
+      for (const road of ROADS) {
+        const overlapX=b.x<road.x+road.w && b.x+b.w>road.x;
+        const overlapY=b.y<road.y+road.d && b.y+b.d>road.y;
+        expect(overlapX && overlapY, id+" intersects a road").toBe(false);
+      }
     }
   });
   it("keeps entrances navigable after widening streets", () => {
