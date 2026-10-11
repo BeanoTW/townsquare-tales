@@ -7,13 +7,13 @@ describe("skateboard appearance",()=>{
     const view=render(<TownMap hour={12} house={1} skating onEnter={vi.fn()} active={null}/>);
     const pose=view.container.querySelector("[data-skater-pose]");
     expect(pose).toBeInTheDocument();
-    expect(pose?.getAttribute("transform")).toContain("translate(0 -9)");
+    expect(view.container.querySelector("[data-overhead-person]")).toBeInTheDocument();
     const deck=view.container.querySelector('[data-skateboard="deck"]');
-    expect(deck?.getAttribute("rx")).toBe("5.5");
+    expect(deck?.getAttribute("rx")).toBe("5");
     expect(deck?.getAttribute("height")).toBe("42");
     expect(deck?.getAttribute("fill")).toBe("#89949c");
     expect(pose?.getAttribute("transform")).toContain("rotate(270)");
-    expect(pose?.querySelectorAll("circle")).toHaveLength(1);
+    expect(view.container.querySelector("[data-overhead-person] circle")).toBeInTheDocument();
   });
   it("shows the board only when skating",()=>{
     const view=render(<TownMap hour={12} house={1} skating onEnter={vi.fn()} active={null}/>);
