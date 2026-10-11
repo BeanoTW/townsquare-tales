@@ -8,6 +8,7 @@ export type GameState = {
   relMara: number; relNox: number; relGus: number; relIvy: number;
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
   smokes: number; skateboard: number; skateboardEquipped: number; parkSmokes: number; parkKidGone: number;
+  parkSkateDay?: number; parkHoopDay?: number; parkHideDay?: number; gangResponseDay?: number;
   streetSearchDay?: number;
   residentFavour?: number; residentFavourStage?: number; residentFavourDeadline?: number; residentFavourLastDay?: number;
   streetNewsDay?: number;
@@ -17,6 +18,7 @@ export type GameState = {
 
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
+  parkSkateDay:[0,100000],parkHoopDay:[0,100000],parkHideDay:[0,100000],gangResponseDay:[0,100000],
   streetSearchDay: [0, 100000],
   residentFavour:[0,4],residentFavourStage:[0,1],residentFavourDeadline:[0,2400030],residentFavourLastDay:[0,100000],
   streetNewsDay: [0, 100000],

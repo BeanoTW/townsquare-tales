@@ -17,7 +17,7 @@ import { FURNITURE, ownsFurniture } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
-import { meetStreetGang, type GangMeeting } from "@/lib/street-gang";
+import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
@@ -171,18 +171,10 @@ function Game() {
     setPlace(null);
     setTab(null);
     setResult(null);
-    const meeting = meetStreetGang(s, Math.random);
+    const meeting = gangReception(s);
     setGangDone(s.day);
     setGangMeeting(meeting);
-    if (meeting.hostile) {
-      // Consequences are immediate: dismissing the encounter can't undo the mugging.
-      perform({
-        id: "gang-mugging", label: "Street mugging", hours: 0, energy: 0,
-        resolve: () => ({ patch: meeting.patch, message: meeting.message }),
-      });
-    } else {
-      notify(meeting.message, true);
-    }
+    notify(meeting.message, true);
     playActionCue("encounter", soundOn);
   };
   const encounterSpot = strangerLeft === s.day ? null : availableStreetEvent(s);
@@ -321,17 +313,19 @@ function Game() {
           <p className="text-lg font-bold">{gangMeeting.message}</p>
           {gangMeeting.hostile ? (
             <>
-              <p className="text-base">They laugh as you stagger off. Build your charm or strength before coming back.</p>
+              <p className="text-base">Strength 15 holds your ground; Charm 15 talks them down. Each response takes 15m. Leaving costs nothing.</p>
+              <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
+              <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Fine. I'm leaving.</Btn>
             </>
           ) : (
             <>
               <p className="text-base">{gangDialogue(s)}</p>
-              {gangAccess(s)==="initiation" && <Btn onClick={() => { perform(gangJob("gang-initiation")); setGangMeeting(null); }}>Hear them out</Btn>}
+              {gangAccess(s)==="initiation" && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
               {["probation","trusted"].includes(gangAccess(s)) && <>
-                <Btn onClick={() => { perform(gangJob("gang-lookout")); setGangMeeting(null); }}>Keep watch</Btn>
-                <Btn onClick={() => { perform(gangJob("gang-courier")); setGangMeeting(null); }}>Take a package</Btn>
-                {gangAccess(s)==="trusted" && <Btn onClick={() => { perform(gangJob("gang-fence")); setGangMeeting(null); }}>Meet their buyer</Btn>}
+                <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
+                <Btn onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>Take a package</Btn>
+                {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>

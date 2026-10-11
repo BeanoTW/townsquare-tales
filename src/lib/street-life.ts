@@ -3,7 +3,10 @@ import type { ActionDef } from "@/lib/actions";
 import { RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import { findRoute, isWalkable, nearestWalkable, type Point, type Obstacle } from "@/lib/pathfinding";
 
+import { PARK_OBJECTS, parkAction } from "@/lib/park-life";
+
 export const STREET_OBJECTS = [
+  ...PARK_OBJECTS,
   { id: "bench", x: 8, y: 10.8, label: "Sit on bench · 30m · +8 energy", kind: "bench" },
   { id: "bin", x: 8, y: 11.7, label: "Search rubbish bin · 30m", kind: "bin" },
   { id: "newspaper", x:8.1, y:17.9, label:"Read the town paper · $2 · 15m · +1 intelligence", kind:"newspaper" },
@@ -12,6 +15,7 @@ export const STREET_OBJECTS = [
 ] as const;
 export type StreetObjectId = typeof STREET_OBJECTS[number]["id"];
 export function streetAction(id: StreetObjectId): ActionDef {
+  if(id === "ramp" || id === "hoop" || id === "hide") return parkAction(id);
   return {
     id: `street-${id}`, label: STREET_OBJECTS.find(o => o.id === id)?.label ?? id,
     hours: id === "vending" || id === "litter" ? 0 : id === "newspaper" ? .25 : .5, energy: id === "litter" ? 1 : 0, cost: id === "vending" ? 3 : id === "newspaper" ? 2 : 0,
@@ -106,7 +110,7 @@ export function ambientVisible(id: string, hour: number) {
   if (id === "shopper") return hour >= 8 && hour < 22;
   return hour >= 7 && hour < 23;
 }
-export const PIGEON_FLOCKS = [{x:8,y:11.2},{x:21.8,y:11.3},{x:7.8,y:21.5}];
+export const PIGEON_FLOCKS = [{x:8,y:11.2},{x:21.8,y:11.3},{x:7.8,y:21.5},{x:27.5,y:11.3}];
 export function pigeonOffset(distance: number, elapsed: number, index: number) {
   const scatter = distance < 1.5;
   const radius = scatter ? 1.2 : 0.15;

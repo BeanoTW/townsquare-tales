@@ -405,6 +405,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT, "gang"); } }}>
         <g transform={`translate(${gx} ${gy})`}>
           <ellipse cx="0" cy="8" rx="45" ry="7" fill="#27372f" opacity=".14"/>
+          <g data-gang-backlot pointerEvents="none" stroke="var(--town-ink)">
+            <rect x="-62" y="-9" width="16" height="23" rx="3" fill="var(--town-bin)"/>
+            <path d="M-61 -9h14m-12-3q-6-10 0-17m8 16q7-12 0-20" fill="none" stroke="var(--town-grime)"/>
+            <rect x="40" y="-4" width="30" height="17" rx="2" fill="var(--town-vending)"/>
+            <circle cx="47" cy="5" r="4" fill="var(--town-ink)"/><circle cx="63" cy="5" r="4" fill="var(--town-ink)"/>
+            <path d="M47 -5v-6h16v6" fill="none"/>
+          </g>
           <path d="M-30 -8h22" stroke="#846b53" strokeWidth="5" strokeLinecap="round"/>
           <g data-gang-sitting transform="translate(-20 0)"><OverheadPerson head="#ae856c" outline="#292735" phase={t} pose="sitting" /></g>
           <g data-gang-standing transform="translate(8 -10)"><OverheadPerson head="#aa7f6b" outline="#292735" phase={t+2} moving/></g>
