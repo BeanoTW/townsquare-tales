@@ -40,7 +40,6 @@ import {
   enrollAction,
   type ActionDef,
 } from "@/lib/actions";
-import { DARTS_ACTION } from "@/lib/minigames";
 import { CASINO_CHATTER } from "@/lib/casino-lines";
 import { lifetime, money, signed, type CasinoGame } from "@/lib/casino";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
@@ -85,7 +84,7 @@ export type Hotspot = {
   lines?: (s: GameState) => string[];
   actions?: (s: GameState) => ActionDef[];
   /** Tapping opens this full-screen minigame instead of a panel. */
-  launch?: "blackjack" | "slots";
+  launch?: "blackjack" | "slots" | "darts";
 };
 export type Palette = { wall: string; floor: string; accent: string };
 export type Room = {
@@ -391,7 +390,6 @@ export const ROOMS: Record<PlaceId, Room> = {
     sign: "TIPSY STICK",
     palette: { wall: "#644363", floor: "#3a2937", accent: "#f477a9" },
     hotspots: [
-      { id: "dartboard", label: "Dartboard", tag: "DARTS", hint: "Nine darts. Aim for the treble twenty.", box: { x: 300, y: 52, w: 90, h: 65 }, actions: () => [DARTS_ACTION] },
       {
         id: "bar-counter",
         label: "Bar counter",
@@ -407,6 +405,15 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Make a move",
         box: { x: 262, y: 126, w: 140, h: 62 },
         actions: () => [CHAT_UP],
+      },
+      {
+        id: "dartboard",
+        label: "Dartboard",
+        tag: "DARTS",
+        hint: "Throw darts with Gus watching",
+        box: { x: 340, y: 46, w: 56, h: 64 },
+        lines: () => ["Gus is watching. Three darts, no pressure."],
+        launch: "darts",
       },
     ],
   },

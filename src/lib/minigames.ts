@@ -1,228 +1,187 @@
 import { runAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 
-export type SkillGame = "basketball" | "skateboard" | "darts";
-export const GAME_INFO = {
-  basketball: {
-    title: "Park Basketball",
-    hours: 0.5,
-    energy: 8,
-    goal: 3,
-    best: "basketBest",
-    day: "parkHoopDay",
-    stat: "str",
-  },
-  skateboard: {
-    title: "Rail Challenge",
-    hours: 0.25,
-    energy: 6,
-    goal: 4,
-    best: "skateBest",
-    day: "parkSkateDay",
-    stat: "cha",
-  },
-  darts: {
-    title: "Tipsy Stick Darts",
-    hours: 0.5,
-    energy: 3,
-    goal: 180,
-    best: "dartsBest",
-    day: "dartsRewardDay",
-    stat: "cha",
-  },
-} as const;
-export function skillSession(game: SkillGame): ActionDef {
-  const info = GAME_INFO[game];
+/**
+ * Shared rules for the arcade minigames (basketball, rail grind, darts).
+ *
+ * - Playing costs in-game time and energy through the ordinary action rules, charged once when a
+ *   session begins. The real-world clock never advances the game clock.
+ * - Records live in the normal save (see GameState). Old saves read as zero.
+ * - Stat rewards reuse the existing stats and are capped to one per day per game, using the
+ *   same saved day-stamps the park activities already used, so practice cannot be farmed.
+ */
+export type MinigameId = "basketball" | "rail" | "darts";
+
+export const SESSIONS: Record<
+  MinigameId,
+  { hours: number; energy: number; label: string; failure: string }
+> = {
+  basketball: { hours: 0.5, energy: 8, label: "Shoot hoops", failure: "Too tired to shoot hoops." },
+  rail: { hours: 0.25, energy: 6, label: "Grind the rail", failure: "Too tired to skate." },
+  darts: { hours: 0.5, energy: 3, label: "Play darts", failure: "Too tired to throw." },
+};
+
+export function sessionAction(id: MinigameId): ActionDef {
+  const s = SESSIONS[id];
   return {
-    id: `skill-${game}`,
-    label: `Play ${info.title}`,
-    hours: info.hours,
-    energy: info.energy,
-    resolve: (s) =>
-      game === "skateboard" && (!s.skateboard || !s.skateboardEquipped)
-        ? "Equip your skateboard first."
-        : { patch: {}, message: "Game on." },
+    id: `minigame-${id}`,
+    label: s.label,
+    hours: s.hours,
+    energy: s.energy,
+    resolve: () => ({ patch: {}, message: s.label + "." }),
   };
 }
-export const DARTS_ACTION: ActionDef = {
-  ...skillSession("darts"),
-  id: "start-darts",
-  note: "Aim and throw nine darts. 180 points earns Charm +1 once per day.",
-};
-export function startSkill(s: GameState, game: SkillGame) {
-  return runAction(s, skillSession(game));
+
+export type SessionStart = { ok: true; next: GameState } | { ok: false; message: string };
+
+/** Charge the time and energy for one sitting. Refuses (changing nothing) when the player can't afford it. */
+export function startSession(s: GameState, id: MinigameId): SessionStart {
+  const r = runAction(s, sessionAction(id));
+  return r.ok ? { ok: true, next: r.next } : { ok: false, message: r.message };
 }
-/** A completed run can improve its record; stat rewards are capped once per saved day. */
-export function finishSkill(
+
+/** Quick pre-check used before opening a game from the town or a room. */
+export const canStartSession = (s: GameState, id: MinigameId) => startSession(s, id);
+
+export const hasEquippedBoard = (s: GameState) => Boolean(s.skateboard && s.skateboardEquipped);
+
+const pct = (made: number, total: number) => (total > 0 ? Math.round((made / total) * 100) : 0);
+export const accuracy = (made: number, total: number) => pct(made, total);
+
+export type Finish = { next: GameState; notes: string[]; newBest: boolean };
+
+/* ------------------------------ Basketball ------------------------------ */
+export type BasketballMode = "practice" | "five" | "timed";
+
+export function finishBasketball(
   s: GameState,
-  game: SkillGame,
-  score: number,
-): { next: GameState; rewarded: boolean } {
-  const info = GAME_INFO[game];
-  const safe = Math.max(
-    0,
-    Math.min(
-      game === "darts" ? 540 : game === "basketball" ? 5 : 4,
-      Number.isFinite(score) ? score : 0,
-    ),
-  );
-  const rewarded = safe >= info.goal && s[info.day] !== s.day;
-  const next = {
-    ...s,
-    [info.best]: Math.max(s[info.best] ?? 0, safe),
-    ...(rewarded ? { [info.day]: s.day, [info.stat]: s[info.stat] + 1 } : {}),
-  };
-  return { next, rewarded };
-}
-
-export type Basketball = {
-  time: number;
-  shots: number;
-  score: number;
-  phase: "aim" | "flight" | "done";
-  held: number | null;
-  flight: number;
-  power: number;
-  hit: boolean | null;
-};
-export const newBasketball = (): Basketball => ({
-  time: 0,
-  shots: 0,
-  score: 0,
-  phase: "aim",
-  held: null,
-  flight: 0,
-  power: 0,
-  hit: null,
-});
-export const hoopPosition = (time: number) => 0.5 + 0.32 * Math.sin(time * 1.15);
-export const shotPower = (held: number) => {
-  const t = Math.max(0, held) % 2;
-  return t <= 1 ? t : 2 - t;
-};
-export function basketballHold(s: Basketball): Basketball {
-  return s.phase === "aim" && s.held === null ? { ...s, held: 0, hit: null } : s;
-}
-export function basketballRelease(s: Basketball): Basketball {
-  if (s.phase !== "aim" || s.held === null) return s;
-  const power = shotPower(s.held);
-  return {
-    ...s,
-    held: null,
-    phase: "flight",
-    flight: 0,
-    power,
-    hit: Math.abs(power - hoopPosition(s.time + 0.75)) <= 0.075,
-  };
-}
-export function basketballStep(s: Basketball, dt: number): Basketball {
-  if (s.phase === "done") return s;
-  const time = s.time + Math.max(0, dt);
-  if (s.phase === "aim")
-    return { ...s, time, held: s.held === null ? null : s.held + Math.max(0, dt) };
-  const flight = s.flight + Math.max(0, dt);
-  if (flight < 0.9) return { ...s, time, flight };
-  const shots = s.shots + 1;
-  return {
-    ...s,
-    time,
-    flight: 0.9,
-    shots,
-    score: s.score + (s.hit ? 1 : 0),
-    phase: shots === 5 ? "done" : "aim",
-  };
-}
-
-export type Skate = {
-  phase: "approach" | "grind" | "done";
-  time: number;
-  balance: number;
-  velocity: number;
-  score: number;
-  landed: boolean;
-  entry: number;
-};
-export const newSkate = (): Skate => ({
-  phase: "approach",
-  time: 0,
-  balance: 0,
-  velocity: 0,
-  score: 0,
-  landed: false,
-  entry: 0,
-});
-export const JUMP_WINDOW = [1.1, 1.55] as const;
-export function skateJump(s: Skate): Skate {
-  if (s.phase !== "approach") return s;
-  return s.time >= JUMP_WINDOW[0] && s.time <= JUMP_WINDOW[1]
-    ? { ...s, phase: "grind", time: 0, balance: 0.12, velocity: 0.25, entry: s.time }
-    : { ...s, phase: "done" };
-}
-export function skateStep(s: Skate, dt: number, input: number): Skate {
-  if (s.phase === "done") return s;
-  if (s.phase === "approach") {
-    const time = s.time + Math.max(0, dt);
-    return { ...s, time, phase: time > 1.8 ? "done" : "approach" };
+  mode: BasketballMode,
+  made: number,
+  shots: number,
+  completed: boolean,
+): Finish {
+  const m = Math.max(0, Math.min(made, shots));
+  let next: GameState =
+    mode === "practice"
+      ? { ...s }
+      : { ...s, bbMade: s.bbMade + m, bbShots: s.bbShots + Math.max(0, shots) };
+  const notes: string[] = [];
+  let newBest = false;
+  if (completed && mode === "five" && m > s.bbBest5) {
+    next = { ...next, bbBest5: Math.min(5, m) };
+    newBest = m > 0;
   }
-  // Substeps make the balance physics consistent across frame rates.
-  let next = { ...s },
-    remaining = Math.max(0, Math.min(dt, 0.25));
-  while (remaining > 0 && next.phase !== "done") {
-    const h = Math.min(remaining, 1 / 120);
-    remaining -= h;
-    const time = Math.min(4, next.time + h);
-    const disturbance = 0.9 * Math.cos(time * 0.8) + 0.6 * Math.sin(time * 2.5);
-    const velocity =
-      (next.velocity +
-        (disturbance + next.balance * 0.5 + Math.max(-1, Math.min(1, input)) * 2.8) * h) *
-      Math.exp(-1.4 * h);
-    const balance = next.balance + velocity * h;
-    const fell = Math.abs(balance) >= 1;
-    next = {
-      ...next,
-      time,
-      velocity,
-      balance,
-      score: fell ? Math.min(time, 3.999) : time,
-      landed: !fell && time >= 4,
-      phase: fell || time >= 4 ? "done" : "grind",
-    };
+  if (completed && mode === "timed" && m > s.bbBestTimed) {
+    next = { ...next, bbBestTimed: Math.min(200, m) };
+    newBest = m > 0;
   }
-  return next;
+  if (completed && mode !== "practice" && m >= 1) {
+    if (s.parkHoopDay === s.day)
+      notes.push("Strength training done for today. The hoop is not impressed by overtime.");
+    else {
+      next = { ...next, str: s.str + 1, parkHoopDay: s.day };
+      notes.push("Strength +1 (once a day)");
+    }
+  } else if (completed && mode !== "practice") {
+    notes.push("No baskets, no gains.");
+  } else if (mode === "practice") {
+    notes.push("Practice never counts towards records or rewards.");
+  }
+  return { next, notes, newBest };
 }
 
-export const DART_SEGMENTS = [
-  20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5,
-] as const;
-export function dartScore(x: number, y: number): number {
-  const r = Math.hypot(x, y);
-  if (!Number.isFinite(r) || r > 1) return 0;
-  if (r <= 0.0374) return 50;
-  if (r <= 0.0935) return 25;
-  const angle = (Math.atan2(x, -y) + Math.PI / 20 + Math.PI * 2) % (Math.PI * 2);
-  const value = DART_SEGMENTS[Math.floor(angle / (Math.PI / 10)) % 20]!;
-  return value * (r >= 0.953 ? 2 : r >= 0.582 && r <= 0.629 ? 3 : 1);
+/* ------------------------------ Rail grind ------------------------------ */
+export function finishRail(
+  s: GameState,
+  r: { level: number; success: boolean; balancedMs: number },
+): Finish {
+  const level = Math.max(1, Math.min(5, Math.trunc(r.level)));
+  const longest = Math.max(0, Math.min(60000, Math.round(r.balancedMs)));
+  let next: GameState = { ...s };
+  const notes: string[] = [];
+  let newBest = longest > s.railLongest;
+  if (newBest) next = { ...next, railLongest: longest };
+  if (r.success) {
+    next = { ...next, railGrinds: s.railGrinds + 1, railLevel: Math.max(s.railLevel, level) };
+    if (level > s.railLevel) notes.push(`Level ${Math.min(5, level + 1)} unlocked.`);
+    if (s.parkSkateDay === s.day)
+      notes.push("Charm is capped at one gain a day. The crew already saw your best.");
+    else {
+      next = { ...next, cha: s.cha + 1, parkSkateDay: s.day };
+      notes.push("Charm +1 (once a day)");
+    }
+  } else {
+    next = { ...next, railFalls: s.railFalls + 1 };
+    newBest = newBest && longest > 0;
+  }
+  return { next, notes, newBest };
 }
-export type Darts = {
-  time: number;
-  aimX: number;
-  aimY: number;
-  throws: { x: number; y: number; score: number }[];
-  phase: "aim" | "done";
-};
-export const newDarts = (): Darts => ({ time: 0, aimX: 0, aimY: -0.6, throws: [], phase: "aim" });
-export function dartCursor(s: Darts) {
-  return { x: s.aimX + 0.065 * Math.sin(s.time * 3.2), y: s.aimY + 0.065 * Math.cos(s.time * 4.1) };
+
+/* -------------------------------- Darts --------------------------------- */
+export type DartsMode = "practice" | "three" | "x01";
+export const WAGERS = [0, 5, 10, 20] as const;
+export const MAX_WAGER = 20;
+
+/** A friendly wager is whole dollars, at most MAX_WAGER, and never more than the player holds. */
+export function clampWager(w: number, money: number): number {
+  if (!Number.isFinite(w) || w <= 0) return 0;
+  return Math.max(0, Math.min(MAX_WAGER, Math.floor(money), Math.floor(w)));
 }
-export function dartsAim(s: Darts, x: number, y: number): Darts {
-  return s.phase === "done"
-    ? s
-    : { ...s, aimX: Math.max(-1.2, Math.min(1.2, x)), aimY: Math.max(-1.2, Math.min(1.2, y)) };
+
+export function finishDarts(
+  s: GameState,
+  r: {
+    mode: DartsMode;
+    throws: number;
+    hits: number;
+    /** Three-dart score (mode "three"). */
+    score?: number;
+    /** Win/loss for matches that have one. */
+    won?: boolean | null;
+    completed: boolean;
+    /** Stake already taken at the start of the match. */
+    wager?: number;
+  },
+): Finish {
+  let next: GameState =
+    r.mode === "practice"
+      ? { ...s }
+      : {
+          ...s,
+          dartThrows: s.dartThrows + Math.max(0, r.throws),
+          dartHits: s.dartHits + Math.max(0, Math.min(r.hits, r.throws)),
+        };
+  const notes: string[] = [];
+  let newBest = false;
+  if (r.mode === "three" && r.completed && r.score !== undefined && r.score > s.dartBest3) {
+    next = { ...next, dartBest3: Math.min(180, r.score) };
+    newBest = r.score > 0;
+  }
+  const wager = Math.max(0, r.wager ?? 0);
+  if (r.mode !== "practice") {
+    if (r.won === true && r.completed) {
+      next = { ...next, dartWins: s.dartWins + 1, money: next.money + wager * 2 };
+      if (wager) notes.push(`Won $${wager} from Gus.`);
+      if (s.dartDay === s.day) notes.push("Charm and Gus's respect are capped at one gain a day.");
+      else {
+        next = { ...next, cha: s.cha + 1, relGus: Math.min(10, s.relGus + 1), dartDay: s.day };
+        notes.push("Charm +1, Gus +1 (once a day)");
+      }
+    } else if (r.won === null && r.completed) {
+      if (wager) {
+        next = { ...next, money: next.money + wager };
+        notes.push("A draw. Your stake is returned.");
+      }
+    } else if (r.won === false || !r.completed) {
+      next = { ...next, dartLosses: s.dartLosses + 1 };
+      if (wager) notes.push(`Lost $${wager}.`);
+    }
+  } else notes.push("Practice never counts towards records or rewards.");
+  return { next, notes, newBest };
 }
-export function dartsThrow(s: Darts): Darts {
-  if (s.phase === "done") return s;
-  const p = dartCursor(s),
-    throws = [...s.throws, { ...p, score: dartScore(p.x, p.y) }];
-  return { ...s, throws, phase: throws.length === 9 ? "done" : "aim" };
+
+/** The wager is taken when a match starts so quitting mid-match cannot dodge it. */
+export function takeWager(s: GameState, wager: number): GameState {
+  const w = clampWager(wager, s.money);
+  return w ? { ...s, money: s.money - w } : s;
 }
-export const dartsTotal = (s: Darts) => s.throws.reduce((total, t) => total + t.score, 0);

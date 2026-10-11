@@ -25,6 +25,7 @@ const old: GameState = {
   gangRep: 0, gangStage: 0,
   relMara: 0, relNox: 0, relGus: 0, relIvy: 0,
   lastMara: 0, lastNox: 0, lastGus: 0, lastIvy: 0,
+  bbBest5: 0, bbBestTimed: 0, bbMade: 0, bbShots: 0, railGrinds: 0, railFalls: 0, railLongest: 0, railLevel: 0, dartBest3: 0, dartThrows: 0, dartHits: 0, dartWins: 0, dartLosses: 0,
   bjWon: 0,
   bjLost: 0,
   slotWon: 0,

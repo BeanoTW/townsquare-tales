@@ -24,9 +24,9 @@ export const SHOP_LAYOUTS: Record<ShopId, ShopFixture[]> = {
     { id: "booth", x: 11, y: 7, w: 4, d: 2, approach: { x: 10, y: 8 } },
   ],
   bar: [
-    { id: "dartboard", x: 13, y: 8.5, w: 2, d: 1, approach: { x: 12, y: 9 } },
     { id: "bar-counter", x: 2, y: 4, w: 8, d: 1.5, approach: { x: 6, y: 6.5 } },
     { id: "dance-floor", x: 11, y: 4, w: 4, d: 4, approach: { x: 12, y: 6 }, solid: false },
+    { id: "dartboard", x: 1, y: 6, w: 1.2, d: 1.6, approach: { x: 3.5, y: 7 } },
   ],
   furniture: [
     { id: "sofa-display", x: 2, y: 4, w: 4, d: 2, approach: { x: 7, y: 5 } },

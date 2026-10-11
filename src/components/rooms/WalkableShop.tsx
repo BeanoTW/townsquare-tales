@@ -8,7 +8,7 @@ import { ShopFitting, ShopShell } from "@/components/rooms/ShopFittings";
 import { ActionPanel } from "@/components/rooms/ActionPanel";
 import { OverheadPerson } from "@/components/OverheadPerson";
 import { STAFF } from "@/components/rooms/ArcadeInterior";
-import { visibleHotspots, type Room } from "@/lib/rooms";
+import { visibleHotspots, type Hotspot, type Room } from "@/lib/rooms";
 import {
   SHOP_ENTRY,
   SHOP_EXIT,
@@ -42,6 +42,8 @@ export function WalkableShop({
   onRun,
   onLeave,
   godMode = false,
+  onLaunch,
+  paused = false,
 }: {
   room: Room;
   state: GameState;
@@ -49,6 +51,10 @@ export function WalkableShop({
   onRun: (a: ActionDef) => void;
   onLeave: () => void;
   godMode?: boolean;
+  /** Hotspots with a `launch` open a full-screen minigame instead of a panel. */
+  onLaunch?: ((game: NonNullable<Hotspot["launch"]>) => void) | undefined;
+  /** A minigame is open on top: ignore the keyboard so it cannot walk the player or leave the room. */
+  paused?: boolean;
 }) {
   const id = room.id as ShopId,
     fixtures = SHOP_LAYOUTS[id];
@@ -88,8 +94,19 @@ export function WalkableShop({
             })),
         }
       : selected;
-  const control = useRef({ selectedId, onLeave, visible, near });
-  control.current = { selectedId, onLeave, visible, near };
+  const control = useRef({ selectedId, onLeave, visible, near, onLaunch, paused });
+  control.current = { selectedId, onLeave, visible, near, onLaunch, paused };
+  const choose = (target: string) => {
+    const spot = control.current.visible.find((h) => h.id === hotspotId(target));
+    if (spot?.launch && control.current.onLaunch) {
+      keys.current.clear();
+      path.current = [];
+      setSelected(null);
+      control.current.onLaunch(spot.launch);
+      return;
+    }
+    setSelected(hotspotId(target));
+  };
   const open = (target: string) => {
     if (target === "exit") {
       if (Math.hypot(pos.current.x - SHOP_EXIT.x, pos.current.y - SHOP_EXIT.y) < 0.8) {
@@ -100,7 +117,7 @@ export function WalkableShop({
       const f = interactionFixtures.find((f) => f.id === target);
       if (!f) return;
       if (fixtureNear(pos.current, f)) {
-        setSelected(hotspotId(target));
+        choose(target);
         return;
       }
     }
@@ -124,6 +141,7 @@ export function WalkableShop({
   useEffect(() => {
     reduced.current = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     const down = (e: KeyboardEvent) => {
+      if (control.current.paused) return;
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (k === "Escape") {
         e.preventDefault();
@@ -145,7 +163,7 @@ export function WalkableShop({
       }
       if (k === "e" || k === "Enter" || k === " ") {
         e.preventDefault();
-        if (control.current.near) setSelected(hotspotId(control.current.near.id));
+        if (control.current.near) choose(control.current.near.id);
         else if (Math.hypot(pos.current.x - SHOP_EXIT.x, pos.current.y - SHOP_EXIT.y) < 0.8)
           control.current.onLeave();
       }
@@ -222,7 +240,7 @@ export function WalkableShop({
           control.current.visible.some((h) => h.id === hotspotId(target)) &&
           interactionFixtures.some((f) => f.id === target && fixtureNear(next, f))
         )
-          setSelected(hotspotId(target));
+          choose(target);
         setRunning(false);
         return;
       }
@@ -502,7 +520,7 @@ export function WalkableShop({
             className="absolute bottom-2 left-1/2 min-h-11 -translate-x-1/2 rounded border-2 border-foreground bg-card px-3"
             onClick={() => {
               stop();
-              setSelected(hotspotId(near.id));
+              choose(near.id);
             }}
           >
             {visible.find((h) => h.id === hotspotId(near.id))?.label} · E

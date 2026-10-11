@@ -9,6 +9,7 @@ export type GameState = {
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
   smokes: number; skateboard: number; skateboardEquipped: number; parkSmokes: number; parkKidGone: number;
   parkSkateDay?: number; parkHoopDay?: number; parkHideDay?: number; gangResponseDay?: number;
+  /** Records retained from the first arcade release. */
   basketBest?: number; skateBest?: number; dartsBest?: number; dartsRewardDay?: number;
   weapon?: number; tillRobberyDay?: number;
   streetSearchDay?: number;
@@ -18,6 +19,11 @@ export type GameState = {
   streetMaraIncidents?: number; streetNoxIncidents?: number; streetGusIncidents?: number; streetIvyIncidents?: number;
   /** Lifetime casino totals (money won / money lost) per game. Old saves default to 0. */
   bjWon: number; bjLost: number; slotWon: number; slotLost: number;
+  /** Arcade minigame records. Old saves default to 0. */
+  bbBest5: number; bbBestTimed: number; bbMade: number; bbShots: number;
+  railGrinds: number; railFalls: number; railLongest: number; railLevel: number;
+  dartBest3: number; dartThrows: number; dartHits: number; dartWins: number; dartLosses: number;
+  dartDay?: number;
 };
 
 const KEY = "sticktown";
@@ -39,6 +45,10 @@ const ranges: Record<keyof GameState, [number, number]> = {
   job: [0, 4], career: [0, 3], xp: [0, 1000000], heat: [0, 100],
   bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 255],
   bjWon: [0, 1e12], bjLost: [0, 1e12], slotWon: [0, 1e12], slotLost: [0, 1e12],
+  bbBest5: [0, 5], bbBestTimed: [0, 200], bbMade: [0, 1e9], bbShots: [0, 1e9],
+  railGrinds: [0, 1e9], railFalls: [0, 1e9], railLongest: [0, 60000], railLevel: [0, 5],
+  dartBest3: [0, 180], dartThrows: [0, 1e9], dartHits: [0, 1e9], dartWins: [0, 1e9], dartLosses: [0, 1e9],
+  dartDay: [0, 100000],
 };
 
 export function parseGame(raw: string | null, fallback: GameState): GameState {
@@ -53,6 +63,16 @@ export function parseGame(raw: string | null, fallback: GameState): GameState {
       const [min, max] = ranges[k];
       result[k] = Math.max(min, Math.min(max, k === "hour" || k === "residentFavourDeadline" || k === "skateBest" ? n : Math.trunc(n)));
     }
+    // Migrate compatible records from PR #108 only when the new field is absent.
+    const saved = value as Record<string, unknown>;
+    if (!("bbBest5" in saved)) result.bbBest5 = result.basketBest ?? 0;
+    if (!("railLongest" in saved)) result.railLongest = Math.round((result.skateBest ?? 0) * 1000);
+    if ((result.skateBest ?? 0) >= 4) {
+      if (!("railLevel" in saved)) result.railLevel = 1;
+      if (!("railGrinds" in saved)) result.railGrinds = 1;
+    }
+    if (!("dartDay" in saved) && result.dartsRewardDay !== undefined) result.dartDay = result.dartsRewardDay;
+    // The old nine-dart score has no equivalent in the new three-dart mode; retain it separately.
     if (!("skateboardEquipped" in (value as Record<string, unknown>))) result.skateboardEquipped = result.skateboard;
     return result;
   } catch {
