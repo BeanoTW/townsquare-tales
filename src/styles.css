@@ -296,3 +296,27 @@
 .town-litter-kicked { animation: town-litter-kick 1.8s ease-out both; }
 @keyframes town-litter-kick { 0% { transform: translateX(0) rotate(0deg); } 40%,75% { transform: translateX(20px) rotate(100deg); } 100% { transform: translateX(0) rotate(0deg); } }
 @media (prefers-reduced-motion: reduce) { .town-litter-kicked { animation: none; } }
+
+:root {
+  --shop-floor: #c7b18e;
+  --shop-pawn-floor: #8b8271;
+  --shop-tile-line: #6e6454;
+  --shop-wall: #e9dcc0;
+  --shop-wood: #947053;
+  --shop-wood-dark: #594735;
+  --shop-counter-top: #ece1c9;
+  --shop-counter-mat: #53665f;
+  --shop-case-glass: #b0d1c9;
+  --shop-screen: #b8d9a2;
+  --shop-shelf-back: #b99974;
+  --shop-brass: #dfb952;
+  --shop-product-red: #bc6552;
+  --shop-product-green: #779d70;
+  --shop-product-gold: #e0b354;
+  --shop-product-blue: #6d92b0;
+  --shop-sofa: #688a89;
+  --shop-sofa-dark: #405d60;
+  --shop-rug: #d9b687;
+  --shop-linen: #eee3cf;
+  --shop-bedspread: #8799b4;
+}

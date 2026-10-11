@@ -10,6 +10,8 @@ import {
   SHOP_EXIT,
   shopRoute,
   shopObstacles,
+  SHOP_AISLES,
+  SHOP_STAFF,
   moveShopPlayer,
 } from "@/lib/walkable-shops";
 import { isWalkable } from "@/lib/pathfinding";
@@ -84,6 +86,32 @@ describe("walkable shop navigation", () => {
       }
     }
   });
+  it("renders proper tills and distinct fittings whose aisles block walking", () => {
+    for (const id of ["shop", "pawn", "furniture"] as const) {
+      const view = enter(id);
+      expect(
+        view.container.querySelector("[data-shop-counter] [data-shop-till]"),
+      ).toBeInTheDocument();
+      expect(view.container.querySelector("[data-shop-shell]")).toHaveAttribute(
+        "data-shop-shell",
+        id,
+      );
+      const staff = SHOP_STAFF[id];
+      expect(isWalkable(staff, shopObstacles(id))).toBe(false);
+      if (id === "shop") {
+        expect(view.container.querySelectorAll("[data-stocked-shelf]")).toHaveLength(2);
+        for (const aisle of SHOP_AISLES[id])
+          expect(
+            isWalkable({ x: aisle.x + aisle.w / 2, y: aisle.y + aisle.d / 2 }, shopObstacles(id)),
+          ).toBe(false);
+      }
+      if (id === "furniture") {
+        expect(view.container.querySelector("[data-showroom-bed]")).toBeInTheDocument();
+        expect(view.container.querySelector("[data-showroom-sofa]")).toBeInTheDocument();
+      }
+      view.unmount();
+    }
+  });
   it("blocks keyboard movement into furniture and walls", () => {
     expect(moveShopPlayer("shop", { x: 5.5, y: 5 }, { x: -0.4, y: 0 })).toEqual({ x: 5.5, y: 5 });
     expect(moveShopPlayer("shop", { x: 16.5, y: 12 }, { x: 0.5, y: 0 })).toEqual({
@@ -91,42 +119,76 @@ describe("walkable shop navigation", () => {
       y: 12,
     });
   });
-  it("walks to shelves before opening all seven goods and reuses their actions", () => {
+  it("browses without charging, walks to the till, then reuses every catalog action", () => {
     const step = clock(),
       state = { ...START, money: 1000 },
       { container, run } = enter("shop", state);
     fireEvent.click(screen.getByRole("button", { name: /^Shop shelves\./ }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    step(130);
-    const panel = screen.getByRole("dialog", { name: "Shop shelves" });
-    const actions = within(panel)
-      .getAllByRole("button")
-      .filter((b) => b.getAttribute("aria-label") !== "Close panel");
-    expect(actions).toHaveLength(SHOP_GOODS.length);
-    for (const [i, good] of SHOP_GOODS.entries()) {
-      fireEvent.click(actions[i]!);
+    step(160);
+    const shelves = screen.getByRole("dialog", { name: "Shop shelves" });
+    for (const good of SHOP_GOODS)
+      expect(
+        within(shelves).getByRole("button", { name: `Take ${good.name} to checkout` }),
+      ).toBeInTheDocument();
+    fireEvent.click(within(shelves).getByRole("button", { name: "Take Snack pack to checkout" }));
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    step(160);
+    const checkout = screen.getByRole("dialog", { name: "Checkout" });
+    for (const good of SHOP_GOODS) {
+      fireEvent.click(within(checkout).getByRole("button", { name: `Select ${good.name}` }));
+      fireEvent.click(
+        within(checkout).getByRole("button", { name: `Buy ${good.name} for $${good.price}` }),
+      );
       const action = run.mock.calls.at(-1)![0];
-      expect(action.id).toBe(good.action(START).id);
       expect(runAction(state, action, () => 0)).toEqual(
         runAction(state, good.action(state), () => 0),
       );
     }
     expect(container.querySelectorAll("[data-overhead-person]")).toHaveLength(2);
     expect(container.querySelector("[data-resting-legs]")).toBeNull();
-    const player = container.querySelector("[data-shop-player]")!;
-    expect(Number(player.getAttribute("data-x"))).toBeCloseTo(6, 1);
-    expect(Math.abs(Number(player.getAttribute("data-y")) - 5)).toBeLessThan(0.08);
-    // Escape also works when focus is inside the action panel.
-    fireEvent.keyDown(actions[0]!, { key: "Escape" });
+    expect(
+      Number(container.querySelector("[data-shop-player]")!.getAttribute("data-x")),
+    ).toBeCloseTo(10, 1);
+    fireEvent.keyDown(within(checkout).getByRole("button", { name: "Close panel" }), {
+      key: "Escape",
+    });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
-  it("disables unaffordable and already-owned catalog goods", () => {
+  it("disables unaffordable and already-owned goods at the checkout", () => {
     const step = clock();
     enter("shop", { ...START, trainers: 1 });
-    fireEvent.click(screen.getByRole("button", { name: /^Shop shelves\./ }));
-    step(130);
+    fireEvent.click(screen.getByRole("button", { name: /^Checkout\./ }));
+    step(160);
+    fireEvent.click(screen.getByRole("button", { name: "Select Running shoes" }));
     expect(screen.getByRole("button", { name: /Running shoes.*Already owned/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Select Alarm clock" }));
     expect(screen.getByRole("button", { name: /Alarm clock.*Need \$80 more/i })).toBeDisabled();
+  });
+  it("approaches the centre aisle rather than opening its menu from across the room", () => {
+    const step = clock(),
+      { container } = enter();
+    fireEvent.click(screen.getByRole("button", { name: "Browse the grocery aisle" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    step(160);
+    expect(screen.getByRole("dialog", { name: "Shop shelves" })).toBeInTheDocument();
+    expect(
+      Number(container.querySelector("[data-shop-player]")!.getAttribute("data-x")),
+    ).toBeCloseTo(9.5, 1);
+  });
+  it("filters shelf categories and leaves retail shifts at the till", () => {
+    const step = clock();
+    enter();
+    fireEvent.click(screen.getByRole("button", { name: /^Shop shelves\./ }));
+    step(160);
+    fireEvent.click(screen.getByRole("button", { name: "Equipment" }));
+    expect(
+      screen.getByRole("button", { name: "Take Running shoes to checkout" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Take Snack pack to checkout" }),
+    ).not.toBeInTheDocument();
   });
   it("keeps jobs accessible and pauses movement while a panel is open", () => {
     const step = clock(),

@@ -20,8 +20,18 @@ export const SHOP_LAYOUTS: Record<ShopId, ShopFixture[]> = {
   furniture: [
     { id: "sofa-display", x: 2, y: 4, w: 4, d: 2, approach: { x: 7, y: 5 } },
     { id: "bed-display", x: 10, y: 3, w: 4, d: 4, approach: { x: 9, y: 5 } },
-    { id: "catalogue", x: 11, y: 9, w: 3, d: 2, approach: { x: 10, y: 10 } },
+    { id: "catalogue", x: 11, y: 9, w: 4, d: 2, approach: { x: 10, y: 10 } },
   ],
+};
+export const SHOP_STAFF: Record<ShopId, Point> = {
+  shop: { x: 13, y: 6 },
+  pawn: { x: 5, y: 2.75 },
+  furniture: { x: 13, y: 8 },
+};
+export const SHOP_AISLES: Record<ShopId, ShopFixture[]> = {
+  shop: [{ id: "aisle", x: 7, y: 6, w: 1.5, d: 3, approach: { x: 9.5, y: 7.5 } }],
+  pawn: [],
+  furniture: [],
 };
 /** Reuse town navigation with padded furniture and room walls, leaving the exit open. */
 export function shopObstacles(id: ShopId): Obstacle[] {
@@ -30,8 +40,13 @@ export function shopObstacles(id: ShopId): Obstacle[] {
     { x: 0, y: 0, w: 1, d: 30 },
     { x: 17, y: 0, w: 13, d: 30 },
     { x: 0, y: 14, w: 30, d: 16 },
-    { x: 14.5, y: 5.5, w: 1, d: 1 },
-    ...SHOP_LAYOUTS[id].map((f) => ({ x: f.x - 0.25, y: f.y - 0.25, w: f.w + 0.5, d: f.d + 0.5 })),
+    { x: SHOP_STAFF[id].x - 0.5, y: SHOP_STAFF[id].y - 0.5, w: 1, d: 1 },
+    ...[...SHOP_LAYOUTS[id], ...SHOP_AISLES[id]].map((f) => ({
+      x: f.x - 0.25,
+      y: f.y - 0.25,
+      w: f.w + 0.5,
+      d: f.d + 0.5,
+    })),
   ];
 }
 export function shopRoute(id: ShopId, start: Point, goal: Point) {
