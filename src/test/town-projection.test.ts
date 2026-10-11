@@ -25,7 +25,8 @@ describe("upright oblique town projection", () => {
   it("keeps the visible player head centred when travelling north and south", () => {
     for (const y of [2, 9, 16, 25]) {
       const x = 10;
-      const [left, top, width, height] = playerCameraViewBox(x, y).split(" ").map(Number);
+      const parts = playerCameraViewBox(x, y).split(" ").map(Number);
+      const left = parts[0]!, top = parts[1]!, width = parts[2]!, height = parts[3]!;
       const [px, py] = P(x, y);
       expect(left + width / 2).toBe(px);
       expect(top + height / 2).toBe(py - 7);
