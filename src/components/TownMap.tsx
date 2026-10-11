@@ -121,7 +121,7 @@ function Stick({ x, y, phase, walking, skating = false, skateAngle = 90, color =
       <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
       <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
     </g>}
-    <OverheadPerson head={head} outline={color} phase={phase} moving={walking}/>
+    <OverheadPerson head={head} outline={color} phase={phase} moving={walking} angle={skateAngle}/>
   </g>;
 }
 
@@ -138,9 +138,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   // Local residents retain their current position while the clock changes.
   // They travel along walkable routes instead of teleporting at shift boundaries.
-  const residentMotion = useRef<Record<string, { x: number; y: number; goalX: number; goalY: number; path: Point[]; walking: boolean }>>({});
+  const residentMotion = useRef<Record<string, { x: number; y: number; goalX: number; goalY: number; path: Point[]; walking: boolean; angle: number }>>({});
   for (const resident of residentsAt(hour)) {
-    residentMotion.current[resident.id] ??= { x: resident.x, y: resident.y, goalX: resident.x, goalY: resident.y, path: [], walking: false };
+    residentMotion.current[resident.id] ??= { x: resident.x, y: resident.y, goalX: resident.x, goalY: resident.y, path: [], walking: false, angle: 0 };
   }
   const routeTo = (destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
@@ -276,7 +276,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           else {
             const nx = resident.x + rx / distance * step;
             const ny = resident.y + ry / distance * step;
-            if (!blocked(nx, ny)) { resident.x = nx; resident.y = ny; resident.walking = true; }
+            if (!blocked(nx, ny)) { resident.x = nx; resident.y = ny; resident.walking = true; resident.angle = Math.atan2(rx, -ry) * 180 / Math.PI; }
             else resident.path = []; // Never ghost through buildings.
           }
         }
@@ -377,7 +377,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       el: <g key={person.id} role="button" tabIndex={0} data-resident={person.id} aria-label={"Talk to "+person.name}
         className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
         onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();routeTo(person,"resident:"+person.id);}}}>
-        <Stick x={person.x} y={person.y} phase={t*3+i} walking={Boolean(motion?.walking)} idle={!motion?.walking} color={person.color}/>
+        <Stick x={person.x} y={person.y} phase={t*3+i} walking={Boolean(motion?.walking)} idle={!motion?.walking} color={person.color} skateAngle={motion?.angle ?? 0}/>
         <g transform={`translate(${P(person.x,person.y)[0]+16} ${P(person.x,person.y)[1]-33+Math.sin(t*1.4+i)*2})`}>
           <rect x="-10" y="-13" width="23" height="22" rx="9" fill="#f2e8d4" stroke="#4a454c" strokeWidth="1.5" opacity=".95"/>
           <text x="1" y="4" fontSize="14" textAnchor="middle">{residentActivity(person.id,hour)}</text>
@@ -401,9 +401,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         <g transform={`translate(${gx} ${gy})`}>
           <ellipse cx="0" cy="8" rx="45" ry="7" fill="#27372f" opacity=".14"/>
           <path d="M-30 -8h22" stroke="#846b53" strokeWidth="5" strokeLinecap="round"/>
-          <g data-gang-sitting transform="translate(-20 0)"><OverheadPerson head="#ae856c" outline="#292735" phase={t} /></g>
+          <g data-gang-sitting transform="translate(-20 0)"><OverheadPerson head="#ae856c" outline="#292735" phase={t} pose="sitting" /></g>
           <g data-gang-standing transform="translate(8 -10)"><OverheadPerson head="#aa7f6b" outline="#292735" phase={t+2} moving/></g>
-          <g data-gang-leaning transform="translate(30 0)"><OverheadPerson head="#bd977b" outline="#332c35" phase={t+4}/></g>
+          <g data-gang-leaning transform="translate(30 0)"><OverheadPerson head="#bd977b" outline="#332c35" phase={t+4} pose="lying"/></g>
           {Math.sin(t*1.3)>.48 && <g transform="translate(4 -42)"><rect x="-21" y="-17" width="42" height="20" rx="8" fill="#eee1c4" stroke="#302b35" strokeWidth="2"/><text y="-3" textAnchor="middle" fontSize="11" fill="#302b35">Oi...</text></g>}
           <rect x="-45" y="-55" width="94" height="73" fill="transparent"/>
         </g>
@@ -420,7 +420,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         <g transform={`translate(${kx} ${ky})`}>
           <path d="M-24 -8h48M-24 -2h48" stroke="#806249" strokeWidth="5" strokeLinecap="round"/>
           <path d="M-20 -2v12M20 -2v12" stroke="#4d403a" strokeWidth="3"/>
-          <g data-kid-sitting><OverheadPerson head="#dbb38b" outline="#292633"/></g>
+          <g data-kid-sitting><OverheadPerson head="#dbb38b" outline="#292633" pose="sitting"/></g>
           <rect x="-28" y="-36" width="56" height="52" fill="transparent"/>
         </g>
       </g> });
@@ -432,7 +432,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const [sx,sy]=P(px,e.y);
     items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();onEncounter?.();}}} onClick={ev=>{ev.stopPropagation();onEncounter?.();}}>
       <g transform={`translate(${sx} ${sy})`}>
-        <OverheadPerson head="#f3d7b8" outline="#3c3043" phase={t} moving={e.pose==="pacing"}/>
+        <OverheadPerson head="#f3d7b8" outline="#3c3043" phase={t} moving={e.pose==="pacing"} pose={e.pose==="sitting"?"sitting":"standing"}/>
         <g transform={`translate(0 ${-36+Math.sin(t*3)*2})`}>
           <rect x="-19" y="-24" width="38" height="29" rx="12" fill="#fff2d4" stroke="#24202b" strokeWidth="3"/>
           <text textAnchor="middle" y="-4" fontSize="18" fontWeight="bold" fill="#25202b">{e.icon}</text>
