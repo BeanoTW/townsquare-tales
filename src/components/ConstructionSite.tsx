@@ -1,3 +1,4 @@
+import "./construction-site.css";
 import { P } from "@/lib/town-projection";
 
 const polygon = (corners: [number,number][]) => corners.map(([x,y]) => P(x,y).join(",")).join(" ");
