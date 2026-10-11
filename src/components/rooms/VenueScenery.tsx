@@ -121,6 +121,7 @@ function Employee({ room, shirt }: { room: PlaceId; shirt: string }) {
   const face = room === "pawn" ? "#ac8469" : room === "bar" ? "#946d59" : room === "yard" ? "#cf9872" : "#e9c59b";
   return <g data-character-venue={room} data-expression={emo ? "unimpressed" : gruff ? "gruff" : "reserved"}
     transform="translate(220 58)" stroke="#302a35" strokeWidth="4" strokeLinecap="round">
+    <g className={`venue-employee-idle venue-idle-${room}`}>
     <ellipse cy="131" rx="39" ry="7" fill="#302a35" stroke="none" opacity=".18"/>
     <path d="M-26 113L-21 76H21L26 113" fill="#434053"/>
     <path d="M-32 66L-43 99M32 66L43 99" fill="none" strokeWidth="7"/>
@@ -153,6 +154,7 @@ function Employee({ room, shirt }: { room: PlaceId; shirt: string }) {
     </g>}
     {room==="pawn"&&<path d="M20 37L26 41" stroke="#6c4141" strokeWidth="3"/>}
     {room==="depot"&&<path d="M-20 38Q-15 49 -5 50" stroke="#6b6459" strokeWidth="2" fill="none"/>}
+    </g>
   </g>;
 }
 
