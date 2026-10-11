@@ -1,7 +1,7 @@
 import { OverheadPerson } from "@/components/OverheadPerson";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StreetLife, type ResidentPositions } from "@/components/StreetLife";
-import { STREET_OBJECTS, type StreetObjectId } from "@/lib/street-life";
+import { townAtmosphere, STREET_OBJECTS, type StreetObjectId } from "@/lib/street-life";
 import { START } from "@/lib/game-data";
 import type { ResidentId } from "@/lib/living-town";
 import type { GameState } from "@/lib/game-state";
@@ -363,7 +363,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const items: { key: number; el: React.ReactNode }[] = [];
   bs.forEach((b) => items.push({ key: (b.y + b.d) * 100 + b.x, el: (
     <g key={b.id} data-world-interactive role="button" tabIndex={0} aria-label={`Enter ${b.label}`} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();routeTo(door(b),b.id);}}} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
-      <Exterior b={b} night={night} />
+      <Exterior b={b} night={townAtmosphere(hour).lit} />
     </g>) }));
   TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
   LAMPS.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
@@ -441,7 +441,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   );
 
   return (
-    <div className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
+    <div data-town-paused={paused} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
       <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 165} ${cy - 275} 330 550`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={e=>{if(!pausedRef.current)onGroundPointerDown(e);}}
         onClickCapture={(e) => {
@@ -508,7 +508,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           const depth = south || north ? 0.65 : 0.66;
           return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
         })}
-        <Site onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
+        <Site active={townAtmosphere(hour).constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
         {/* Street gang occupy the untouched north-east green, away from the shops. */}
         {tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
@@ -516,7 +516,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
         <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} />
-        {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.4 : 0.15} pointerEvents="none" />}
+        {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
       </svg>
       
       {stickVisual && (

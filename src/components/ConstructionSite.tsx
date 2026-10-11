@@ -5,11 +5,11 @@ import { P } from "@/lib/town-projection";
 const polygon = (corners: [number,number][]) => corners.map(([x,y]) => P(x,y).join(",")).join(" ");
 
 /** Large decorative redevelopment plot. Interactions remain with the actual yard office/foreman. */
-export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
+export function ConstructionSite({ onForeman, active = true }: { onForeman: () => void; active?: boolean }) {
   const x=16.1, y=15.3, w=6.0, d=9.2;
   const [fx,fy]=P(18.2,24.1);
   const [cx,cy]=P(18.9,16.9);
-  return <g data-construction-site>
+  return <g data-construction-site data-active={active}>
     <polygon points={polygon([[x,y],[x+w,y],[x+w,y+d],[x,y+d]])} fill="#968b76" stroke="#4a4842" strokeWidth="3"/>
     {/* Layered compacted earth, concrete pads and vehicle ruts. Keep the gate walkable. */}
     <g data-site-ground-detail pointerEvents="none">
@@ -109,7 +109,7 @@ export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
     {/* Same stature and overhead silhouette as the player, with subtle helmet markings. */}
     {[[17.3,20.8,"#d7ab38"],[20.8,18.7,"#eac763"]].map(([wx,wy,hat],i)=>{
       const [px,py]=P(Number(wx),Number(wy));
-      return <g key={i} data-construction-worker transform={`translate(${px} ${py})`}>
+      return <g key={i} data-construction-worker visibility={active ? "visible" : "hidden"} transform={`translate(${px} ${py})`}>
         <g className={i===0?"construction-worker-carry":"construction-worker-hammer"}>
           <OverheadPerson head="#dbb089" outline="#394043" hat={String(hat)} moving phase={i*2}/>
         </g>

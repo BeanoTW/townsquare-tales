@@ -76,13 +76,22 @@ export function routineGoal(id: ResidentId, scheduled: Point, hour: number, trip
   if (id === "ivy" && hour >= 18) return trip % 2 ? {x:11.4,y:6.5} : scheduled;
   return LOCAL_STOPS[id][trip % 2] ?? scheduled;
 }
-export const AMBIENT_ROUTES = [
+export type AmbientRoute = {id:string;color:string;morning:readonly [Point,Point];evening:readonly [Point,Point];line:string};
+export const AMBIENT_ROUTES: readonly AmbientRoute[] = [
   {id:"worker",color:"var(--town-npc-blue)",morning:[{x:11.4,y:19.5},{x:11.4,y:24.6}],evening:[{x:11.4,y:24.6},{x:11.4,y:19.5}],line:"Another meeting. Kill me now."},
   {id:"shopper",color:"var(--town-npc-red)",morning:[{x:15.1,y:11.6},{x:21.8,y:11.6}],evening:[{x:4.7,y:21.5},{x:8.1,y:21.5}],line:"Only came out for milk."},
   {id:"foreman-helper",color:"var(--town-depot-sign)",morning:[{x:19,y:22.2},{x:21.8,y:24.7}],evening:[{x:7.8,y:21.5},{x:4.7,y:21.5}],line:"They call that a safety briefing?"},
+  {id:"delivery",color:"var(--town-depot-sign)",morning:[{x:16.5,y:11.65},{x:21.8,y:11.6}],evening:[{x:16.5,y:11.65},{x:21.8,y:11.6}],line:"Signed for by 'Nobody'. Again."},
+  {id:"coffee",color:"var(--town-npc-blue)",morning:[{x:8.5,y:16.8},{x:8,y:10.8}],evening:[{x:8.5,y:16.8},{x:8,y:10.8}],line:"Coffee first. Existential dread later."},
+  {id:"park",color:"var(--town-npc-green)",morning:[{x:26.7,y:10.3},{x:26.7,y:8.5}],evening:[{x:26.7,y:10.3},{x:26.7,y:8.5}],line:"Nature. With suspicious pond foam."},
+  {id:"casino",color:"var(--town-casino-sign)",morning:[{x:8.3,y:21.5},{x:6.6,y:21.4}],evening:[{x:8.3,y:21.5},{x:6.6,y:21.4}],line:"It's only a loss if I go home."},
   {id:"patrol",color:"var(--town-police-sign)",morning:[{x:25.5,y:18.7},{x:25.5,y:24}],evening:[{x:8.1,y:21.5},{x:11.4,y:25}],line:"Nothing to see here. Yet."},
 ] as const;
 export function ambientVisible(id: string, hour: number) {
+  if (id === "delivery") return hour >= 6 && hour < 12;
+  if (id === "coffee") return hour >= 6 && hour < 11;
+  if (id === "park") return hour >= 12 && hour < 18;
+  if (id === "casino") return hour >= 18 || hour < 2;
   if (id === "patrol") return hour >= 22 || hour < 6;
   if (id === "worker") return hour >= 6 && hour < 19;
   if (id === "shopper") return hour >= 8 && hour < 22;
@@ -151,4 +160,28 @@ export function recordStreetIncident(s: GameState, id: ResidentId): GameState {
   if (count >= 3) return s;
   const relation = RELATION_FIELDS[id];
   return {...s,[field]:s.day*10+count+1,...(count===2 ? {[relation]:Math.max(-10,s[relation]-1)} : {})};
+}
+
+export function townAtmosphere(hour: number) {
+  return {period:hour<6||hour>=22?"late-night":hour<12?"morning":hour<18?"afternoon":"evening",
+    lit:hour>=18||hour<6, constructionActive:hour>=7&&hour<18, dinerActive:hour>=6&&hour<22};
+}
+export type StreetBird = Point & { angle: number; scatterUntil: number; armed: boolean };
+/** Bounded flight and a gentle return; no radius-switch teleport or constant fright retrigger. */
+export function moveBird(bird: StreetBird, home: Point, me: Point, now: number, dt: number,
+  index: number, lots: Obstacle[], reduced = false) {
+  const distance=Math.hypot(bird.x-me.x,bird.y-me.y);
+  if(distance>2) bird.armed=true;
+  if(distance<1.2 && bird.armed) {bird.scatterUntil=now+3;bird.armed=false;}
+  const scattering=now<bird.scatterUntil;
+  const dx=bird.x-me.x,dy=bird.y-me.y,length=Math.hypot(dx,dy)||1;
+  const target=scattering ? {x:home.x+dx/length*1.4,y:home.y+dy/length*1.4} :
+    {x:home.x+Math.cos(now*.25+index*2.1)*.22,y:home.y+Math.sin(now*.25+index*2.1)*.22};
+  const tx=target.x-bird.x,ty=target.y-bird.y,travel=Math.hypot(tx,ty);
+  if(travel>.025) {
+    const step=Math.min(travel,dt*(scattering ? reduced ? .65 : 1.6 : .22));
+    const next={x:bird.x+tx/travel*step,y:bird.y+ty/travel*step};
+    if(isWalkable(next,lots)) {Object.assign(bird,next);bird.angle=Math.atan2(tx,-ty)*180/Math.PI;}
+  }
+  return scattering;
 }
