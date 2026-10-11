@@ -248,3 +248,9 @@
 
 .room-action:disabled { cursor: not-allowed; opacity: .63; background: #ded9d0; transform: none; }
 .room-action-blocked { font-size: .78rem; font-weight: 700; color: #983e36; }
+
+.gym-lifter-arms { transform-box: fill-box; transform-origin: center 70%; animation: gym-reps 2.4s ease-in-out infinite; }
+.gym-runner { transform-box: fill-box; transform-origin: center bottom; animation: gym-jog .48s ease-in-out infinite alternate; }
+@keyframes gym-reps { 0%,100% { transform:translateY(5px); } 50% { transform:translateY(-11px); } }
+@keyframes gym-jog { from { transform:translateY(1.5px) rotate(-2deg); } to { transform:translateY(-1.5px) rotate(2deg); } }
+@media(prefers-reduced-motion:reduce) { .gym-lifter-arms,.gym-runner { animation:none; } }
