@@ -122,18 +122,17 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
 }
 
 /** Follow the visible character: the skateboard extends farther below the head uphill. */
-export function playerCameraViewBox(x: number, y: number, skating = false, skateAngle = 180): string {
+export function playerCameraViewBox(x: number, y: number, skating = false, _skateAngle = 180): string {
   const [cx, cy] = P(x, y);
-  // Walking follows the head; skating follows the combined board and rider.
-  // Northbound boards are rotated 180 degrees and project farther below the rider.
-  const boardYOffset = skating ? 5 * Math.cos(skateAngle * Math.PI / 180) : -7;
+  // Keep one visual anchor in all travel directions; the board stays screen-upright.
+  const boardYOffset = skating ? -5 : -7;
   return `${cx - 165} ${cy + boardYOffset - 275} 330 550`;
 }
 
 function Stick({ x, y, phase, walking, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
   const [sx, sy] = P(x, y);
   return <g transform={`translate(${sx},${sy})`}>
-    {skating && <g data-skater-pose data-skate-angle={skateAngle} transform={`rotate(${skateAngle+180})`}>
+    {skating && <g data-skater-pose data-skate-angle={0}>
       <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
       <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
     </g>}

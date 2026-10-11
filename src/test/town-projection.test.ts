@@ -38,8 +38,8 @@ describe("upright oblique town projection", () => {
       const parts = playerCameraViewBox(10, 14, true, angle).split(" ").map(Number);
       return parts[1]! + parts[3]! / 2;
     };
-    expect(centre(0)).toBe(groundY + 5);
+    expect(centre(0)).toBe(groundY - 5);
     expect(centre(180)).toBe(groundY - 5);
-    expect(centre(90)).toBeCloseTo(groundY);
+    expect(centre(90)).toBe(groundY - 5);
   });
 });

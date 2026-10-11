@@ -12,7 +12,8 @@ describe("skateboard appearance",()=>{
     expect(deck?.getAttribute("rx")).toBe("5");
     expect(deck?.getAttribute("height")).toBe("42");
     expect(deck?.getAttribute("fill")).toBe("#89949c");
-    expect(pose?.getAttribute("transform")).toContain("rotate(270)");
+    expect(pose?.getAttribute("transform")).toBeNull();
+    expect(pose?.getAttribute("data-skate-angle")).toBe("0");
     expect(view.container.querySelector("[data-overhead-person] circle")).toBeInTheDocument();
   });
   it("shows the board only when skating",()=>{
