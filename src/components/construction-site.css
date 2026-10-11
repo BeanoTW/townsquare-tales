@@ -1,0 +1,11 @@
+.construction-crane-jib{animation:site-crane 9s ease-in-out infinite;transform-box:fill-box;transform-origin:25% 22%}
+.construction-digger-arm{animation:site-excavate 3.8s ease-in-out infinite;transform-box:fill-box;transform-origin:10% 60%}
+@keyframes site-crane{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@keyframes site-excavate{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
+@media(prefers-reduced-motion:reduce){.construction-crane-jib,.construction-digger-arm{animation:none}}
+
+.construction-worker-carry{animation:construction-lift 3.1s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
+.construction-worker-hammer{animation:construction-tap 2.3s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
+@keyframes construction-lift{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes construction-tap{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@media(prefers-reduced-motion:reduce){.construction-worker-carry,.construction-worker-hammer{animation:none}}
