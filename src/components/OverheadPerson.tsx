@@ -4,7 +4,6 @@ export function OverheadPerson({ head = "#f0d5b7", outline = "#222530", phase = 
   angle?: number; pose?: "standing" | "sitting" | "lying";
 }) {
   const sway = moving ? Math.sin(phase) * 2.1 : 0;
-  const leadingLeft = Math.sin(phase) >= 0;
   return <g data-overhead-person data-pose={pose} data-heading={angle}>
     <ellipse cy="4" rx="10" ry="4" fill="#292a2c" opacity=".18"/>
     {pose !== "standing" && <g data-resting-legs stroke={outline} strokeWidth="2.8" strokeLinecap="round" fill="none">
@@ -15,10 +14,6 @@ export function OverheadPerson({ head = "#f0d5b7", outline = "#222530", phase = 
       </g> : <path d="M-5 1L-7 16M5 1L7 16"/>}
     </g>}
     <g transform={`rotate(${angle})`} data-body-heading>
-      {moving && <g data-walking-feet stroke={outline} strokeWidth="3" strokeLinecap="round">
-        {/* Feet remain centred; alternating lengths make each peek out then tuck under the head. */}
-        <path d={leadingLeft ? "M0 -16L0 -21M0 2L0 3" : "M0 -16L0 -17M0 2L0 7"}/>
-      </g>}
       <path d={`M-7 -7 Q-13 ${-5+sway} -13 0 M7 -7 Q13 ${-5-sway} 13 0`}
         stroke={outline} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
       <circle cy="-7" r="9.2" fill={head} stroke={outline} strokeWidth="2.1"/>
