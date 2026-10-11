@@ -7,8 +7,12 @@ export function OverheadPerson({ head = "#f0d5b7", outline = "#222530", phase = 
   const step = moving ? Math.sin(phase) * 3 : 0;
   return <g data-overhead-person data-pose={pose} data-heading={angle}>
     <ellipse cy="4" rx="10" ry="4" fill="#292a2c" opacity=".18"/>
-    {pose !== "standing" && <g data-resting-legs stroke={outline} strokeWidth="2.8" strokeLinecap="round">
-      <path d={pose==="sitting"?"M-5 1L-7 11L-13 14M5 1L7 11L13 14":"M-5 1L-6 15M5 1L6 15"}/>
+    {pose !== "standing" && <g data-resting-legs stroke={outline} strokeWidth="2.8" strokeLinecap="round" fill="none">
+      {pose === "sitting" ? <g data-sideways-seated-legs>
+        {/* Same circular head as standing; bent knees project to one side, like classic Stick RPG. */}
+        <path d="M-5 0L-15 8L-23 5M4 1L-7 14L-17 17"/>
+        <path d="M-23 5l-4 2M-17 17l-3 3" strokeWidth="3.2"/>
+      </g> : <path d="M-5 1L-7 16M5 1L7 16"/>}
     </g>}
     <g transform={`rotate(${angle})`} data-body-heading>
       {moving && <g data-walking-feet stroke={outline} strokeWidth="3" strokeLinecap="round">

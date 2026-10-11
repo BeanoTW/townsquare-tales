@@ -13,7 +13,7 @@ describe("overhead character direction and poses",()=>{
  });
  it("shows legs only for seated and reclining figures without changing the silhouette size",()=>{
    const view=render(<svg><OverheadPerson pose="sitting"/></svg>);
-   expect(view.container.querySelector("[data-resting-legs]")).toBeInTheDocument();
+   expect(view.container.querySelector("[data-sideways-seated-legs]")).toBeInTheDocument();
    view.rerender(<svg><OverheadPerson pose="lying"/></svg>);
    expect(view.container.querySelector('[data-pose="lying"] [data-resting-legs]')).toBeInTheDocument();
    view.rerender(<svg><OverheadPerson/></svg>);
