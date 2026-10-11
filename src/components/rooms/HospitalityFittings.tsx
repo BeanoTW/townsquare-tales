@@ -16,7 +16,14 @@ export function HospitalityFitting({
       pointerEvents="none"
       data-hospitality-fitting={f.id}
     >
-      {f.id === "counter" || f.id === "bar-counter" ? (
+      {f.id === "dartboard" ? <g data-pub-dartboard>
+        <rect width={w} height={h} rx="3" fill="#35283f" stroke="var(--town-ink)"/>
+        <circle cx={w/2} cy={h/2} r={h/2-2} fill="#efe4cc" stroke="#252430" strokeWidth="3"/>
+        <circle cx={w/2} cy={h/2} r={h/3} fill="none" stroke="#4d997c" strokeWidth="3"/>
+        <path d={`M${w/2} 2v${h-4}M${w/2-h/2+2} ${h/2}h${h-4}`} stroke="#252430"/>
+        <circle cx={w/2} cy={h/2} r="3" fill="#c15767"/>
+        <text x={w/2} y={h+10} textAnchor="middle" fontSize="8" fill="var(--town-paper)">DARTS</text>
+      </g> : f.id === "counter" || f.id === "bar-counter" ? (
         <g data-hospitality-counter>
           <rect x="3" y="4" width={w} height={h} rx="3" fill="var(--town-ink)" opacity=".15" />
           <rect

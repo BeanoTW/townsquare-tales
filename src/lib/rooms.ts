@@ -40,6 +40,7 @@ import {
   enrollAction,
   type ActionDef,
 } from "@/lib/actions";
+import { DARTS_ACTION } from "@/lib/minigames";
 import { CASINO_CHATTER } from "@/lib/casino-lines";
 import { lifetime, money, signed, type CasinoGame } from "@/lib/casino";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
@@ -390,6 +391,7 @@ export const ROOMS: Record<PlaceId, Room> = {
     sign: "TIPSY STICK",
     palette: { wall: "#644363", floor: "#3a2937", accent: "#f477a9" },
     hotspots: [
+      { id: "dartboard", label: "Dartboard", tag: "DARTS", hint: "Nine darts. Aim for the treble twenty.", box: { x: 300, y: 52, w: 90, h: 65 }, actions: () => [DARTS_ACTION] },
       {
         id: "bar-counter",
         label: "Bar counter",
