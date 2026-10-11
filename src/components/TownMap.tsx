@@ -121,7 +121,7 @@ function Stick({ x, y, phase, walking, skating = false, skateAngle = 90, color =
       <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
       <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
     </g>}
-    <OverheadPerson head={head} outline={color} phase={phase} moving={walking && !skating} angle={skating ? 0 : skateAngle}/>
+    <OverheadPerson head={head} outline={color} phase={phase} moving={walking && !skating} angle={skating ? 0 : (skateAngle + 180) % 360}/>
   </g>;
 }
 
