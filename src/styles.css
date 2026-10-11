@@ -320,3 +320,11 @@
   --shop-linen: #eee3cf;
   --shop-bedspread: #8799b4;
 }
+
+:root {
+  --diner-seat: #b45448;
+  --pub-floor: #4f424c;
+  --pub-counter: #937047;
+  --pub-seat: #75526d;
+  --pub-bottle: #69875b;
+}

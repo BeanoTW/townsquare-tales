@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { bankTransferAction, dinerMealAction, HOT_MEAL, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
+import { bankTransferAction, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
+import {DINER_MEALS} from "@/lib/diner-menu";
 import { currentRole, nextRole } from "@/lib/careers";
 import { SCHOOLS } from "@/lib/game-data";
 import type { GameState } from "@/lib/game-state";
@@ -124,11 +125,7 @@ function ShopWheel({ state, onRun, room }: { state: GameState; onRun: (a: Action
 function DinerCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef) => void }) {
   const employed = state.career === 1;
   const [page, setPage] = useState<"menu" | "staff">("menu");
-  const meals = [
-    { icon: "🥣", title: "Soup & bread", description: "Something warm and filling.", action: dinerMealAction("soup") },
-    { icon: "🍳", title: "Fryday special", description: "Our famous hot plate.", action: HOT_MEAL },
-    { icon: "🥓", title: "Big breakfast", description: "The full works.", action: dinerMealAction("breakfast") },
-  ];
+  const meals = DINER_MEALS;
   const staffActions = employed
     ? [shiftAction(state), ...(nextRole(state) ? [PROMOTE] : [])]
     : [applyAction(1)];
