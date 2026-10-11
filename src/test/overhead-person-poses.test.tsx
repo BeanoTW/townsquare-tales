@@ -6,20 +6,16 @@ describe("overhead character direction and poses",()=>{
  it("rotates arms and head together with travel direction",()=>{
    const view=render(<svg><OverheadPerson angle={90} moving phase={1}/></svg>);
    expect(view.container.querySelector('[data-body-heading]')?.getAttribute("transform")).toBe("rotate(90)");
-   expect(view.container.querySelector("[data-walking-feet]")).toBeInTheDocument();
+   expect(view.container.querySelector("[data-walking-feet]")).not.toBeInTheDocument();
    view.rerender(<svg><OverheadPerson angle={-45}/></svg>);
    expect(view.container.querySelector('[data-body-heading]')?.getAttribute("transform")).toBe("rotate(-45)");
    expect(view.container.querySelector("[data-walking-feet]")).not.toBeInTheDocument();
  });
- it("alternates one foot ahead of the head and one behind on successive steps",()=>{
+ it("renders no walking feet across gait phases",()=>{
    const view=render(<svg><OverheadPerson moving phase={Math.PI/2}/></svg>);
-   const first=view.container.querySelector("[data-walking-feet] path")?.getAttribute("d") ?? "";
-   expect(first).toContain("M0 -16L0 -21");
-   expect(first).toContain("M0 2L0 3");
+   expect(view.container.querySelector("[data-walking-feet]")).not.toBeInTheDocument();
    view.rerender(<svg><OverheadPerson moving phase={Math.PI*1.5}/></svg>);
-   const second=view.container.querySelector("[data-walking-feet] path")?.getAttribute("d") ?? "";
-   expect(second).toContain("M0 -16L0 -17");
-   expect(second).toContain("M0 2L0 7");
+   expect(view.container.querySelector("[data-walking-feet]")).not.toBeInTheDocument();
  });
  it("shows legs only for seated and reclining figures without changing the silhouette size",()=>{
    const view=render(<svg><OverheadPerson pose="sitting"/></svg>);
