@@ -11,21 +11,21 @@ export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
   return <g data-construction-site>
     <polygon points={polygon([[x,y],[x+w,y],[x+w,y+d],[x,y+d]])} fill="#968b76" stroke="#4a4842" strokeWidth="3"/>
     {/* Site perimeter, with a clear southern pedestrian gate. */}
-    {[[x,y,x+w,y],[x,y,x,y+d],[x+w,y,x+w,y+d],[x,y+d,17.6,y+d],[18.8,y+d,x+w,y+d]] as [number,number,number,number][]).map(([ax,ay,bx,by],i)=>{
+    {([[x,y,x+w,y],[x,y,x,y+d],[x+w,y,x+w,y+d],[x,y+d,17.6,y+d],[18.8,y+d,x+w,y+d]] as [number,number,number,number][]).map(([ax,ay,bx,by],i)=>{
       const a=P(ax!,ay!),b=P(bx!,by!);
       return <g key={i}><path d={`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`} stroke="#e1ac49" strokeWidth="7" strokeDasharray="20 9"/><path d={`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`} stroke="#4c4b4a" strokeWidth="2"/></g>;
     })}
     {/* Excavated foundations and a partly erected steel-frame building. */}
     <polygon points={polygon([[16.5,17.5],[19.3,17.5],[19.3,20.2],[16.5,20.2]])} fill="#676a66" stroke="#30383b" strokeWidth="4"/>
     <polygon points={polygon([[16.8,17.8],[19.0,17.8],[19.0,19.9],[16.8,19.9]])} fill="#4d5454" stroke="#c7bca8" strokeWidth="4"/>
-    {[[16.8,17.8],[19,17.8],[16.8,19.9],[19,19.9]] as [number,number][]).map(([px,py],i)=><g key={i}>
+    {([[16.8,17.8],[19,17.8],[16.8,19.9],[19,19.9]] as [number,number][]).map(([px,py],i)=><g key={i}>
       <path d={`M${P(px,py)[0]} ${P(px,py)[1]}v-75`} stroke="#333a3c" strokeWidth="9"/>
       <path d={`M${P(px,py)[0]} ${P(px,py)[1]}v-75`} stroke="#b7bec0" strokeWidth="5"/>
     </g>)}
     <path d={`M${P(16.8,17.8).join(" ")}L${P(19,17.8).join(" ")}M${P(16.8,19.9).join(" ")}L${P(19,19.9).join(" ")}`} stroke="#adb9bb" strokeWidth="4"/>
     {/* Second structure at foundations stage. */}
     <polygon points={polygon([[19.9,19.2],[21.6,19.2],[21.6,21.4],[19.9,21.4]])} fill="#b0a89b" stroke="#5b5f60" strokeWidth="5"/>
-    {[[20.1,19.4],[21.4,19.4],[20.1,21.2],[21.4,21.2]].map(([px,py],i)=><circle key={i} cx={P(px,py)[0]} cy={P(px,py)[1]} r="6" fill="#767d7c" stroke="#454a48" strokeWidth="2"/>)}
+    {([[20.1,19.4],[21.4,19.4],[20.1,21.2],[21.4,21.2]] as [number,number][]).map(([px,py],i)=><circle key={i} cx={P(px,py)[0]} cy={P(px,py)[1]} r="6" fill="#767d7c" stroke="#454a48" strokeWidth="2"/>)}
     {/* Animated crane, isolated behind the fence. */}
     <g transform={`translate(${cx} ${cy})`} data-construction-crane>
       <path d="M0 0V-172" stroke="#a97720" strokeWidth="12"/>
