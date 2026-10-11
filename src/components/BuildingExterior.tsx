@@ -1,4 +1,9 @@
-import { P } from "@/lib/town-projection";
+import { P as project } from "@/lib/town-projection";
+
+// Only buildings use the stronger oblique height offset. Ground-plan geometry,
+// collision footprints, player sprites and the minimap are not altered.
+const P = (x: number, y: number, height = 0) =>
+  [project(x, y, height)[0] + height * 0.25, project(x, y, height)[1]] as const;
 
 export type BuildingLot = { facing: "north" | "south" | "east" | "west"; id: string; label: string; x: number; y: number; w: number; d: number; h: number; wall: string; side: string; roof: string; sign: string; win?: boolean };
 const points = (a: (readonly [number, number])[]) => a.map(p => p.join(",")).join(" ");
@@ -13,6 +18,14 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
   // The frontage follows the actual doorway, including west-facing shops.
   const F = (u: number, z: number) => horizontal ? P(x + u * w, fy, z) : P(fx, y + u * d, z);
   const frontWidth = horizontal ? w * 48 : d * 36;
+  // The visible return wall has its own glazing: not just a blank roof-side wedge.
+  // Use the adjacent south or west face, whichever isn't the main entrance.
+  const sideFacing = horizontal ? "west" : "south";
+  const sideF = (u: number, z: number) => sideFacing === "west"
+    ? P(x, y + d*u, z)
+    : P(x + w*u, y+d, z);
+  const sidePanel = (a: number, c: number, low: number, high: number, fill: string) =>
+    <polygon data-side-window points={points([sideF(a,low),sideF(c,low),sideF(c,high),sideF(a,high)])} fill={fill} stroke={ink} strokeWidth="1.6" />;
   const panel = (a: number, c: number, low: number, high: number, fill: string) => <polygon points={points([F(a, low), F(c, low), F(c, high), F(a, high)])} fill={fill} stroke={ink} strokeWidth="1.3" />;
   const peaked = ["home", "school", "furniture", "bank"].includes(id) && h > 20;
   const canopy = ["shop", "diner", "pawn", "bar", "furniture", "depot", "clinic"].includes(id);
@@ -24,6 +37,11 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
     <polygon points={points([P(x+.15,y+.1),P(x+w+.38,y+.1),P(x+w+.38,y+d+.35),P(x+.15,y+d+.35)])} fill={ink} opacity=".15" />
     {[[P(x,y),P(x+w,y),P(x+w,y,h),P(x,y,h)], [P(x,y),P(x,y+d),P(x,y+d,h),P(x,y,h)], [P(x+w,y),P(x+w,y+d),P(x+w,y+d,h),P(x+w,y,h)], [P(x,y+d),P(x+w,y+d),P(x+w,y+d,h),P(x,y+d,h)]].map((face,i)=><polygon key={i} points={points(face)} fill={(i===0&&b.facing==="north")||(i===1&&b.facing==="west")||(i===2&&b.facing==="east")||(i===3&&b.facing==="south")?b.wall:b.side} stroke={ink} strokeWidth="1.8"/>)}
     {b.win && Array.from({length:Math.max(1,Math.floor((h-20)/30))},(_,r)=><g key={r}>{[.12,.29,.7,.87].map(u=><g key={u}>{panel(u-.055,u+.055,18+r*30,32+r*30,night?"var(--town-window-lit)":glass)}<path d={`M${F(u,18+r*30).join(" ")}L${F(u,32+r*30).join(" ")}`} stroke={paper} strokeWidth="1" opacity=".55"/></g>)}</g>)}
+    {/* Windows and the main entry are drawn on their respective actual walls. */}
+    {b.win && sideFacing !== b.facing && h > 35 && <g data-building-return-wall={id}>
+      {sidePanel(.23,.42,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
+      {sidePanel(.6,.79,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
+    </g>}
     {panel(.43,.57,0,25,night?"var(--town-window-lit)":glass)}
     {id==="gym" && panel(.08,.35,2,17,glass)}
     {id==="diner" && <g>{panel(.04,.37,2,23,glass)}{panel(.65,.96,2,23,glass)}{[.08,.2,.32,.68,.8,.92].map(u=><circle key={u} cx={F(u,4)[0]} cy={F(u,4)[1]} r="2" fill={b.sign}/>)}</g>}
