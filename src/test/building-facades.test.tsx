@@ -4,6 +4,16 @@ import { BuildingExterior } from "@/components/BuildingExterior";
 import { buildings } from "@/components/TownMap";
 
 describe("two-face building perspective", () => {
+  it("paints landmark return walls over hidden facade glazing", () => {
+    for (const id of ["work", "casino", "bar"]) {
+      const lot=buildings(1).find(b=>b.id===id)!;
+      const view=render(<svg><BuildingExterior b={lot} night={false}/></svg>);
+      const wall=view.container.querySelector('[data-landmark-return-wall="'+id+'"]');
+      expect(wall).toBeInTheDocument();
+      expect(wall?.querySelectorAll('[data-side-window]')).toHaveLength(2);
+      view.unmount();
+    }
+  });
   it("mounts street-facing signs on walls rather than floating over the road", () => {
     for (const id of ["police","depot","pawn"]) {
       const lot=buildings(1).find(b=>b.id===id)!;

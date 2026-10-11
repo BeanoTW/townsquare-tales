@@ -16,7 +16,12 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
   const landmark = ["work", "casino", "bar"].includes(id);
   const H = (a: number, c: number, z = 0) => {
     const p = P(a, c, z);
-    return [p[0] - (landmark ? z * .09 : 0), p[1] - (landmark ? z * .15 : 0)] as const;
+    // Keep landmark rooflines back from the street: western frontage
+    // sets the upper floors eastward; northern frontage sets them southward.
+    const westSetback = id === "work" ? z * .15 : 0;
+    const northSetback = ["casino", "bar"].includes(id) ? z * .44 : 0;
+    return [p[0] - (landmark ? z * .09 : 0) + westSetback,
+      p[1] - (landmark ? z * .15 : 0) + northSetback] as const;
   };
   const roofPoint = H(x + w / 2, y + d / 2, h);
   const horizontal = b.facing === "north" || b.facing === "south";
@@ -49,7 +54,7 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
     {[[H(x,y),H(x+w,y),H(x+w,y,h),H(x,y,h)], [H(x,y),H(x,y+d),H(x,y+d,h),H(x,y,h)], [H(x+w,y),H(x+w,y+d),H(x+w,y+d,h),H(x+w,y,h)], [H(x,y+d),H(x+w,y+d),H(x+w,y+d,h),H(x,y+d,h)]].map((face,i)=><polygon key={i} points={points(face)} fill={(i===0&&b.facing==="north")||(i===1&&b.facing==="west")||(i===2&&b.facing==="east")||(i===3&&b.facing==="south")?b.wall:b.side} stroke={ink} strokeWidth="1.8"/>)}
     {b.win && Array.from({length:Math.max(1,Math.floor((h-20)/30))},(_,r)=><g key={r}>{[.12,.29,.7,.87].map(u=><g key={u}>{panel(u-.055,u+.055,18+r*30,32+r*30,night?"var(--town-window-lit)":glass)}<path d={`M${F(u,18+r*30).join(" ")}L${F(u,32+r*30).join(" ")}`} stroke={paper} strokeWidth="1" opacity=".55"/></g>)}</g>)}
     {/* Windows and the main entry are drawn on their respective actual walls. */}
-    {b.win && sideFacing !== b.facing && h > 35 && <g data-building-return-wall={id}>
+    {b.win && sideFacing !== b.facing && h > 35 && !landmark && <g data-building-return-wall={id}>
       {sidePanel(.23,.42,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
       {sidePanel(.6,.79,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
     </g>}
@@ -64,6 +69,18 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
     {id==="bank" && [.15,.3,.7,.85].map(u=><g key={u}><path d={`M${F(u,3).join(" ")}L${F(u,h-12).join(" ")}`} stroke={paper} strokeWidth="8"/><path d={`M${F(u-.035,3).join(" ")}L${F(u+.035,3).join(" ")}`} stroke={ink} strokeWidth="3"/></g>)}
     {id==="work" && [45,80,115,150].map(z=><path key={z} d={`M${F(0,z).join(" ")}L${F(1,z).join(" ")}`} stroke={paper} opacity=".65" strokeWidth="2"/>)}
     {id==="alley" && <g transform={`translate(${sx-24},${sy+9}) rotate(-9)`}><text fill="var(--town-graffiti)" fontSize="17" fontWeight="bold">NO COPS</text><path d="M0 5L68 2" stroke="var(--town-graffiti)" strokeWidth="3"/></g>}
+    {/* Paint the visible return wall last on landmarks so front windows cannot
+        appear through it. Its glazing is placed on its own actual wall plane. */}
+    {landmark && <g data-landmark-return-wall={id}>
+      <polygon points={points(sideFacing === "west"
+        ? [H(x,y), H(x,y+d), H(x,y+d,h), H(x,y,h)]
+        : [H(x,y+d), H(x+w,y+d), H(x+w,y+d,h), H(x,y+d,h)])}
+        fill={b.side} stroke={ink} strokeWidth="1.8"/>
+      {b.win && sideFacing !== b.facing && <g data-building-return-wall={id}>
+        {sidePanel(.23,.42,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
+        {sidePanel(.6,.79,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
+      </g>}
+    </g>}
     <polygon points={points([H(x,y,h),H(x+w,y,h),H(x+w,y+d,h),H(x,y+d,h)])} fill={b.roof} stroke={ink} strokeWidth="1.8"/>
     {peaked ? <g><polygon points={points([H(x-.1,y-.1,h),H(x+w/2,y-.1,h+30),H(x+w/2,y+d+.1,h+30),H(x-.1,y+d+.1,h)])} fill={b.roof} stroke={ink} strokeWidth="1.8"/><polygon points={points([H(x+w/2,y-.1,h+30),H(x+w+.1,y-.1,h),H(x+w+.1,y+d+.1,h),H(x+w/2,y+d+.1,h+30)])} fill={b.sign} stroke={ink} strokeWidth="1.8"/>{[.25,.5,.75].map(u=><path key={u} d={`M${H(x+w/2,y+d*u,h+30).join(" ")}L${H(x+w,y+d*u,h).join(" ")}`} stroke={ink} opacity=".3"/>)}</g>:<polygon points={points([H(x+.13,y+.13,h+5),H(x+w-.13,y+.13,h+5),H(x+w-.13,y+d-.13,h+5),H(x+.13,y+d-.13,h+5)])} fill="none" stroke={b.side} strokeWidth="5"/>}
     <g transform={`translate(${roofPoint[0]},${roofPoint[1]})`}>
