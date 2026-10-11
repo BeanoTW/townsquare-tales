@@ -27,11 +27,11 @@ const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join
 // Streets have deliberate ends and T-junctions rather than an endless grid.
 export const ROADS = [
   { x: 8.6, y: 0, w: 2.8, d: 30 },       // north-south Main Street, only T-junctions
-  { x: 0, y: 7.4, w: 9.1, d: 2.2 },    // upper west street, joins Main Street
-  { x: 11.1, y: 12.2, w: 12.2, d: 2.2 }, // east market street, offset 4.8 tiles
-  { x: 0, y: 18.8, w: 9.1, d: 2.2 },     // lower west street, staggered again
-  { x: 11.1, y: 25.8, w: 12.2, d: 2.2 },  // lower east street, offset 7 tiles
-  { x: 22.6, y: 12.2, w: 2.8, d: 17.4 }, // east side street with T-junctions
+  { x: 0, y: 7.1, w: 9.1, d: 2.8 },    // upper west street, joins Main Street
+  { x: 11.1, y: 11.9, w: 12.2, d: 2.8 }, // east market street, offset 4.8 tiles
+  { x: 0, y: 18.5, w: 9.1, d: 2.8 },     // lower west street, staggered again
+  { x: 11.1, y: 25.5, w: 12.2, d: 2.8 },  // lower east street, offset 7 tiles
+  { x: 22.6, y: 11.9, w: 2.8, d: 17.7 }, // east side street with T-junctions
 ] as const;
 
 type B = BuildingLot;
@@ -47,16 +47,16 @@ export const buildings = (house: number): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0] ?? { h: 18, wall: "var(--town-cardboard)", side: "var(--town-cardboard-side)", roof: "var(--town-cardboard-roof)", label: "Box" };
   return [
     { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1.1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "var(--town-home-sign)", win: house > 0 },
-    { facing: "north", id: "yard", label: "Workers Yard", x: 1.2, y: 9.8, w: 3, d: 2.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
-    { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 8.3, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
+    { facing: "north", id: "yard", label: "Workers Yard", x: 1.2, y: 10.55, w: 3, d: 2.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
+    { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
     { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "var(--town-bar-wall)", side: "var(--town-bar-side)", roof: "var(--town-bar-roof)", sign: "var(--town-bar-sign)", win: true },
     { facing: "north", id: "work", label: "MegaCorp", x: 17.2, y: 15.5, w: 3.7, d: 4, h: 190, wall: "var(--town-work-wall)", side: "var(--town-work-side)", roof: "var(--town-work-roof)", sign: "var(--town-work-sign)", win: true },
     { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "var(--town-bank-wall)", side: "var(--town-bank-side)", roof: "var(--town-bank-roof)", sign: "var(--town-bank-sign)", win: true },
-    { facing: "south", id: "shop", label: "Corner Shop", x: 15.25, y: 8.65, w: 2.6, d: 3.0, h: 48, wall: "var(--town-shop-wall)", side: "var(--town-shop-side)", roof: "var(--town-shop-roof)", sign: "var(--town-shop-sign)", win: true },
+    { facing: "south", id: "shop", label: "Corner Shop", x: 15.25, y: 8.05, w: 2.6, d: 3.0, h: 48, wall: "var(--town-shop-wall)", side: "var(--town-shop-side)", roof: "var(--town-shop-roof)", sign: "var(--town-shop-sign)", win: true },
     { facing: "south", id: "diner", label: "Fryday Diner", x: 5.1, y: 13.2, w: 2.8, d: 3.8, h: 55, wall: "var(--town-diner-wall)", side: "var(--town-diner-side)", roof: "var(--town-diner-roof)", sign: "var(--town-diner-sign)", win: true },
     { facing: "west", id: "pawn", label: "Oddities Pawn", x: 26, y: 13.3, w: 3, d: 3.2, h: 56, wall: "var(--town-pawn-wall)", side: "var(--town-pawn-side)", roof: "var(--town-pawn-roof)", sign: "var(--town-pawn-sign)", win: true },
-    { facing: "south", id: "furniture", label: "Cosy Corner", x: 18.3, y: 7.9, w: 3.6, d: 3.7, h: 78, wall: "var(--town-furniture-wall)", side: "var(--town-furniture-side)", roof: "var(--town-furniture-roof)", sign: "var(--town-furniture-sign)", win: true },
+    { facing: "south", id: "furniture", label: "Cosy Corner", x: 18.3, y: 7.25, w: 3.6, d: 3.7, h: 78, wall: "var(--town-furniture-wall)", side: "var(--town-furniture-side)", roof: "var(--town-furniture-roof)", sign: "var(--town-furniture-sign)", win: true },
     { facing: "north", id: "casino", label: "Lucky Sevens", x: 5.2, y: 22, w: 2.8, d: 4, h: 115, wall: "var(--town-casino-wall)", side: "var(--town-casino-side)", roof: "var(--town-casino-roof)", sign: "var(--town-casino-sign)", win: true },
     { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 25.6, w: 3, d: 3.1, h: 50, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: true },
     { facing: "west", id: "police", label: "Town Police", x: 26, y: 19.3, w: 3, d: 3.9, h: 90, wall: "var(--town-police-wall)", side: "var(--town-police-side)", roof: "var(--town-police-roof)", sign: "var(--town-police-sign)", win: true },
@@ -73,7 +73,7 @@ export const door = (b: B) => {
   }
 };
 const TREES = [[.6,1],[4.6,1],[8,3],[11.9,.6],[17,4],[21,4],[28.8,6],[1,11],[7.5,11],[12.2,10],[21.5,16.2],[28.8,18],[1,28],[8,28],[13.7,27.7],[18,24],[21,22],[29,29]] as const;
-const LAMPS = [[2,6.9],[7,6.9],[8.4,10.3],[12,11.8],[20.8,11.8],[2,18.4],[7,18.4],[8.4,22],[12,25.4],[20,25.4],[25.5,16],[25.5,23]] as const;
+const LAMPS = [[2,6.65],[7,6.65],[8.4,10.35],[12,11.35],[20.8,11.35],[2,18.05],[7,18.05],[8.4,22],[12,25.05],[20,25.05],[25.5,16],[25.5,23]] as const;
 
 
 function Tree({ x, y }: { x: number; y: number }) {
@@ -555,7 +555,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
         })}
         {/* Crossings only where the staggered side roads actually meet the spine. */}
-        {[7.4,12.2,18.8,25.8].map((y,i)=>
+        {[7.1,11.9,18.5,25.5].map((y,i)=>
           <g key={"crossing-"+i}>{Array.from({length:4},(_,j)=>
             tile(8.85+j*.62,y-.35,.34,.4,"var(--town-crossing)","stripe-"+i+"-"+j))}</g>)}
         {/* Every property has a short approach path linking its door to the surrounding pavement. */}
