@@ -270,3 +270,20 @@
 .town-day { background: var(--town-sky); }
 .town-dusk { background: var(--town-sky-dusk); }
 .town-night { background: var(--town-sky-night); }
+
+:root {
+  --town-bubble: oklch(.97 .026 90);
+  --town-pigeon: oklch(.64 .022 260);
+  --town-pigeon-neck: oklch(.43 .055 174);
+  --town-vending: oklch(.58 .17 28);
+  --town-drain: oklch(.49 .01 260);
+}
+.street-target { cursor: pointer; outline: none; }
+.street-target:focus-visible > rect:last-of-type { stroke: var(--town-player-marker); stroke-width: 3; }
+.town-speech { animation: town-bubble-life 4.5s ease both; }
+.town-steam { animation: town-steam-rise 5s ease-in-out infinite; }
+.town-neon { animation: town-sign-flicker 7s steps(1) infinite; }
+@keyframes town-bubble-life { 0% { opacity: 0; } 8%,85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes town-steam-rise { 0%,100% { opacity: .15; transform: translateY(2px); } 50% { opacity: .5; transform: translateY(-7px); } }
+@keyframes town-sign-flicker { 0%,92%,96%,100% { opacity: 1; } 93%,97% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .town-speech, .town-steam, .town-neon { animation: none; } }
