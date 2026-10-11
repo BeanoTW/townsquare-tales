@@ -6,7 +6,7 @@ export type Resident = { id: ResidentId; name: string; title: string; color: str
 export const RESIDENTS: readonly { id: ResidentId; name: string; title: string; color: string; early: [number,number]; day: [number,number]; night: [number,number] }[] = [
   { id:"mara",name:"Mara",title:"The tired shop assistant",color:"#594760",early:[5.6,7.0],day:[15.1,12.2],night:[4.9,7.1] },
   { id:"nox",name:"Nox",title:"The local troublemaker",color:"#733d45",early:[21.8,22.9],day:[19.8,24.5],night:[25.7,10.3] },
-  { id:"gus",name:"Gus",title:"The pub regular",color:"#596d59",early:[2.7,18.0],day:[7.8,19.0],night:[5.1,22.5] },
+  { id:"gus",name:"Gus",title:"The pub regular",color:"var(--town-npc-green)",early:[2.7,18.0],day:[7.8,19.0],night:[4.7,21.5] },
   { id:"ivy",name:"Ivy",title:"The student",color:"#5c6e98",early:[11.5,7.5],day:[11.8,11.1],night:[16.1,22.0] },
 ];
 export function residentsAt(hour:number): Resident[] {
@@ -38,8 +38,9 @@ export function conversation(id: ResidentId, state: GameState): { title:string; 
     gus:["Don't know you, pal.","Sit yourself down. It's been a long day.","There you are! I saved you a story."],
     ivy:["Sorry, I'm trying to concentrate.","Oh, hello again. Got a minute?","I was hoping I'd run into you!"],
   };
-  const text=opening[id]![rel>=4?2:rel>=1?1:0]!;
-  return {title:RESIDENTS.find(p=>p.id===id)!.name+" · "+RESIDENTS.find(p=>p.id===id)!.title,text,choices:[
+  const text=opening[id][rel>=4?2:rel>=1?1:0] ?? "Alright?";
+  const person=RESIDENTS.find(p=>p.id===id);
+  return {title:(person?.name ?? id)+" · "+(person?.title ?? "Resident"),text,choices:[
     {label:"Have a friendly chat",change:1,karma:0,reply:id==="mara"?"Mara manages half a smile. Progress.":id==="nox"?"Nox nods approvingly.":id==="gus"?"Gus launches into a story about the old town.":"Ivy looks up from her notes and laughs."},
     {label:"Offer to help",change:2,karma:1,reply:"You lend a hand. They remember the gesture. +1 karma."},
     {label:"Be rude",change:-2,karma:-1,reply:"They won't forget that in a hurry. -1 karma."},
@@ -59,7 +60,8 @@ export function dailyTownEvent(day:number,hour:number):TownEvent|null {
     {id:"work",title:"Workplace rumour",hint:"Someone wants a word",x:11.7,y:22.1,icon:"…",pose:"pacing"},
     {id:"shop",title:"A dodgy offer",hint:"Someone has an offer outside the shop",x:5.4,y:6.7,icon:"?",pose:"standing"},
   ];
-  const event=events[(day*7+Math.floor(day/3))%events.length]!;
+  const event=events[(day*7+Math.floor(day/3))%events.length];
+  if(!event)return null;
   if(event.id==="bar" && hour<16)return null;
   if(event.id==="diner" && hour>19)return null;
   if(event.id==="school" && hour>18)return null;

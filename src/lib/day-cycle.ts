@@ -9,4 +9,4 @@ export function sleepOutcome(s:SleepState) {
  const recovery=Math.min(100,(baseRecovery[s.house]??50)+(bed?25:0)-Math.max(0,s.hour-22)*8);
  return {hour:wake,energy:Math.min(100,s.energy+Math.max(25,recovery))};
 }
-export function timeLabel(hour:number) {return `${String(Math.floor(hour)%24).padStart(2,"0")}:00`;}
+export function timeLabel(hour:number) {const minutes=Math.round(hour*60);return `${String(Math.floor(minutes/60)%24).padStart(2,"0")}:${String(minutes%60).padStart(2,"0")}`;}
