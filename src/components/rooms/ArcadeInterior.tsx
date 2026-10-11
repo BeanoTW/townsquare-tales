@@ -18,7 +18,7 @@ type SceneProps = {
 };
 
 type Attendant = { title: string; name: string; greeting: string; shirt: string; accent: string; prop: string };
-const STAFF: Partial<Record<PlaceId, Attendant>> = {
+export const STAFF: Partial<Record<PlaceId, Attendant>> = {
   shop: { title: "CORNER SHOP", name: "The shopkeeper", greeting: "What d’you want? Prices are on the shelf. Don’t waste my time.", shirt: "#a63f38", accent: "#e0c176", prop: "🏷️" },
   bank: { title: "TOWN BANK", name: "Bank teller", greeting: "Cash or savings? Make it quick. There’s a queue.", shirt: "#426c59", accent: "#c9dcbb", prop: "💵" },
   school: { title: "STICK U", name: "Admissions officer", greeting: "You want qualifications? Better be ready to work for them.", shirt: "#547b62", accent: "#e5ca86", prop: "📚" },
