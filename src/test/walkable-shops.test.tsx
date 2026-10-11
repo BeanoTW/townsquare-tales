@@ -240,6 +240,24 @@ describe("walkable shop navigation", () => {
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+  it.each([
+    ["shop", /^Checkout\./],
+    ["pawn", /^Pawn counter\./],
+    ["furniture", /^Catalogue stand\./],
+    ["diner", /^Counter\./],
+    ["bar", /^Bar counter\./],
+  ] as const)("only offers robbery after reaching the %s counter", (id, name) => {
+    const step = clock(),
+      view = enter(id, { ...START, weapon: 2 });
+    expect(screen.queryByRole("button", { name: /Rob the till/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name }));
+    expect(screen.queryByRole("button", { name: /Rob the till/ })).not.toBeInTheDocument();
+    step(200);
+    fireEvent.click(screen.getByRole("button", { name: /Rob the till/ }));
+    expect(view.run).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Go through with it" }));
+    expect(view.run.mock.calls[0]![0].id).toBe(`rob-till-${id}`);
+  });
   it("disables unaffordable and already-owned goods at the checkout", () => {
     const step = clock();
     enter("shop", { ...START, trainers: 1 });

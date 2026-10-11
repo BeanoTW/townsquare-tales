@@ -1,3 +1,5 @@
+import { CounterRobberyChoice } from "@/components/rooms/CounterRobberyChoice";
+import { COUNTERS } from "@/lib/counter-robbery";
 import { useEffect, useRef, useState } from "react";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
@@ -444,6 +446,9 @@ export function WalkableShop({
             state={state}
             godMode={godMode}
             browsing={panel.id === "shelves"}
+            counterOption={
+              <CounterRobberyChoice state={state} venue={id} godMode={godMode} onRun={onRun} />
+            }
             picked={pickedGood}
             onPick={(good) => {
               setPickedGood(good);
@@ -478,7 +483,17 @@ export function WalkableShop({
               }
               onRun={onRun}
               onClose={() => setSelected(null)}
-            />
+            >
+              {panel.id === COUNTERS[id] && (
+                <CounterRobberyChoice
+                  key={panel.id}
+                  state={state}
+                  venue={id}
+                  godMode={godMode}
+                  onRun={onRun}
+                />
+              )}
+            </ActionPanel>
           )
         )}
         {near && !selected && !running && (
