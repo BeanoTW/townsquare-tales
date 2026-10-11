@@ -12,8 +12,6 @@ import { playActionCue } from "@/lib/action-audio";
 import { RESIDENT_FAVOURS, activeFavour, favourChoices, favourObjective, favourVisitAction } from "@/lib/resident-favours";
 import { availableStreetEvent, streetEncounter, type StreetEncounter } from "@/lib/street-encounters";
 import { conversation, recordConversation, hasTalkedToday, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
-import { SkillGame } from "@/components/minigames/SkillGame";
-import { startSkill, type SkillGame as SkillGameId } from "@/lib/minigames";
 import { BlackjackGame } from "@/components/casino/BlackjackGame";
 import { SlotsGame } from "@/components/casino/SlotsGame";
 import { LocationScene, type Feedback } from "@/components/LocationScene";
@@ -26,6 +24,10 @@ import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
+import { hasEquippedBoard, startSession } from "@/lib/minigames";
+import { DartsGame } from "@/components/minigames/DartsGame";
+import { RailGrindGame } from "@/components/minigames/RailGrindGame";
+import { BasketballGame } from "@/components/minigames/BasketballGame";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
 
 export const Route = createFileRoute("/")({
@@ -67,8 +69,8 @@ function Game() {
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
-  const [skill, setSkill] = useState<SkillGameId | null>(null);
   const [game, setGame] = useState<CasinoGame | null>(null);
+  const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
   const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
   // Result cards are transient, unlike dialogue that requires a player decision.
@@ -147,15 +149,8 @@ function Game() {
     say(message);
   };
 
-  const launchSkill = (id: SkillGameId) => {
-    const check = startSkill(s, id);
-    if (!check.ok) { notify(check.message, false); return false; }
-    setResult(null); setSkill(id); return true;
-  };
-
   /** Every interior and town action goes through the same rules and feedback. */
   const perform = (def: ActionDef) => {
-    if (def.id === "start-darts") return launchSkill("darts");
     const outcome = godMode ? runGodAction(s, def, Math.random) : runAction(s, def, Math.random);
     if (!outcome.ok) { notify(outcome.message, false); return false; }
     setS(outcome.next);
@@ -172,6 +167,14 @@ function Game() {
     if (s.money < MIN_BET) return notify(`You need at least $${MIN_BET} to sit down.`, false);
     setResult(null);
     setGame(g);
+  };
+
+  /** Darts at The Tipsy Stick: refuse politely if too tired, otherwise open on top of the pub (the room stays mounted, so you return exactly where you stood). */
+  const launchDarts = () => {
+    const ok = startSession(s, "darts");
+    if (!ok.ok) return notify(ok.message, false);
+    setResult(null);
+    setArcade("darts");
   };
 
   const walk = (id: PlaceId) => {
@@ -234,10 +237,21 @@ function Game() {
       <TownMap
         state={s}
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
-        paused={Boolean(skill || place || tab || enc || resident || gangMeeting || parkKidOpen || vignette)}
+        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || arcade)}
         onStreet={(id: StreetObjectId) => {
-          if (id === "hoop") return launchSkill("basketball");
-          if (id === "ramp") return launchSkill("skateboard");
+          if(id==="ramp"){
+            // Without an equipped board the game opens on its requirement card instead of charging anything.
+            if(hasEquippedBoard(s)){
+              const ok=startSession(s,"rail");
+              if(!ok.ok){setResult(null);say(ok.message);playActionCue("failure",soundOn);return false;}
+            }
+            setResult(null);setArcade("rail");return true;
+          }
+          if(id==="hoop"){
+            const ok=startSession(s,"basketball");
+            if(!ok.ok){setResult(null);say(ok.message);playActionCue("failure",soundOn);return false;}
+            setResult(null);setArcade("basketball");return true;
+          }
           const outcome=godMode ? runGodAction(s,streetAction(id),Math.random) : runAction(s,streetAction(id),Math.random);
           if(outcome.ok)setS(outcome.next);
           setResult(null);say(outcome.message);
@@ -271,14 +285,14 @@ function Game() {
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
         <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} />
         <div className="pointer-events-auto flex shrink-0 flex-row gap-1 sm:gap-2">
-          <Icon disabled={game !== null || skill !== null} label="Player" onClick={() => setTab("player")}>
+          <Icon disabled={game !== null || arcade !== null} label="Player" onClick={() => setTab("player")}>
             👤
           </Icon>
-          <Icon disabled={game !== null || skill !== null} label="Inventory" onClick={() => setTab("inventory")}>🎒</Icon>
-          <Icon disabled={game !== null || skill !== null} label="Journal" onClick={() => setTab("log")}>
+          <Icon disabled={game !== null || arcade !== null} label="Inventory" onClick={() => setTab("inventory")}>🎒</Icon>
+          <Icon disabled={game !== null || arcade !== null} label="Journal" onClick={() => setTab("log")}>
             📜
           </Icon>
-          <Icon disabled={game !== null || skill !== null} label="Settings" onClick={() => setTab("settings")}>
+          <Icon disabled={game !== null || arcade !== null} label="Settings" onClick={() => setTab("settings")}>
             ⚙️
           </Icon>
         </div>
@@ -382,7 +396,7 @@ function Game() {
         </div>
       )}
 
-      {!skill && !enc && !gangMeeting && !resident && !parkKidOpen && place && !tab && (
+      {!enc && !gangMeeting && !resident && !parkKidOpen && place && !tab && (
         <LocationScene
           key={place}
           room={roomFor(place, s)}
@@ -391,12 +405,10 @@ function Game() {
           feedback={result}
           onRun={perform}
           onLeave={close}
-          onLaunch={launchGame}
-          paused={game !== null}
+          onLaunch={(g) => (g === "darts" ? launchDarts() : launchGame(g))}
+          paused={game !== null || arcade === "darts"}
         />
       )}
-
-      {skill && <SkillGame key={skill} game={skill} state={s} onChange={setS} onExit={() => { setSkill(null); notify("You step away from the game.", true); }} />}
 
       {!enc && place === "casino" && game && (
         <>
@@ -422,7 +434,43 @@ function Game() {
         </>
       )}
 
-      {result && !skill && !enc && !gangMeeting && !resident && !parkKidOpen && !place && (
+      {arcade==="basketball" && (
+        <BasketballGame
+          sound={soundOn}
+          state={s}
+          onChange={setS}
+          onExit={() => {
+            setArcade(null);
+            notify("You head back from the court.", true);
+          }}
+        />
+      )}
+
+      {arcade==="darts" && (
+        <DartsGame
+          sound={soundOn}
+          state={s}
+          onChange={setS}
+          onExit={() => {
+            setArcade(null);
+            notify("You step away from the dartboard.", true);
+          }}
+        />
+      )}
+
+      {arcade==="rail" && (
+        <RailGrindGame
+          sound={soundOn}
+          state={s}
+          onChange={setS}
+          onExit={() => {
+            setArcade(null);
+            notify("You roll away from the rail.", true);
+          }}
+        />
+      )}
+
+      {result && !enc && !gangMeeting && !resident && !parkKidOpen && !place && (
         <div
           key={result.message + String(result.timeLine)}
           role="status"

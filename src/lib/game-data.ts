@@ -32,6 +32,19 @@ export const START: GameState = {
   bjLost: 0,
   slotWon: 0,
   slotLost: 0,
+  bbBest5: 0,
+  bbBestTimed: 0,
+  bbMade: 0,
+  bbShots: 0,
+  railGrinds: 0,
+  railFalls: 0,
+  railLongest: 0,
+  railLevel: 0,
+  dartBest3: 0,
+  dartThrows: 0,
+  dartHits: 0,
+  dartWins: 0,
+  dartLosses: 0,
 };
 
 export const HOUSES = [

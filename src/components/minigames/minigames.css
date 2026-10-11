@@ -1,0 +1,112 @@
+/* Shared look for the arcade minigames. Cartoon outlines, big touch targets, no page scroll while playing. */
+.mg-root {
+  --mg-ink: #25242a;
+  --mg-gold: #f3bd4b;
+  touch-action: manipulation;
+}
+.mg-play-area {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.mg-btn {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 14px;
+  border: 2px solid var(--mg-ink);
+  border-radius: 12px;
+  background: #f1e6c8;
+  color: var(--mg-ink);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.mg-btn:hover:not(:disabled),
+.mg-btn:focus-visible {
+  background: var(--mg-gold);
+}
+.mg-btn:disabled {
+  opacity: 0.45;
+}
+.mg-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.mg-btn-primary {
+  background: var(--mg-gold);
+}
+.mg-hold {
+  min-height: 84px;
+  width: 100%;
+  border: 3px solid var(--mg-ink);
+  border-radius: 18px;
+  background: var(--mg-gold);
+  color: var(--mg-ink);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.mg-hold.is-down {
+  background: #e08b2c;
+  transform: translateY(2px);
+}
+.mg-chip {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 2px solid var(--mg-ink);
+  border-radius: 999px;
+  background: #fffdf5;
+  color: var(--mg-ink);
+  font-weight: 700;
+}
+.mg-chip[aria-pressed="true"] {
+  background: var(--mg-gold);
+}
+.mg-card {
+  border: 2px solid var(--mg-ink);
+  border-radius: 14px;
+  background: #fff8e6;
+  color: var(--mg-ink);
+  padding: 12px;
+}
+.mg-pop {
+  animation: mg-pop 360ms ease-out both;
+}
+@keyframes mg-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mg-shake {
+  animation: mg-shake 360ms ease-in-out both;
+}
+@keyframes mg-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-pop,
+  .mg-shake {
+    animation: none;
+  }
+  .mg-hold.is-down {
+    transform: none;
+  }
+}

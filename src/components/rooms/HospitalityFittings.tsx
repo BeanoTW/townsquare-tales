@@ -16,14 +16,7 @@ export function HospitalityFitting({
       pointerEvents="none"
       data-hospitality-fitting={f.id}
     >
-      {f.id === "dartboard" ? <g data-pub-dartboard>
-        <rect width={w} height={h} rx="3" fill="#35283f" stroke="var(--town-ink)"/>
-        <circle cx={w/2} cy={h/2} r={h/2-2} fill="#efe4cc" stroke="#252430" strokeWidth="3"/>
-        <circle cx={w/2} cy={h/2} r={h/3} fill="none" stroke="#4d997c" strokeWidth="3"/>
-        <path d={`M${w/2} 2v${h-4}M${w/2-h/2+2} ${h/2}h${h-4}`} stroke="#252430"/>
-        <circle cx={w/2} cy={h/2} r="3" fill="#c15767"/>
-        <text x={w/2} y={h+10} textAnchor="middle" fontSize="8" fill="var(--town-paper)">DARTS</text>
-      </g> : f.id === "counter" || f.id === "bar-counter" ? (
+      {f.id === "counter" || f.id === "bar-counter" ? (
         <g data-hospitality-counter>
           <rect x="3" y="4" width={w} height={h} rx="3" fill="var(--town-ink)" opacity=".15" />
           <rect
@@ -83,6 +76,17 @@ export function HospitalityFitting({
               ))}
             </g>
           )}
+        </g>
+      ) : f.id === "dartboard" ? (
+        <g data-pub-dartboard>
+          <rect x="-2" y="-2" width={w + 6} height={h + 4} rx="4" fill="var(--shop-wood-dark)" stroke="var(--town-ink)" strokeWidth="2" />
+          <circle cx={w / 2 + 1} cy={h / 2} r="15" fill="var(--town-ink)" />
+          <circle cx={w / 2 + 1} cy={h / 2} r="13" fill="var(--shop-linen)" stroke="var(--town-ink)" />
+          <circle cx={w / 2 + 1} cy={h / 2} r="10" fill="var(--pub-seat)" opacity=".85" />
+          <circle cx={w / 2 + 1} cy={h / 2} r="6.5" fill="var(--shop-linen)" />
+          <circle cx={w / 2 + 1} cy={h / 2} r="3.4" fill="var(--pub-bottle)" />
+          <circle cx={w / 2 + 1} cy={h / 2} r="1.3" fill="var(--town-ink)" />
+          <path d={`M${w / 2 - 6} ${h / 2 - 5}l7 5`} stroke="var(--town-ink)" strokeWidth="1.5" />
         </g>
       ) : f.id === "pub-bottles" ? (
         <g data-pub-bottle-shelf>
