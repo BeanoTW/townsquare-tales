@@ -8,6 +8,7 @@ import { TownMap } from "@/components/TownMap";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
+import { RESIDENT_FAVOURS, activeFavour, favourChoices, favourObjective, favourVisitAction } from "@/lib/resident-favours";
 import { availableStreetEvent, streetEncounter, type StreetEncounter } from "@/lib/street-encounters";
 import { conversation, recordConversation, hasTalkedToday, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import { LocationScene, type Feedback } from "@/components/LocationScene";
@@ -155,6 +156,11 @@ function Game() {
     setEnc(null);
     setParkKidOpen(false);
     if (s.parkSmokes >= 15 && !s.parkKidGone) setS(cur => ({ ...cur, parkKidGone: 1 }));
+    const pickup=favourVisitAction(s,id);
+    if(pickup) {
+      const outcome=runAction(s,pickup);
+      if(outcome.ok) {setS(current => {const latest=runAction(current,pickup);return latest.ok ? latest.next : current;});say(outcome.message);}
+    }
     setPlace(id);
   };
   const approachGang = () => {
@@ -259,6 +265,8 @@ function Game() {
         </div>
       </div>
 
+      {activeFavour(s) && !place && !tab && !enc && !resident && !gangMeeting && !parkKidOpen && !result && <div role="status" className="pointer-events-none absolute left-3 top-24 z-10 max-w-[13rem] rounded-md border border-foreground bg-card/90 px-2 py-1 text-xs">{favourObjective(s)}</div>}
+
       {log[0] && !result && !place && !enc && !gangMeeting && !resident && !parkKidOpen && !tab && (
         <div className="pointer-events-none absolute inset-x-3 bottom-4 mx-auto max-w-md rounded-sm border-2 border-foreground bg-card/90 px-3 py-1 text-center text-base">
           {log[0]}
@@ -285,7 +293,7 @@ function Game() {
       )}
 
       {resident && (
-        <div role="dialog" aria-label={conversation(resident,s).title} className="absolute inset-x-3 bottom-3 z-30 mx-auto max-w-md rounded-md border-2 border-foreground bg-card p-3 shadow-lg">
+        <div role="dialog" aria-label={conversation(resident,s).title} className="absolute inset-x-3 bottom-3 z-30 mx-auto max-h-[65dvh] max-w-md overflow-y-auto rounded-md border-2 border-foreground bg-card p-3 shadow-lg">
           <div className="flex items-start justify-between gap-2"><h2 className="text-lg font-bold">{conversation(resident,s).title}</h2><Button size="icon" variant="ghost" aria-label="Close conversation" onClick={()=>setResident(null)}>✕</Button></div>
           <p className="text-lg">{conversation(resident,s).text}</p>
           <p className="text-sm text-muted-foreground">Relationship: {s[RELATION_FIELDS[resident]]} · {s[RELATION_FIELDS[resident]]>=4?"Friends":s[RELATION_FIELDS[resident]]<=-4?"Rivals":"Acquaintances"}</p>
@@ -299,6 +307,12 @@ function Game() {
                 setResident(null);
               }}>{choice.label}</Btn>
             ))}
+          <div className="mt-3 grid gap-2 border-t border-foreground/20 pt-2">
+            <h3 className="font-bold">Resident favour</h3>
+            <p className="text-sm">{activeFavour(s) ? favourObjective(s) : favourChoices(resident,s).length ? RESIDENT_FAVOURS.find(f=>f.resident===resident)?.request : "No favour available just now. Relationships and recent errands matter."}</p>
+            {favourChoices(resident,s).map(action=><Btn key={action.id} onClick={()=>{if(perform(action))setResident(null);}}>{action.label}</Btn>)}
+            {result && <p role="status" className="text-sm">{result.message}</p>}
+          </div>
           <div className="mt-2"><Button variant="ghost" onClick={()=>setResident(null)}>Leave them to it</Button></div>
         </div>
       )}

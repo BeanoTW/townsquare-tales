@@ -20,7 +20,8 @@ export function grantGodPowers(s: GameState): GameState {
 /** Time and resource costs are bypassed, but career, home, education and equipment still progress normally. */
 export function runGodAction(state: GameState, def: ActionDef, rng: Rng = Math.random): ActionResult {
   const powered = grantGodPowers(state);
-  const attempt = runAction({ ...powered, hour: 0 }, def, rng);
+  // Preserve the real clock for contextual dialogue and quest deadlines.
+  const attempt = runAction(powered, { ...def, hours: 0, energy: 0 }, rng);
   if (!attempt.ok) return attempt;
   return {
     ...attempt,
