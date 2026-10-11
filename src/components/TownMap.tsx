@@ -304,7 +304,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [house, speed]);
+  }, [house, speed, hour]);
 
   const toTile = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
