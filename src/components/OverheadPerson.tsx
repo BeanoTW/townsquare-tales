@@ -16,7 +16,7 @@ export function OverheadPerson({ head = "#f0d5b7", outline = "#222530", phase = 
     </g>}
     <g transform={`rotate(${angle})`} data-body-heading>
       {moving && <g data-walking-feet stroke={outline} strokeWidth="3" strokeLinecap="round">
-        <path d={leadingLeft ? "M-4 -2L-5 -19M4 0L5 15" : "M-4 0L-5 15M4 -2L5 -19"}/>
+        <path d={leadingLeft ? "M-4 -2L-5 -13M4 0L5 7" : "M-4 0L-5 7M4 -2L5 -13"}/>
       </g>}
       <path d={`M-7 -7 Q-13 ${-5+sway} -13 0 M7 -7 Q13 ${-5-sway} 13 0`}
         stroke={outline} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
