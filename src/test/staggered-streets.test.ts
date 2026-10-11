@@ -19,7 +19,7 @@ describe("staggered street plan",()=>{
   });
   it("offsets west and east side-street junctions",()=>{
     const west=ROADS.filter(r=>r.w>r.d&&r.x===0).map(r=>r.y);
-    const east=ROADS.filter(r=>r.w>r.d&&r.x===11).map(r=>r.y);
+    const east=ROADS.filter(r=>r.w>r.d&&r.x>10 && r.x<12).map(r=>r.y);
     for(const a of west)for(const b of east)expect(Math.abs(a-b)).toBeGreaterThan(2);
   });
   it("has 15 unobstructed building doors, leaving the gang in open terrain",()=>{
