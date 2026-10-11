@@ -4,7 +4,7 @@ import { P } from "@/lib/town-projection";
 import { residentsAt, RELATION_FIELDS, type ResidentId } from "@/lib/living-town";
 import type { GameState } from "@/lib/game-state";
 import { isWalkable, type Point, type Obstacle } from "@/lib/pathfinding";
-import { AMBIENT_ROUTES, ambientVisible, makeActor, moveActor, PIGEON_FLOCKS, pigeonOffset, residentBark, routineGoal, SPEECH_COOLDOWN, SPEECH_SECONDS, STREET_OBJECTS, newEncounterMemory, updateEncounter, reactionTarget, type EncounterMemory, type StreetActor, type StreetObjectId } from "@/lib/street-life";
+import { AMBIENT_ROUTES, ambientVisible, makeActor, moveActor, PIGEON_FLOCKS, moveBird, townAtmosphere, type StreetBird, residentBark, routineGoal, SPEECH_COOLDOWN, SPEECH_SECONDS, STREET_OBJECTS, newEncounterMemory, updateEncounter, reactionTarget, type EncounterMemory, type StreetActor, type StreetObjectId } from "@/lib/street-life";
 
 type Player = Point & { walking: boolean };
 export type ResidentPositions = Partial<Record<ResidentId, StreetActor>>;
@@ -24,7 +24,7 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0, last = performance.now(), nextSpeech = 0, speechUntil = 0, visibleId = "";
-    const frightened: Record<string, number> = {};
+    const flockActors: Record<string, StreetBird> = {};
     let previous = {x:player.current.x,y:player.current.y};
     const update = (now: number) => {
       raf = requestAnimationFrame(update);
@@ -111,16 +111,16 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
 
       }
       PIGEON_FLOCKS.forEach((flock, index) => {
-        const distance = Math.hypot(flock.x-me.x,flock.y-me.y);
-        if(distance<1.5) frightened[index]=seconds+5;
         for(let i=0;i<3;i++) {
-          const bird = birds.current[`${index}-${i}`]; if(!bird)continue;
-          const offset=pigeonOffset(seconds<(frightened[index] ?? 0) ? 0 : 10,seconds,i);
-          const point={x:flock.x+offset.x,y:flock.y+offset.y};
-          const [x,y]=P(isWalkable(point,obstacles)?point.x:flock.x,isWalkable(point,obstacles)?point.y:flock.y);
-          bird.setAttribute("transform",`translate(${x} ${y}) rotate(${seconds*15+i*120})`);
-          bird.setAttribute("data-scattering",String(offset.scatter));
-          bird.querySelector("[data-wing]")?.setAttribute("opacity",offset.scatter && !reduced ? String(.3+Math.abs(Math.sin(seconds*12))*.7) : "0");
+          const key=`${index}-${i}`, bird = birds.current[key]; if(!bird)continue;
+          const home={x:flock.x+i*.15,y:flock.y};
+          const actor=flockActors[key] ??= {...home,angle:i*120,scatterUntil:0,armed:true};
+          if(frozen)continue;
+          const scatter=moveBird(actor,home,me,seconds,dt,i,obstacles,reduced);
+          const [x,y]=P(actor.x,actor.y);
+          bird.setAttribute("transform",`translate(${x} ${y}) rotate(${actor.angle})`);
+          bird.setAttribute("data-scattering",String(scatter));
+          bird.querySelector("[data-wing]")?.setAttribute("opacity",scatter && !reduced ? String(.3+Math.abs(Math.sin(seconds*12))*.7) : "0");
         }
       });
     };
@@ -133,7 +133,8 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
     onResident(id,p);
   };
   const schedules=residentsAt(state.hour);
-  return <g data-street-life>
+  const atmosphere=townAtmosphere(state.hour);
+  return <g data-street-life data-town-period={atmosphere.period} data-town-paused={paused}>
     {STREET_OBJECTS.map(object => <g key={object.id} transform={`translate(${P(object.x,object.y).join(" ")})`} data-street-object={object.id}
       role="button" tabIndex={0} aria-label={object.label} className="street-target" onClick={e=>{e.stopPropagation();onObject(object.id);}}
       onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();onObject(object.id);}}}>
@@ -148,12 +149,14 @@ export function StreetLife({ player, positions, lots, state, skating, paused, on
     </g>;})}
     {AMBIENT_ROUTES.map(route=><g key={route.id} ref={el=>{groups.current[route.id]=el;}} transform={`translate(${P(route.morning[0].x,route.morning[0].y).join(" ")})`} visibility={ambientVisible(route.id,state.hour)?"visible":"hidden"} data-street-pedestrian={route.id}><OverheadPerson outline={route.color} {...(route.id==="foreman-helper" ? {hat:"var(--town-window-lit)"} : {})}/></g>)}
     {PIGEON_FLOCKS.flatMap((flock,index)=>[0,1,2].map(i=><g key={`${index}-${i}`} ref={el=>{birds.current[`${index}-${i}`]=el;}} transform={`translate(${P(flock.x+i*.15,flock.y).join(" ")})`} data-pigeon><ellipse rx="4" ry="6" fill="var(--town-pigeon)" stroke="var(--town-ink)" strokeWidth=".7"/><circle cy="-5" r="2.6" fill="var(--town-pigeon-neck)"/><path d="M-2 -7L0 -10L2 -7" fill="var(--town-lane-paint)"/><path data-wing d="M-3 0L-9 5M3 0L9 5" stroke="var(--town-pigeon)" strokeWidth="3" opacity="0"/></g>))}
+    {/* Wind-blown receipts stay clear of doors, with no gameplay cost. */}
+    {[{x:8.1,y:14.3},{x:21.6,y:15.2}].map((p,i)=><g key={`receipt-${i}`} transform={`translate(${P(p.x,p.y).join(" ")})`} pointerEvents="none" data-street-receipt><g className="town-receipt" style={{animationDelay:`${i*-4}s`}}><path d="M-4 -3l9 2 -1 5 -8 -2Z" fill="var(--town-paper)" stroke="var(--town-grime)" strokeWidth=".8"/><title>{i ? "Receipt: emotional damages not refundable" : "MegaCorp receipt: one soul, no change"}</title></g></g>)}
     {/* Minimal street wear, clear of every doorway. */}
     {[{x:8.1,y:14.3},{x:21.6,y:15.2},{x:11.4,y:27.7}].map((p,i)=><g key={i} transform={`translate(${P(p.x,p.y).join(" ")})`} pointerEvents="none"><path d="M-14 -2l7 3 -2 6 8 2M-7 1l3 -8" stroke="var(--town-grime)" fill="none" opacity=".5"/><rect x="10" y="8" width="13" height="8" fill="var(--town-drain)" stroke="var(--town-ink)"/><path d="M13 8v8M17 8v8M21 8v8" stroke="var(--town-ink)"/></g>)}
     <g transform={`translate(${P(11.4,18).join(" ")})`} data-parked-bicycle stroke="var(--town-ink)" strokeWidth="2" fill="none"><circle cx="-11" r="7"/><circle cx="13" r="7"/><path d="M-11 0L-3 -11L6 0H-11M6 0L8 -15h5M-3 -11h10"/></g>
     <g transform={`translate(${P(8.1,17.9).join(" ")})`} data-newspaper-box><rect x="-8" y="-20" width="16" height="24" fill="var(--town-vending)" stroke="var(--town-ink)"/><rect x="-5" y="-16" width="10" height="9" fill="var(--town-bubble)"/><path d="M-4 -13h8M-4 -10h5" stroke="var(--town-ink)"/></g>
-    <g transform={`translate(${P(6.5,14.4,55).join(" ")})`} pointerEvents="none" data-diner-steam><path className="town-steam" d="M0 0q-8 -8 0 -16t0 -16M9 4q8 -8 0 -16t0 -16" fill="none" stroke="var(--town-paper)" strokeWidth="3" opacity=".5"/></g>
-    {state.hour>=18 && <g transform={`translate(${P(6.6,21.9,100).join(" ")})`} className="town-neon" pointerEvents="none"><path d="M-25 0h50" stroke="var(--town-casino-sign)" strokeWidth="5"/></g>}
+    <g transform={`translate(${P(6.5,14.4,55).join(" ")})`} pointerEvents="none" data-diner-steam visibility={atmosphere.dinerActive ? "visible" : "hidden"}><path className="town-steam" d="M0 0q-8 -8 0 -16t0 -16M9 4q8 -8 0 -16t0 -16" fill="none" stroke="var(--town-paper)" strokeWidth="3" opacity=".5"/></g>
+    {atmosphere.lit && <g transform={`translate(${P(6.6,21.9,100).join(" ")})`} className="town-neon" pointerEvents="none"><path d="M-25 0h50" stroke="var(--town-casino-sign)" strokeWidth="5"/></g>}
     {speech && !paused && <g key={`${speech.id}-${speech.text}`} ref={el=>{groups.current["speech"]=el;}} transform={`translate(${P(speech.x,speech.y)[0]} ${P(speech.x,speech.y)[1]-37})`} className="town-speech" data-ambient-speech pointerEvents="none">
       <rect x="-83" y="-40" width="166" height="37" rx="6" fill="var(--town-bubble)" stroke="var(--town-ink)" strokeWidth="1.6"/><path d="M-7 -3L0 4L6 -3" fill="var(--town-bubble)" stroke="var(--town-ink)" strokeWidth="1.4"/>
       <text textAnchor="middle" fontSize="12" fill="var(--town-ink)">{wrapSpeech(speech.text).map((line,i)=><tspan key={i} x="0" y={-24+i*14}>{line}</tspan>)}</text>

@@ -287,3 +287,8 @@
 @keyframes town-steam-rise { 0%,100% { opacity: .15; transform: translateY(2px); } 50% { opacity: .5; transform: translateY(-7px); } }
 @keyframes town-sign-flicker { 0%,92%,96%,100% { opacity: 1; } 93%,97% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .town-speech, .town-steam, .town-neon { animation: none; } }
+
+.town-receipt { animation: town-receipt-drift 11s ease-in-out infinite; }
+@keyframes town-receipt-drift { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(9px,-3px) rotate(12deg); } }
+[data-town-paused="true"] *, [data-construction-site][data-active="false"] * { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .town-receipt { animation: none; } }
