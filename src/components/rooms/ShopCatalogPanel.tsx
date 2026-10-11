@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { GameState } from "@/lib/game-state";
 import type { ActionDef } from "@/lib/actions";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
@@ -14,6 +14,7 @@ export function ShopCatalogPanel({
   onRun,
   onClose,
   shiftActions,
+  counterOption,
 }: {
   state: GameState;
   godMode: boolean;
@@ -23,6 +24,7 @@ export function ShopCatalogPanel({
   onRun: (a: ActionDef) => void;
   onClose: () => void;
   shiftActions: ActionDef[];
+  counterOption?: ReactNode;
 }) {
   const [category, setCategory] = useState<Category>("All");
   const goods = SHOP_GOODS.filter(
@@ -70,6 +72,7 @@ export function ShopCatalogPanel({
         ))}
       </div>
       <div className="shop-catalog-list">
+        {!browsing && counterOption}
         {goods.map((g) => (
           <button
             type="button"

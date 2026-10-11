@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { hotspotActions, type Hotspot } from "@/lib/rooms";
@@ -32,6 +32,7 @@ export function ActionPanel({
   onRun,
   onClose,
   unavailable,
+  children,
 }: {
   hotspot: Hotspot;
   state: GameState;
@@ -39,6 +40,7 @@ export function ActionPanel({
   style: CSSProperties;
   onRun: (a: ActionDef) => void;
   onClose: () => void;
+  children?: ReactNode;
   unavailable?: (a: ActionDef) => string | null;
 }) {
   const actions = hotspotActions(hotspot, state);
@@ -81,6 +83,7 @@ export function ActionPanel({
           </button>
         );
       })}
+      {children}
       {actions.length === 0 && lines.length === 0 && (
         <p className="room-panel-line">Nothing to do here yet.</p>
       )}

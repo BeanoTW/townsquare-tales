@@ -1,3 +1,4 @@
+import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
@@ -327,6 +328,8 @@ function Game() {
                 <Btn onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>Take a package</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
+              <p className="text-sm">Crew equipment: serious gear takes time, trust and cash. The cheap bat cannot be used for till robberies.</p>
+              {([1,2] as const).map(tier => <Btn key={tier} disabled={!!weaponBlock(s,tier)} onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · ${buyWeapon(tier).cost} · {buyWeapon(tier).hours}h · {buyWeapon(tier).energy} energy · {weaponBlock(s,tier) ?? buyWeapon(tier).note}</Btn>)}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>
             </>
@@ -404,6 +407,7 @@ function Game() {
           <div className="grid grid-cols-2 gap-2">
             <Stat k="🚬 Smokes" v={s.smokes} />
             <Stat k="🍫 Snacks" v={s.snacks} />
+            <Stat k="Weapon" v={weaponName(s)} />
             <Stat k="⏰ Alarm clock" v={s.alarm ? "Owned" : "—"} />
             <Stat k="👟 Running shoes" v={s.trainers ? "Owned · 1.35× speed" : "—"} />
             <Stat k="🛹 Skateboard" v={s.skateboard ? s.skateboardEquipped ? "Equipped · 1.5× speed" : "Owned · Unequipped" : "—"} />
@@ -563,10 +567,11 @@ function Stat({ k, v }: { k: string; v: React.ReactNode }) {
     </div>
   );
 }
-function Btn(p: { onClick: () => void; children: React.ReactNode }) {
+function Btn(p: { onClick: () => void; children: React.ReactNode; disabled?: boolean }) {
   return (
     <button
       onClick={p.onClick}
+      disabled={p.disabled}
       className="min-h-11 text-left text-lg border-2 border-foreground px-3 py-1 rounded-sm bg-secondary hover:bg-primary hover:text-primary-foreground"
     >
       {p.children}
