@@ -76,7 +76,11 @@ describe("depth and housing progression", () => {
       expect(wall).toHaveAttribute("width", "352");
       expect(view.container.querySelector('[data-room-shell="square"]')).toBeInTheDocument();
       if (id === "casino") expect(view.container.querySelector("[data-casino-regular]")).toBeInTheDocument();
-      if (id === "gym") expect(view.container.querySelector("[data-gym-trainer]")).toBeInTheDocument();
+      if (id === "gym") {
+        expect(view.container.querySelector("[data-gym-trainer]")).toBeInTheDocument();
+        expect(view.container.querySelector('[data-gym-patron="weights"] .gym-lifter-arms')).toBeInTheDocument();
+        expect(view.container.querySelector('[data-gym-patron="treadmill"] .gym-runner')).toBeInTheDocument();
+      }
       view.unmount();
     }
   });

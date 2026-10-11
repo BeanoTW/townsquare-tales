@@ -428,6 +428,28 @@ function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
       <path d="M-16 -7Q-15 -30 5 -24Q19 -21 16 -6L2 -17L-15 -9Z" fill="#252b30"/>
       <path d="M-11 -7L-3 -3M3 -3L11 -7M-6 5H6" stroke="#332d2f" strokeWidth="3"/>
     </g>
+    {/* Ambient patrons give the gym life without adding blocking interactions. */}
+    <g data-gym-patron="weights" transform="translate(107 190)">
+      <ellipse cx="0" cy="22" rx="16" ry="4" fill="#18232b" opacity=".28"/>
+      <path d="M-7 6L-11 20M7 6L11 20" stroke="#38383d" strokeWidth="5" strokeLinecap="round"/>
+      <path d="M-10 -13L-9 6H9L10 -13Z" fill="#567d81" stroke="#293039" strokeWidth="2"/>
+      <circle cx="0" cy="-22" r="11" fill="#bd957c" stroke="#293039" strokeWidth="2.5"/>
+      <g className="gym-lifter-arms">
+        <path d="M-9 -10L-19 -4L-19 -18M9 -10L19 -4L19 -18" stroke="#bd957c" strokeWidth="5" fill="none" strokeLinecap="round"/>
+        <path d="M-28 -20H28" stroke="#bac4c8" strokeWidth="3"/>
+        <path d="M-26 -27V-13M26 -27V-13" stroke="#303943" strokeWidth="7"/>
+      </g>
+    </g>
+    <g data-gym-patron="treadmill" transform="translate(329 168)">
+      <ellipse cy="23" rx="20" ry="5" fill="#18232b" opacity=".25"/>
+      <path d="M-17 18H18L12 27H-14Z" fill="#29333d" stroke="#97a5af" strokeWidth="3"/>
+      <g className="gym-runner">
+        <path d="M-2 -7L-11 9L-17 16M2 -7L12 7L5 17" stroke="#303740" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+        <path d="M-9 -24L-10 -6H10L8 -24Z" fill="#b75d51" stroke="#293039" strokeWidth="2"/>
+        <circle cx="0" cy="-34" r="10" fill="#d8ac86" stroke="#293039" strokeWidth="2.5"/>
+        <path d="M-8 -22L-16 -11M8 -22L15 -16" stroke="#d8ac86" strokeWidth="4" strokeLinecap="round"/>
+      </g>
+    </g>
     <path d="M271 65V77" stroke="#31363b" strokeWidth="5"/>
     <rect x="258" y="77" width="26" height="59" rx="11" fill="#7e454b" stroke="#30343c" strokeWidth="4"/>
     <path d="M259 100H283M259 117H283" stroke="#ad7774" strokeWidth="3"/>
