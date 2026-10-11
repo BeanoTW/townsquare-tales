@@ -11,6 +11,9 @@ describe("construction compound", () => {
     for (const name of ["construction-site","construction-crane","construction-dumper","construction-digger","construction-foreman"]) {
       expect(view.container.querySelector("[data-"+name+"]")).toBeInTheDocument();
     }
+    expect(view.container.querySelector("[data-site-ground-detail]")).toBeInTheDocument();
+    expect(view.container.querySelector("[data-site-scaffolding]")).toBeInTheDocument();
+    expect(view.container.querySelector("[data-site-materials]")).toBeInTheDocument();
     fireEvent.click(view.getByRole("button",{name:"Talk to the construction foreman"}));
     expect(onForeman).toHaveBeenCalledOnce();
   });
