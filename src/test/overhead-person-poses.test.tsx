@@ -14,12 +14,12 @@ describe("overhead character direction and poses",()=>{
  it("alternates one foot ahead of the head and one behind on successive steps",()=>{
    const view=render(<svg><OverheadPerson moving phase={Math.PI/2}/></svg>);
    const first=view.container.querySelector("[data-walking-feet] path")?.getAttribute("d") ?? "";
-   expect(first).toContain("L2 -20");
-   expect(first).toContain("L-2 6");
+   expect(first).toContain("M0 -16L0 -21");
+   expect(first).toContain("M0 2L0 3");
    view.rerender(<svg><OverheadPerson moving phase={Math.PI*1.5}/></svg>);
    const second=view.container.querySelector("[data-walking-feet] path")?.getAttribute("d") ?? "";
-   expect(second).toContain("L2 6");
-   expect(second).toContain("L-2 -20");
+   expect(second).toContain("M0 -16L0 -17");
+   expect(second).toContain("M0 2L0 7");
  });
  it("shows legs only for seated and reclining figures without changing the silhouette size",()=>{
    const view=render(<svg><OverheadPerson pose="sitting"/></svg>);
