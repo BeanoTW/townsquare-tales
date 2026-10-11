@@ -503,7 +503,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
 
   return (
     <div className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
-      <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 240} ${cy - 415} 480 800`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
+      <svg ref={svgRef} viewBox={(() => { const [cx, cy] = P(m.x, m.y); return `${cx - 165} ${cy - 275} 330 550`; })()} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDown={onGroundPointerDown}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {
