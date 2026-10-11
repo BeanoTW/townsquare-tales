@@ -54,6 +54,19 @@ export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
     <g transform={`translate(${P(17.2,23.2).join(" ")})`}>
       <path d="M-28 0h56" stroke="#eab74c" strokeWidth="8"/><path d="M-26 -3l10 6m8-6l10 6m8-6l10 6" stroke="#393c3c" strokeWidth="4"/>
     </g>
+    {/* Crew move between material stacks, with clearly different hard hats. */}
+    {[[17.3,20.8,"#d7ab38"],[20.8,18.7,"#eac763"]].map(([wx,wy,hat],i)=>{
+      const [px,py]=P(Number(wx),Number(wy));
+      return <g key={i} data-construction-worker transform={`translate(${px} ${py})`}>
+        <ellipse cy="3" rx="11" ry="4" fill="#343936" opacity=".2"/>
+        <g className={i===0?"construction-worker-carry":"construction-worker-hammer"}>
+          <path d="M0 -14v-24M0 -27l-9 8M0 -27l9 8M0 -14l-7 16M0 -14l7 16" stroke="#394043" strokeWidth="3.5" strokeLinecap="round"/>
+          <rect x="-7" y="-36" width="14" height="19" fill={i===0?"#d9803c":"#6d8395"} stroke="#384042" strokeWidth="2"/>
+          <circle cy="-46" r="9" fill="#dbb089" stroke="#384042" strokeWidth="2"/>
+          <path d="M-10 -49q10-12 20 0v3h-20Z" fill={String(hat)} stroke="#384042" strokeWidth="1.5"/>
+        </g>
+      </g>;
+    })}
     {/* Foreman is the walk-up gateway to the existing Workers Yard employment. */}
     <g role="button" tabIndex={0} aria-label="Talk to the construction foreman" data-construction-foreman
       className="cursor-pointer" onClick={e=>{e.stopPropagation();onForeman();}}
