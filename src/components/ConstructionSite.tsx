@@ -11,14 +11,14 @@ export function ConstructionSite({ onForeman }: { onForeman: () => void }) {
   return <g data-construction-site>
     <polygon points={polygon([[x,y],[x+w,y],[x+w,y+d],[x,y+d]])} fill="#968b76" stroke="#4a4842" strokeWidth="3"/>
     {/* Site perimeter, with a clear southern pedestrian gate. */}
-    {[[x,y,x+w,y],[x,y,x,y+d],[x+w,y,x+w,y+d],[x,y+d,17.6,y+d],[18.8,y+d,x+w,y+d]].map(([ax,ay,bx,by],i)=>{
+    {[[x,y,x+w,y],[x,y,x,y+d],[x+w,y,x+w,y+d],[x,y+d,17.6,y+d],[18.8,y+d,x+w,y+d]] as [number,number,number,number][]).map(([ax,ay,bx,by],i)=>{
       const a=P(ax!,ay!),b=P(bx!,by!);
       return <g key={i}><path d={`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`} stroke="#e1ac49" strokeWidth="7" strokeDasharray="20 9"/><path d={`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`} stroke="#4c4b4a" strokeWidth="2"/></g>;
     })}
     {/* Excavated foundations and a partly erected steel-frame building. */}
     <polygon points={polygon([[16.5,17.5],[19.3,17.5],[19.3,20.2],[16.5,20.2]])} fill="#676a66" stroke="#30383b" strokeWidth="4"/>
     <polygon points={polygon([[16.8,17.8],[19.0,17.8],[19.0,19.9],[16.8,19.9]])} fill="#4d5454" stroke="#c7bca8" strokeWidth="4"/>
-    {[[16.8,17.8],[19,17.8],[16.8,19.9],[19,19.9]].map(([px,py],i)=><g key={i}>
+    {[[16.8,17.8],[19,17.8],[16.8,19.9],[19,19.9]] as [number,number][]).map(([px,py],i)=><g key={i}>
       <path d={`M${P(px,py)[0]} ${P(px,py)[1]}v-75`} stroke="#333a3c" strokeWidth="9"/>
       <path d={`M${P(px,py)[0]} ${P(px,py)[1]}v-75`} stroke="#b7bec0" strokeWidth="5"/>
     </g>)}
