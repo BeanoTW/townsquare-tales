@@ -1,0 +1,42 @@
+import {afterEach,describe,expect,it,vi} from "vitest";
+import {cleanup,fireEvent,render} from "@testing-library/react";
+import {START} from "@/lib/game-data";
+import {Route} from "@/routes/index";
+import {acceptFavour,favourVisitAction} from "@/lib/resident-favours";
+import {runAction} from "@/lib/actions";
+vi.mock("@/components/TownMap",()=>({TownMap:({onEnter}:{onEnter:(id:string)=>void})=><div><button onClick={()=>onEnter("resident:mara")}>Talk to Mara</button><button onClick={()=>onEnter("diner")}>Enter diner</button></div>}));
+vi.mock("@/components/LocationScene",()=>({LocationScene:({onLeave}:{onLeave:()=>void})=><button onClick={onLeave}>Leave building</button>}));
+vi.mock("@/lib/action-audio",()=>({playActionCue:vi.fn()}));
+afterEach(()=>{cleanup();window.localStorage.clear();});
+const Game=Route.options.component!;
+describe("resident favour game integration",()=>{
+  it("accepts, picks up on building entry, returns and saves without losing existing progress",()=>{
+    window.localStorage.setItem("sticktown",JSON.stringify({...START,hour:12,job:3,parkSmokes:15,parkKidGone:0}));
+    const view=render(<Game/>);
+    fireEvent.click(view.getByRole("button",{name:"Talk to Mara"}));
+    fireEvent.click(view.getByRole("button",{name:/Take the favour/}));
+    expect(JSON.parse(window.localStorage.getItem("sticktown")!).residentFavour).toBe(1);
+    fireEvent.click(view.getByRole("button",{name:"Enter diner"}));
+    let saved=JSON.parse(window.localStorage.getItem("sticktown")!);
+    expect(saved.residentFavourStage).toBe(1);expect(saved.parkKidGone).toBe(1);expect(saved.job).toBe(3);
+    fireEvent.click(view.getByRole("button",{name:"Leave building"}));
+    fireEvent.click(view.getByRole("button",{name:"Talk to Mara"}));
+    fireEvent.click(view.getByRole("button",{name:/Deliver her lunch/}));
+    saved=JSON.parse(window.localStorage.getItem("sticktown")!);
+    expect(saved.residentFavour).toBe(0);expect(saved.relMara).toBe(2);expect(saved.money).toBe(30);
+    expect(saved.hour).toBe(12.25);expect(saved.energy).toBe(98);
+  });
+  it("keeps a failed hand-in open and shows the reason",()=>{
+    const accepted=runAction({...START,hour:12},acceptFavour("mara"));
+    if(!accepted.ok)throw Error(accepted.message);
+    const picked=runAction(accepted.next,favourVisitAction(accepted.next,"diner")!);
+    if(!picked.ok)throw Error(picked.message);
+    window.localStorage.setItem("sticktown",JSON.stringify({...picked.next,energy:0}));
+    const view=render(<Game/>);
+    fireEvent.click(view.getByRole("button",{name:"Talk to Mara"}));
+    fireEvent.click(view.getByRole("button",{name:/Deliver her lunch/}));
+    expect(view.getByRole("dialog")).toBeInTheDocument();
+    expect(view.getByRole("status")).toHaveTextContent("Not enough energy");
+    expect(JSON.parse(window.localStorage.getItem("sticktown")!).residentFavourStage).toBe(1);
+  });
+});

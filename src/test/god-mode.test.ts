@@ -52,3 +52,10 @@ describe("God Mode sandbox", () => {
     expect(parseGodSave(JSON.stringify({...START,day:7}),START).day).toBe(7);
   });
 });
+
+it("preserves the real hour for contextual rules while bypassing action costs",()=>{
+  const result=runGodAction({...START,hour:23},{id:"context-check",label:"Context",hours:2,energy:200,resolve:s=>({patch:{int:s.int+1},message:`Clock ${s.hour}`})});
+  if(!result.ok)throw Error(result.message);
+  expect(result.message).toBe("Clock 23");
+  expect(result.next.hour).toBe(23);expect(result.hoursUsed).toBe(0);
+});
