@@ -152,6 +152,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const svgRef = useRef<SVGSVGElement>(null);
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
+  // Local residents retain their current position while the clock changes.
+  // They travel along walkable routes instead of teleporting at shift boundaries.
+  const residentMotion = useRef<Record<string, { x: number; y: number; goalX: number; goalY: number; path: Point[]; walking: boolean }>>({});
+  for (const resident of residentsAt(hour)) {
+    residentMotion.current[resident.id] ??= { x: resident.x, y: resident.y, goalX: resident.x, goalY: resident.y, path: [], walking: false };
+  }
   const routeTo = (destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
     const route = findRoute(me.current, destination, bs);
@@ -268,6 +274,29 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
         m.phase += dt * 12;
       }
+      for (const person of residentsAt(hour)) {
+        const resident = residentMotion.current[person.id]!;
+        if (resident.goalX !== person.x || resident.goalY !== person.y) {
+          resident.goalX = person.x;
+          resident.goalY = person.y;
+          const start = isWalkable(resident, bs) ? resident : nearestWalkable(resident, bs);
+          resident.path = findRoute(start, person, bs);
+        }
+        const next = resident.path[0];
+        resident.walking = false;
+        if (next) {
+          const rx = next.x - resident.x, ry = next.y - resident.y;
+          const distance = Math.hypot(rx, ry);
+          const step = Math.min(distance, dt * 0.8);
+          if (distance <= 0.12) resident.path.shift();
+          else {
+            const nx = resident.x + rx / distance * step;
+            const ny = resident.y + ry / distance * step;
+            if (!blocked(nx, ny)) { resident.x = nx; resident.y = ny; resident.walking = true; }
+            else resident.path = []; // Never ghost through buildings.
+          }
+        }
+      }
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
       if (n?.id !== nearRef.current?.id) { nearRef.current = n; setNear(n); }
       setT(now / 1000);
@@ -275,7 +304,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [house, speed]);
+  }, [house, speed, hour]);
 
   const toTile = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
@@ -357,12 +386,14 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     </g>
   </g> });
   // The same named locals appear at different places as the day progresses.
-  residentsAt(hour).forEach((person, i) => {
+  residentsAt(hour).forEach((scheduled, i) => {
+    const motion = residentMotion.current[scheduled.id];
+    const person = motion ? {...scheduled, x: motion.x, y: motion.y} : scheduled;
     items.push({ key: person.y*100+person.x,
       el: <g key={person.id} role="button" tabIndex={0} data-resident={person.id} aria-label={"Talk to "+person.name}
         className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" onClick={e=>{e.stopPropagation();routeTo(person,"resident:"+person.id);}}
         onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();routeTo(person,"resident:"+person.id);}}}>
-        <Stick x={person.x} y={person.y} phase={t*3+i} walking={false} idle color={person.color}/>
+        <Stick x={person.x} y={person.y} phase={t*3+i} walking={Boolean(motion?.walking)} idle={!motion?.walking} color={person.color}/>
         <g transform={`translate(${P(person.x,person.y)[0]+16} ${P(person.x,person.y)[1]-33+Math.sin(t*1.4+i)*2})`}>
           <rect x="-10" y="-13" width="23" height="22" rx="9" fill="#f2e8d4" stroke="#4a454c" strokeWidth="1.5" opacity=".95"/>
           <text x="1" y="4" fontSize="14" textAnchor="middle">{residentActivity(person.id,hour)}</text>
