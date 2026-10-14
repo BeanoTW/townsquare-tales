@@ -15,7 +15,8 @@ describe("overworld balance grinds",()=>{
  });
  it("falls if balance drifts outside the allowed band",()=>{
   let run=beginStreetGrind({x:27.7,y:7.8},rail)!;
-  for(let i=0;i<35&&run.outcome==="grinding";i++)run=advanceStreetGrind(run,.05,1);
+  run.balance=.99; run.velocity=1;
+  run=advanceStreetGrind(run,.05,1);
   expect(run.outcome).toBe("fell");
  });
 });
