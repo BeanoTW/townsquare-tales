@@ -1,3 +1,4 @@
+import { TOWN_RAILS } from "@/lib/town-rails";
 import { elevation, deckRotation, stepJump, type SkateJump } from "@/lib/skate-tricks";
 import { OverheadPerson } from "@/components/OverheadPerson";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -529,6 +530,15 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           return Array.from({length:count},(_,j)=>
             vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"var(--town-lane-paint)","line-"+i+"-"+j):
               tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
+        })}
+        {/* Visible grind targets, positioned using existing map projection. */}
+        {TOWN_RAILS.map(rail => {
+          const [ax, ay] = P(rail.a.x, rail.a.y);
+          const [bx, by] = P(rail.b.x, rail.b.y);
+          return <g key={"grind-"+rail.id} data-town-rail={rail.id} pointerEvents="none">
+            <path d={`M${ax} ${ay} L${bx} ${by}`} stroke="#2b2c31" strokeWidth={5} strokeLinecap="round"/>
+            <path d={`M${ax} ${ay-2} L${bx} ${by-2}`} stroke="#bbc2c7" strokeWidth={2} strokeLinecap="round"/>
+          </g>;
         })}
         {/* Crossings only where the staggered side roads actually meet the spine. */}
         {[7.1,11.9,18.5,25.5].map((y,i)=>
