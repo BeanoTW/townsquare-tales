@@ -99,7 +99,7 @@ export function simulateFlight(settings: PhysicsSettings): PhysicsFlight {
     if (tick % 2 === 1) frames.push({ x, y, ...(contact ? { contact } : {}) });
     if (y >= floor - 0.01 && vy === 0 && Math.abs(vx) < 8 && tick > 50) break;
     // Prevent a long off-court flight from consuming simulation time.
-    if (x < -100 || x > 600 || y > s.floorY + 100) break;
+    if (x < -100 || x > 600 || y > s.floorY + 100) { frames.push({ x, y: floor, contact: "floor" }); break; }
   }
   return { frames, contacts, crossedNet };
 }
