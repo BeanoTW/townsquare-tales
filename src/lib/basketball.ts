@@ -130,6 +130,37 @@ export function evaluateShot(power: number, releaseMs: number, level: Difficulty
   return { power: p, releaseMs, result, made: result === "swish" || result === "rim-in", miss: dx, arriveMs, hoopAtArrival: hx, reason };
 }
 
+/**
+ * Resolve the actual simulated trajectory rather than trusting the legacy
+ * ideal-power classification. The legacy predictor still drives the aim guide.
+ */
+export function evaluatePhysicalShot(power: number, releaseMs: number, level: Difficulty): Shot {
+  const predicted = evaluateShot(power, releaseMs, level);
+  const simulation = simulateFlight({
+    releaseX: COURT.releaseX,
+    releaseY: COURT.releaseY,
+    floorY: COURT.floorY,
+    rimY: COURT.rimY,
+    radius: BALL_R,
+    rimHalf: RIM_HALF,
+    gravity: GRAVITY,
+    speed: speedFor(predicted.power),
+    angle: ANGLE,
+    hoopX: predicted.hoopAtArrival,
+  });
+  const rimTouched = simulation.contacts.some((c) => c === "front-rim" || c === "back-rim");
+  const banked = simulation.contacts.includes("backboard");
+  const made = simulation.crossedNet;
+  const result: ShotResult = made ? (rimTouched || banked ? "rim-in" : "swish") :
+    rimTouched ? "rim-out" : predicted.result === "airball" ? "airball" :
+    predicted.miss < 0 ? "short" : "long";
+  const reason = made
+    ? result === "swish" ? "Nothing but net!" : banked ? "Off the glass and in!" : "Rattled the iron and dropped!"
+    : rimTouched ? "Clanged off the rim and bounced out."
+    : predicted.reason;
+  return { ...predicted, result, made, reason };
+}
+
 export type Pt = { x: number; y: number };
 
 /**
