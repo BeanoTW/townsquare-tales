@@ -1,694 +1,253 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  BALL_R,
-  COURT,
-  FIVE_SHOTS,
-  LEVELS,
-  RIM_HALF,
-  TIMED_SECONDS,
-  ballPath,
-  speedFor,
-  evaluatePhysicalShot,
-  hoopX,
-  idealPower,
-  landingX,
-  powerAt,
-  type Difficulty,
-  type Pt,
-  type Shot,
-} from "@/lib/basketball";
-import { simulateFlight } from "@/lib/basketball-physics";
-import { qualifiesHorseShot, HORSE_OPPONENTS, createHorseGame, horseAttempt, horseLetters, npcHorseChance, type HorseOpponent, type HorseState, type HorseShot } from "@/lib/horse-game";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { ArrowUp, Pause, Play, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { RulesSheet } from "@/components/casino/CasinoShell";
 import type { GameState } from "@/lib/game-state";
 import { accuracy, finishBasketball, startSession, type BasketballMode } from "@/lib/minigames";
 import { playActionCue } from "@/lib/action-audio";
-import { useAutoPause, useFrameLoop, useHold } from "./hooks";
-import { MinigameShell, PauseOverlay, ResultCard, helpSeen, markHelpSeen } from "./MinigameShell";
+import { ARCADE_COURT as C, SHOOTOUT_SECONDS, projectCourt, rimOutline, simulateArcadeShot, swipeVelocity, type ArcadeFlight, type Vec3 } from "@/lib/basketball-arcade";
+import { useAutoPause, useFrameLoop } from "./hooks";
+import { MinigameShell, PauseOverlay, ResultCard, markHelpSeen } from "./MinigameShell";
+import "./basketball-arcade.css";
 
+type Mode = Extract<BasketballMode, "timed" | "practice">;
 type Phase = "menu" | "play" | "result";
-type CourtMode = BasketballMode | "horse";
-const MODES: { id: CourtMode; label: string; desc: string }[] = [
-  { id: "practice", label: "Practice", desc: "Unlimited shots. No records or rewards." },
-  { id: "five", label: "Five shots", desc: "Score as many baskets as you can from five." },
-  { id: "timed", label: "30 seconds", desc: "As many baskets as you can before time runs out." },
-  { id: "horse", label: "H-O-R-S-E", desc: "Call shots and outlast a park rival." },
-];
-const LEVEL_LABEL: Record<Difficulty, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
+type Flight = { simulation: ArcadeFlight; elapsed: number; index: number };
+type Run = { left: number; made: number; shots: number; streak: number; flight: Flight | null; cooldown: number; net: number; over: boolean };
+const fresh = (): Run => ({ left: SHOOTOUT_SECONDS, made: 0, shots: 0, streak: 0, flight: null, cooldown: 0, net: 0, over: false });
+const point = (p: Vec3) => { const q = projectCourt(p); return `${q.x.toFixed(2)},${q.y.toFixed(2)}`; };
+const polygon = (points: Vec3[]) => points.map(point).join(" ");
+const release = projectCourt(C.release);
+const rim = projectCourt(C.hoop);
+const board = polygon([
+  { x: -1, y: C.boardTop, z: C.boardZ }, { x: 1, y: C.boardTop, z: C.boardZ },
+  { x: 1, y: C.boardBottom, z: C.boardZ }, { x: -1, y: C.boardBottom, z: C.boardZ },
+]);
+const target = polygon([
+  { x: -.32, y: 3.6, z: C.boardZ }, { x: .32, y: 3.6, z: C.boardZ },
+  { x: .32, y: 3.08, z: C.boardZ }, { x: -.32, y: 3.08, z: C.boardZ },
+]);
 
-type Flight = { shot: Shot; path: Pt[]; t: number; netDone: boolean; actor: "human" | "npc" };
-type Run = {
-  clock: number;
-  charging: boolean;
-  chargeStart: number;
-  flight: Flight | null;
-  cooldown: number;
-  made: number;
-  shots: number;
-  timeLeft: number;
-  shownSecond: number;
-  over: boolean;
-  netUntil: number;
-  streak: number;
-};
-const freshRun = (): Run => ({
-  clock: 0,
-  charging: false,
-  chargeStart: 0,
-  flight: null,
-  cooldown: 0,
-  made: 0,
-  shots: 0,
-  timeLeft: TIMED_SECONDS * 1000,
-  shownSecond: TIMED_SECONDS,
-  over: false,
-  netUntil: 0,
-  streak: 0,
-});
-
-const METER = { x: 14, y: 52, w: 18, h: 196 };
-const HAND = { x: 84, y: 212 };
-const horseMade = (shot: Shot, called: HorseShot) => {
-  const sim = simulateFlight({
-    releaseX: COURT.releaseX, releaseY: COURT.releaseY, floorY: COURT.floorY,
-    rimY: COURT.rimY, radius: BALL_R, rimHalf: RIM_HALF,
-    gravity: 900, speed: speedFor(shot.power), angle: Math.PI / 3,
-    hoopX: shot.hoopAtArrival,
-  });
-  return qualifiesHorseShot(called, shot.made, shot.power, sim.bankBeforeNet ? ["backboard"] : [], shot.result === "swish");
-};
-
-
-export function BasketballGame({
-  state,
-  onChange,
-  onExit,
-  sound = true,
-}: {
-  state: GameState;
-  onChange: (next: GameState) => void;
-  onExit: () => void;
-  /** Play small synthesized cues (the town's sound setting). */
-  sound?: boolean;
+export function BasketballGame({ state, onChange, onExit, sound = true }: {
+  state: GameState; onChange: (s: GameState) => void; onExit: () => void; sound?: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>("menu");
-  const [mode, setMode] = useState<CourtMode>("five");
-  const [opponent, setOpponent] = useState<HorseOpponent>("park-kid");
-  const [horseView, setHorseView] = useState<HorseState>(createHorseGame());
-  const [horseShot, setHorseShot] = useState<HorseShot>("standard");
-  const horseRef = useRef<HorseState>(createHorseGame());
-  const npcCalledRef = useRef<HorseShot>("standard");
-  const [level, setLevel] = useState<Difficulty>("normal");
+  const [mode, setMode] = useState<Mode>("timed");
   const [paused, setPaused] = useState(false);
   const [help, setHelp] = useState(false);
-  const [status, setStatus] = useState("Pick a mode to start.");
-  const [good, setGood] = useState<boolean | undefined>(undefined);
-  const [hud, setHud] = useState({ made: 0, shots: 0, left: TIMED_SECONDS });
-  const [callout, setCallout] = useState<{ text: string; good: boolean; id: number } | null>(null);
-  const [result, setResult] = useState<{ headline: string; lines: string[]; best: boolean } | null>(
-    null,
-  );
+  const [status, setStatus] = useState("The park's least official league.");
+  const [hud, setHud] = useState({ score: 0, shots: 0, streak: 0, left: SHOOTOUT_SECONDS });
+  const [callout, setCallout] = useState("");
+  const [result, setResult] = useState<{ headline: string; lines: string[]; best: boolean } | null>(null);
+  const run = useRef(fresh());
+  const paid = useRef(false), finished = useRef(false);
+  const latest = useRef({ state, mode, phase, paused: paused || help });
+  latest.current = { state, mode, phase, paused: paused || help };
+  const ball = useRef<SVGGElement>(null), shadow = useRef<SVGEllipseElement>(null), net = useRef<SVGGElement>(null);
+  const aim = useRef<SVGPathElement>(null);
+  const drag = useRef<{ x: number; y: number; start: number; id: number } | null>(null);
+  const keyboardStart = useRef<number | null>(null);
+  const aimOffset = useRef(0);
+  const cancel = () => { drag.current = null; keyboardStart.current = null; aim.current?.setAttribute("d", ""); };
+  useAutoPause(() => { cancel(); if (latest.current.phase === "play") setPaused(true); });
+  useEffect(() => { if (paused || help) cancel(); }, [paused, help]);
 
-  const run = useRef<Run>(freshRun());
-  const sessionPaid = useRef(false);
-  const stateRef = useRef(state);
-  stateRef.current = state;
-  const phaseRef = useRef(phase);
-  phaseRef.current = phase;
-  const pausedRef = useRef(paused);
-  pausedRef.current = paused || help;
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
-  const levelRef = useRef(level);
-  levelRef.current = level;
-  const finished = useRef(false);
-
-  const hoopEl = useRef<SVGGElement>(null);
-  const netEl = useRef<SVGGElement>(null);
-  const crowdEl = useRef<SVGGElement>(null);
-  const ballEl = useRef<SVGCircleElement>(null);
-  const armsEl = useRef<SVGGElement>(null);
-  const fillEl = useRef<SVGRectElement>(null);
-  const guideEl = useRef<SVGRectElement>(null);
-  const markerEl = useRef<SVGPathElement>(null);
-
-  useEffect(() => {
-    if (!helpSeen("basketball")) setHelp(true);
-  }, []);
-  useAutoPause(() => {
-    if (phaseRef.current === "play") setPaused(true);
-  });
-
-  const meterY = (p: number) => METER.y + METER.h * (1 - p);
-  const slope = (() => {
-    const a = landingX(0.55)!;
-    const b = landingX(0.65)!;
-    return (b - a) / 0.1;
-  })();
-
+  const updateHud = () => {
+    const r = run.current;
+    setHud({ score: r.made, shots: r.shots, streak: r.streak, left: Math.ceil(r.left) });
+  };
   const paint = () => {
-    const r = run.current;
-    const l = levelRef.current;
-    const hx = hoopX(r.clock, l);
-    hoopEl.current?.setAttribute("transform", `translate(${(hx - 296).toFixed(2)} 0)`);
-    const progress = Math.max(0, (r.netUntil - r.clock) / 450);
-    const netScale = 1 + progress * (0.18 + Math.sin((1-progress)*24) * 0.16);
-    crowdEl.current?.setAttribute("transform", `translate(0 ${r.netUntil > r.clock ? -3*Math.abs(Math.sin((1-progress)*24)) : 0})`);
-    netEl.current?.setAttribute(
-      "transform",
-      `translate(${hx.toFixed(2)} ${COURT.rimY + 4}) scale(1 ${netScale}) translate(${(-hx).toFixed(2)} ${-(COURT.rimY + 4)})`,
-    );
-    const power = r.charging ? powerAt(r.clock - r.chargeStart) : 0;
-    fillEl.current?.setAttribute("y", String(meterY(power)));
-    fillEl.current?.setAttribute("height", String(METER.h * power));
-    // Arms rise with the charge so the shooter visibly winds up.
-    armsEl.current?.setAttribute("transform", `rotate(${-30 - power * 80} 70 176)`);
-    if (LEVELS[l].showGuide && !r.flight) {
-      const ideal = idealPower(r.clock, l);
-      const half = LEVELS[l].made / slope;
-      const top = meterY(Math.min(1, ideal + half));
-      const bottom = meterY(Math.max(0, ideal - half));
-      guideEl.current?.setAttribute("y", String(top));
-      guideEl.current?.setAttribute("height", String(Math.max(3, bottom - top)));
-    } else guideEl.current?.setAttribute("height", "0");
-    markerEl.current?.setAttribute("transform", `translate(0 ${meterY(power)})`);
-    const ball = ballEl.current;
-    if (!ball) return;
-    if (r.flight) {
-      const i = Math.min(r.flight.path.length - 1, Math.floor(r.flight.t / (1000 / 60)));
-      const p = r.flight.path[i]!;
-      ball.setAttribute("cx", p.x.toFixed(1));
-      ball.setAttribute("cy", p.y.toFixed(1));
-    } else {
-      // In the shooter's hands: lifts a little as power builds.
-      ball.setAttribute("cx", String(HAND.x - 6));
-      ball.setAttribute("cy", String(HAND.y - 22 - power * 26));
+    const r = run.current, f = r.flight;
+    const current = f?.simulation.frames[Math.min(f.index, f.simulation.frames.length - 1)];
+    let position = current;
+    const next = f?.simulation.frames[f.index + 1];
+    if (current && next && f) {
+      const t = Math.max(0, Math.min(1, (f.elapsed - current.time) / (next.time - current.time)));
+      position = { ...current, x: current.x + (next.x - current.x) * t, y: current.y + (next.y - current.y) * t, z: current.z + (next.z - current.z) * t };
     }
+    const p = projectCourt(position ?? C.release);
+    ball.current?.setAttribute("transform", `translate(${p.x} ${p.y}) scale(${p.radius / 40}) rotate(${f ? f.elapsed * 220 : 0})`);
+    const ground = projectCourt({ ...(position ?? C.release), y: 0 });
+    shadow.current?.setAttribute("cx", String(ground.x)); shadow.current?.setAttribute("cy", String(Math.min(550, ground.y)));
+    shadow.current?.setAttribute("rx", String(p.radius * .85));
+    net.current?.setAttribute("transform", `translate(${rim.x} ${rim.y}) scale(1 ${1 + Math.sin(r.net * 25) * r.net * .35}) translate(${-rim.x} ${-rim.y})`);
   };
-
-  const finishRun = (completed: boolean) => {
+  const finish = (completed: boolean) => {
     if (finished.current) return;
-    finished.current = true;
+    finished.current = true; run.current.over = true; cancel();
     const r = run.current;
-    r.over = true;
-    if (modeRef.current === "horse") {
-      setResult({ headline: horseRef.current.winner === "human" ? "You win!" : horseRef.current.winner === "npc" ? `${HORSE_OPPONENTS[opponent].name} wins!` : "Match abandoned", lines: [`You: ${horseLetters(horseRef.current.letters.human) || "—"}`, `${HORSE_OPPONENTS[opponent].name}: ${horseLetters(horseRef.current.letters.npc) || "—"}`], best: false });
-      if (completed) setPhase("result");
-      return;
-    }
-    const out = finishBasketball(stateRef.current, modeRef.current, r.made, r.shots, completed);
-    onChange(out.next);
+    const outcome = finishBasketball(latest.current.state, latest.current.mode, r.made, r.shots, completed);
+    onChange(outcome.next);
     if (completed) {
-      const acc = accuracy(r.made, r.shots);
-      setResult({
-        headline: modeRef.current === "five" ? `${r.made} / ${FIVE_SHOTS}` : `${r.made} baskets`,
-        lines: [`${r.made} of ${r.shots} shots (${acc}%)`, ...out.notes],
-        best: out.newBest,
-      });
-      setPhase("result");
-      setStatus(out.newBest ? "New personal best!" : "Round over.");
+      setResult({ headline: `${r.made} basket${r.made === 1 ? "" : "s"}`, lines: [`${r.made}/${r.shots} shots · ${accuracy(r.made, r.shots)}% accuracy`, ...outcome.notes], best: outcome.newBest });
+      setPhase("result"); setStatus(outcome.newBest ? "New park record. Still no scouts." : "Round over.");
     }
   };
-
-  const resolveFlight = () => {
-    const r = run.current;
+  const shoot = (dx: number, up: number, ms: number) => {
+    const r = run.current, l = latest.current;
+    cancel();
+    if (l.phase !== "play" || l.paused || r.over || r.flight || r.cooldown > 0 || (l.mode === "timed" && r.left <= 0)) return;
+    const velocity = swipeVelocity(dx, up, ms);
+    if (!velocity) return;
+    r.flight = { simulation: simulateArcadeShot(velocity), elapsed: 0, index: 0 };
+    r.shots++; setCallout(""); setStatus("Ball in the air…"); updateHud();
+  };
+  useFrameLoop((dtMs) => {
+    const r = run.current, dt = dtMs / 1000;
+    if (r.over) return;
+    r.cooldown = Math.max(0, r.cooldown - dt); r.net = Math.max(0, r.net - dt);
+    if (latest.current.mode === "timed") {
+      const old = Math.ceil(r.left); r.left = Math.max(0, r.left - dt);
+      if (old !== Math.ceil(r.left)) updateHud();
+      if (r.left === 0) cancel();
+    }
     const f = r.flight;
-    if (!f) return;
-    r.flight = null;
-    r.cooldown = 450;
-    if (f.actor === "human" && f.shot.made) { r.made++; r.streak++; } else if (f.actor === "human") r.streak = 0;
-    playActionCue(f.shot.made ? "success" : "failure", sound);
-    if (f.actor === "human") setHud((h) => ({ ...h, made: r.made, shots: r.shots }));
-    setStatus(f.actor === "npc" ? `${HORSE_OPPONENTS[opponent].name} ${f.shot.made ? "scores!" : "misses!"}` : f.shot.reason);
-    setGood(f.shot.made);
-    setCallout({
-      text:
-        f.actor === "npc" ? (f.shot.made ? "NPC SCORES!" : "NPC MISSES!") : f.shot.result === "swish"
-          ? (r.streak >= 3 ? "HEATING UP!" : "SWISH!")
-          : f.shot.made
-            ? (r.streak >= 3 ? `${r.streak} IN A ROW!` : "In!")
-            : f.shot.result === "airball"
-              ? "Airball"
-              : "Miss",
-      good: f.shot.made,
-      id: f.actor === "npc" ? horseRef.current.turns + 1000 : r.shots,
-    });
-    if (modeRef.current === "horse") {
-      const called = horseRef.current.phase === "copy" ? (horseRef.current.shot ?? "standard") : (f.actor === "npc" ? (npcCalledRef.current) : horseShot);
-      const valid = horseMade(f.shot, called);
-      if (f.shot.made && !valid) {
-        setStatus(`Basket scored, but it was not a valid ${called} shot.`);
-        setCallout({ text: `${called.toUpperCase()} NOT MET`, good: false, id: horseRef.current.turns + 2000 });
-      }
-      const next = horseAttempt(horseRef.current, f.actor, valid, called);
-      horseRef.current = next;
-      setHorseView(next);
-      if (next.winner) finishRun(true);
-    }
-    if (modeRef.current === "five" && r.shots >= FIVE_SHOTS) finishRun(true);
-  };
-
-  useFrameLoop(
-    (dt) => {
-      const r = run.current;
-      r.clock += dt;
-      if (r.cooldown > 0) r.cooldown -= dt;
-      if (modeRef.current === "horse" && !r.over && !r.flight && r.cooldown <= 0) {
-        const h = horseRef.current;
-        const npcTurn = h.phase === "call" ? h.caller === "npc" : h.caller === "human";
-        if (npcTurn) {
-          const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : (["standard", "bank", "long", "trick"] as HorseShot[])[Math.floor(Math.random() * 4)]!;
-          // Choose a physically valid shot matching the NPC's skill roll when possible.
-          // Never award a basket that the animated trajectory doesn't actually make.
-          npcCalledRef.current = calledShot;
-          const wantsMake = Math.random() < npcHorseChance(opponent, calledShot);
-          const options = Array.from({ length: 64 }, (_, i) =>
-            evaluatePhysicalShot((i + 0.5) / 64, r.clock, levelRef.current));
-          const candidates = options.filter((shot) => horseMade(shot, calledShot) === wantsMake);
-          const pool = candidates.length ? candidates : options.filter((shot) => !horseMade(shot, calledShot));
-          const selected = (pool.length ? pool : options)[Math.floor(Math.random() * (pool.length || options.length))]!;
-          r.flight = { shot: selected, path: ballPath(selected), t: 0, netDone: false, actor: "npc" };
-          setStatus(`${HORSE_OPPONENTS[opponent].name} shoots...`);
-          setCallout(null);
+    if (f) {
+      f.elapsed += dt;
+      const frames = f.simulation.frames;
+      while (f.index + 1 < frames.length && (frames[f.index + 1]?.time ?? Infinity) <= f.elapsed) {
+        f.index++;
+        const frame = frames[f.index];
+        if (frame?.basket) {
+          r.made++; r.streak++; r.net = .6; updateHud();
+          setCallout(r.streak >= 3 ? "HEATING UP!" : f.simulation.swish ? "SWISH!" : "IN!");
+          setStatus(f.simulation.swish ? "Nothing but net." : "Ugly baskets count too."); playActionCue("success", sound);
+        } else if (frame?.contact === "rim" || frame?.contact === "board") {
+          setCallout(frame.contact === "rim" ? "CLANG!" : "OFF THE GLASS!");
         }
       }
-      if (modeRef.current === "timed" && !r.over) {
-        r.timeLeft = Math.max(0, r.timeLeft - dt);
-        const sec = Math.ceil(r.timeLeft / 1000);
-        if (sec !== r.shownSecond) {
-          r.shownSecond = sec;
-          setHud((h) => ({ ...h, left: sec }));
+      const last = frames.at(-1);
+      if (last && f.elapsed >= last.time + .08) {
+        if (!f.simulation.made) {
+          r.streak = 0; updateHud();
+          const hit = f.simulation.contacts.some((c) => c !== "floor");
+          setCallout(hit ? "CLANG!" : "AIRBALL!"); setStatus(hit ? "The iron remains undefeated." : "Somewhere, a pigeon is worried.");
+          playActionCue("failure", sound);
         }
-        if (r.timeLeft <= 0 && r.charging) r.charging = false; // time's up: an unreleased shot does not count
+        r.flight = null; r.cooldown = .12;
       }
-      if (r.flight) {
-        r.flight.t += dt;
-        const i = Math.floor(r.flight.t / (1000 / 60));
-        if (r.flight.shot.made && !r.flight.netDone) {
-          const p = r.flight.path[Math.min(i, r.flight.path.length - 1)]!;
-          if (p.y > COURT.rimY && i > 20) {
-            r.flight.netDone = true;
-            r.netUntil = r.clock + 450;
-          }
-        }
-        if (i >= r.flight.path.length) resolveFlight();
-      }
-      paint();
-      if (modeRef.current === "timed" && r.timeLeft <= 0 && !r.flight && !r.over) finishRun(true);
-    },
-    phase === "play" && !paused && !help,
-  );
-
-  const onDown = () => {
-    const r = run.current;
-    if (r.over || r.flight || r.cooldown > 0 || phaseRef.current !== "play" || pausedRef.current)
-      return;
-    if (modeRef.current === "timed" && r.timeLeft <= 0) return;
-    if (modeRef.current === "horse") {
-      const h = horseRef.current;
-      const yourTurn = h.phase === "call" ? h.caller === "human" : h.caller === "npc";
-      if (!yourTurn) return;
     }
-    r.charging = true;
-    r.chargeStart = r.clock;
-    setCallout(null);
-  };
-  const onUp = () => {
-    const r = run.current;
-    if (!r.charging) return;
-    r.charging = false;
-    if (pausedRef.current || phaseRef.current !== "play" || r.over || r.flight) return; // a paused hold is cancelled, not fired
-    const power = powerAt(r.clock - r.chargeStart);
-    const shot = evaluatePhysicalShot(power, r.clock, levelRef.current);
-    r.flight = { shot, path: ballPath(shot), t: 0, netDone: false, actor: "human" };
-    r.shots++;
-    setHud((h) => ({ ...h, shots: r.shots }));
-    setStatus("Ball's in the air...");
-    setGood(undefined);
-  };
-  const { bind } = useHold({
-    enabled: phase === "play" && !paused && !help,
-    onDown,
-    onUp,
-    onCancel: () => {
-      run.current.charging = false;
-    },
-  });
+    paint();
+    // A shot released before the buzzer finishes visibly; no shots after zero.
+    if (latest.current.mode === "timed" && r.left <= 0 && !r.flight) finish(true);
+  }, phase === "play" && !paused && !help);
 
-  const start = (m: CourtMode) => {
-    if (!sessionPaid.current) {
-      const s = startSession(stateRef.current, "basketball");
-      if (!s.ok) {
-        setStatus(s.message);
-        setGood(false);
-        return;
+  const handlers = useRef({ shoot }); handlers.current = { shoot };
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (latest.current.phase !== "play" || latest.current.paused) return;
+      if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+        e.preventDefault(); aimOffset.current = Math.max(-120, Math.min(120, aimOffset.current + (e.code === "ArrowLeft" ? -10 : 10)));
+        setStatus(aimOffset.current === 0 ? "Aim: centre" : `Aim: ${Math.abs(aimOffset.current)} ${aimOffset.current < 0 ? "left" : "right"}`);
       }
-      onChange(s.next);
-      sessionPaid.current = true;
-    }
-    run.current = freshRun();
-    horseRef.current = createHorseGame();
-    npcCalledRef.current = "standard";
-    setHorseShot("standard");
-    setHorseView(horseRef.current);
-    finished.current = false;
-    setMode(m);
-    modeRef.current = m;
-    setHud({ made: 0, shots: 0, left: TIMED_SECONDS });
-    setCallout(null);
-    setResult(null);
-    setPaused(false);
-    setPhase("play");
-    setGood(undefined);
-    setStatus(
-      m === "practice"
-        ? "Hold, then release to shoot. Practice is unlimited."
-        : "Hold, then release to shoot.",
-    );
+      if (e.code === "Space") { e.preventDefault(); if (!e.repeat) keyboardStart.current = performance.now(); }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || keyboardStart.current === null) return;
+      e.preventDefault();
+      const ms = performance.now() - keyboardStart.current;
+      handlers.current.shoot(aimOffset.current, Math.max(32, Math.min(290, ms * .56)), ms);
+    };
+    window.addEventListener("keydown", down); window.addEventListener("keyup", up);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
+  }, []);
+  const coords = (e: PointerEvent<HTMLDivElement>) => {
+    const bounds = e.currentTarget.querySelector("svg")?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0 || bounds.height <= 0) return null;
+    const scale = Math.min(bounds.width / 400, bounds.height / 560);
+    return { x: (e.clientX - bounds.left - (bounds.width - 400 * scale) / 2) / scale, y: (e.clientY - bounds.top - (bounds.height - 560 * scale) / 2) / scale };
   };
-
-  const leave = () => {
-    if (phaseRef.current === "play" && run.current.shots > 0) finishRun(false);
-    onExit();
-  };
-  const closeHelp = () => {
-    markHelpSeen("basketball");
-    setHelp(false);
-  };
-  const endPractice = () => {
+  const pointerDown = (e: PointerEvent<HTMLDivElement>) => {
     const r = run.current;
-    if (r.flight) return;
-    finishRun(true);
-    // Practice has no result screen worth showing beyond the summary.
+    if (e.button !== 0 || latest.current.paused || drag.current || r.flight || r.cooldown > 0 || r.over) return;
+    const p = coords(e); if (!p) return;
+    e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId);
+    drag.current = { ...p, start: performance.now(), id: e.pointerId }; setCallout("");
   };
+  const start = () => {
+    if (!paid.current) {
+      const session = startSession(latest.current.state, "basketball");
+      if (!session.ok) { setStatus(session.message); return; }
+      onChange(session.next); paid.current = true;
+    }
+    run.current = fresh(); finished.current = false; cancel(); aimOffset.current = 0;
+    setHud({ score: 0, shots: 0, streak: 0, left: SHOOTOUT_SECONDS });
+    setResult(null); setCallout(""); setPaused(false); setPhase("play"); setStatus("The park's least official league.");
+  };
+  const leave = () => { if (latest.current.phase === "play" && run.current.shots > 0) finish(false); onExit(); };
+  const closeHelp = () => { markHelpSeen("basketball"); setHelp(false); };
 
-  const guide = LEVELS[level].showGuide;
-  const hudView =
-    phase === "play" ? (
-      <>
-        <span>{MODES.find((m) => m.id === mode)?.label}</span>
-        {mode === "horse" && <span data-testid="horse-score">You {horseLetters(horseView.letters.human) || "—"} · {HORSE_OPPONENTS[opponent].name} {horseLetters(horseView.letters.npc) || "—"}</span>}
-        <span data-testid="hud-score">
-          Baskets {hud.made}/{hud.shots}
-          {mode === "five" ? ` · ${Math.max(0, FIVE_SHOTS - hud.shots)} left` : ""}
-        </span>
-        {mode === "timed" && <span data-testid="hud-time">⏱ {hud.left}s</span>}
-      </>
-    ) : null;
-
-  const dock =
-    phase === "play" ? (
-      <div className="space-y-2">
-        {mode === "horse" && horseView.phase === "call" && horseView.caller === "human" && (
-          <div role="group" aria-label="Call your shot" className="flex flex-wrap justify-center gap-1">
-            {(["standard", "bank", "long", "trick"] as HorseShot[]).map((kind) => (
-              <button key={kind} type="button" className="mg-chip" aria-pressed={horseShot === kind}
-                onClick={() => setHorseShot(kind)}>{kind === "standard" ? "Regular" : kind === "bank" ? "Bank" : kind === "long" ? "Long" : "Trick"}</button>
-            ))}
-          </div>
-        )}
-        {mode === "horse" && <div className="text-sm font-semibold text-center" data-testid="horse-turn">{horseView.phase === "copy" ? `Copy: ${horseView.shot}` : horseView.caller === "human" ? "Your call" : `${HORSE_OPPONENTS[opponent].name} calls`}</div>}
-        <button
-          type="button"
-          className="mg-hold"
-          aria-label="Hold to charge, release to shoot"
-          disabled={mode === "horse" && (horseView.phase === "finished" || (horseView.phase === "call" ? horseView.caller === "npc" : horseView.caller === "human"))}
-          {...bind}
-        >
-          {mode === "horse" && ((horseView.phase === "call" && horseView.caller === "npc") || (horseView.phase === "copy" && horseView.caller === "human")) ? "OPPONENT TURN" : "HOLD TO SHOOT"}
-        </button>
-        {mode === "practice" && (
-          <button type="button" className="mg-btn w-full" onClick={endPractice}>
-            Finish practice
-          </button>
-        )}
+  return <MinigameShell kicker="Park court" title="Basketball" background="var(--basketball-sky)"
+    status={status} helpOpen={help} onHelp={() => { cancel(); setHelp(true); }} onLeave={leave}
+    paused={phase === "play" ? paused : undefined}
+    onTogglePause={phase === "play" && !help ? () => { cancel(); setPaused((p) => !p); } : undefined}
+    hud={phase === "play" ? <><span data-testid="hud-score">Score {hud.score} · Shots {hud.shots}</span><span data-testid="hud-time">{mode === "timed" ? `${hud.left}s` : "Practice ∞"}</span><span data-testid="hud-streak">Streak {hud.streak}</span></> : null}
+    dock={phase === "menu" ? <Button className="mg-btn mg-btn-primary w-full" onClick={start}><Play size={18}/>Start · {mode === "timed" ? "30-Second Shootout" : "Practice"}</Button> : phase === "play" && mode === "practice" ? <Button className="mg-btn w-full" onClick={() => { cancel(); run.current.flight = null; finish(true); }}>Finish practice</Button> : undefined}>
+    <div className="bb-arcade relative h-full">
+      <div className="bb-court mg-play-area" role="application" aria-label="Swipe shooting area" tabIndex={phase === "play" ? 0 : -1}
+        onPointerDown={phase === "play" ? pointerDown : undefined}
+        onPointerMove={(e) => { const d = drag.current, p = coords(e); if (!d || d.id !== e.pointerId || !p) return; aim.current?.setAttribute("d", `M${d.x} ${d.y}L${p.x} ${p.y}`); }}
+        onPointerUp={(e) => { const d = drag.current, p = coords(e); if (!d || d.id !== e.pointerId) return; if (p) shoot(p.x - d.x, d.y - p.y, performance.now() - d.start); else cancel(); }}
+        onPointerCancel={cancel} onLostPointerCapture={cancel} onContextMenu={(e) => e.preventDefault()}>
+        <svg viewBox="0 0 400 560" preserveAspectRatio="xMidYMid meet" aria-label="First-person outdoor basketball court" role="img">
+          <rect width="400" height="560" fill="var(--basketball-sky)"/>
+          <circle cx="338" cy="45" r="24" fill="var(--basketball-sun)"/>
+          <path d="M0 220V170L22 150L42 173L58 148L80 170L100 162L125 185L154 161L175 185L225 166L260 180L284 152L310 174L338 144L365 171L400 157V290H0Z" fill="var(--town-leaf-light)" stroke="var(--town-ink)" strokeWidth="2"/>
+          <path d="M0 260H400V560H0Z" fill="var(--basketball-court)"/>
+          <path d="M0 260H400M0 560L155 260M400 560L245 260M100 560L177 260M300 560L223 260M100 425Q200 390 300 425" fill="none" stroke="var(--town-crossing)" strokeWidth="3"/>
+          <g stroke="var(--town-ink)" strokeWidth="2" opacity=".45"><path d="M0 245H400M0 229H400"/>{Array.from({length: 17}, (_, i) => <path key={i} d={`M${i*25} 225v35`}/>)}</g>
+          <g data-testid="hoop" stroke="var(--town-ink)" strokeWidth="2.5" strokeLinejoin="round">
+            <path d={`M${point({ x: 0, y: 0, z: 6.1 })}L${point({ x: 0, y: 3.4, z: 6.1 })}`} strokeWidth="9"/>
+            <polygon points={board} fill="var(--basketball-board)"/>
+            <polygon points={target} fill="none" stroke="var(--basketball-rim)" strokeWidth="3"/>
+            <path d={`M${point({ x: 0, y: C.hoop.y, z: C.boardZ })}L${point({ x: 0, y: C.hoop.y, z: C.hoop.z + C.rimRadius })}`} stroke="var(--basketball-rim)" strokeWidth="4"/>
+            <g ref={net} data-testid="net" stroke="var(--basketball-net)" strokeWidth="1.6" fill="none">
+              {Array.from({ length: 12 }, (_, i) => {
+                const a = i / 12 * Math.PI * 2, b = a + .8;
+                return <path key={i} d={`M${point({ x: Math.cos(a)*C.rimRadius, y: C.hoop.y, z: C.hoop.z+Math.sin(a)*C.rimRadius })}L${point({ x: Math.cos(b)*.24, y: 2.48, z: C.hoop.z+Math.sin(b)*.24 })}`}/>;
+              })}
+              <path d={rimOutline(.33, 2.77)}/><path d={rimOutline(.24, 2.48)}/>
+            </g>
+            <path d={rimOutline()} fill="none" stroke="var(--basketball-rim)" strokeWidth="4"/>
+          </g>
+          <g fill="var(--town-paper)" stroke="var(--town-ink)" strokeWidth="3" strokeLinecap="round">
+            <path d="M46 299l-10 9m24-9 10 9M340 299l-10-6m24 6 11-6"/><circle cx="53" cy="296" r="10"/><circle cx="347" cy="296" r="10"/>
+          </g>
+          <text x="53" y="332" textAnchor="middle" className="bb-scenery-text">NO SCOUTS.</text><text x="347" y="332" textAnchor="middle" className="bb-scenery-text">JUST GUS.</text>
+          <ellipse ref={shadow} cx="200" cy="550" rx="35" ry="7" fill="var(--town-shadow)" opacity=".18"/>
+          <g ref={ball} data-testid="basketball-ball" transform={`translate(${release.x} ${release.y}) scale(${release.radius / 40})`}>
+            <circle r="40" fill="var(--basketball-ball)" stroke="var(--town-ink)" strokeWidth="2.5"/>
+            <path d="M-40 0H40M0-40V40M-28-28Q12 0-28 28M28-28Q-12 0 28 28" fill="none" stroke="var(--town-ink)" strokeWidth="2"/>
+            <path d="M-20-28Q-8-35 3-32" stroke="var(--basketball-highlight)" strokeWidth="5" strokeLinecap="round"/>
+          </g>
+          <path ref={aim} fill="none" stroke="var(--basketball-net)" strokeWidth="4" strokeDasharray="8 6"/>
+        </svg>
       </div>
-    ) : phase === "menu" ? (
-      <button type="button" className="mg-btn mg-btn-primary w-full" onClick={() => start(mode)}>
-        Start · {MODES.find((m) => m.id === mode)?.label}
-      </button>
-    ) : null;
-
-  return (
-    <MinigameShell
-      kicker="Park court"
-      title="Basketball"
-      background="#bfe0ee"
-      hud={hudView}
-      status={status}
-      statusGood={good}
-      paused={phase === "play" ? paused : undefined}
-      onTogglePause={phase === "play" && !help ? () => setPaused((p) => !p) : undefined}
-      helpOpen={help}
-      onHelp={() => setHelp(true)}
-      onLeave={leave}
-      dock={dock}
-    >
-      {phase === "menu" && (
-        <div className="mg-card mx-auto flex h-full max-w-md flex-col gap-3 overflow-y-auto">
-          <div role="radiogroup" aria-label="Mode" className="grid gap-2">
-            {MODES.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                role="radio"
-                aria-checked={mode === m.id}
-                className={`mg-btn text-left ${mode === m.id ? "mg-btn-primary" : ""}`}
-                onClick={() => setMode(m.id)}
-              >
-                <span className="block">{m.label}</span>
-                <span className="block text-xs font-normal">{m.desc}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Difficulty">
-            <span className="text-sm font-bold">Difficulty</span>
-            {(["easy", "normal", "hard"] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                className="mg-chip"
-                aria-pressed={level === d}
-                onClick={() => setLevel(d)}
-              >
-                {LEVEL_LABEL[d]}
-              </button>
-            ))}
-          </div>
-          {mode === "horse" && <div className="flex flex-wrap gap-2" role="group" aria-label="H-O-R-S-E opponent">{(Object.keys(HORSE_OPPONENTS) as HorseOpponent[]).map((id) => <button type="button" key={id} className="mg-chip" aria-pressed={opponent === id} onClick={() => setOpponent(id)}>{HORSE_OPPONENTS[id].name}</button>)}</div>}
-          <p className="text-sm" data-testid="records">
-            Best five-shot: {state.bbBest5}/{FIVE_SHOTS} · Best 30s: {state.bbBestTimed} · Lifetime:{" "}
-            {state.bbMade}/{state.bbShots} ({accuracy(state.bbMade, state.bbShots)}%)
-          </p>
-          <p className="text-xs opacity-80">
-            Costs 30 minutes and 8 energy once per visit. Strength +1 once a day for a scoring
-            round.
-          </p>
+      {phase === "menu" && <div className="bb-menu">
+        <h3>Park Shootout</h3>
+        <div role="radiogroup" aria-label="Mode" className="grid gap-2">
+          <Button role="radio" aria-checked={mode === "timed"} className={`mg-btn ${mode === "timed" ? "mg-btn-primary" : ""}`} onClick={() => setMode("timed")}>30-Second Shootout</Button>
+          <Button role="radio" aria-checked={mode === "practice"} className={`mg-btn ${mode === "practice" ? "mg-btn-primary" : ""}`} onClick={() => setMode("practice")}>Practice</Button>
         </div>
-      )}
-
-      {phase === "result" && result && (
-        <div className="flex h-full items-center">
-          <ResultCard
-            title="Round over"
-            headline={result.headline}
-            lines={result.lines}
-            best={result.best}
-            actions={
-              <>
-                <button type="button" className="mg-btn mg-btn-primary" onClick={() => start(mode)}>
-                  Play again
-                </button>
-                <button type="button" className="mg-btn" onClick={() => setPhase("menu")}>
-                  Change mode
-                </button>
-                <button type="button" className="mg-btn" onClick={leave}>
-                  Leave court
-                </button>
-              </>
-            }
-          />
-        </div>
-      )}
-
-      {phase === "play" && (
-        <div className="mg-play-area relative flex h-full items-center justify-center" {...bind}>
-          <svg
-            viewBox={`0 0 ${COURT.w} ${COURT.h}`}
-            className="max-h-full w-full max-w-[560px] rounded-xl border-2 border-[#25242a]"
-            role="img"
-            aria-label="Basketball court. Hold to charge the power meter, release to shoot at the moving hoop."
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <rect width={COURT.w} height={COURT.h} fill="#bfe0ee" />
-            <path
-              d="M0 210 L40 170 L80 205 L130 150 L190 210 L240 165 L300 215 L350 175 L400 205 V268 H0Z"
-              fill="#9cc7b5"
-            />
-            <rect y={COURT.floorY} width={COURT.w} height={COURT.h - COURT.floorY} fill="#c98a4b" />
-            <path d={`M0 ${COURT.floorY}H${COURT.w}`} stroke="#25242a" strokeWidth="3" />
-            <path
-              d={`M20 ${COURT.floorY + 16}H${COURT.w - 20}`}
-              stroke="#f6e4c3"
-              strokeWidth="3"
-              strokeDasharray="14 10"
-            />
-
-            <g data-testid="hoop" ref={hoopEl}>
-              <path d={`M333 ${COURT.rimY + 6}V${COURT.floorY}`} stroke="#25242a" strokeWidth="6" />
-              <circle cx="333" cy={COURT.floorY - 2} r="5" fill="#25242a" />
-              <rect
-                x={296 + RIM_HALF + 12}
-                y={COURT.rimY - 52}
-                width="6"
-                height="58"
-                rx="2"
-                fill="#fffdf5"
-                stroke="#25242a"
-                strokeWidth="2.5"
-              />
-              <path
-                d={`M${296 + RIM_HALF} ${COURT.rimY}H${296 + RIM_HALF + 12}`}
-                stroke="#25242a"
-                strokeWidth="3"
-              />
-            </g>
-            <g ref={netEl} data-testid="net">
-              <path
-                d={`M${296 - RIM_HALF} ${COURT.rimY}L${296 - 13} ${COURT.rimY + 24}M${296 - 7} ${COURT.rimY + 3}L${296 - 4} ${COURT.rimY + 26}M${296 + 7} ${COURT.rimY + 3}L${296 + 4} ${COURT.rimY + 26}M${296 + RIM_HALF} ${COURT.rimY}L${296 + 13} ${COURT.rimY + 24}M${296 - 17} ${COURT.rimY + 12}H${296 + 17}`}
-                stroke="#fffdf5"
-                strokeWidth="2"
-                fill="none"
-              />
-              <ellipse
-                cx="296"
-                cy={COURT.rimY}
-                rx={RIM_HALF}
-                ry="4.5"
-                fill="none"
-                stroke="#d2542a"
-                strokeWidth="4"
-              />
-            </g>
-
-            {/* The local park spectators are part of the court rather than a separate overlay. */}
-            <g ref={crowdEl} data-testid="basketball-spectators" stroke="#25242a" strokeWidth="2.3" strokeLinecap="round">
-              {[154, 206, 256].map((x, i) => (
-                <g key={x} transform={"translate(" + x + " 0)"}>
-                  <ellipse cx="0" cy="261" rx="12" ry="3" fill="#25242a" opacity=".15" stroke="none" />
-                  <path d="M0 222V246M0 246L-8 258M0 246L8 258" fill="none" />
-                  <path d={i === 1 ? "M0 229L-10 211M0 229L10 214" : "M0 230L-10 240M0 230L11 239"} fill="none" />
-                  <circle cx="0" cy="213" r="9" fill={i === 0 ? "#c58f70" : i === 1 ? "#f1d6ae" : "#926c55"} />
-                  <path d="M-4 210h1M3 210h1" strokeWidth="2.5" />
-                </g>
-              ))}
-            </g>
-
-            {/* shooter: circular head, fixed standing legs, arms that rise with the charge */}
-            <g stroke="#25242a" strokeWidth="4" strokeLinecap="round" fill="none">
-              <circle cx="70" cy="150" r="12" fill="#f1d6ae" />
-              <path d="M70 162V204M70 204L58 252M70 204L84 252" />
-              <g ref={armsEl} transform="rotate(-30 70 176)">
-                <path d="M70 176L98 190" />
-              </g>
-            </g>
-            <ellipse cx="70" cy={COURT.floorY} rx="26" ry="5" fill="#25242a" opacity="0.15" />
-
-            {/* power meter */}
-            <rect
-              x={METER.x}
-              y={METER.y}
-              width={METER.w}
-              height={METER.h}
-              rx="6"
-              fill="#fffdf5"
-              stroke="#25242a"
-              strokeWidth="2.5"
-            />
-            <rect
-              ref={guideEl}
-              x={METER.x + 1}
-              width={METER.w - 2}
-              y={METER.y}
-              height="0"
-              fill="#7bd389"
-              opacity="0.85"
-            />
-            <rect
-              ref={fillEl}
-              x={METER.x + 3}
-              width={METER.w - 6}
-              y={METER.y + METER.h}
-              height="0"
-              rx="3"
-              fill="#e08b2c"
-            />
-            <path ref={markerEl} d={`M${METER.x + METER.w + 2} 0l9 -5v10z`} fill="#25242a" />
-            <text
-              x={METER.x + METER.w / 2}
-              y={METER.y - 8}
-              textAnchor="middle"
-              fontSize="11"
-              fontWeight="700"
-              fill="#25242a"
-            >
-              POWER
-            </text>
-
-            <circle
-              ref={ballEl}
-              cx={HAND.x - 6}
-              cy={HAND.y - 22}
-              r={BALL_R}
-              fill="#e0732a"
-              stroke="#25242a"
-              strokeWidth="2.5"
-            />
-          </svg>
-          {callout && (
-            <div
-              key={callout.id}
-              className={`mg-pop pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-xl border-2 border-[#25242a] px-4 py-1 text-xl font-extrabold ${callout.good ? "bg-[#9be3a4]" : "bg-[#f5b3a6]"}`}
-              data-testid="callout"
-            >
-              {callout.text}
-            </div>
-          )}
-          {!guide && (
-            <p className="pointer-events-none absolute bottom-2 left-3 text-xs font-bold opacity-80">
-              Hard: no aiming guide
-            </p>
-          )}
-          {paused && <PauseOverlay onResume={() => setPaused(false)} onLeave={leave} />}
-        </div>
-      )}
-
-      {help && (
-        <RulesSheet title="How to play basketball" onClose={closeHelp}>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>
-              The hoop slides left and right. You can't move, so you aim with power and timing.
-            </li>
-            <li>
-              <b>Press and hold</b> (touch the court or the big button, or hold Space) to charge.
-              The power bar sweeps up and down.
-            </li>
-            <li>
-              <b>Release</b> to shoot. Release when the orange bar reaches the green zone, which
-              follows the hoop.
-            </li>
-            <li>
-              The message under the court tells you why a shot missed: short means more power, long
-              means less.
-            </li>
-            <li>Five shots or 30 seconds. Practice is unlimited but never counts for records.</li>
-            <li>H-O-R-S-E: make a call; your opponent must copy it. Fail to copy a successful call and gain a letter. First to H-O-R-S-E loses. No cash prizes yet.</li>
-            <li>
-              Scoring a challenge round gives Strength +1, once a day. Pausing stops the clock.
-            </li>
-          </ul>
-        </RulesSheet>
-      )}
-    </MinigameShell>
-  );
+        <p>Best 30s: {state.bbBestTimed} · Lifetime {state.bbMade}/{state.bbShots}</p>
+        <p>30 minutes · 8 energy per visit</p>
+      </div>}
+      {phase === "play" && callout && <div className="bb-callout" key={`${hud.shots}-${callout}`} aria-live="polite" data-testid="callout">{callout}</div>}
+      {phase === "play" && paused && <PauseOverlay onResume={() => setPaused(false)} onLeave={leave}/>}
+      {phase === "result" && result && <div className="bb-results"><ResultCard title="Round over" {...result} actions={<>
+        <Button className="mg-btn mg-btn-primary" onClick={start}><RotateCcw size={18}/>Play again</Button>
+        <Button className="mg-btn" onClick={() => setPhase("menu")}>Change mode</Button>
+        <Button className="mg-btn" onClick={leave}>Leave court</Button>
+      </>}/></div>}
+    </div>
+    {help && <RulesSheet title="How to play basketball" onClose={closeHelp}>
+      <ul className="list-disc space-y-2 pl-5">
+        <li>Swipe up on the ball or court and release. A medium straight swipe is a good starting shot.</li>
+        <li>Swipe left or right to aim; longer, faster swipes add power. Mouse drags work too.</li>
+        <li>Keyboard: hold Space briefly and release to shoot; left/right arrows adjust aim.</li>
+        <li>Each basket scores one. Shots released before the buzzer can still finish. Pause stops the clock.</li>
+        <li>Practice has no records or rewards. A scoring shootout earns Strength +1, once a day.</li>
+      </ul>
+    </RulesSheet>}
+  </MinigameShell>;
 }

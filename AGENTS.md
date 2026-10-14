@@ -12,3 +12,4 @@
 - Keep upright ground projection in the browser-safe town-projection module so map geometry and exterior rendering agree.
 - Render destination architecture in BuildingExterior using the same lots and frontage as navigation, so visual entrances stay reachable.
 - Keep town illustration colors in global semantic CSS tokens so exterior details and the map share one palette.
+- Basketball arcade rendering and scoring must consume the same deterministic 3D flight frames and shared court geometry; legacy side-view and H-O-R-S-E logic stays separate to preserve reusable code without prediction-based scoring.
