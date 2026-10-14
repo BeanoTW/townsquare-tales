@@ -34,7 +34,7 @@ const MODES: { id: CourtMode; label: string; desc: string }[] = [
 ];
 const LEVEL_LABEL: Record<Difficulty, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 
-type Flight = { shot: Shot; path: Pt[]; t: number; netDone: boolean };
+type Flight = { shot: Shot; path: Pt[]; t: number; netDone: boolean; actor: "human" | "npc" };
 type Run = {
   clock: number;
   charging: boolean;
@@ -203,14 +203,14 @@ export function BasketballGame({
     if (!f) return;
     r.flight = null;
     r.cooldown = 450;
-    if (f.shot.made) { r.made++; r.streak++; } else r.streak = 0;
+    if (f.actor === "human" && f.shot.made) { r.made++; r.streak++; } else if (f.actor === "human") r.streak = 0;
     playActionCue(f.shot.made ? "success" : "failure", sound);
-    setHud((h) => ({ ...h, made: r.made, shots: r.shots }));
-    setStatus(f.shot.reason);
+    if (f.actor === "human") setHud((h) => ({ ...h, made: r.made, shots: r.shots }));
+    setStatus(f.actor === "npc" ? `${HORSE_OPPONENTS[opponent].name} ${f.shot.made ? "scores!" : "misses!"}` : f.shot.reason);
     setGood(f.shot.made);
     setCallout({
       text:
-        f.shot.result === "swish"
+        f.actor === "npc" ? (f.shot.made ? "NPC SCORES!" : "NPC MISSES!") : f.shot.result === "swish"
           ? (r.streak >= 3 ? "HEATING UP!" : "SWISH!")
           : f.shot.made
             ? (r.streak >= 3 ? `${r.streak} IN A ROW!` : "In!")
@@ -218,10 +218,10 @@ export function BasketballGame({
               ? "Airball"
               : "Miss",
       good: f.shot.made,
-      id: r.shots,
+      id: f.actor === "npc" ? horseRef.current.turns + 1000 : r.shots,
     });
     if (modeRef.current === "horse") {
-      const next = horseAttempt(horseRef.current, "human", f.shot.made, horseShot);
+      const next = horseAttempt(horseRef.current, f.actor, f.shot.made, horseShot);
       horseRef.current = next;
       setHorseView(next);
       if (next.winner) finishRun(true);
@@ -239,14 +239,16 @@ export function BasketballGame({
         const npcTurn = h.phase === "call" ? h.caller === "npc" : h.caller === "human";
         if (npcTurn) {
           const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : "standard";
-          const made = Math.random() < npcHorseChance(opponent, calledShot);
-          const next = horseAttempt(h, "npc", made, calledShot);
-          horseRef.current = next;
-          setHorseView(next);
-          r.cooldown = 900;
-          setStatus(`${HORSE_OPPONENTS[opponent].name} ${made ? "lands" : "misses"} the ${calledShot} shot!`);
-          setCallout({ text: made ? "NPC SCORES!" : "NPC MISSES!", good: !made, id: next.turns + 1000 });
-          if (next.winner) finishRun(true);
+          // Choose a physically valid shot matching the NPC's skill roll when possible.
+          // Never award a basket that the animated trajectory doesn't actually make.
+          const wantsMake = Math.random() < npcHorseChance(opponent, calledShot);
+          const options = Array.from({ length: 64 }, (_, i) =>
+            evaluatePhysicalShot((i + 0.5) / 64, r.clock, levelRef.current));
+          const candidates = options.filter((shot) => shot.made === wantsMake);
+          const selected = (candidates.length ? candidates : options)[Math.floor(Math.random() * (candidates.length || options.length))]!;
+          r.flight = { shot: selected, path: ballPath(selected), t: 0, netDone: false, actor: "npc" };
+          setStatus(`${HORSE_OPPONENTS[opponent].name} shoots...`);
+          setCallout(null);
         }
       }
       if (modeRef.current === "timed" && !r.over) {
@@ -297,7 +299,7 @@ export function BasketballGame({
     if (pausedRef.current || phaseRef.current !== "play" || r.over || r.flight) return; // a paused hold is cancelled, not fired
     const power = powerAt(r.clock - r.chargeStart);
     const shot = evaluatePhysicalShot(power, r.clock, levelRef.current);
-    r.flight = { shot, path: ballPath(shot), t: 0, netDone: false };
+    r.flight = { shot, path: ballPath(shot), t: 0, netDone: false, actor: "human" };
     r.shots++;
     setHud((h) => ({ ...h, shots: r.shots }));
     setStatus("Ball's in the air...");
