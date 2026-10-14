@@ -83,7 +83,7 @@ export function BasketballGame({
   const [mode, setMode] = useState<CourtMode>("five");
   const [opponent, setOpponent] = useState<HorseOpponent>("park-kid");
   const [horseView, setHorseView] = useState<HorseState>(createHorseGame());
-  const [horseShot, setHorseShot] = useState<HorseShot>("standard");
+  const horseShot: HorseShot = "standard";
   const horseRef = useRef<HorseState>(createHorseGame());
   const [level, setLevel] = useState<Difficulty>("normal");
   const [paused, setPaused] = useState(false);
@@ -379,6 +379,7 @@ export function BasketballGame({
           type="button"
           className="mg-hold"
           aria-label="Hold to charge, release to shoot"
+          disabled={mode === "horse" && (horseView.phase === "finished" || (horseView.phase === "call" ? horseView.caller === "npc" : horseView.caller === "human"))}
           {...bind}
         >
           {mode === "horse" && ((horseView.phase === "call" && horseView.caller === "npc") || (horseView.phase === "copy" && horseView.caller === "human")) ? "OPPONENT TURN" : "HOLD TO SHOOT"}
