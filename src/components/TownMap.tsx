@@ -267,10 +267,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
-    // Limit expensive React/SVG scene reconciliation to 20 FPS on mobile.
+    // Keep map animation at 30 FPS on mobile for smoother movement without full 60 FPS scene reconciliation.
     // The browser still schedules RAF normally, but most frames do no React work.
     let last = performance.now(), raf = 0;
-    const FRAME_MS = 50;
+    const FRAME_MS = 1000 / 30;
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
       if (now - last < FRAME_MS) return;
@@ -337,7 +337,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         if (!blocked(nx, ny)) { m.x = nx; m.y = ny; }
         else if (!blocked(nx, m.y)) m.x = nx;
         else if (!blocked(m.x, ny)) m.y = ny;
-        else target.current = null;
+        else { target.current = null; m.walking = false; }
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
         m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
@@ -366,7 +366,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   };
 
   const onGroundPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (e.pointerType === "mouse" || joystick.current) return;
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if (joystick.current) return;
     if (e.isPrimary === false) return;
     // Anchor to the real touch point, not a clamped position that jumps near edges.
     const x = e.clientX, y = e.clientY;
@@ -503,7 +504,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   return (
     <div data-town-paused={paused} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
       <svg ref={svgRef} viewBox={playerCameraViewBox(m.x, m.y, skating, m.skateAngle)} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
-        onPointerDownCapture={e=>{if(!pausedRef.current)onGroundPointerDown(e);}}
+        onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {
             suppressGroundClickUntil.current = 0;
