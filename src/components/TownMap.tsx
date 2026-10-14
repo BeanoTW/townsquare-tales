@@ -366,7 +366,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   };
 
   const onGroundPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (movementMode !== "joystick" || e.pointerType === "mouse" || joystick.current) return;
+    if (e.pointerType === "mouse" || joystick.current) return;
     if (e.isPrimary === false) return;
     // Anchor to the real touch point, not a clamped position that jumps near edges.
     const x = e.clientX, y = e.clientY;
@@ -503,7 +503,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   return (
     <div data-town-paused={paused} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
       <svg ref={svgRef} viewBox={playerCameraViewBox(m.x, m.y, skating, m.skateAngle)} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
-        onPointerDown={e=>{if(!pausedRef.current)onGroundPointerDown(e);}}
+        onPointerDownCapture={e=>{if(!pausedRef.current)onGroundPointerDown(e);}}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {
             suppressGroundClickUntil.current = 0;
@@ -512,7 +512,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           }
         }}
         onClick={(e) => {
-          if (movementMode === "joystick" && e.nativeEvent.detail !== 0 && !(e.nativeEvent as PointerEvent).pointerType?.includes("mouse")) return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
+          if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
