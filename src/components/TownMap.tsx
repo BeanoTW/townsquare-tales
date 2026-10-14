@@ -1,3 +1,7 @@
+import { beginStreetGrind, advanceStreetGrind, grindPosition, type StreetGrind } from "@/lib/street-grind";
+import { nearbyRail } from "@/lib/town-rails";
+import { TOWN_RAILS } from "@/lib/town-rails";
+import { elevation, deckRotation, stepJump, type SkateJump } from "@/lib/skate-tricks";
 import { OverheadPerson } from "@/components/OverheadPerson";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StreetLife, type ResidentPositions } from "@/components/StreetLife";
@@ -129,12 +133,12 @@ export function playerCameraViewBox(x: number, y: number, skating = false, _skat
   return `${cx - 165} ${cy + boardYOffset - 275} 330 550`;
 }
 
-function Stick({ x, y, phase, walking, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
+function Stick({ x, y, phase, walking, jump = null, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; jump?: SkateJump | null; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
   const [sx, sy] = P(x, y);
   return <g transform={`translate(${sx},${sy})`}>
-    {skating ? <g data-skater-pose data-skate-angle={skateAngle} transform={`rotate(${skateAngle + 180})`}>
-      <rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/>
-      <path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/>
+    {skating && jump && <ellipse data-skate-shadow cx="0" cy="0" rx="11" ry="6" fill="#25242a" opacity=".17"/>}
+    {skating ? <g data-skater-pose data-skate-angle={skateAngle} transform={jump ? `translate(0 ${-elevation(jump)}) rotate(${skateAngle + 180})` : `rotate(${skateAngle + 180})`}>
+      <g transform={`rotate(${deckRotation(jump)})`}><rect data-skateboard="deck" x="-5" y="-24" width="10" height="42" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/><path d="M-3 -18h6M-3 12h6" stroke="#cbd0d2" strokeWidth="1.2"/></g>
       <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={false} angle={0}/>
     </g> : <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking || feedback === "bin"} angle={(skateAngle + 180) % 360}/>}
     {feedback === "vending" && <g data-drinking-feedback transform="translate(14 -10)"><path d="M-3 -4h7l-1 9h-5Z" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -4v-5l3-2" stroke="var(--town-ink)" fill="none"/></g>}
@@ -166,6 +170,16 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     }
   }, []);
   const svgRef = useRef<SVGSVGElement>(null);
+  const skateJump = useRef<SkateJump | null>(null);
+  const streetGrind = useRef<StreetGrind | null>(null);
+  const [grindHud, setGrindHud] = useState<{name:string;balance:number}|null>(null);
+  const startTrick = (trick: "ollie" | "kickflip" | "shuvit") => {
+    if (!skating || pausedRef.current || skateJump.current || streetGrind.current) return;
+    const rail = nearbyRail(me.current);
+    const grind = rail ? beginStreetGrind(me.current, rail) : null;
+    if (grind) { streetGrind.current = grind; skateJump.current = null; }
+    else skateJump.current = {trick,elapsed:0};
+  };
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = useCallback((destination: Point, enter?: string) => {
@@ -237,6 +251,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const down = (e: KeyboardEvent) => {
       if (pausedRef.current || (e.target instanceof HTMLElement && e.target.closest("button,input,textarea,[role=dialog]"))) return;
       const k = e.key.toLowerCase();
+      if (skating && !e.repeat && (k === " " || k === "q" || k === "r") && !skateJump.current) {
+        startTrick(k === "q" ? "kickflip" : k === "r" ? "shuvit" : "ollie");
+        e.preventDefault();
+        return;
+      }
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
       if ((k === "e" || k === " " || k === "enter") && nearStreetRef.current) useStreet(nearStreetRef.current);
       else if ((k === "e" || k === " " || k === "enter") && nearRef.current) enterRef.current(nearRef.current.id);
@@ -258,6 +277,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       const dt = Math.min((now - last) / 1000, 0.1);
       last = now;
       if(pausedRef.current){ keys.current.clear(); target.current=null; me.current.walking=false; return; }
+      skateJump.current = skating ? stepJump(skateJump.current, dt) : null;
+      if(streetGrind.current && skating){
+        const lean = (keys.current.has("a") || keys.current.has("arrowleft") ? -1 : 0) + (keys.current.has("d") || keys.current.has("arrowright") ? 1 : 0);
+        const next = advanceStreetGrind(streetGrind.current,dt,lean);
+        streetGrind.current=next;
+        const pos=grindPosition(next); me.current.x=pos.x; me.current.y=pos.y;
+        if(next.outcome==="grinding")setGrindHud({name:next.rail.name,balance:next.balance});
+        else {streetGrind.current=null;setGrindHud(null);}
+        setT(now/1000);
+        return;
+      }
+      if(!skating && streetGrind.current){streetGrind.current=null;setGrindHud(null);}
       const k = keys.current, m = me.current;
       let dx = 0, dy = 0;
       if (k.has("w") || k.has("arrowup")) dy -= 1;
@@ -462,7 +493,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={karmaHeadColor(karma)} /> });
+  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
   const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
@@ -521,6 +552,15 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           return Array.from({length:count},(_,j)=>
             vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"var(--town-lane-paint)","line-"+i+"-"+j):
               tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
+        })}
+        {/* Visible grind targets, positioned using existing map projection. */}
+        {TOWN_RAILS.map(rail => {
+          const [ax, ay] = P(rail.a.x, rail.a.y);
+          const [bx, by] = P(rail.b.x, rail.b.y);
+          return <g key={"grind-"+rail.id} data-town-rail={rail.id} pointerEvents="none">
+            <path d={`M${ax} ${ay} L${bx} ${by}`} stroke="#2b2c31" strokeWidth={5} strokeLinecap="round"/>
+            <path d={`M${ax} ${ay-2} L${bx} ${by-2}`} stroke="#bbc2c7" strokeWidth={2} strokeLinecap="round"/>
+          </g>;
         })}
         {/* Crossings only where the staggered side roads actually meet the spine. */}
         {[7.1,11.9,18.5,25.5].map((y,i)=>
@@ -585,6 +625,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </svg>
       </div>
 
+      {skating && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("a");}} onPointerUp={()=>keys.current.delete("a")} onPointerCancel={()=>keys.current.delete("a")}>◀ Hold</button><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("d");}} onPointerUp={()=>keys.current.delete("d")} onPointerCancel={()=>keys.current.delete("d")}>Hold ▶</button></div></div>}
+      {skating && !paused && (
+        <div data-skate-trick-controls className="absolute bottom-36 right-3 z-20 flex flex-col gap-2 sm:bottom-20" aria-label="Skateboard tricks">
+          {(["ollie", "kickflip", "shuvit"] as const).map(trick => (
+            <button key={trick} type="button" aria-label={trick} className="min-h-11 rounded-lg border-2 border-foreground bg-card/90 px-3 text-xs font-bold shadow-lg"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); startTrick(trick); }}>
+              {trick === "ollie" ? "Jump" : trick === "kickflip" ? "Kickflip" : "Shuvit"}
+            </button>
+          ))}
+        </div>
+      )}
       {nearStreet && !paused && <Button onClick={()=>useStreet(nearStreet)} className="absolute bottom-64 left-1/2 h-auto min-h-11 max-w-[calc(100%-24px)] -translate-x-1/2 whitespace-normal rounded-sm border-2 border-foreground text-center sm:bottom-24">{STREET_OBJECTS.find(o=>o.id===nearStreet)?.label}</Button>}
       {near && !nearStreet && !paused && (
         <Button onClick={() => onEnter(near.id)} className="absolute bottom-64 left-1/2 max-w-[calc(100%-24px)] -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-lg text-primary-foreground sm:bottom-24">
