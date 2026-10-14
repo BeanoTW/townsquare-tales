@@ -148,6 +148,8 @@ export function sleepAction(s: GameState): ActionDef {
           energy: rested.energy,
           day: st.day + 1,
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
+          loanDebt: Math.min(100000, (st.loanDebt ?? 0) + Math.ceil((st.loanDebt ?? 0) * 0.01)),
+          loanLastDay: st.day + 1,
           heat: Math.max(0, st.heat - 1),
         },
         message: `Day ${st.day + 1}. You wake at ${timeLabel(rested.hour)} in your ${HOUSES[st.house]?.name ?? "home"} with ${rested.energy} energy.`,
@@ -329,6 +331,35 @@ export const CHAT_UP: ActionDef = {
 };
 
 /** Any whole-dollar transfer amount, without changing the save schema. */
+/** Town Bank loans: 1% daily interest charged on sleep, one outstanding loan at a time. */
+export function bankLoanAction(amount: number): ActionDef {
+  return {
+    id: `bank-loan-${amount}`, label: `Borrow ${amount}`, hours: 0, energy: 0,
+    note: "1% daily interest · repay at the bank",
+    resolve: s => {
+      if (![250, 1000, 2500].includes(amount)) return "That loan amount is unavailable.";
+      if ((s.loanDebt ?? 0) > 0) return "Repay your existing loan before borrowing again.";
+      if (amount > 250 && s.job === 0) return "You need a job to qualify for a larger loan.";
+      if (s.money + amount > 1e12) return "Your wallet cannot hold that much cash.";
+      return { patch: { money: s.money + amount, loanDebt: amount, loanLastDay: s.day }, message: `Approved: ${amount} loan. Interest is 1% per day, charged when you sleep.` };
+    },
+  };
+}
+
+export function repayLoanAction(amount: number | "all"): ActionDef {
+  return {
+    id: `bank-repay-${amount}`, label: amount === "all" ? "Repay loan in full" : `Repay ${amount}`,
+    hours: 0, energy: 0,
+    resolve: s => {
+      const debt = s.loanDebt ?? 0;
+      if (!debt) return "You have no outstanding loan.";
+      const payment = amount === "all" ? debt : Math.min(debt, amount);
+      if (s.money < payment) return `You need ${payment} cash to make this payment.`;
+      return { patch: { money: s.money - payment, loanDebt: debt - payment }, message: `Paid ${payment} towards your loan. ${debt-payment} remaining.` };
+    },
+  };
+}
+
 export function bankTransferAction(kind: "deposit" | "withdraw", amount: number): ActionDef {
   return {
     id: `bank-${kind}-${amount}`,
