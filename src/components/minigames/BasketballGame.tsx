@@ -7,7 +7,7 @@ import {
   RIM_HALF,
   TIMED_SECONDS,
   ballPath,
-  evaluateShot,
+  evaluatePhysicalShot,
   hoopX,
   idealPower,
   landingX,
@@ -253,7 +253,7 @@ export function BasketballGame({
     r.charging = false;
     if (pausedRef.current || phaseRef.current !== "play" || r.over || r.flight) return; // a paused hold is cancelled, not fired
     const power = powerAt(r.clock - r.chargeStart);
-    const shot = evaluateShot(power, r.clock, levelRef.current);
+    const shot = evaluatePhysicalShot(power, r.clock, levelRef.current);
     r.flight = { shot, path: ballPath(shot), t: 0, netDone: false };
     r.shots++;
     setHud((h) => ({ ...h, shots: r.shots }));
