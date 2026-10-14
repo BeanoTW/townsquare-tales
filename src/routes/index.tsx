@@ -83,17 +83,16 @@ function Game() {
 
   // Load whatever the player has saved. Releases must never erase progress.
   useEffect(() => {
+    // Always launch the regular save. Developer Mode is an explicit session choice,
+    // never a persisted launch preference; retain its separate progress for next time.
     const normal = loadGame(START);
-    let enabled = false;
+    setGodMode(false);
+    setS(normal);
     try {
-      enabled = window.localStorage.getItem(GOD_ENABLED_KEY) === "true";
-    } catch { /* Start in normal mode when storage is unavailable. */ }
-    setGodMode(enabled);
-    try {
-      setS(enabled ? parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), START) : normal);
+      window.localStorage.removeItem(GOD_ENABLED_KEY);
       setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
       setSoundOn(window.localStorage.getItem("sticktown-sounds") !== "false");
-    } catch { setS(enabled ? parseGodSave(null, START) : normal); }
+    } catch { /* Run with in-memory preferences when storage is unavailable. */ }
     setSaveReady(true);
   }, []);
   // Never overwrite a player's existing save with SSR defaults during hydration.
@@ -108,7 +107,7 @@ function Game() {
     if (godMode) {
       try {
         window.localStorage.setItem(GOD_SAVE_KEY, JSON.stringify(s));
-        window.localStorage.setItem(GOD_ENABLED_KEY, "false");
+        window.localStorage.removeItem(GOD_ENABLED_KEY);
       } catch { /* Still switches back during this session. */ }
       setS(loadGame(START));
       setGodMode(false);
@@ -117,7 +116,7 @@ function Game() {
       let sandbox = parseGodSave(null, s);
       try {
         sandbox = parseGodSave(window.localStorage.getItem(GOD_SAVE_KEY), s);
-        window.localStorage.setItem(GOD_ENABLED_KEY, "true");
+        // Never persist God Mode as a launch preference.
       } catch { /* Continue with a fresh sandbox if storage is disabled. */ }
       setS(sandbox);
       setGodMode(true);
