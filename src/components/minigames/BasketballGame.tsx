@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowUp, Pause, Play, RotateCcw } from "lucide-react";
+import { Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RulesSheet } from "@/components/casino/CasinoShell";
 import type { GameState } from "@/lib/game-state";

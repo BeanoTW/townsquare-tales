@@ -83,7 +83,7 @@ export function simulateArcadeShot(velocity: Vec3): ArcadeFlight {
   return { frames, made, swish: made && !contacts.some((c) => c === "rim" || c === "board"), contacts };
 }
 
-export function rimOutline(radius = ARCADE_COURT.rimRadius, y: number = ARCADE_COURT.hoop.y): string {
+export function rimOutline(radius: number = ARCADE_COURT.rimRadius, y: number = ARCADE_COURT.hoop.y): string {
   const h = ARCADE_COURT.hoop;
   return Array.from({ length: 49 }, (_, i) => {
     const angle = i / 48 * Math.PI * 2;
