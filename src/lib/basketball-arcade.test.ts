@@ -47,6 +47,21 @@ describe("first-person arcade physics", () => {
     expect(made).toBeGreaterThan(0); expect(missed).toBeGreaterThan(0);
     expect(rim).toBeGreaterThan(0); expect(board).toBeGreaterThan(0);
   });
+  it("keeps swipe calibration finite across realistic mobile gestures", () => {
+    for (const duration of [80, 120, 250, 500, 900]) {
+      for (const up of [35, 65, 110, 168, 230, 320]) {
+        for (const dx of [-180, -60, 0, 60, 180]) {
+          const velocity = swipeVelocity(dx, up, duration);
+          expect(velocity).not.toBeNull();
+          if (!velocity) continue;
+          expect(Object.values(velocity).every(Number.isFinite)).toBe(true);
+          const flight = simulateArcadeShot(velocity);
+          expect(flight.frames.length).toBeGreaterThan(1);
+          expect(flight.made).toBe(flight.frames.some(frame => frame.basket));
+        }
+      }
+    }
+  });
   it("is deterministic and perspective makes the ball shrink toward the basket", () => {
     const v = { x: 0, y: 7.09, z: 4.636 };
     expect(simulateArcadeShot(v)).toEqual(simulateArcadeShot(v));
