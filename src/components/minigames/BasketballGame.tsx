@@ -7,6 +7,7 @@ import {
   RIM_HALF,
   TIMED_SECONDS,
   ballPath,
+  speedFor,
   evaluatePhysicalShot,
   hoopX,
   idealPower,
@@ -16,7 +17,8 @@ import {
   type Pt,
   type Shot,
 } from "@/lib/basketball";
-import { HORSE_OPPONENTS, createHorseGame, horseAttempt, horseLetters, npcHorseChance, type HorseOpponent, type HorseState, type HorseShot } from "@/lib/horse-game";
+import { simulateFlight } from "@/lib/basketball-physics";
+import { qualifiesHorseShot, HORSE_OPPONENTS, createHorseGame, horseAttempt, horseLetters, npcHorseChance, type HorseOpponent, type HorseState, type HorseShot } from "@/lib/horse-game";
 import { RulesSheet } from "@/components/casino/CasinoShell";
 import type { GameState } from "@/lib/game-state";
 import { accuracy, finishBasketball, startSession, type BasketballMode } from "@/lib/minigames";
@@ -66,6 +68,16 @@ const freshRun = (): Run => ({
 
 const METER = { x: 14, y: 52, w: 18, h: 196 };
 const HAND = { x: 84, y: 212 };
+const horseMade = (shot: Shot, called: HorseShot) => {
+  const sim = simulateFlight({
+    releaseX: COURT.releaseX, releaseY: COURT.releaseY, floorY: COURT.floorY,
+    rimY: COURT.rimY, radius: BALL_R, rimHalf: RIM_HALF,
+    gravity: 900, speed: speedFor(shot.power), angle: Math.PI / 3,
+    hoopX: shot.hoopAtArrival,
+  });
+  return qualifiesHorseShot(called, shot.made, shot.power, sim.contacts, shot.result === "swish");
+};
+
 
 export function BasketballGame({
   state,
@@ -85,6 +97,7 @@ export function BasketballGame({
   const [horseView, setHorseView] = useState<HorseState>(createHorseGame());
   const [horseShot, setHorseShot] = useState<HorseShot>("standard");
   const horseRef = useRef<HorseState>(createHorseGame());
+  const npcCalledRef = useRef<HorseShot>("standard");
   const [level, setLevel] = useState<Difficulty>("normal");
   const [paused, setPaused] = useState(false);
   const [help, setHelp] = useState(false);
@@ -221,7 +234,9 @@ export function BasketballGame({
       id: f.actor === "npc" ? horseRef.current.turns + 1000 : r.shots,
     });
     if (modeRef.current === "horse") {
-      const next = horseAttempt(horseRef.current, f.actor, f.shot.made, horseRef.current.phase === "copy" ? (horseRef.current.shot ?? "standard") : horseShot);
+      const called = horseRef.current.phase === "copy" ? (horseRef.current.shot ?? "standard") : (f.actor === "npc" ? (npcCalledRef.current) : horseShot);
+      const valid = horseMade(f.shot, called);
+      const next = horseAttempt(horseRef.current, f.actor, valid, called);
       horseRef.current = next;
       setHorseView(next);
       if (next.winner) finishRun(true);
@@ -241,11 +256,13 @@ export function BasketballGame({
           const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : (["standard", "bank", "long", "trick"] as HorseShot[])[Math.floor(Math.random() * 4)]!;
           // Choose a physically valid shot matching the NPC's skill roll when possible.
           // Never award a basket that the animated trajectory doesn't actually make.
+          npcCalledRef.current = calledShot;
           const wantsMake = Math.random() < npcHorseChance(opponent, calledShot);
           const options = Array.from({ length: 64 }, (_, i) =>
             evaluatePhysicalShot((i + 0.5) / 64, r.clock, levelRef.current));
-          const candidates = options.filter((shot) => shot.made === wantsMake);
-          const selected = (candidates.length ? candidates : options)[Math.floor(Math.random() * (candidates.length || options.length))]!;
+          const candidates = options.filter((shot) => horseMade(shot, calledShot) === wantsMake);
+          const pool = candidates.length ? candidates : options.filter((shot) => !horseMade(shot, calledShot));
+          const selected = (pool.length ? pool : options)[Math.floor(Math.random() * (pool.length || options.length))]!;
           r.flight = { shot: selected, path: ballPath(selected), t: 0, netDone: false, actor: "npc" };
           setStatus(`${HORSE_OPPONENTS[opponent].name} shoots...`);
           setCallout(null);
@@ -327,6 +344,7 @@ export function BasketballGame({
     }
     run.current = freshRun();
     horseRef.current = createHorseGame();
+    npcCalledRef.current = "standard";
     setHorseShot("standard");
     setHorseView(horseRef.current);
     finished.current = false;
