@@ -146,6 +146,15 @@
 
 /* Illustration materials are stable across interface themes. */
 :root {
+  --basketball-sky: oklch(0.88 0.065 225);
+  --basketball-sun: oklch(0.94 0.15 92);
+  --basketball-court: oklch(0.65 0.1 185);
+  --basketball-board: oklch(0.99 0.015 90);
+  --basketball-net: oklch(0.96 0.015 90);
+  --basketball-ball: oklch(0.73 0.18 48);
+  --basketball-rim: oklch(0.61 0.21 31);
+  --basketball-highlight: oklch(0.87 0.1 66);
+  --basketball-overlay: oklch(0.23 0 0 / 0.4);
   --town-ink: oklch(0.2308 0.0000 89.88);
   --town-shadow: oklch(0.0000 0.0000 0.00);
   --town-paper: oklch(1.0000 0.0000 89.88);
