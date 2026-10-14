@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RulesSheet } from "@/components/casino/CasinoShell";
@@ -159,7 +159,7 @@ export function BasketballGame({ state, onChange, onExit, sound = true }: {
     const scale = Math.min(bounds.width / 400, bounds.height / 560);
     return { x: (clientX - bounds.left - (bounds.width - 400 * scale) / 2) / scale, y: (clientY - bounds.top - (bounds.height - 560 * scale) / 2) / scale };
   };
-  const pointerDown = (e: PointerEvent<HTMLDivElement>) => {
+  const pointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const r = run.current;
     if (e.button !== 0 || latest.current.paused || drag.current || r.flight || r.cooldown > 0 || r.over) return;
     const element = e.currentTarget;
@@ -169,7 +169,7 @@ export function BasketballGame({ state, onChange, onExit, sound = true }: {
     drag.current = { ...p, start: performance.now(), id: e.pointerId };
     setCallout("");
     // Window-level listeners survive SVG/overlay changes while the finger moves.
-    const move = (event: globalThis.PointerEvent) => {
+    const move = (event: PointerEvent) => {
       const d = drag.current;
       if (!d || d.id !== event.pointerId) return;
       if (event.cancelable) event.preventDefault();
@@ -182,7 +182,7 @@ export function BasketballGame({ state, onChange, onExit, sound = true }: {
       window.removeEventListener("pointercancel", abort, true);
       removeSwipeListeners.current = null;
     };
-    const up = (event: globalThis.PointerEvent) => {
+    const up = (event: PointerEvent) => {
       const d = drag.current;
       if (!d || d.id !== event.pointerId) return;
       const pos = coordsAt(element, event.clientX, event.clientY);
@@ -190,7 +190,7 @@ export function BasketballGame({ state, onChange, onExit, sound = true }: {
       if (pos) shoot(pos.x - d.x, d.y - pos.y, performance.now() - d.start);
       else cancel();
     };
-    const abort = (event: globalThis.PointerEvent) => {
+    const abort = (event: PointerEvent) => {
       if (drag.current?.id !== event.pointerId) return;
       cleanup(); cancel();
     };
