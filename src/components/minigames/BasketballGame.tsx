@@ -75,7 +75,7 @@ const horseMade = (shot: Shot, called: HorseShot) => {
     gravity: 900, speed: speedFor(shot.power), angle: Math.PI / 3,
     hoopX: shot.hoopAtArrival,
   });
-  return qualifiesHorseShot(called, shot.made, shot.power, sim.contacts, shot.result === "swish");
+  return qualifiesHorseShot(called, shot.made, shot.power, sim.bankBeforeNet ? ["backboard"] : [], shot.result === "swish");
 };
 
 
