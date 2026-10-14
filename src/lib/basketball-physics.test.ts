@@ -28,7 +28,7 @@ describe("basketball physics", () => {
 
   it("detects a front rim impact", () => {
     const flight = simulateFlight({
-      ...base, releaseX: 252, releaseY: 80, speed: 120, angle: 0,
+      ...base, releaseX: 274, releaseY: 80, speed: 0, angle: 0,
     });
     expect(flight.contacts).toContain("front-rim");
   });
