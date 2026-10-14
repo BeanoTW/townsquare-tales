@@ -7,7 +7,8 @@ import {
   RIM_HALF,
   TIMED_SECONDS,
   ballPath,
-  evaluateShot,
+  speedFor,
+  evaluatePhysicalShot,
   hoopX,
   idealPower,
   landingX,
@@ -16,6 +17,8 @@ import {
   type Pt,
   type Shot,
 } from "@/lib/basketball";
+import { simulateFlight } from "@/lib/basketball-physics";
+import { qualifiesHorseShot, HORSE_OPPONENTS, createHorseGame, horseAttempt, horseLetters, npcHorseChance, type HorseOpponent, type HorseState, type HorseShot } from "@/lib/horse-game";
 import { RulesSheet } from "@/components/casino/CasinoShell";
 import type { GameState } from "@/lib/game-state";
 import { accuracy, finishBasketball, startSession, type BasketballMode } from "@/lib/minigames";
@@ -24,14 +27,16 @@ import { useAutoPause, useFrameLoop, useHold } from "./hooks";
 import { MinigameShell, PauseOverlay, ResultCard, helpSeen, markHelpSeen } from "./MinigameShell";
 
 type Phase = "menu" | "play" | "result";
-const MODES: { id: BasketballMode; label: string; desc: string }[] = [
+type CourtMode = BasketballMode | "horse";
+const MODES: { id: CourtMode; label: string; desc: string }[] = [
   { id: "practice", label: "Practice", desc: "Unlimited shots. No records or rewards." },
   { id: "five", label: "Five shots", desc: "Score as many baskets as you can from five." },
   { id: "timed", label: "30 seconds", desc: "As many baskets as you can before time runs out." },
+  { id: "horse", label: "H-O-R-S-E", desc: "Call shots and outlast a park rival." },
 ];
 const LEVEL_LABEL: Record<Difficulty, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 
-type Flight = { shot: Shot; path: Pt[]; t: number; netDone: boolean };
+type Flight = { shot: Shot; path: Pt[]; t: number; netDone: boolean; actor: "human" | "npc" };
 type Run = {
   clock: number;
   charging: boolean;
@@ -44,6 +49,7 @@ type Run = {
   shownSecond: number;
   over: boolean;
   netUntil: number;
+  streak: number;
 };
 const freshRun = (): Run => ({
   clock: 0,
@@ -57,10 +63,21 @@ const freshRun = (): Run => ({
   shownSecond: TIMED_SECONDS,
   over: false,
   netUntil: 0,
+  streak: 0,
 });
 
 const METER = { x: 14, y: 52, w: 18, h: 196 };
 const HAND = { x: 84, y: 212 };
+const horseMade = (shot: Shot, called: HorseShot) => {
+  const sim = simulateFlight({
+    releaseX: COURT.releaseX, releaseY: COURT.releaseY, floorY: COURT.floorY,
+    rimY: COURT.rimY, radius: BALL_R, rimHalf: RIM_HALF,
+    gravity: 900, speed: speedFor(shot.power), angle: Math.PI / 3,
+    hoopX: shot.hoopAtArrival,
+  });
+  return qualifiesHorseShot(called, shot.made, shot.power, sim.bankBeforeNet ? ["backboard"] : [], shot.result === "swish");
+};
+
 
 export function BasketballGame({
   state,
@@ -75,7 +92,12 @@ export function BasketballGame({
   sound?: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>("menu");
-  const [mode, setMode] = useState<BasketballMode>("five");
+  const [mode, setMode] = useState<CourtMode>("five");
+  const [opponent, setOpponent] = useState<HorseOpponent>("park-kid");
+  const [horseView, setHorseView] = useState<HorseState>(createHorseGame());
+  const [horseShot, setHorseShot] = useState<HorseShot>("standard");
+  const horseRef = useRef<HorseState>(createHorseGame());
+  const npcCalledRef = useRef<HorseShot>("standard");
   const [level, setLevel] = useState<Difficulty>("normal");
   const [paused, setPaused] = useState(false);
   const [help, setHelp] = useState(false);
@@ -103,6 +125,7 @@ export function BasketballGame({
 
   const hoopEl = useRef<SVGGElement>(null);
   const netEl = useRef<SVGGElement>(null);
+  const crowdEl = useRef<SVGGElement>(null);
   const ballEl = useRef<SVGCircleElement>(null);
   const armsEl = useRef<SVGGElement>(null);
   const fillEl = useRef<SVGRectElement>(null);
@@ -128,7 +151,9 @@ export function BasketballGame({
     const l = levelRef.current;
     const hx = hoopX(r.clock, l);
     hoopEl.current?.setAttribute("transform", `translate(${(hx - 296).toFixed(2)} 0)`);
-    const netScale = r.netUntil > r.clock ? 1.35 : 1;
+    const progress = Math.max(0, (r.netUntil - r.clock) / 450);
+    const netScale = 1 + progress * (0.18 + Math.sin((1-progress)*24) * 0.16);
+    crowdEl.current?.setAttribute("transform", `translate(0 ${r.netUntil > r.clock ? -3*Math.abs(Math.sin((1-progress)*24)) : 0})`);
     netEl.current?.setAttribute(
       "transform",
       `translate(${hx.toFixed(2)} ${COURT.rimY + 4}) scale(1 ${netScale}) translate(${(-hx).toFixed(2)} ${-(COURT.rimY + 4)})`,
@@ -166,6 +191,11 @@ export function BasketballGame({
     finished.current = true;
     const r = run.current;
     r.over = true;
+    if (modeRef.current === "horse") {
+      setResult({ headline: horseRef.current.winner === "human" ? "You win!" : horseRef.current.winner === "npc" ? `${HORSE_OPPONENTS[opponent].name} wins!` : "Match abandoned", lines: [`You: ${horseLetters(horseRef.current.letters.human) || "—"}`, `${HORSE_OPPONENTS[opponent].name}: ${horseLetters(horseRef.current.letters.npc) || "—"}`], best: false });
+      if (completed) setPhase("result");
+      return;
+    }
     const out = finishBasketball(stateRef.current, modeRef.current, r.made, r.shots, completed);
     onChange(out.next);
     if (completed) {
@@ -186,23 +216,35 @@ export function BasketballGame({
     if (!f) return;
     r.flight = null;
     r.cooldown = 450;
-    if (f.shot.made) r.made++;
+    if (f.actor === "human" && f.shot.made) { r.made++; r.streak++; } else if (f.actor === "human") r.streak = 0;
     playActionCue(f.shot.made ? "success" : "failure", sound);
-    setHud((h) => ({ ...h, made: r.made, shots: r.shots }));
-    setStatus(f.shot.reason);
+    if (f.actor === "human") setHud((h) => ({ ...h, made: r.made, shots: r.shots }));
+    setStatus(f.actor === "npc" ? `${HORSE_OPPONENTS[opponent].name} ${f.shot.made ? "scores!" : "misses!"}` : f.shot.reason);
     setGood(f.shot.made);
     setCallout({
       text:
-        f.shot.result === "swish"
-          ? "SWISH!"
+        f.actor === "npc" ? (f.shot.made ? "NPC SCORES!" : "NPC MISSES!") : f.shot.result === "swish"
+          ? (r.streak >= 3 ? "HEATING UP!" : "SWISH!")
           : f.shot.made
-            ? "In!"
+            ? (r.streak >= 3 ? `${r.streak} IN A ROW!` : "In!")
             : f.shot.result === "airball"
               ? "Airball"
               : "Miss",
       good: f.shot.made,
-      id: r.shots,
+      id: f.actor === "npc" ? horseRef.current.turns + 1000 : r.shots,
     });
+    if (modeRef.current === "horse") {
+      const called = horseRef.current.phase === "copy" ? (horseRef.current.shot ?? "standard") : (f.actor === "npc" ? (npcCalledRef.current) : horseShot);
+      const valid = horseMade(f.shot, called);
+      if (f.shot.made && !valid) {
+        setStatus(`Basket scored, but it was not a valid ${called} shot.`);
+        setCallout({ text: `${called.toUpperCase()} NOT MET`, good: false, id: horseRef.current.turns + 2000 });
+      }
+      const next = horseAttempt(horseRef.current, f.actor, valid, called);
+      horseRef.current = next;
+      setHorseView(next);
+      if (next.winner) finishRun(true);
+    }
     if (modeRef.current === "five" && r.shots >= FIVE_SHOTS) finishRun(true);
   };
 
@@ -211,6 +253,25 @@ export function BasketballGame({
       const r = run.current;
       r.clock += dt;
       if (r.cooldown > 0) r.cooldown -= dt;
+      if (modeRef.current === "horse" && !r.over && !r.flight && r.cooldown <= 0) {
+        const h = horseRef.current;
+        const npcTurn = h.phase === "call" ? h.caller === "npc" : h.caller === "human";
+        if (npcTurn) {
+          const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : (["standard", "bank", "long", "trick"] as HorseShot[])[Math.floor(Math.random() * 4)]!;
+          // Choose a physically valid shot matching the NPC's skill roll when possible.
+          // Never award a basket that the animated trajectory doesn't actually make.
+          npcCalledRef.current = calledShot;
+          const wantsMake = Math.random() < npcHorseChance(opponent, calledShot);
+          const options = Array.from({ length: 64 }, (_, i) =>
+            evaluatePhysicalShot((i + 0.5) / 64, r.clock, levelRef.current));
+          const candidates = options.filter((shot) => horseMade(shot, calledShot) === wantsMake);
+          const pool = candidates.length ? candidates : options.filter((shot) => !horseMade(shot, calledShot));
+          const selected = (pool.length ? pool : options)[Math.floor(Math.random() * (pool.length || options.length))]!;
+          r.flight = { shot: selected, path: ballPath(selected), t: 0, netDone: false, actor: "npc" };
+          setStatus(`${HORSE_OPPONENTS[opponent].name} shoots...`);
+          setCallout(null);
+        }
+      }
       if (modeRef.current === "timed" && !r.over) {
         r.timeLeft = Math.max(0, r.timeLeft - dt);
         const sec = Math.ceil(r.timeLeft / 1000);
@@ -227,7 +288,7 @@ export function BasketballGame({
           const p = r.flight.path[Math.min(i, r.flight.path.length - 1)]!;
           if (p.y > COURT.rimY && i > 20) {
             r.flight.netDone = true;
-            r.netUntil = r.clock + 260;
+            r.netUntil = r.clock + 450;
           }
         }
         if (i >= r.flight.path.length) resolveFlight();
@@ -243,6 +304,11 @@ export function BasketballGame({
     if (r.over || r.flight || r.cooldown > 0 || phaseRef.current !== "play" || pausedRef.current)
       return;
     if (modeRef.current === "timed" && r.timeLeft <= 0) return;
+    if (modeRef.current === "horse") {
+      const h = horseRef.current;
+      const yourTurn = h.phase === "call" ? h.caller === "human" : h.caller === "npc";
+      if (!yourTurn) return;
+    }
     r.charging = true;
     r.chargeStart = r.clock;
     setCallout(null);
@@ -253,8 +319,8 @@ export function BasketballGame({
     r.charging = false;
     if (pausedRef.current || phaseRef.current !== "play" || r.over || r.flight) return; // a paused hold is cancelled, not fired
     const power = powerAt(r.clock - r.chargeStart);
-    const shot = evaluateShot(power, r.clock, levelRef.current);
-    r.flight = { shot, path: ballPath(shot), t: 0, netDone: false };
+    const shot = evaluatePhysicalShot(power, r.clock, levelRef.current);
+    r.flight = { shot, path: ballPath(shot), t: 0, netDone: false, actor: "human" };
     r.shots++;
     setHud((h) => ({ ...h, shots: r.shots }));
     setStatus("Ball's in the air...");
@@ -269,7 +335,7 @@ export function BasketballGame({
     },
   });
 
-  const start = (m: BasketballMode) => {
+  const start = (m: CourtMode) => {
     if (!sessionPaid.current) {
       const s = startSession(stateRef.current, "basketball");
       if (!s.ok) {
@@ -281,6 +347,10 @@ export function BasketballGame({
       sessionPaid.current = true;
     }
     run.current = freshRun();
+    horseRef.current = createHorseGame();
+    npcCalledRef.current = "standard";
+    setHorseShot("standard");
+    setHorseView(horseRef.current);
     finished.current = false;
     setMode(m);
     modeRef.current = m;
@@ -317,6 +387,7 @@ export function BasketballGame({
     phase === "play" ? (
       <>
         <span>{MODES.find((m) => m.id === mode)?.label}</span>
+        {mode === "horse" && <span data-testid="horse-score">You {horseLetters(horseView.letters.human) || "—"} · {HORSE_OPPONENTS[opponent].name} {horseLetters(horseView.letters.npc) || "—"}</span>}
         <span data-testid="hud-score">
           Baskets {hud.made}/{hud.shots}
           {mode === "five" ? ` · ${Math.max(0, FIVE_SHOTS - hud.shots)} left` : ""}
@@ -328,13 +399,23 @@ export function BasketballGame({
   const dock =
     phase === "play" ? (
       <div className="space-y-2">
+        {mode === "horse" && horseView.phase === "call" && horseView.caller === "human" && (
+          <div role="group" aria-label="Call your shot" className="flex flex-wrap justify-center gap-1">
+            {(["standard", "bank", "long", "trick"] as HorseShot[]).map((kind) => (
+              <button key={kind} type="button" className="mg-chip" aria-pressed={horseShot === kind}
+                onClick={() => setHorseShot(kind)}>{kind === "standard" ? "Regular" : kind === "bank" ? "Bank" : kind === "long" ? "Long" : "Trick"}</button>
+            ))}
+          </div>
+        )}
+        {mode === "horse" && <div className="text-sm font-semibold text-center" data-testid="horse-turn">{horseView.phase === "copy" ? `Copy: ${horseView.shot}` : horseView.caller === "human" ? "Your call" : `${HORSE_OPPONENTS[opponent].name} calls`}</div>}
         <button
           type="button"
           className="mg-hold"
           aria-label="Hold to charge, release to shoot"
+          disabled={mode === "horse" && (horseView.phase === "finished" || (horseView.phase === "call" ? horseView.caller === "npc" : horseView.caller === "human"))}
           {...bind}
         >
-          HOLD TO SHOOT
+          {mode === "horse" && ((horseView.phase === "call" && horseView.caller === "npc") || (horseView.phase === "copy" && horseView.caller === "human")) ? "OPPONENT TURN" : "HOLD TO SHOOT"}
         </button>
         {mode === "practice" && (
           <button type="button" className="mg-btn w-full" onClick={endPractice}>
@@ -394,6 +475,7 @@ export function BasketballGame({
               </button>
             ))}
           </div>
+          {mode === "horse" && <div className="flex flex-wrap gap-2" role="group" aria-label="H-O-R-S-E opponent">{(Object.keys(HORSE_OPPONENTS) as HorseOpponent[]).map((id) => <button type="button" key={id} className="mg-chip" aria-pressed={opponent === id} onClick={() => setOpponent(id)}>{HORSE_OPPONENTS[id].name}</button>)}</div>}
           <p className="text-sm" data-testid="records">
             Best five-shot: {state.bbBest5}/{FIVE_SHOTS} · Best 30s: {state.bbBestTimed} · Lifetime:{" "}
             {state.bbMade}/{state.bbShots} ({accuracy(state.bbMade, state.bbShots)}%)
@@ -487,6 +569,19 @@ export function BasketballGame({
                 stroke="#d2542a"
                 strokeWidth="4"
               />
+            </g>
+
+            {/* The local park spectators are part of the court rather than a separate overlay. */}
+            <g ref={crowdEl} data-testid="basketball-spectators" stroke="#25242a" strokeWidth="2.3" strokeLinecap="round">
+              {[154, 206, 256].map((x, i) => (
+                <g key={x} transform={"translate(" + x + " 0)"}>
+                  <ellipse cx="0" cy="261" rx="12" ry="3" fill="#25242a" opacity=".15" stroke="none" />
+                  <path d="M0 222V246M0 246L-8 258M0 246L8 258" fill="none" />
+                  <path d={i === 1 ? "M0 229L-10 211M0 229L10 214" : "M0 230L-10 240M0 230L11 239"} fill="none" />
+                  <circle cx="0" cy="213" r="9" fill={i === 0 ? "#c58f70" : i === 1 ? "#f1d6ae" : "#926c55"} />
+                  <path d="M-4 210h1M3 210h1" strokeWidth="2.5" />
+                </g>
+              ))}
             </g>
 
             {/* shooter: circular head, fixed standing legs, arms that rise with the charge */}
@@ -587,6 +682,7 @@ export function BasketballGame({
               means less.
             </li>
             <li>Five shots or 30 seconds. Practice is unlimited but never counts for records.</li>
+            <li>H-O-R-S-E: make a call; your opponent must copy it. Fail to copy a successful call and gain a letter. First to H-O-R-S-E loses. No cash prizes yet.</li>
             <li>
               Scoring a challenge round gives Strength +1, once a day. Pausing stops the clock.
             </li>
