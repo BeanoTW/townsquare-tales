@@ -34,6 +34,15 @@ describe("basketball physics", () => {
     expect(flight.contacts).toContain("front-rim");
   });
 
+
+  it("records whether a bank happened before crossing the net", () => {
+    const straight = simulateFlight({ ...base, releaseX: 296, releaseY: 75, speed: 0, angle: 0 });
+    expect(straight.crossedNet).toBe(true);
+    expect(straight.bankBeforeNet).toBe(false);
+    const bank = simulateFlight({ ...base, releaseX: 302, releaseY: 85, speed: 150, angle: 0 });
+    expect(bank.contacts).toContain("backboard");
+    if (!bank.crossedNet) expect(bank.bankBeforeNet).toBe(false);
+  });
   it("detects a downward net crossing", () => {
     const flight = simulateFlight({
       ...base, releaseX: 296, releaseY: 75, speed: 0, angle: 0,
