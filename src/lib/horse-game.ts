@@ -44,3 +44,14 @@ export function npcHorseChance(opponent: HorseOpponent, shot: HorseShot): number
   const profile = HORSE_OPPONENTS[opponent];
   return shot === "standard" ? profile.accuracy : profile[shot];
 }
+
+/** Shot requirements are checked against the actual simulated flight. */
+export function qualifiesHorseShot(kind: HorseShot, made: boolean, power: number, contacts: readonly string[], swish: boolean): boolean {
+  if (!made) return false;
+  switch (kind) {
+    case "standard": return true;
+    case "bank": return contacts.includes("backboard");
+    case "long": return power >= 0.7;
+    case "trick": return swish && power >= 0.55;
+  }
+}
