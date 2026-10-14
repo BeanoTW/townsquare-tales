@@ -15,6 +15,7 @@ export type PhysicsFlight = {
   frames: PhysicsFrame[];
   contacts: PhysicsContact[];
   crossedNet: boolean;
+  bankBeforeNet: boolean;
 };
 const STEP = 1 / 120;
 const DURATION = 4;
@@ -31,6 +32,8 @@ export function simulateFlight(settings: PhysicsSettings): PhysicsFlight {
   let vx = s.speed * Math.cos(s.angle);
   let vy = -s.speed * Math.sin(s.angle);
   let crossedNet = false;
+  let bankBeforeNet = false;
+  let hitBoard = false;
   let lastContact = "";
   let lastContactStep = -20;
   const rimXs = [s.hoopX - s.rimHalf, s.hoopX + s.rimHalf];
@@ -75,11 +78,13 @@ export function simulateFlight(settings: PhysicsSettings): PhysicsFlight {
       x = boardX - s.radius;
       vx = -Math.abs(vx) * BOARD_RESTITUTION;
       contact = "backboard";
+      hitBoard = true;
     }
 
     if (oldY <= s.rimY && y >= s.rimY && vy > 0 &&
         x > rimXs[0]! + s.radius * 0.35 &&
         x < rimXs[1]! - s.radius * 0.35 && !contact) {
+      if (!crossedNet) bankBeforeNet = hitBoard;
       crossedNet = true;
     }
 
@@ -101,5 +106,5 @@ export function simulateFlight(settings: PhysicsSettings): PhysicsFlight {
     // Prevent a long off-court flight from consuming simulation time.
     if (x < -100 || x > 600 || y > s.floorY + 100) { frames.push({ x, y: floor, contact: "floor" }); break; }
   }
-  return { frames, contacts, crossedNet };
+  return { frames, contacts, crossedNet, bankBeforeNet };
 }
