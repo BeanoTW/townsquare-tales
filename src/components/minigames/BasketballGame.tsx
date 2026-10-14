@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RulesSheet } from "@/components/casino/CasinoShell";
@@ -151,18 +151,53 @@ export function BasketballGame({ state, onChange, onExit, sound = true }: {
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   }, []);
-  const coords = (e: PointerEvent<HTMLDivElement>) => {
-    const bounds = e.currentTarget.querySelector("svg")?.getBoundingClientRect();
+  const removeSwipeListeners = useRef<(() => void) | null>(null);
+  useEffect(() => () => removeSwipeListeners.current?.(), []);
+  const coordsAt = (element: HTMLDivElement, clientX: number, clientY: number) => {
+    const bounds = element.querySelector("svg")?.getBoundingClientRect();
     if (!bounds || bounds.width <= 0 || bounds.height <= 0) return null;
     const scale = Math.min(bounds.width / 400, bounds.height / 560);
-    return { x: (e.clientX - bounds.left - (bounds.width - 400 * scale) / 2) / scale, y: (e.clientY - bounds.top - (bounds.height - 560 * scale) / 2) / scale };
+    return { x: (clientX - bounds.left - (bounds.width - 400 * scale) / 2) / scale, y: (clientY - bounds.top - (bounds.height - 560 * scale) / 2) / scale };
   };
-  const pointerDown = (e: PointerEvent<HTMLDivElement>) => {
+  const pointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const r = run.current;
     if (e.button !== 0 || latest.current.paused || drag.current || r.flight || r.cooldown > 0 || r.over) return;
-    const p = coords(e); if (!p) return;
-    e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId);
-    drag.current = { ...p, start: performance.now(), id: e.pointerId }; setCallout("");
+    const element = e.currentTarget;
+    const p = coordsAt(element, e.clientX, e.clientY);
+    if (!p) return;
+    e.preventDefault();
+    drag.current = { ...p, start: performance.now(), id: e.pointerId };
+    setCallout("");
+    // Window-level listeners survive SVG/overlay changes while the finger moves.
+    const move = (event: PointerEvent) => {
+      const d = drag.current;
+      if (!d || d.id !== event.pointerId) return;
+      if (event.cancelable) event.preventDefault();
+      const pos = coordsAt(element, event.clientX, event.clientY);
+      if (pos) aim.current?.setAttribute("d", `M${d.x} ${d.y}L${pos.x} ${pos.y}`);
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", abort, true);
+      removeSwipeListeners.current = null;
+    };
+    const up = (event: PointerEvent) => {
+      const d = drag.current;
+      if (!d || d.id !== event.pointerId) return;
+      const pos = coordsAt(element, event.clientX, event.clientY);
+      cleanup();
+      if (pos) shoot(pos.x - d.x, d.y - pos.y, performance.now() - d.start);
+      else cancel();
+    };
+    const abort = (event: PointerEvent) => {
+      if (drag.current?.id !== event.pointerId) return;
+      cleanup(); cancel();
+    };
+    window.addEventListener("pointermove", move, { capture: true, passive: false });
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", abort, true);
+    removeSwipeListeners.current = cleanup;
   };
   const start = () => {
     if (!paid.current) {
@@ -186,9 +221,7 @@ export function BasketballGame({ state, onChange, onExit, sound = true }: {
     <div className="bb-arcade relative h-full">
       <div className="bb-court mg-play-area" role="application" aria-label="Swipe shooting area" tabIndex={phase === "play" ? 0 : -1}
         onPointerDown={phase === "play" ? pointerDown : undefined}
-        onPointerMove={(e) => { const d = drag.current, p = coords(e); if (!d || d.id !== e.pointerId || !p) return; aim.current?.setAttribute("d", `M${d.x} ${d.y}L${p.x} ${p.y}`); }}
-        onPointerUp={(e) => { const d = drag.current, p = coords(e); if (!d || d.id !== e.pointerId) return; if (p) shoot(p.x - d.x, d.y - p.y, performance.now() - d.start); else cancel(); }}
-        onPointerCancel={cancel} onLostPointerCapture={cancel} onContextMenu={(e) => e.preventDefault()}>
+        onContextMenu={(e) => e.preventDefault()}>
         <svg viewBox="0 0 400 560" preserveAspectRatio="xMidYMid meet" aria-label="First-person outdoor basketball court" role="img">
           <rect width="400" height="560" fill="var(--basketball-sky)"/>
           <circle cx="338" cy="45" r="24" fill="var(--basketball-sun)"/>
