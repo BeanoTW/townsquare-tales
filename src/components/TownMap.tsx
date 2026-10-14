@@ -593,6 +593,17 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </svg>
       </div>
 
+      {skating && !paused && (
+        <div data-skate-trick-controls className="absolute bottom-36 right-3 z-20 flex flex-col gap-2 sm:bottom-20" aria-label="Skateboard tricks">
+          {(["ollie", "kickflip", "shuvit"] as const).map(trick => (
+            <button key={trick} type="button" aria-label={trick} className="min-h-11 rounded-lg border-2 border-foreground bg-card/90 px-3 text-xs font-bold shadow-lg"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); if (!skateJump.current) skateJump.current = {trick,elapsed:0}; }}>
+              {trick === "ollie" ? "Jump" : trick === "kickflip" ? "Kickflip" : "Shuvit"}
+            </button>
+          ))}
+        </div>
+      )}
       {nearStreet && !paused && <Button onClick={()=>useStreet(nearStreet)} className="absolute bottom-64 left-1/2 h-auto min-h-11 max-w-[calc(100%-24px)] -translate-x-1/2 whitespace-normal rounded-sm border-2 border-foreground text-center sm:bottom-24">{STREET_OBJECTS.find(o=>o.id===nearStreet)?.label}</Button>}
       {near && !nearStreet && !paused && (
         <Button onClick={() => onEnter(near.id)} className="absolute bottom-64 left-1/2 max-w-[calc(100%-24px)] -translate-x-1/2 rounded-sm border-2 border-foreground bg-primary px-4 py-1 text-lg text-primary-foreground sm:bottom-24">
