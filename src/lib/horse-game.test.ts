@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createHorseGame, horseAttempt, horseLetters, npcHorseChance } from "./horse-game";
+import { createHorseGame, horseAttempt, horseLetters, npcHorseChance, qualifiesHorseShot } from "./horse-game";
 
 describe("H-O-R-S-E", () => {
   it("requires a successful call before a copy", () => {
@@ -35,5 +35,19 @@ describe("H-O-R-S-E", () => {
   it("keeps opponent chances bounded and distinguishes their strengths", () => {
     expect(npcHorseChance("nox", "trick")).toBeGreaterThan(npcHorseChance("gus", "trick"));
     expect(npcHorseChance("mara", "standard")).toBe(.75);
+  });
+});
+
+describe("called shot qualification", () => {
+  it("requires an actual bank contact for bank calls", () => {
+    expect(qualifiesHorseShot("bank", true, .7, [], true)).toBe(false);
+    expect(qualifiesHorseShot("bank", true, .7, ["backboard"], false)).toBe(true);
+  });
+  it("enforces the long and trick requirements", () => {
+    expect(qualifiesHorseShot("long", true, .69, [], true)).toBe(false);
+    expect(qualifiesHorseShot("long", true, .7, [], false)).toBe(true);
+    expect(qualifiesHorseShot("trick", true, .8, [], false)).toBe(false);
+    expect(qualifiesHorseShot("trick", true, .8, [], true)).toBe(true);
+    expect(qualifiesHorseShot("standard", false, 1, [], true)).toBe(false);
   });
 });
