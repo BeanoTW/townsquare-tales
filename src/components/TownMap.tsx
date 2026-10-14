@@ -1,3 +1,5 @@
+import { beginStreetGrind, advanceStreetGrind, grindPosition, type StreetGrind } from "@/lib/street-grind";
+import { nearbyRail } from "@/lib/town-rails";
 import { TOWN_RAILS } from "@/lib/town-rails";
 import { elevation, deckRotation, stepJump, type SkateJump } from "@/lib/skate-tricks";
 import { OverheadPerson } from "@/components/OverheadPerson";
@@ -169,6 +171,15 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   }, []);
   const svgRef = useRef<SVGSVGElement>(null);
   const skateJump = useRef<SkateJump | null>(null);
+  const streetGrind = useRef<StreetGrind | null>(null);
+  const [grindHud, setGrindHud] = useState<{name:string;balance:number}|null>(null);
+  const startTrick = (trick: "ollie" | "kickflip" | "shuvit") => {
+    if (!skating || pausedRef.current || skateJump.current || streetGrind.current) return;
+    const rail = nearbyRail(me.current);
+    const grind = rail ? beginStreetGrind(me.current, rail) : null;
+    if (grind) { streetGrind.current = grind; skateJump.current = null; }
+    else skateJump.current = {trick,elapsed:0};
+  };
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = useCallback((destination: Point, enter?: string) => {
@@ -241,7 +252,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       if (pausedRef.current || (e.target instanceof HTMLElement && e.target.closest("button,input,textarea,[role=dialog]"))) return;
       const k = e.key.toLowerCase();
       if (skating && !e.repeat && (k === " " || k === "q" || k === "r") && !skateJump.current) {
-        skateJump.current = { trick: k === "q" ? "kickflip" : k === "r" ? "shuvit" : "ollie", elapsed: 0 };
+        startTrick(k === "q" ? "kickflip" : k === "r" ? "shuvit" : "ollie");
         e.preventDefault();
         return;
       }
@@ -267,6 +278,17 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       last = now;
       if(pausedRef.current){ keys.current.clear(); target.current=null; me.current.walking=false; return; }
       skateJump.current = skating ? stepJump(skateJump.current, dt) : null;
+      if(streetGrind.current && skating){
+        const lean = (keys.current.has("a") || keys.current.has("arrowleft") ? -1 : 0) + (keys.current.has("d") || keys.current.has("arrowright") ? 1 : 0);
+        const next = advanceStreetGrind(streetGrind.current,dt,lean);
+        streetGrind.current=next;
+        const pos=grindPosition(next); me.current.x=pos.x; me.current.y=pos.y;
+        if(next.outcome==="grinding")setGrindHud({name:next.rail.name,balance:next.balance});
+        else {streetGrind.current=null;setGrindHud(null);}
+        setT(now/1000);
+        return;
+      }
+      if(!skating && streetGrind.current){streetGrind.current=null;setGrindHud(null);}
       const k = keys.current, m = me.current;
       let dx = 0, dy = 0;
       if (k.has("w") || k.has("arrowup")) dy -= 1;
@@ -603,12 +625,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </svg>
       </div>
 
+      {skating && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="mg-chip" onClick={()=>keys.current.add("a")}>◀ Lean</button><button type="button" className="mg-chip" onClick={()=>keys.current.add("d")}>Lean ▶</button></div></div>}
       {skating && !paused && (
         <div data-skate-trick-controls className="absolute bottom-36 right-3 z-20 flex flex-col gap-2 sm:bottom-20" aria-label="Skateboard tricks">
           {(["ollie", "kickflip", "shuvit"] as const).map(trick => (
             <button key={trick} type="button" aria-label={trick} className="min-h-11 rounded-lg border-2 border-foreground bg-card/90 px-3 text-xs font-bold shadow-lg"
               onPointerDown={e => e.stopPropagation()}
-              onClick={e => { e.stopPropagation(); if (!skateJump.current) skateJump.current = {trick,elapsed:0}; }}>
+              onClick={e => { e.stopPropagation(); startTrick(trick); }}>
               {trick === "ollie" ? "Jump" : trick === "kickflip" ? "Kickflip" : "Shuvit"}
             </button>
           ))}
