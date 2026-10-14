@@ -16,6 +16,7 @@ import {
   type Pt,
   type Shot,
 } from "@/lib/basketball";
+import { HORSE_OPPONENTS, createHorseGame, horseAttempt, horseLetters, npcHorseChance, type HorseOpponent, type HorseState, type HorseShot } from "@/lib/horse-game";
 import { RulesSheet } from "@/components/casino/CasinoShell";
 import type { GameState } from "@/lib/game-state";
 import { accuracy, finishBasketball, startSession, type BasketballMode } from "@/lib/minigames";
@@ -24,10 +25,12 @@ import { useAutoPause, useFrameLoop, useHold } from "./hooks";
 import { MinigameShell, PauseOverlay, ResultCard, helpSeen, markHelpSeen } from "./MinigameShell";
 
 type Phase = "menu" | "play" | "result";
-const MODES: { id: BasketballMode; label: string; desc: string }[] = [
+type CourtMode = BasketballMode | "horse";
+const MODES: { id: CourtMode; label: string; desc: string }[] = [
   { id: "practice", label: "Practice", desc: "Unlimited shots. No records or rewards." },
   { id: "five", label: "Five shots", desc: "Score as many baskets as you can from five." },
   { id: "timed", label: "30 seconds", desc: "As many baskets as you can before time runs out." },
+  { id: "horse", label: "H-O-R-S-E", desc: "Call shots and outlast a park rival." },
 ];
 const LEVEL_LABEL: Record<Difficulty, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 
@@ -77,7 +80,11 @@ export function BasketballGame({
   sound?: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>("menu");
-  const [mode, setMode] = useState<BasketballMode>("five");
+  const [mode, setMode] = useState<CourtMode>("five");
+  const [opponent, setOpponent] = useState<HorseOpponent>("park-kid");
+  const [horseView, setHorseView] = useState<HorseState>(createHorseGame());
+  const [horseShot, setHorseShot] = useState<HorseShot>("standard");
+  const horseRef = useRef<HorseState>(createHorseGame());
   const [level, setLevel] = useState<Difficulty>("normal");
   const [paused, setPaused] = useState(false);
   const [help, setHelp] = useState(false);
@@ -171,6 +178,11 @@ export function BasketballGame({
     finished.current = true;
     const r = run.current;
     r.over = true;
+    if (modeRef.current === "horse") {
+      setResult({ headline: horseRef.current.winner === "human" ? "You win!" : horseRef.current.winner === "npc" ? `${HORSE_OPPONENTS[opponent].name} wins!` : "Match abandoned", lines: [`You: ${horseLetters(horseRef.current.letters.human) || "—"}`, `${HORSE_OPPONENTS[opponent].name}: ${horseLetters(horseRef.current.letters.npc) || "—"}`], best: false });
+      if (completed) setPhase("result");
+      return;
+    }
     const out = finishBasketball(stateRef.current, modeRef.current, r.made, r.shots, completed);
     onChange(out.next);
     if (completed) {
@@ -208,6 +220,12 @@ export function BasketballGame({
       good: f.shot.made,
       id: r.shots,
     });
+    if (modeRef.current === "horse") {
+      const next = horseAttempt(horseRef.current, "human", f.shot.made, horseShot);
+      horseRef.current = next;
+      setHorseView(next);
+      if (next.winner) finishRun(true);
+    }
     if (modeRef.current === "five" && r.shots >= FIVE_SHOTS) finishRun(true);
   };
 
@@ -216,6 +234,21 @@ export function BasketballGame({
       const r = run.current;
       r.clock += dt;
       if (r.cooldown > 0) r.cooldown -= dt;
+      if (modeRef.current === "horse" && !r.over && !r.flight && r.cooldown <= 0) {
+        const h = horseRef.current;
+        const npcTurn = h.phase === "call" ? h.caller === "npc" : h.caller === "human";
+        if (npcTurn) {
+          const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : "standard";
+          const made = Math.random() < npcHorseChance(opponent, calledShot);
+          const next = horseAttempt(h, "npc", made, calledShot);
+          horseRef.current = next;
+          setHorseView(next);
+          r.cooldown = 900;
+          setStatus(`${HORSE_OPPONENTS[opponent].name} ${made ? "lands" : "misses"} the ${calledShot} shot!`);
+          setCallout({ text: made ? "NPC SCORES!" : "NPC MISSES!", good: !made, id: next.turns + 1000 });
+          if (next.winner) finishRun(true);
+        }
+      }
       if (modeRef.current === "timed" && !r.over) {
         r.timeLeft = Math.max(0, r.timeLeft - dt);
         const sec = Math.ceil(r.timeLeft / 1000);
@@ -248,6 +281,11 @@ export function BasketballGame({
     if (r.over || r.flight || r.cooldown > 0 || phaseRef.current !== "play" || pausedRef.current)
       return;
     if (modeRef.current === "timed" && r.timeLeft <= 0) return;
+    if (modeRef.current === "horse") {
+      const h = horseRef.current;
+      const yourTurn = h.phase === "call" ? h.caller === "human" : h.caller === "npc";
+      if (!yourTurn) return;
+    }
     r.charging = true;
     r.chargeStart = r.clock;
     setCallout(null);
@@ -274,7 +312,7 @@ export function BasketballGame({
     },
   });
 
-  const start = (m: BasketballMode) => {
+  const start = (m: CourtMode) => {
     if (!sessionPaid.current) {
       const s = startSession(stateRef.current, "basketball");
       if (!s.ok) {
@@ -286,6 +324,8 @@ export function BasketballGame({
       sessionPaid.current = true;
     }
     run.current = freshRun();
+    horseRef.current = createHorseGame();
+    setHorseView(horseRef.current);
     finished.current = false;
     setMode(m);
     modeRef.current = m;
@@ -322,6 +362,7 @@ export function BasketballGame({
     phase === "play" ? (
       <>
         <span>{MODES.find((m) => m.id === mode)?.label}</span>
+        {mode === "horse" && <span data-testid="horse-score">You {horseLetters(horseView.letters.human) || "—"} · {HORSE_OPPONENTS[opponent].name} {horseLetters(horseView.letters.npc) || "—"}</span>}
         <span data-testid="hud-score">
           Baskets {hud.made}/{hud.shots}
           {mode === "five" ? ` · ${Math.max(0, FIVE_SHOTS - hud.shots)} left` : ""}
@@ -333,13 +374,14 @@ export function BasketballGame({
   const dock =
     phase === "play" ? (
       <div className="space-y-2">
+        {mode === "horse" && <div className="text-sm font-semibold text-center" data-testid="horse-turn">{horseView.phase === "copy" ? `Copy: ${horseView.shot}` : horseView.caller === "human" ? "Your call" : `${HORSE_OPPONENTS[opponent].name} calls`}</div>}
         <button
           type="button"
           className="mg-hold"
           aria-label="Hold to charge, release to shoot"
           {...bind}
         >
-          HOLD TO SHOOT
+          {mode === "horse" && ((horseView.phase === "call" && horseView.caller === "npc") || (horseView.phase === "copy" && horseView.caller === "human")) ? "OPPONENT TURN" : "HOLD TO SHOOT"}
         </button>
         {mode === "practice" && (
           <button type="button" className="mg-btn w-full" onClick={endPractice}>
@@ -399,6 +441,7 @@ export function BasketballGame({
               </button>
             ))}
           </div>
+          {mode === "horse" && <div className="flex flex-wrap gap-2" role="group" aria-label="H-O-R-S-E opponent">{(Object.keys(HORSE_OPPONENTS) as HorseOpponent[]).map((id) => <button type="button" key={id} className="mg-chip" aria-pressed={opponent === id} onClick={() => setOpponent(id)}>{HORSE_OPPONENTS[id].name}</button>)}</div>}
           <p className="text-sm" data-testid="records">
             Best five-shot: {state.bbBest5}/{FIVE_SHOTS} · Best 30s: {state.bbBestTimed} · Lifetime:{" "}
             {state.bbMade}/{state.bbShots} ({accuracy(state.bbMade, state.bbShots)}%)
@@ -605,6 +648,7 @@ export function BasketballGame({
               means less.
             </li>
             <li>Five shots or 30 seconds. Practice is unlimited but never counts for records.</li>
+            <li>H-O-R-S-E: make a call; your opponent must copy it. Fail to copy a successful call and gain a letter. First to H-O-R-S-E loses. No cash prizes yet.</li>
             <li>
               Scoring a challenge round gives Strength +1, once a day. Pausing stops the clock.
             </li>
