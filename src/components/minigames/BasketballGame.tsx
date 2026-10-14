@@ -44,6 +44,7 @@ type Run = {
   shownSecond: number;
   over: boolean;
   netUntil: number;
+  streak: number;
 };
 const freshRun = (): Run => ({
   clock: 0,
@@ -57,6 +58,7 @@ const freshRun = (): Run => ({
   shownSecond: TIMED_SECONDS,
   over: false,
   netUntil: 0,
+  streak: 0,
 });
 
 const METER = { x: 14, y: 52, w: 18, h: 196 };
@@ -103,6 +105,7 @@ export function BasketballGame({
 
   const hoopEl = useRef<SVGGElement>(null);
   const netEl = useRef<SVGGElement>(null);
+  const crowdEl = useRef<SVGGElement>(null);
   const ballEl = useRef<SVGCircleElement>(null);
   const armsEl = useRef<SVGGElement>(null);
   const fillEl = useRef<SVGRectElement>(null);
@@ -128,7 +131,9 @@ export function BasketballGame({
     const l = levelRef.current;
     const hx = hoopX(r.clock, l);
     hoopEl.current?.setAttribute("transform", `translate(${(hx - 296).toFixed(2)} 0)`);
-    const netScale = r.netUntil > r.clock ? 1.35 : 1;
+    const progress = Math.max(0, (r.netUntil - r.clock) / 450);
+    const netScale = 1 + progress * (0.18 + Math.sin((1-progress)*24) * 0.16);
+    crowdEl.current?.setAttribute("transform", `translate(0 ${r.netUntil > r.clock ? -3*Math.abs(Math.sin((1-progress)*24)) : 0})`);
     netEl.current?.setAttribute(
       "transform",
       `translate(${hx.toFixed(2)} ${COURT.rimY + 4}) scale(1 ${netScale}) translate(${(-hx).toFixed(2)} ${-(COURT.rimY + 4)})`,
@@ -186,7 +191,7 @@ export function BasketballGame({
     if (!f) return;
     r.flight = null;
     r.cooldown = 450;
-    if (f.shot.made) r.made++;
+    if (f.shot.made) { r.made++; r.streak++; } else r.streak = 0;
     playActionCue(f.shot.made ? "success" : "failure", sound);
     setHud((h) => ({ ...h, made: r.made, shots: r.shots }));
     setStatus(f.shot.reason);
@@ -194,9 +199,9 @@ export function BasketballGame({
     setCallout({
       text:
         f.shot.result === "swish"
-          ? "SWISH!"
+          ? (r.streak >= 3 ? "HEATING UP!" : "SWISH!")
           : f.shot.made
-            ? "In!"
+            ? (r.streak >= 3 ? `${r.streak} IN A ROW!` : "In!")
             : f.shot.result === "airball"
               ? "Airball"
               : "Miss",
@@ -227,7 +232,7 @@ export function BasketballGame({
           const p = r.flight.path[Math.min(i, r.flight.path.length - 1)]!;
           if (p.y > COURT.rimY && i > 20) {
             r.flight.netDone = true;
-            r.netUntil = r.clock + 260;
+            r.netUntil = r.clock + 450;
           }
         }
         if (i >= r.flight.path.length) resolveFlight();
@@ -487,6 +492,19 @@ export function BasketballGame({
                 stroke="#d2542a"
                 strokeWidth="4"
               />
+            </g>
+
+            {/* The local park spectators are part of the court rather than a separate overlay. */}
+            <g ref={crowdEl} data-testid="basketball-spectators" stroke="#25242a" strokeWidth="2.3" strokeLinecap="round">
+              {[154, 206, 256].map((x, i) => (
+                <g key={x} transform={"translate(" + x + " 0)"}>
+                  <ellipse cx="0" cy="261" rx="12" ry="3" fill="#25242a" opacity=".15" stroke="none" />
+                  <path d="M0 222V246M0 246L-8 258M0 246L8 258" fill="none" />
+                  <path d={i === 1 ? "M0 229L-10 211M0 229L10 214" : "M0 230L-10 240M0 230L11 239"} fill="none" />
+                  <circle cx="0" cy="213" r="9" fill={i === 0 ? "#c58f70" : i === 1 ? "#f1d6ae" : "#926c55"} />
+                  <path d="M-4 210h1M3 210h1" strokeWidth="2.5" />
+                </g>
+              ))}
             </g>
 
             {/* shooter: circular head, fixed standing legs, arms that rise with the charge */}
