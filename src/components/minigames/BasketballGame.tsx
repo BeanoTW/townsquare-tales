@@ -83,7 +83,7 @@ export function BasketballGame({
   const [mode, setMode] = useState<CourtMode>("five");
   const [opponent, setOpponent] = useState<HorseOpponent>("park-kid");
   const [horseView, setHorseView] = useState<HorseState>(createHorseGame());
-  const horseShot: HorseShot = "standard";
+  const [horseShot, setHorseShot] = useState<HorseShot>("standard");
   const horseRef = useRef<HorseState>(createHorseGame());
   const [level, setLevel] = useState<Difficulty>("normal");
   const [paused, setPaused] = useState(false);
@@ -221,7 +221,7 @@ export function BasketballGame({
       id: f.actor === "npc" ? horseRef.current.turns + 1000 : r.shots,
     });
     if (modeRef.current === "horse") {
-      const next = horseAttempt(horseRef.current, f.actor, f.shot.made, horseShot);
+      const next = horseAttempt(horseRef.current, f.actor, f.shot.made, horseRef.current.phase === "copy" ? (horseRef.current.shot ?? "standard") : horseShot);
       horseRef.current = next;
       setHorseView(next);
       if (next.winner) finishRun(true);
@@ -238,7 +238,7 @@ export function BasketballGame({
         const h = horseRef.current;
         const npcTurn = h.phase === "call" ? h.caller === "npc" : h.caller === "human";
         if (npcTurn) {
-          const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : "standard";
+          const calledShot = h.phase === "copy" ? (h.shot ?? "standard") : (["standard", "bank", "long", "trick"] as HorseShot[])[Math.floor(Math.random() * 4)]!;
           // Choose a physically valid shot matching the NPC's skill roll when possible.
           // Never award a basket that the animated trajectory doesn't actually make.
           const wantsMake = Math.random() < npcHorseChance(opponent, calledShot);
@@ -327,6 +327,7 @@ export function BasketballGame({
     }
     run.current = freshRun();
     horseRef.current = createHorseGame();
+    setHorseShot("standard");
     setHorseView(horseRef.current);
     finished.current = false;
     setMode(m);
@@ -376,6 +377,14 @@ export function BasketballGame({
   const dock =
     phase === "play" ? (
       <div className="space-y-2">
+        {mode === "horse" && horseView.phase === "call" && horseView.caller === "human" && (
+          <div role="group" aria-label="Call your shot" className="flex flex-wrap justify-center gap-1">
+            {(["standard", "bank", "long", "trick"] as HorseShot[]).map((kind) => (
+              <button key={kind} type="button" className="mg-chip" aria-pressed={horseShot === kind}
+                onClick={() => setHorseShot(kind)}>{kind === "standard" ? "Regular" : kind === "bank" ? "Bank" : kind === "long" ? "Long" : "Trick"}</button>
+            ))}
+          </div>
+        )}
         {mode === "horse" && <div className="text-sm font-semibold text-center" data-testid="horse-turn">{horseView.phase === "copy" ? `Copy: ${horseView.shot}` : horseView.caller === "human" ? "Your call" : `${HORSE_OPPONENTS[opponent].name} calls`}</div>}
         <button
           type="button"
