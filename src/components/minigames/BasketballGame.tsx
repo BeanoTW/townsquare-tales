@@ -236,6 +236,10 @@ export function BasketballGame({
     if (modeRef.current === "horse") {
       const called = horseRef.current.phase === "copy" ? (horseRef.current.shot ?? "standard") : (f.actor === "npc" ? (npcCalledRef.current) : horseShot);
       const valid = horseMade(f.shot, called);
+      if (f.shot.made && !valid) {
+        setStatus(`Basket scored, but it was not a valid ${called} shot.`);
+        setCallout({ text: `${called.toUpperCase()} NOT MET`, good: false, id: horseRef.current.turns + 2000 });
+      }
       const next = horseAttempt(horseRef.current, f.actor, valid, called);
       horseRef.current = next;
       setHorseView(next);
