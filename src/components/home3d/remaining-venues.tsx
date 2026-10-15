@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { VenueVisualPolish } from "./venue-visual-polish";
+import { CornerShopDecor, CornerShopFixture } from "./corner-shop-detailed";
 const mat=(color:string,metalness=0)=>new THREE.MeshStandardMaterial({color,metalness,roughness:metalness?.45:.78});
 const m={wood:mat("#7f5d41"),metal:mat("#838d90",.5),ink:mat("#30343b"),paper:mat("#e9e4d5"),glass:new THREE.MeshStandardMaterial({color:"#accbd4",transparent:true,opacity:.37,roughness:.14,depthWrite:false}),green:mat("#456e56"),red:mat("#a74e4c"),gold:mat("#bf974b",.5),cream:mat("#d6c7a8"),screen:new THREE.MeshStandardMaterial({color:"#2f6873",roughness:.25,emissive:"#113942",emissiveIntensity:.4}),darkWood:mat("#493629"),yellow:mat("#e6ba63"),cloth:mat("#8b6679")};
 function B({p,s,material=m.wood}:{p:[number,number,number];s:[number,number,number];material?:THREE.Material}) {
@@ -57,6 +58,7 @@ function Kiosk(){
  </group>;
 }
 export function RemainingVenueFixture({id,venue}:{id:string;venue:string}){
+ if(venue==="shop" && ["shelves","checkout","back-office"].includes(id)) return <CornerShopFixture id={id}/>;
  if(["shelves","library","cabinet","vault"].includes(id))return <Shelf col={venue==="clinic"?m.cream:m.wood}/>;
  if(["shop-board","trades-board","vacancies","departures","wanted"].includes(id))return <Board colour={venue==="depot"?m.ink:m.green}/>;
  if(["bed-display","treatment-bed"].includes(id))return <Bed/>;
@@ -77,10 +79,9 @@ function Bench({x,z}:{x:number;z:number}) {
 }
 export function RemainingVenueDecor({venue}:{venue:string}){
  return <group>
-   <VenueVisualPolish venue={venue}/>
+   {venue==="shop" ? <CornerShopDecor/> : <VenueVisualPolish venue={venue}/>}
    {/* Architecture and characteristic stock is positioned along the perimeter,
        preserving a generous route between interactive fixture slots. */}
-   {venue==="shop"&&<><group position={[.65,0,.8]}><Shelf/></group><group position={[9.3,0,.9]}><Shelf/></group><B p={[9.24,1.1,6.6]} s={[.68,2.1,.74]} material={m.glass}/></>}
    {venue==="diner"&&<><Bench x={.95} z={6.3}/><Bench x={9} z={6.5}/><B p={[9.2,1.4,.55]} s={[1.3,1.65,.4]} material={m.metal}/></>}
    {venue==="furniture"&&<><Bench x={.85} z={6.7}/><B p={[9.2,.8,.65]} s={[1.25,1.6,.6]} material={m.wood}/></>}
    {venue==="bank"&&<><B p={[5.1,1.5,.4]} s={[2.2,2.8,.7]} material={m.metal}/><Bench x={.95} z={6.6}/><B p={[.7,1.9,.5]} s={[1.1,1.6,.2]} material={m.glass}/></>}
