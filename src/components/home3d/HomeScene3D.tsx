@@ -22,6 +22,9 @@ const FOV = 45;
 const EL_MIN = 0.3;
 const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
+/** Match three presses of the existing 0.8× zoom-in control on venue entry. */
+export const VENUE_ENTRY_ZOOM = 0.8 ** 3;
+const initialDistance = (plan: HomePlan, full: number) => plan.tier >= 10 ? Math.max(DIST_MIN, full * VENUE_ENTRY_ZOOM) : full;
 const DEFAULT_AZ = 0;
 const DEFAULT_EL = Math.PI / 2 - 0.015;
 
@@ -173,7 +176,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     (z: PlanZone | "all") => {
       const r = regionOf(plan, z);
       const az = cam.current?.gaz ?? DEFAULT_AZ;
-      return { tx: (r.x0 + r.x1) / 2, tz: (r.z0 + r.z1) / 2, dist: fitToView(r.x1 - r.x0, r.z1 - r.z0, plan.size.h, az, DEFAULT_EL, aspect, FOV) };
+      return { tx: (r.x0 + r.x1) / 2, tz: (r.z0 + r.z1) / 2, dist: initialDistance(plan, fitToView(r.x1 - r.x0, r.z1 - r.z0, plan.size.h, az, DEFAULT_EL, aspect, FOV)) };
     },
     [aspect, plan],
   );
