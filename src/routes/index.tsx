@@ -410,7 +410,7 @@ function Game() {
         />
       )}
 
-      {!enc && place === "casino" && game && (
+      {!enc && (place === "casino" || place === "home") && game && (
         <>
           {game === "blackjack" ? (
             <BlackjackGame
