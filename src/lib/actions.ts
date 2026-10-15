@@ -148,6 +148,8 @@ export function sleepAction(s: GameState): ActionDef {
           energy: rested.energy,
           day: st.day + 1,
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
+          loanDebt: Math.min(100000, (st.loanDebt ?? 0) + Math.ceil((st.loanDebt ?? 0) * 0.01)),
+          loanLastDay: st.day + 1,
           heat: Math.max(0, st.heat - 1),
         },
         message: `Day ${st.day + 1}. You wake at ${timeLabel(rested.hour)} in your ${HOUSES[st.house]?.name ?? "home"} with ${rested.energy} energy.`,
@@ -329,6 +331,35 @@ export const CHAT_UP: ActionDef = {
 };
 
 /** Any whole-dollar transfer amount, without changing the save schema. */
+/** Town Bank loans: 1% daily interest charged on sleep, one outstanding loan at a time. */
+export function bankLoanAction(amount: number): ActionDef {
+  return {
+    id: `bank-loan-${amount}`, label: `Borrow ${amount}`, hours: 0, energy: 0,
+    note: "1% daily interest · repay at the bank",
+    resolve: s => {
+      if (![250, 1000, 2500].includes(amount)) return "That loan amount is unavailable.";
+      if ((s.loanDebt ?? 0) > 0) return "Repay your existing loan before borrowing again.";
+      if (amount > 250 && s.job === 0) return "You need a job to qualify for a larger loan.";
+      if (s.money + amount > 1e12) return "Your wallet cannot hold that much cash.";
+      return { patch: { money: s.money + amount, loanDebt: amount, loanLastDay: s.day }, message: `Approved: ${amount} loan. Interest is 1% per day, charged when you sleep.` };
+    },
+  };
+}
+
+export function repayLoanAction(amount: number | "all"): ActionDef {
+  return {
+    id: `bank-repay-${amount}`, label: amount === "all" ? "Repay loan in full" : `Repay ${amount}`,
+    hours: 0, energy: 0,
+    resolve: s => {
+      const debt = s.loanDebt ?? 0;
+      if (!debt) return "You have no outstanding loan.";
+      const payment = amount === "all" ? debt : Math.min(debt, amount);
+      if (s.money < payment) return `You need ${payment} cash to make this payment.`;
+      return { patch: { money: s.money - payment, loanDebt: debt - payment }, message: `Paid ${payment} towards your loan. ${debt-payment} remaining.` };
+    },
+  };
+}
+
 export function bankTransferAction(kind: "deposit" | "withdraw", amount: number): ActionDef {
   return {
     id: `bank-${kind}-${amount}`,
@@ -660,6 +691,7 @@ export function shiftAction(s: GameState): ActionDef {
     energy: 30,
     note: `${reward.role} · +4 work XP`,
     resolve: (st) => {
+      if (st.employed === 0) return "Not employed. Apply for a job first.";
       const r = shiftReward(st);
       return {
         patch: { money: st.money + r.money, xp: st.xp + r.xp, karma: st.karma + r.karma },
@@ -675,6 +707,7 @@ export const PROMOTE: ActionDef = {
   hours: 1,
   energy: 5,
   resolve: (s) => {
+    if (s.employed === 0) return "Not employed. Apply for a job first.";
     const upcoming = nextRole(s);
     if (!upcoming) return "Already at the top of your profession.";
     const missing = missingRequirements(s, upcoming);
@@ -685,6 +718,11 @@ export const PROMOTE: ActionDef = {
           message: `Promoted to ${upcoming.name}! New wage ${upcoming.pay}/hour.`,
         };
   },
+};
+
+export const QUIT_JOB: ActionDef = {
+  id: "quit-job", label: "Resign from current job", hours: 0, energy: 0,
+  resolve: s => s.employed === 0 ? "You are not employed." : { patch: { employed: 0 }, message: "You resigned. You can now apply elsewhere." },
 };
 
 export function applyAction(index: number): ActionDef {
@@ -698,9 +736,9 @@ export function applyAction(index: number): ActionDef {
     note: entry ? `$${entry.pay}/hour · entry level` : undefined,
     resolve: (s) => {
       if (!field) return "No such vacancy.";
-      if (s.career === index) return `You're already employed in ${field.name}.`;
+      if (s.employed !== 0) return `Already employed at ${CAREERS[s.career]?.name ?? "another workplace"}. Resign before applying.`;
       return {
-        patch: { career: index, job: 0, xp: Math.floor(s.xp / 4) },
+        patch: { career: index, employed: 1, job: 0, xp: Math.floor(s.xp / 4) },
         message: `Hired as ${entry?.name ?? field.name}! Some experience transferred.`,
       };
     },
