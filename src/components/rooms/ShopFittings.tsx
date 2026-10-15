@@ -6,7 +6,7 @@ export function ShopFitting({ fixture: f, shop }: { fixture: ShopFixture; shop: 
   if (shop === "diner" || shop === "bar") return <HospitalityFitting fixture={f} venue={shop} />;
   const w = f.w * 24,
     h = f.d * 24;
-  const counter = f.id === "checkout" || f.id === "pawn-counter" || f.id === "catalogue";
+  const counter = f.id === "checkout" || f.id === "pawn-counter" || f.id === "catalogue" || f.id === "premium";
   const shelf = f.id === "shelves" || f.id === "curiosities" || f.id === "aisle";
   return (
     <g
@@ -21,11 +21,11 @@ export function ShopFitting({ fixture: f, shop }: { fixture: ShopFixture; shop: 
             width={w}
             height={h}
             rx="3"
-            fill="var(--shop-wood)"
+            fill={f.id === "premium" ? "#4e3b65" : "var(--shop-wood)"}
             stroke="var(--town-ink)"
             strokeWidth="2"
           />
-          <path d={`M0 ${h - 9}h${w}v9H0Z`} fill="var(--shop-wood-dark)" stroke="var(--town-ink)" />
+          <path d={`M0 ${h - 9}h${w}v9H0Z`} fill={f.id === "premium" ? "#c1a778" : "var(--shop-wood-dark)"} stroke="var(--town-ink)" />
           <rect
             x="3"
             y="3"
@@ -57,7 +57,7 @@ export function ShopFitting({ fixture: f, shop }: { fixture: ShopFixture; shop: 
             rx="2"
           />
           <text x={w / 2} y={h - 1} textAnchor="middle" fontSize="8" fill="var(--town-paper)">
-            {shop === "pawn" ? "VALUATIONS" : "CHECKOUT"}
+            {shop === "pawn" ? "VALUATIONS" : f.id === "premium" ? "PREMIUM" : f.id === "catalogue" ? "BASIC" : "CHECKOUT"}
           </text>
         </g>
       ) : shelf ? (
