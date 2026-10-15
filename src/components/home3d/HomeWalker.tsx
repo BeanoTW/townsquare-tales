@@ -19,6 +19,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
   const pos=useRef<WalkPoint>({x:start[0],z:start[1]});
   const waypoints=useRef<WalkPoint[]>([]);
   const target=useRef<string|null>(null);
+  const dragPointer=useRef<number|null>(null);
   const keys=useRef(new Set<string>());
   const dir=useRef(0);
   const phase=useRef(0);
@@ -91,10 +92,29 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
   }, -1);
   return <>
     <Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} />
-    {/* An unobtrusive ground target: pointer events on furniture take precedence. */}
+    {/* Capture a single finger so drag-to-walk continues even when the finger
+        crosses a fixture. Pinch gestures are handled by the camera controls. */}
     <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
-      onClick={e=>{if(e.delta>8)return;e.stopPropagation();moveTo(e.point.x,e.point.z);}}
-      onPointerMove={e=>{if(e.buttons===1){e.stopPropagation();moveTo(e.point.x,e.point.z);}}}>
+      onPointerDown={e=>{
+        if (dragPointer.current!==null || !e.isPrimary) return;
+        e.stopPropagation();
+        dragPointer.current=e.pointerId;
+        e.target.setPointerCapture(e.pointerId);
+        moveTo(e.point.x,e.point.z);
+      }}
+      onPointerMove={e=>{
+        if (dragPointer.current!==e.pointerId || !e.isPrimary) return;
+        e.stopPropagation();
+        moveTo(e.point.x,e.point.z);
+      }}
+      onPointerUp={e=>{
+        if (dragPointer.current!==e.pointerId) return;
+        dragPointer.current=null;
+        if(e.target.hasPointerCapture(e.pointerId))e.target.releasePointerCapture(e.pointerId);
+      }}
+      onPointerCancel={e=>{
+        if(dragPointer.current===e.pointerId)dragPointer.current=null;
+      }}>
       <planeGeometry args={[plan.size.w,plan.size.d]}/>
       <meshBasicMaterial transparent opacity={0} depthWrite={false}/>
     </mesh>
