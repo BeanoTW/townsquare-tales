@@ -51,9 +51,9 @@ export const START: GameState = {
 
 export const HOUSES = [
   { name: "Cardboard Box", cost: 0, rest: 50 },
-  { name: "Studio Flat", cost: 300, rest: 75 },
-  { name: "Suburban House", cost: 2000, rest: 100 },
-  { name: "Mansion", cost: 15000, rest: 100 },
+  { name: "Studio Flat", cost: 20000, rest: 75 },
+  { name: "Suburban House", cost: 85000, rest: 100 },
+  { name: "Mansion", cost: 350000, rest: 100 },
 ] as const;
 
 export const SCHOOLS = ["Dropout", "High School", "College", "University Degree", "PhD"] as const;

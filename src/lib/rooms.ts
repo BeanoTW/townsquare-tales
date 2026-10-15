@@ -491,10 +491,10 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "LOANS",
         hint: "Borrow money or repay debt",
         box: { x: 280, y: 190, w: 126, h: 80 },
-        lines: s => [`Outstanding debt: ${s.loanDebt ?? 0}`, "Interest: 1% each day when you sleep", "Larger loans require employment"],
+        lines: s => [`Outstanding debt: ${s.loanDebt ?? 0}`, `Due: day ${s.loanDueDay || "—"}`, "40% upfront finance charge · 2% daily penalty after deadline", "Larger loans require employment"],
         actions: s => (s.loanDebt ?? 0) > 0
           ? [repayLoanAction(100), repayLoanAction(500), repayLoanAction("all")]
-          : [bankLoanAction(250), bankLoanAction(1000), bankLoanAction(2500)],
+          : [bankLoanAction(250), bankLoanAction(1000), bankLoanAction(2500), bankLoanAction(5000)],
       },
     ],
   },
