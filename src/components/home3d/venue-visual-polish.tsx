@@ -129,6 +129,25 @@ export function VenueVisualPolish({venue}:{venue:string}){
     {[1.85,2.05,2.25,2.45].map((y,i)=><group key={i}><Box at={[5,y,.22]} size={[2.1,.027,.011]} finish={paint.gold}/><Box at={[4.4,y+.065,.22]} size={[.7,.06,.01]} finish={paint.white}/></group>)}
     <Poster x={8.92} z={.2} tone={paint.blue}/>
   </>}
+  {venue==="casino"&&<>
+    <Frame x={7.5} y={2.4} z={.17} w={2.0} h={.64} color={paint.black}/>
+    {[6.8,7.25,7.7,8.15].map((x,i)=><group key={i}>
+      <Box at={[x,2.45,.215]} size={[.29,.36,.014]} finish={i%2?paint.gold:paint.red}/>
+      <Box at={[x,2.27,.229]} size={[.24,.028,.011]} finish={paint.white}/>
+    </group>)}
+    <Box at={[4.8,.02,8.7]} size={[2.5,.015,1.2]} finish={paint.red}/>
+  </>}
+  {venue==="bar"&&<>
+    <group position={[.45,0,.65]}><Box at={[0,1.0,0]} size={[.5,1.96,.4]} finish={paint.timber}/>{[.45,1.04,1.6].map(y=><Box key={y} at={[0,y,.22]} size={[.43,.03,.35]} finish={paint.gold}/>)}</group>
+    <Poster x={6.1} z={.17} tone={paint.red}/>
+    <Box at={[6.1,2.68,.15]} size={[1.35,.16,.12]} finish={paint.gold}/>
+  </>}
+  {venue==="gym"&&<>
+    <Poster x={6.1} z={.17} tone={paint.yellow}/>
+    <Box at={[2.3,.013,7.2]} size={[2.2,.02,1.25]} finish={paint.black}/>
+    <Box at={[5.1,2.58,.15]} size={[2.7,.12,.12]} finish={paint.black}/>
+    {[4.2,4.75,5.3,5.85].map((x,i)=><Box key={i} at={[x,2.58,.225]} size={[.25,.08,.012]} finish={i%2?paint.red:paint.yellow}/>)}
+  </>}
   {venue==="pawn"&&<>
     <Poster x={5.2} z={.2} tone={paint.gold}/>
     <group position={[9.2,0,6]}><Box at={[0,.48,0]} size={[.68,.93,.48]} finish={paint.timber}/><Box at={[0,.96,0]} size={[.72,.055,.53]} finish={paint.gold}/></group>
