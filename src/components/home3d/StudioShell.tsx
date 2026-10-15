@@ -1,135 +1,12 @@
-import { useEffect, useMemo, useRef } from "react";
-import * as THREE from "three";
-import type { OpeningLike } from "./types";
-import { STUDIO, type WallSpec } from "@/lib/home3d/layout";
 import { Ball, Box, Cone, Cyl, Group, Round, mat } from "./primitives";
-import { carpetTexture, plankTexture } from "./textures";
 import { Frame } from "./furniture";
 
-const T_CAP = "#2c2d33";
-const FRAME = "#f6f1e3";
-const GLASS = { opacity: 0.22, rough: 0.05 };
-
-/** One wall: solid boxes around every opening, plus frames, glass, sills, skirting and a dark cut edge. */
-export function Wall({ spec, register }: { spec: WallSpec; register: (id: string, g: THREE.Group | null) => void }) {
-  const ref = useRef<THREE.Group>(null);
-  useEffect(() => {
-    register(spec.id, ref.current);
-    return () => register(spec.id, null);
-  }, [spec.id, register]);
-  const dx = spec.b[0] - spec.a[0];
-  const dz = spec.b[1] - spec.a[1];
-  const len = Math.hypot(dx, dz);
-  const angle = Math.atan2(-dz, dx);
-  const T = spec.thickness;
-  const H = spec.height;
-  const ops = [...spec.openings].sort((a, b) => a.u0 - b.u0);
-  // Vertical slabs between openings.
-  const slabs: { u0: number; u1: number }[] = [];
-  let cursor = 0;
-  for (const o of ops) {
-    if (o.u0 > cursor) slabs.push({ u0: cursor, u1: o.u0 });
-    cursor = o.u1;
-  }
-  if (cursor < len) slabs.push({ u0: cursor, u1: len });
-  const colour = spec.colour;
-  const piece = (key: string, u0: number, u1: number, v0: number, v1: number, base = false) => (
-    <Group key={key}>
-      <Box s={[u1 - u0, v1 - v0, T]} p={[(u0 + u1) / 2, (v0 + v1) / 2, 0]} c={colour} o={{ rough: 0.92 }} />
-      {v1 >= H - 1e-6 && <Box s={[u1 - u0, 0.025, T + 0.002]} p={[(u0 + u1) / 2, H + 0.0125, 0]} c={T_CAP} shadow={false} />}
-      {base && <Box s={[u1 - u0, 0.1, T + 0.035]} p={[(u0 + u1) / 2, 0.05, 0]} c={FRAME} shadow={false} />}
-    </Group>
-  );
-  return (
-    <group ref={ref} position={[spec.a[0], 0, spec.a[1]]} rotation={[0, angle, 0]}>
-      {slabs.map((s, i) => piece(`s${i}`, s.u0, s.u1, 0, H, true))}
-      {ops.map((o, i) => {
-        const w = o.u1 - o.u0;
-        const h = o.v1 - o.v0;
-        const cx = (o.u0 + o.u1) / 2;
-        const cy = (o.v0 + o.v1) / 2;
-        return (
-          <Group key={`o${i}`}>
-            {o.v1 < H && piece(`top${i}`, o.u0, o.u1, o.v1, H)}
-            {o.v0 > 0 && piece(`bot${i}`, o.u0, o.u1, 0, o.v0, true)}
-            {o.kind === "window" && <WindowDetail w={w} h={h} cx={cx} cy={cy} T={T} />}
-            {o.kind === "door" && <DoorDetail w={w} h={h} cx={cx} T={T} />}
-          </Group>
-        );
-      })}
-    </group>
-  );
-}
-
-function WindowDetail({ w, h, cx, cy, T }: OpeningLike & { cy: number }) {
-  const f = 0.06;
-  return (
-    <Group p={[cx, cy, 0]}>
-      <Box s={[w + 0.08, f, T + 0.06]} p={[0, h / 2 + f / 2 - 0.02, 0]} c={FRAME} shadow={false} />
-      <Box s={[w + 0.08, f, T + 0.06]} p={[0, -h / 2 - f / 2 + 0.02, 0]} c={FRAME} shadow={false} />
-      <Box s={[f, h, T + 0.06]} p={[-w / 2 - f / 2 + 0.02, 0, 0]} c={FRAME} shadow={false} />
-      <Box s={[f, h, T + 0.06]} p={[w / 2 + f / 2 - 0.02, 0, 0]} c={FRAME} shadow={false} />
-      <Box s={[0.04, h, 0.04]} p={[0, 0, 0]} c={FRAME} shadow={false} />
-      <Box s={[w, 0.04, 0.04]} p={[0, 0.05, 0]} c={FRAME} shadow={false} />
-      <Box s={[w - 0.02, h - 0.02, 0.01]} c="#bfe4ee" o={GLASS} shadow={false} />
-      <Box s={[w + 0.22, 0.045, 0.22]} p={[0, -h / 2 - 0.05, T / 2 + 0.06]} c={FRAME} />
-    </Group>
-  );
-}
-
-function DoorDetail({ w, h, cx, T }: OpeningLike) {
-  return (
-    <Group p={[cx, 0, 0]}>
-      <Box s={[0.06, h, T + 0.05]} p={[-w / 2 - 0.02, h / 2, 0]} c={FRAME} shadow={false} />
-      <Box s={[0.06, h, T + 0.05]} p={[w / 2 + 0.02, h / 2, 0]} c={FRAME} shadow={false} />
-      <Box s={[w + 0.1, 0.06, T + 0.05]} p={[0, h + 0.01, 0]} c={FRAME} shadow={false} />
-      {/* leaf swung ajar */}
-      <Group p={[-w / 2 + 0.02, 0, 0.04]} r={[0, 0.55, 0]}>
-        <Box s={[w - 0.06, h - 0.04, 0.045]} p={[(w - 0.06) / 2, h / 2, 0]} c="#2f6a64" />
-        <Box s={[w - 0.3, 0.9, 0.012]} p={[(w - 0.06) / 2, h * 0.64, 0.025]} c="#3a7f78" shadow={false} />
-        <Cyl rad={0.02} h={0.06} p={[w - 0.2, h * 0.48, 0.04]} r={[Math.PI / 2, 0, 0]} c="#c9a24a" o={{ rough: 0.3, metal: 0.85 }} />
-      </Group>
-    </Group>
-  );
-}
-
-/** Floors: laminate planks and a different, softer carpet in the sleeping space. */
-export function Floors() {
-  const plank = useMemo(() => plankTexture([4.2 / 1.0, 4.8 / 1.0]), []);
-  const carpet = useMemo(() => carpetTexture([3.4 * 1.3, 4.8 * 1.3]), []);
+/** Built-in features and everyday clutter. None of this is a purchasable item. */
+export function StudioDecor() {
   return (
     <Group>
-      {STUDIO.floors.map((f) => {
-        const w = f.rect.x1 - f.rect.x0;
-        const d = f.rect.z1 - f.rect.z0;
-        const tex = f.kind === "laminate" ? plank : carpet;
-        return (
-          <mesh key={f.zone} position={[(f.rect.x0 + f.rect.x1) / 2, 0.015, (f.rect.z0 + f.rect.z1) / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={mat("#ffffff", { rough: f.kind === "laminate" ? 0.55 : 0.98, map: tex })}>
-            <planeGeometry args={[w, d]} />
-          </mesh>
-        );
-      })}
       {/* threshold strip between the two floors */}
       <Box s={[0.08, 0.02, 4.8]} p={[4.2, 0.02, 2.4]} c="#c9a24a" o={{ rough: 0.4, metal: 0.6 }} shadow={false} />
-    </Group>
-  );
-}
-
-/** A thick slab under the flat makes it read as a dollhouse cross-section. */
-export function Plinth() {
-  const { w, d } = STUDIO.size;
-  return (
-    <Group>
-      <Box s={[w + 0.5, 0.35, d + 0.5]} p={[w / 2, -0.22, d / 2]} c="#3b414d" o={{ rough: 0.9 }} />
-      <Box s={[w + 0.5, 0.04, d + 0.5]} p={[w / 2, -0.04, d / 2]} c="#59606e" o={{ rough: 0.8 }} shadow={false} />
-    </Group>
-  );
-}
-
-/** Built-in features and everyday clutter. None of this is a purchasable item. */
-export function Decor() {
-  return (
-    <Group>
       {/* living-room rug */}
       <Box s={[2.3, 0.012, 2.1]} p={[2.1, 0.026, 2.55]} c="#e9dfc9" o={{ rough: 1 }} shadow={false} />
       <Box s={[2.1, 0.014, 1.9]} p={[2.1, 0.028, 2.55]} c="#2f7f79" o={{ rough: 1 }} shadow={false} />
@@ -228,7 +105,7 @@ export function Decor() {
   );
 }
 
-function Plant({ p, big = false, small = false }: { p: [number, number, number]; big?: boolean; small?: boolean }) {
+export function Plant({ p, big = false, small = false }: { p: [number, number, number]; big?: boolean; small?: boolean }) {
   const s = big ? 1.25 : small ? 0.7 : 1;
   const leaves: [number, number, number][] = [[0, 0.62, 0], [0.14, 0.52, 0.06], [-0.13, 0.48, -0.05], [0.04, 0.78, -0.08], [-0.06, 0.7, 0.12]];
   return (

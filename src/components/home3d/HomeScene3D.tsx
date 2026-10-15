@@ -2,9 +2,13 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { HomeZone } from "@/lib/home-zones";
-import { STUDIO, daylight, fitToView, visibleSlots, wallCutDown, type Slot } from "@/lib/home3d/layout";
+import { daylight, fitToView, partitionDrops, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
 import { Bed, Bookshelf, Console, Desk, EstateBoard, Kitchen, Mattress, Sofa, Television, Weights } from "./furniture";
-import { Decor, Floors, Plinth, Wall } from "./StudioShell";
+import { Floors, Plinth, Wall } from "./parts";
+import { StudioDecor } from "./StudioShell";
+import { CampStove, CrateDesk, OldCouch, PalletBed, ScrapWeights, SquatDecor, SquatMattress } from "./squat";
+import { SuburbanDecor } from "./suburban";
+import { Bedsides, BlackjackTable, Figure, MansionDecor, SlotBank } from "./mansion";
 import type { CameraControls, Scene3DProps } from "./types";
 
 const FOV = 45;
@@ -22,48 +26,64 @@ const mixHex = (a: string, b: string, t: number) => {
   return `#${c.getHexString()}`;
 };
 
-function regionFor(zone: HomeZone | "all") {
-  const f = STUDIO.focus[zone] ?? STUDIO.focus.all!;
-  const w = zone === "living" ? 4.4 : zone === "bedroom" ? 3.6 : STUDIO.size.w;
-  return { x: f.x, z: f.z, w, d: STUDIO.size.d };
-}
+const regionOf = (plan: HomePlan, zone: HomeZone | "all"): Rect => plan.focus[zone] ?? plan.focus.all!;
 
-function Lights({ day }: { day: number }) {
+function Lights({ plan, day }: { plan: HomePlan; day: number }) {
+  const L = plan.lights;
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const cx = plan.size.w / 2;
+  const cz = plan.size.d / 2;
+  const r = Math.hypot(plan.size.w, plan.size.d) / 2 + 1;
+  const k = Math.max(1, r / 5.5);
+  useEffect(() => {
+    const l = sun.current;
+    if (!l) return;
+    l.target.position.set(cx, 0, cz);
+    l.target.updateMatrixWorld();
+  }, [cx, cz]);
   return (
     <>
-      <hemisphereLight args={["#e3edf5", "#7d6a55", 0.5 + 0.55 * day]} />
+      <hemisphereLight args={[L.hemi[0], L.hemi[1], L.hemiBase + L.hemiDay * day]} />
       <directionalLight
+        ref={sun}
         castShadow
-        position={[-3.5, 9, -7]}
-        intensity={0.2 + 2.6 * day}
-        color={day > 0.9 ? "#fff3dc" : "#ffcf9a"}
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-7}
-        shadow-camera-right={7}
-        shadow-camera-top={7}
-        shadow-camera-bottom={-7}
+        position={[cx - 3.5 * k, 9 * k, cz - 7 * k]}
+        intensity={L.sunBase + L.sunDay * day}
+        color={day > 0.9 ? L.sunTint[0] : L.sunTint[1]}
+        shadow-mapSize={r > 9 ? [2048, 2048] : [1024, 1024]}
+        shadow-camera-left={-r}
+        shadow-camera-right={r}
+        shadow-camera-top={r}
+        shadow-camera-bottom={-r}
         shadow-camera-near={1}
-        shadow-camera-far={28}
+        shadow-camera-far={28 * k}
         shadow-bias={-0.0004}
         shadow-normalBias={0.03}
         shadow-radius={4}
       />
-      {/* warm light for the living space, cooler for the sleeping space, so they read as different rooms */}
-      <pointLight position={[2.1, 2.2, 2.5]} color="#ffc983" intensity={4 + 16 * (1 - day)} distance={8} decay={1.6} />
-      <pointLight position={[5.9, 2.0, 2.2]} color="#c3d2ff" intensity={2.5 + 11 * (1 - day)} distance={7} decay={1.6} />
-      <pointLight position={[1.4, 1.5, 0.9]} color="#fff0c8" intensity={1.5 + 3 * (1 - day)} distance={3.5} decay={1.8} />
+      {/* each room has its own coloured light, so the spaces read as different places */}
+      {L.points.map((l, i) => (
+        <pointLight key={i} position={l.p} color={l.colour} intensity={l.day + (l.night - l.day) * (1 - day)} distance={l.distance} decay={l.decay} />
+      ))}
     </>
   );
 }
 
-function Furniture({ slot, luxury, hasBed }: { slot: Slot; luxury: boolean; hasBed: boolean }) {
+function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan; luxury: boolean; hasBed: boolean }) {
+  const scrap = plan.kind === "squat" && !luxury;
   switch (slot.id) {
     case "bed":
-      return hasBed ? <Bed lux={luxury} /> : <Mattress />;
+      if (!hasBed) return scrap ? <SquatMattress /> : <Mattress />;
+      return scrap ? <PalletBed /> : (
+        <>
+          <Bed lux={luxury} />
+          {plan.tier >= 2 && <Bedsides lux={luxury} />}
+        </>
+      );
     case "sofa":
-      return <Sofa lux={luxury} />;
+      return scrap ? <OldCouch /> : <Sofa lux={luxury} />;
     case "kitchen":
-      return <Kitchen lux={luxury} />;
+      return scrap ? <CampStove /> : <Kitchen lux={luxury} />;
     case "tv":
       return <Television lux={luxury} />;
     case "console":
@@ -71,13 +91,30 @@ function Furniture({ slot, luxury, hasBed }: { slot: Slot; luxury: boolean; hasB
     case "bookshelf":
       return <Bookshelf lux={luxury} />;
     case "weights":
-      return <Weights lux={luxury} />;
+      return scrap ? <ScrapWeights /> : <Weights lux={luxury} />;
     case "desk":
-      return <Desk lux={luxury} />;
+      return scrap ? <CrateDesk /> : <Desk lux={luxury} />;
     case "estate":
       return <EstateBoard />;
+    case "blackjack":
+      return <BlackjackTable />;
+    case "slots":
+      return <SlotBank />;
     default:
       return null;
+  }
+}
+
+function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) {
+  switch (plan.kind) {
+    case "squat":
+      return <SquatDecor owned={owned} />;
+    case "suburban":
+      return <SuburbanDecor owned={owned} />;
+    case "mansion":
+      return <MansionDecor owned={owned} />;
+    default:
+      return <StudioDecor />;
   }
 }
 
@@ -89,7 +126,7 @@ type Shared = {
   dragged: MutableRefObject<number>;
 };
 
-function Rig({ slots, zone, shared }: { slots: Slot[]; zone: HomeZone; shared: Shared }) {
+function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zone: HomeZone; shared: Shared }) {
   const { camera, gl, size, invalidate } = useThree();
   const reduce = useMemo(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true, []);
   const aspect = size.width / Math.max(1, size.height);
@@ -100,13 +137,13 @@ function Rig({ slots, zone, shared }: { slots: Slot[]; zone: HomeZone; shared: S
 
   const goalFor = useCallback(
     (z: HomeZone | "all") => {
-      const r = regionFor(z);
+      const r = regionOf(plan, z);
       const az = cam.current?.gaz ?? DEFAULT_AZ;
-      return { tx: r.x, tz: r.z, dist: fitToView(r.w, r.d, STUDIO.size.h, az, DEFAULT_EL, aspect, FOV) };
+      return { tx: (r.x0 + r.x1) / 2, tz: (r.z0 + r.z1) / 2, dist: fitToView(r.x1 - r.x0, r.z1 - r.z0, plan.size.h, az, DEFAULT_EL, aspect, FOV) };
     },
-    [aspect],
+    [aspect, plan],
   );
-  const maxDist = useCallback(() => fitToView(STUDIO.size.w, STUDIO.size.d, STUDIO.size.h, DEFAULT_AZ, DEFAULT_EL, aspect, FOV, 1.5), [aspect]);
+  const maxDist = useCallback(() => fitToView(plan.size.w, plan.size.d, plan.size.h, DEFAULT_AZ, DEFAULT_EL, aspect, FOV, 1.5), [aspect, plan]);
 
   if (!cam.current) {
     const g = goalFor("all");
@@ -117,9 +154,9 @@ function Rig({ slots, zone, shared }: { slots: Slot[]; zone: HomeZone; shared: S
     const c = cam.current!;
     c.gel = clamp(c.gel, EL_MIN, EL_MAX);
     c.gdist = clamp(c.gdist, DIST_MIN, maxDist());
-    c.gtx = clamp(c.gtx, 0, STUDIO.size.w);
-    c.gtz = clamp(c.gtz, 0, STUDIO.size.d);
-  }, [maxDist]);
+    c.gtx = clamp(c.gtx, 0, plan.size.w);
+    c.gtz = clamp(c.gtz, 0, plan.size.d);
+  }, [maxDist, plan]);
 
   // Public handle used by the on-screen buttons and by tests.
   useEffect(() => {
@@ -289,12 +326,11 @@ function Rig({ slots, zone, shared }: { slots: Slot[]; zone: HomeZone; shared: S
     let busy = Math.abs(c.gaz - c.az) + Math.abs(c.gel - c.el) + Math.abs(c.gdist - c.dist) * 0.2 + Math.abs(c.gtx - c.tx) + Math.abs(c.gtz - c.tz) > 0.0015;
 
     // Cut away whichever exterior walls face the camera, so the view is never blocked.
-    const off = { x: camera.position.x - STUDIO.size.w / 2, z: camera.position.z - STUDIO.size.d / 2 };
-    for (const spec of STUDIO.walls) {
+    const off = { x: camera.position.x - plan.size.w / 2, z: camera.position.z - plan.size.d / 2 };
+    for (const spec of plan.walls) {
       const g = shared.walls.current.get(spec.id);
       if (!g) continue;
-      const cut = wallCutDown(spec, off) || (!spec.outer && spec.height > 1.2 && cutPartition(spec, camera.position));
-      const target = cut ? 0.06 : 1;
+      const target = Math.min(wallScale(spec, off), partitionDrops(spec, camera.position) ? 0.06 : 1);
       const next = reduce ? target : g.scale.y + (target - g.scale.y) * k;
       if (Math.abs(next - g.scale.y) > 0.002) busy = true;
       g.scale.y = Math.abs(next - target) < 0.004 ? target : next;
@@ -319,11 +355,6 @@ function Rig({ slots, zone, shared }: { slots: Slot[]; zone: HomeZone; shared: S
   return null;
 }
 
-/** Partition walls only drop when the camera is level with them and close behind, so rooms stay visible. */
-function cutPartition(spec: { a: [number, number]; normal: [number, number] }, camPos: THREE.Vector3): boolean {
-  return (camPos.x - spec.a[0]) * spec.normal[0] * -1 > 0 && Math.abs(camPos.x - spec.a[0]) > 0 ? camPos.x > spec.a[0] + 0.01 && camPos.y < 3 : false;
-}
-
 function Ring({ slot }: { slot: Slot }) {
   const r = Math.max(slot.w, slot.d) / 2 + 0.12;
   return (
@@ -336,7 +367,9 @@ function Ring({ slot }: { slot: Slot }) {
 
 function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
   const { invalidate } = useThree();
-  const slots = useMemo(() => visibleSlots(STUDIO, p.visibleIds), [p.visibleIds]);
+  const { plan } = p;
+  const slots = useMemo(() => visibleSlots(plan, p.visibleIds), [plan, p.visibleIds]);
+  const owned = useMemo(() => new Set(p.visibleIds), [p.visibleIds]);
   const register = useCallback(
     (id: string, g: THREE.Group | null) => {
       if (g) shared.walls.current.set(id, g);
@@ -348,14 +381,17 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
   const sel = p.selectedId ? slots.find((s) => s.id === p.selectedId) : undefined;
   return (
     <>
-      <Rig slots={slots} zone={p.zone} shared={shared} />
-      <Lights day={daylight(p.hour)} />
-      <Plinth />
-      <Floors />
-      {STUDIO.walls.map((w) => (
+      <Rig plan={plan} slots={slots} zone={p.zone} shared={shared} />
+      <Lights plan={plan} day={daylight(p.hour)} />
+      <Plinth plan={plan} />
+      <Floors plan={plan} />
+      {plan.walls.map((w) => (
         <Wall key={w.id} spec={w} register={register} />
       ))}
-      <Decor />
+      <Decor plan={plan} owned={owned} />
+      {plan.npcs?.map((n) => (
+        <Figure key={n.id} npc={n} />
+      ))}
       {slots.map((s) => (
         <group
           key={s.id}
@@ -378,7 +414,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
             invalidate();
           }}
         >
-          <Furniture slot={s} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
+          <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
       {sel && <Ring slot={sel} />}
@@ -395,14 +431,15 @@ export default function HomeScene3D(props: HomeScene3DProps) {
   const dragged = useRef(0);
   const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged }), [props.controls]);
   const day = daylight(props.hour);
-  const slots = useMemo(() => visibleSlots(STUDIO, props.visibleIds), [props.visibleIds]);
-  const bg = `linear-gradient(180deg, ${mixHex("#1c2440", "#cfe3ee", day)} 0%, ${mixHex("#2d3150", "#f0e8d6", day)} 100%)`;
+  const { plan } = props;
+  const slots = useMemo(() => visibleSlots(plan, props.visibleIds), [plan, props.visibleIds]);
+  const bg = `linear-gradient(180deg, ${mixHex(plan.sky.night[0], plan.sky.day[0], day)} 0%, ${mixHex(plan.sky.night[1], plan.sky.day[1], day)} 100%)`;
   const { onReady } = props;
   useEffect(() => {
     onReady?.();
   }, [onReady]);
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: bg, touchAction: "none" }} data-home3d="studio" data-daylight={day.toFixed(2)}>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: bg, touchAction: "none" }} data-home3d={plan.kind} data-daylight={day.toFixed(2)}>
       <Canvas
         shadows="percentage"
         dpr={[1, 1.75]}
@@ -413,7 +450,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
         onPointerMissed={() => {
           if (shared.dragged.current <= 6) props.onDeselect?.();
         }}
-        aria-label="Interactive 3D view of your studio flat. Drag to orbit, pinch or scroll to zoom, tap furniture to use it."
+        aria-label={`Interactive 3D view of your home: ${plan.name}. Drag to orbit, pinch or scroll to zoom, tap furniture to use it.`}
       >
         <World p={props} shared={shared} />
       </Canvas>

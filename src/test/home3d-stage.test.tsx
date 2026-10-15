@@ -4,7 +4,8 @@ import { START } from "@/lib/game-data";
 import { LocationScene } from "@/components/LocationScene";
 import { luxuryMap, toHotspotId, toSlotId, webglAvailable } from "@/components/home3d/Home3DStage";
 import { roomFor, visibleHotspots } from "@/lib/rooms";
-import { planFor, visibleSlots } from "@/lib/home3d/layout";
+import { visibleSlots } from "@/lib/home3d/layout";
+import { planFor } from "@/lib/home3d/plans";
 
 const flat = (over: Record<string, unknown> = {}) => ({ ...START, house: 1, ...over });
 
@@ -17,9 +18,9 @@ describe("home 3D integration", () => {
 
   it("reads luxury ownership from the existing bitmask", () => {
     const m = luxuryMap(flat({ luxuryFurniture: 1 | 16 }) as never);
-    expect(m.bed).toBe(true);
-    expect(m.sofa).toBe(true);
-    expect(m.kitchen).toBe(false);
+    expect(m["bed"]).toBe(true);
+    expect(m["sofa"]).toBe(true);
+    expect(m["kitchen"]).toBe(false);
     expect(Object.values(luxuryMap(flat() as never)).some(Boolean)).toBe(false);
   });
 
@@ -38,5 +39,47 @@ describe("home 3D integration", () => {
     const { container } = render(<LocationScene room={roomFor("home", s)} state={s} feedback={null} onRun={() => {}} onLeave={() => {}} />);
     expect(container.querySelector("[data-home3d]")).toBeNull();
     expect(container.querySelector(".room-art-frame")).not.toBeNull();
+  });
+});
+
+import { GAME_SLOTS } from "@/components/home3d/Home3DStage";
+import { PLANS } from "@/lib/home3d/plans";
+import { requiresMainsPower } from "@/lib/home-zones";
+import { homeZones } from "@/lib/home-zones";
+
+describe("every housing tier uses a 3D plan", () => {
+  it("maps each house index to a distinct plan", () => {
+    const kinds = [0, 1, 2, 3].map((h) => planFor(h)!.kind);
+    expect(new Set(kinds).size).toBe(4);
+    expect(planFor(4)).toBeNull();
+  });
+
+  it("offers a camera focus for every room button of each tier", () => {
+    for (const h of [0, 1, 2, 3]) {
+      const plan = planFor(h)!;
+      for (const z of homeZones(h)) expect(plan.focus[z.id], `house ${h} ${z.id}`).toBeDefined();
+    }
+  });
+
+  it("gives nothing for free: an empty home shows no furniture slots beyond the mattress rule", () => {
+    for (const h of [0, 1, 2, 3]) {
+      const s = { ...START, house: h, furniture: 0 } as never;
+      const ids = visibleHotspots(roomFor("home", s), s).map((x) => toSlotId(x.id));
+      const slots = visibleSlots(planFor(h)!, ids).map((x) => x.id);
+      for (const id of ["sofa", "tv", "kitchen", "weights", "desk", "console", "bookshelf"]) expect(slots, `house ${h}`).not.toContain(id);
+    }
+  });
+
+  it("keeps mains-powered items out of the squat", () => {
+    const s = { ...START, house: 0, furniture: 255 } as never;
+    const ids = visibleHotspots(roomFor("home", s), s).map((x) => toSlotId(x.id));
+    for (const id of ids) expect(requiresMainsPower(id), id).toBe(false);
+  });
+
+  it("exposes the games-room machines as plan slots that launch the existing minigames", () => {
+    expect(GAME_SLOTS).toEqual({ blackjack: "blackjack", slots: "slots" });
+    const ids = visibleSlots(planFor(3)!, ["blackjack", "slots"]).map((x) => x.id);
+    expect(ids).toEqual(expect.arrayContaining(["blackjack", "slots"]));
+    expect(PLANS[3]!.npcs?.length ?? 0).toBeGreaterThan(0);
   });
 });

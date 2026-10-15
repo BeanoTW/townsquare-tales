@@ -3,12 +3,15 @@ import type { GameState } from "@/lib/game-state";
 import { ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import type { Hotspot } from "@/lib/rooms";
 import type { HomeZone } from "@/lib/home-zones";
+import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
 
 const HomeScene3D = lazy(() => import("./HomeScene3D"));
 
 /** Hotspot ids and layout slot ids differ for the television only. */
 export const toSlotId = (hotspotId: string) => (hotspotId === "television" ? "tv" : hotspotId);
+/** Games-room machines are scene objects that open the existing minigames rather than action panels. */
+export const GAME_SLOTS: Record<string, "blackjack" | "slots"> = { blackjack: "blackjack", slots: "slots" };
 export const toHotspotId = (slotId: string) => (slotId === "tv" ? "television" : slotId);
 
 export function webglAvailable(): boolean {
@@ -43,7 +46,7 @@ export function luxuryMap(state: GameState): Record<string, boolean> {
 const BTN = "min-h-11 min-w-11 rounded-lg border-2 border-foreground bg-card/90 px-2 text-lg font-bold shadow";
 
 export function Home3DStage({
-  state, visible, selectedId, zone, onSelect, onDeselect, onFail,
+  state, visible, selectedId, zone, onSelect, onDeselect, onFail, onLaunch,
 }: {
   state: GameState;
   visible: Hotspot[];
@@ -53,17 +56,26 @@ export function Home3DStage({
   onDeselect: () => void;
   /** Called if WebGL breaks at runtime so the parent can switch to the classic renderer. */
   onFail: () => void;
+  /** Open a full-screen minigame (mansion games room). */
+  onLaunch?: ((game: "blackjack" | "slots") => void) | undefined;
 }) {
   const controls = useRef<CameraControls | null>(null);
-  const visibleIds = useMemo(() => visible.map((h) => toSlotId(h.id)), [visible]);
+  const plan = planFor(state.house) ?? planFor(1)!;
+  const visibleIds = useMemo(() => {
+    const ids = visible.map((h) => toSlotId(h.id));
+    if (state.house >= 3) ids.push(...Object.keys(GAME_SLOTS));
+    return ids;
+  }, [visible, state.house]);
   const luxury = useMemo(() => luxuryMap(state), [state]);
   const hasBed = ownsFurniture(state.furniture, "bed");
   const c = () => controls.current;
   return (
     <div className="absolute inset-0" data-home3d data-hotspot="home3d">
       <Boundary fallback={<FailNotice onFail={onFail} />}>
-        <Suspense fallback={<div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Building your flat…</div>}>
+        <Suspense fallback={<div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Building your home…</div>}>
           <HomeScene3D
+            key={plan.kind}
+            plan={plan}
             controls={controls}
             visibleIds={visibleIds}
             luxury={luxury}
@@ -72,7 +84,11 @@ export function Home3DStage({
             zone={zone}
             hour={state.hour}
             onDeselect={onDeselect}
-            onSelect={(slotId) => onSelect(toHotspotId(slotId))}
+            onSelect={(slotId) => {
+              const game = GAME_SLOTS[slotId];
+              if (game && onLaunch) onLaunch(game);
+              else if (!game) onSelect(toHotspotId(slotId));
+            }}
           />
         </Suspense>
       </Boundary>

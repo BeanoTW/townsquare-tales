@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { STUDIO, insideFootprint, overlaps, planFor, slotFor, visibleSlots, wallCutDown } from "@/lib/home3d/layout";
+import { STUDIO, insideFootprint, overlaps, slotFor, visibleSlots, wallCutDown } from "@/lib/home3d/layout";
+import { planFor } from "@/lib/home3d/plans";
 import { FURNITURE } from "@/lib/furniture";
 
 describe("studio flat plan", () => {
-  it("is only the studio tier for now", () => {
+  it("is the tier-1 plan", () => {
     expect(planFor(1)).toBe(STUDIO);
-    expect(planFor(0)).toBeNull();
-    expect(planFor(2)).toBeNull();
   });
   it("has two clearly separate spaces with different floors", () => {
     const [a, b] = STUDIO.floors;
