@@ -295,7 +295,7 @@ function Walkable3DVenueScene(props: Parameters<typeof ObjectLocationScene>[0]) 
 }
 
 export function LocationScene(props: Parameters<typeof ObjectLocationScene>[0]) {
-  if (props.room.id === "bar" || props.room.id === "pawn") return <Walkable3DVenueScene key={props.room.id} {...props} />;
+  if (props.room.id === "bar" || props.room.id === "pawn" || props.room.id === "police") return <Walkable3DVenueScene key={props.room.id} {...props} />;
   if (isWalkableShop(props.room.id)) return <WalkableShop key={props.room.id} {...props} />;
   return isArcadeRoom(props.room.id) ? (
     <ArcadeInterior {...props} />
