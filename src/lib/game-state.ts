@@ -4,7 +4,7 @@ export type GameState = {
   str: number; int: number; cha: number; karma: number;
   house: number; school: number; job: number; heat: number;
   bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
-  career: number; xp: number;
+  career: number; xp: number; employed?: number;
   gangRep: number; gangStage: number;
   relMara: number; relNox: number; relGus: number; relIvy: number;
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
@@ -44,7 +44,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   lastMara: [0, 100000], lastNox: [0, 100000], lastGus: [0, 100000], lastIvy: [0, 100000],
   relMara: [-10, 10], relNox: [-10, 10], relGus: [-10, 10], relIvy: [-10, 10],
   karma: [-1e6, 1e6], house: [0, 3], school: [0, 4],
-  job: [0, 4], career: [0, 3], xp: [0, 1000000], heat: [0, 100],
+  employed: [0, 1], job: [0, 4], career: [0, 3], xp: [0, 1000000], heat: [0, 100],
   bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 255],
   bjWon: [0, 1e12], bjLost: [0, 1e12], slotWon: [0, 1e12], slotLost: [0, 1e12],
   bbBest5: [0, 5], bbBestTimed: [0, 200], bbMade: [0, 1e9], bbShots: [0, 1e9],
@@ -65,6 +65,7 @@ export function parseGame(raw: string | null, fallback: GameState): GameState {
       const [min, max] = ranges[k];
       result[k] = Math.max(min, Math.min(max, k === "hour" || k === "residentFavourDeadline" || k === "skateBest" ? n : Math.trunc(n)));
     }
+    if (!("employed" in (value as Record<string, unknown>))) result.employed = 1; // preserve legacy employment
     // Migrate compatible records from PR #108 only when the new field is absent.
     const saved = value as Record<string, unknown>;
     if (!("bbBest5" in saved)) result.bbBest5 = result.basketBest ?? 0;
