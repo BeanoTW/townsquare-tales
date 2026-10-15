@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
-import type { ActionDef } from "@/lib/actions";
+import { bankLoanAction, repayLoanAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
 import { ActionPanel } from "@/components/rooms/ActionPanel";
@@ -35,6 +35,7 @@ function ObjectLocationScene({
   paused?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showLoans, setShowLoans] = useState(false);
   const [size, setSize] = useState<Size>({ w: 0, h: 0 });
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +97,14 @@ function ObjectLocationScene({
         </div>
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
+        {room.id === "bank" && <button type="button" onClick={() => { setSelectedId(null); setShowLoans(v => !v); }} className="my-2 min-h-11 rounded-xl border-2 border-foreground bg-secondary px-4 text-base font-bold" aria-expanded={showLoans}>🏦 {showLoans ? "Close loan desk" : "Loans · Borrow & repay"} · Debt ${state.loanDebt ?? 0}</button>}
+        {room.id === "bank" && showLoans && <section data-bank-loans className="max-h-[35vh] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-lg">
+          <div className="flex items-center justify-between gap-2"><strong>Loan desk</strong><span className="text-sm">1% interest per day</span></div>
+          <p className="my-2 text-sm">Outstanding: <strong>${state.loanDebt ?? 0}</strong>. Larger loans require a job. One loan at a time.</p>
+          <div className="grid grid-cols-2 gap-2">
+          {(state.loanDebt ?? 0) > 0 ? [repayLoanAction(100), repayLoanAction(500), repayLoanAction("all")].map(a => <button key={a.id} className="min-h-11 rounded-lg border-2 border-foreground bg-secondary p-2 font-bold" onClick={() => onRun(a)}>{a.label}</button>) : [bankLoanAction(250), bankLoanAction(1000), bankLoanAction(2500)].map(a => <button key={a.id} className="min-h-11 rounded-lg border-2 border-foreground bg-secondary p-2 font-bold" onClick={() => onRun(a)}>{a.label}</button>)}
+          </div>
+        </section>}
       </header>
 
       <div
