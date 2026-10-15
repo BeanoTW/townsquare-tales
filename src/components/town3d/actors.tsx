@@ -303,6 +303,9 @@ export function Traffic() {
   );
 }
 
+/** Scale body and wheels together, keeping traffic coordinates and lane centres unchanged. */
+export const TOWN_CAR_SCALE: readonly [number, number, number] = [1.55, 1.35, 1.55];
+
 /** Rounded little car, nose towards local +Z. */
 export function Car({ colour, wreck = false }: { colour: string; wreck?: boolean }) {
   const paint = mat(colour, { rough: wreck ? 0.95 : 0.35, metal: wreck ? 0 : 0.25 });
@@ -311,7 +314,7 @@ export function Car({ colour, wreck = false }: { colour: string; wreck?: boolean
   const rounded = useMemo(() => roundedBox(0.34, 0.14, 0.62, 0.05), []);
   const cabinGeo = useMemo(() => roundedBox(0.3, 0.13, 0.34, 0.05), []);
   return (
-    <group rotation={[0, 0, wreck ? 0.05 : 0]}>
+    <group rotation={[0, 0, wreck ? 0.05 : 0]} scale={TOWN_CAR_SCALE}>
       <mesh geometry={plane} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.021, 0]} scale={[0.5, 0.8, 1]} material={blob()} renderOrder={2} />
       <mesh geometry={rounded} position={[0, 0.13, 0]} material={paint} castShadow receiveShadow />
       <mesh geometry={cabinGeo} position={[0, 0.25, -0.04]} material={paint} castShadow receiveShadow />
