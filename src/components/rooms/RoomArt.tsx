@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import type { GameState } from "@/lib/game-state";
-import { ownsFurniture } from "@/lib/furniture";
-import { HOUSES } from "@/lib/game-data";
 import { VIEW, type Box, type Hotspot, type PlaceId, type Room } from "@/lib/rooms";
 import "./room.css";
+import { HomeShell, HomeFurnishings } from "./HomeInterior";
 
 const INK = "#25242a";
 const PAPER = "#fff4d6";
@@ -457,127 +456,14 @@ function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
     {[51,66,81].map((x,i)=><circle key={x} cx={x} cy="154" r={11-i*2} fill="#2d353d" stroke="#aebbc0" strokeWidth="3"/>)}
   </g>;
 
-  if (room.id !== "home") return null;
-  const cardboard=house===0;
-  const rich=house>=3;
-  const wall=cardboard?"#ad8a68":house===1?"#d9c9b0":house===2?"#b7d3c0":"#eee1c9";
-  return <g data-scene-depth={["home",house].join("-")} pointerEvents="none">
-    <RoomShell back={wall} side={cardboard?"#876a51":"#b4a18e"} dark={cardboard?"#795b46":"#998673"}
-      floor={cardboard?"#91836d":house===1?"#b28b6d":house===2?"#a58060":"#987356"} trim="#745d4c"/>
-    {cardboard?<g>
-      <rect x="39" y="22" width="97" height="140" fill="#b38e69" stroke="#725640" strokeWidth="4"/>
-      <path d="M46 59H132M46 105H132M54 26V154M122 26V154" stroke="#765941" strokeWidth="2" strokeDasharray="4 5" opacity=".7"/>
-      <rect x="296" y="20" width="86" height="140" fill="#b89472" stroke="#785941" strokeWidth="4"/>
-      <path d="M339 23V157" stroke="#e1c99f" strokeWidth="8" opacity=".75"/>
-      <rect x="162" y="24" width="105" height="82" fill="#7597a6" stroke="#74573f" strokeWidth="6"/>
-      <rect x="170" y="33" width="89" height="64" fill="#a5c3ca" opacity=".7"/>
-      <path d="M213 27V104" stroke="#ddc598" strokeWidth="6"/>
-      <path d="M150 111L163 104L178 110M277 130L284 143L274 153" fill="none" stroke="#816650" strokeWidth="3"/>
-      <path d="M181 166L192 140H232L245 166Z" fill="#71604e" stroke="#594638" strokeWidth="3"/>
-      <rect x="195" y="138" width="31" height="17" rx="2" fill="#d2b88c" stroke="#705743" strokeWidth="2"/>
-      <path d="M173 175L187 168M240 166L254 177" stroke="#705640" strokeWidth="3"/>
-    </g>:<g>
-      <rect x={rich?157:176} y={rich?18:35} width={rich?108:85} height={rich?112:79} fill="#c7e1e5" stroke="#79604d" strokeWidth="7"/>
-      <path d={rich?"M211 18V130M157 74H265":"M218 35V114M176 74H261"} stroke="#79604d" strokeWidth="5"/>
-      <rect x="49" y="30" width="81" height="48" fill="#dbc69f" stroke="#866e52" strokeWidth="4"/>
-      <path d="M63 41L116 64M116 41L63 64" stroke="#a78a6d" strokeWidth="3"/>
-      <rect x="299" y="72" width="75" height="84" fill="#a88a69" stroke="#69533e" strokeWidth="4"/>
-      <path d="M306 105H365M306 130H365" stroke="#dac298" strokeWidth="4"/>
-      {rich&&<g><path d="M210 0V31" stroke="#92754b" strokeWidth="4"/><path d="M175 34Q210 62 245 34Z" fill="#f0d18b" stroke="#876d4b" strokeWidth="4"/><circle cx="210" cy="48" r="7" fill="#fff4ba"/></g>}
-    </g>}
-  </g>;
+  return room.id === "home" ? <HomeShell house={house} /> : null;
 }
 
 /* ---------- Per-room decor. Every object is placed inside its hotspot box. ---------- */
 
 function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: Room): ReactNode {
   switch (id) {
-    case "home": {
-      const bedOwned = ownsFurniture(state.furniture, "bed");
-      return (
-        <g>
-          {bedOwned ? (
-            <g>
-              <path d="M13 142L130 142L145 171H20Z" fill="#64473b" stroke={INK} strokeWidth="4"/>
-              <path d="M13 118H120L138 140H13Z" fill="#f0e6cd" stroke={INK} strokeWidth="4"/>
-              <path d="M16 126H87L106 138H21Z" fill="#c6b5a1"/>
-              <path d="M92 120H122L134 135H105Z" fill="#fff8e7" stroke={INK} strokeWidth="2"/>
-              <path d="M22 157V180M128 159V184" stroke={INK} strokeWidth="7"/>
-            </g>
-          ) : state.house === 0 ? (
-            <g data-makeshift-sleep>
-              <ellipse cx="79" cy="188" rx="73" ry="13" fill="#514638" opacity=".24"/>
-              <path d="M11 168L36 137H122L147 165L116 191H19Z" fill="#84694f" stroke={INK} strokeWidth="3"/>
-              <path d="M15 162L39 141H118L139 160L113 181H22Z" fill="#ccb48a" stroke="#80624a" strokeWidth="3"/>
-              <path d="M24 156L46 145H112L130 162L104 178H24Z" fill="#768b8d" stroke="#38434a" strokeWidth="2"/>
-              <path d="M33 150L54 138H90L111 151L90 162H29Z" fill="#e9dec6" stroke={INK} strokeWidth="2"/>
-              <path d="M33 152Q48 157 66 155" stroke="#cbb9a0" strokeWidth="2" fill="none"/>
-              <path d="M22 173L17 184M119 181L130 188" stroke="#79614b" strokeWidth="3"/>
-            </g>
-          ) : (
-            <g data-basic-mattress>
-              <path d="M13 143L42 119H129L144 145L116 170H18Z" fill="#907b74" stroke={INK} strokeWidth="4"/>
-              <path d="M14 135L40 117H122L138 137L111 153H19Z" fill="#e8d7bc" stroke={INK} strokeWidth="3"/>
-              <path d="M29 130L51 121H92L109 133L89 142H30Z" fill="#b2c6bd"/>
-            </g>
-          )}
-          {ownsFurniture(state.furniture, "weights") && (
-            <Shelves b={B("weights")} body="#647d86" colors={["#505863"]} />
-          )}
-          {ownsFurniture(state.furniture, "desk") && (
-            <g>
-              <Monitor x={B("desk").x + 26} y={B("desk").y} w={44} h={34} />
-              <Fill
-                b={{ x: B("desk").x, y: B("desk").y + 40, w: B("desk").w, h: 12 }}
-                fill="#7d5b43"
-                rx={2}
-                sw={2.5}
-              />
-            </g>
-          )}
-          {ownsFurniture(state.furniture, "sofa") && <Sofa b={B("sofa")} />}
-          {state.house >= 1 && ownsFurniture(state.furniture, "bookshelf") && (
-            <g data-home-bookshelf>
-              <Fill b={B("bookshelf")} fill="#80573e" rx={2}/>
-              {[0,1,2].map(row => <g key={row}>
-                <path d={`M${B("bookshelf").x+4} ${B("bookshelf").y+23+row*23}h35`} stroke="#dbba89" strokeWidth={3}/>
-                {[0,1,2,3].map(book=><rect key={book} x={B("bookshelf").x+6+book*8} y={B("bookshelf").y+4+row*23} width={6} height={17} fill={["#819c85","#ba855d","#728fbd","#d3bf7e"][(row+book)%4]} stroke={INK} strokeWidth={0.7}/>)}
-              </g>)}
-            </g>
-          )}
-          {state.house >= 1 && ownsFurniture(state.furniture, "console") && (
-            <g data-home-console>
-              <R x={B("console").x+3} y={B("console").y+10} w={21} h={17} fill="#383c4f" rx={3} sw={2}/>
-              <circle cx={B("console").x+10} cy={B("console").y+18} r={2} fill="#78ceae"/>
-              <circle cx={B("console").x+18} cy={B("console").y+18} r={2} fill="#d5a9dc"/>
-              <path d={`M${B("console").x+13} ${B("console").y+27}v15`} stroke={INK} strokeWidth={3}/>
-            </g>
-          )}
-          {state.house >= 1 && ownsFurniture(state.furniture, "tv") && (
-            <g data-home-television>
-              <R x={B("television").x+5} y={B("television").y} w={B("television").w-10} h={B("television").h-7} fill="#2a3039" rx={5} sw={3}/>
-              <rect x={B("television").x+11} y={B("television").y+6} width={B("television").w-22} height={B("television").h-19} rx={3} fill="#78b4c5" className="room-flicker"/>
-              <path d={`M${B("television").x+38} ${B("television").y+14}h35m-29 7h22`} stroke="#e9f3ee" strokeWidth={3} opacity=".8"/>
-              <path d={`M${B("television").x+53} ${B("television").y+B("television").h-7}v9m-17 0h34`} stroke={INK} strokeWidth={4}/>
-              <circle cx={B("television").x+B("television").w-12} cy={B("television").y+B("television").h-10} r={2} fill="#ade7a8"/>
-            </g>
-          )}
-          {ownsFurniture(state.furniture, "kitchen") && (
-            <g>
-              <Fill b={B("kitchen")} fill="#d9e5e5" rx={5} />
-              <path
-                d={`M${B("kitchen").x} ${B("kitchen").y + 60}H${B("kitchen").x + B("kitchen").w}`}
-                stroke={INK}
-                strokeWidth={3}
-              />
-            </g>
-          )}
-          {state.house < HOUSES.length - 1 && (
-            <Board b={B("estate")} text="FOR SALE" sub="HOUSE" fill="#8a5d44" />
-          )}
-        </g>
-      );
-    }
+    case "home": return <HomeFurnishings state={state} box={B} />;
     case "gym": {
       const rack = B("rack");
       const track = B("track");
