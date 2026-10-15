@@ -6,6 +6,7 @@ import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
 import { TownMap } from "@/components/TownMap";
+import { GlobalRenderingDiagnostics } from "@/components/GlobalRenderingDiagnostics";
 import { PlayerDashboard, InventoryDashboard } from "@/components/CharacterDashboards";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
@@ -281,6 +282,7 @@ function Game() {
 
       {vignette && <ActionVignette kind={vignette.kind} changes={vignette.changes} message={vignette.message} onDone={() => setVignette(null)} />}
 
+      <GlobalRenderingDiagnostics screen={game ? `Casino: ${game}` : arcade ? `Minigame: ${arcade}` : place ? `Interior: ${place}` : "Town map"} />
       {/* top HUD: always visible, including inside buildings */}
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
         <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} />
