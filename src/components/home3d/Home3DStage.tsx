@@ -95,8 +95,6 @@ export function Home3DStage({
       <div className="absolute right-2 top-2 flex flex-col gap-1" data-home3d-controls onClick={(e) => e.stopPropagation()}>
         <button type="button" className={BTN} aria-label="Zoom in" onClick={() => c()?.zoom(0.8)}>＋</button>
         <button type="button" className={BTN} aria-label="Zoom out" onClick={() => c()?.zoom(1.25)}>－</button>
-        <button type="button" className={BTN} aria-label="Rotate left" onClick={() => c()?.rotate(-0.5)}>⟲</button>
-        <button type="button" className={BTN} aria-label="Rotate right" onClick={() => c()?.rotate(0.5)}>⟳</button>
         <button type="button" className={BTN} aria-label="Reset camera" onClick={() => c()?.reset()}>⌂</button>
       </div>
     </div>
