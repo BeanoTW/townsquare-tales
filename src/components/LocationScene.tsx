@@ -100,6 +100,13 @@ function ObjectLocationScene({
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
         {room.id === "home" && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label="Home rooms">{homeZones(state.house).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
+        {room.id === "home" && state.house >= 3 && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
+          <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
+          <div className="mt-2 flex gap-2">
+            <button type="button" className="min-h-11 flex-1 rounded-lg border-2 border-foreground bg-card px-2 font-bold" onClick={() => onLaunch?.("blackjack")}>♠ Blackjack</button>
+            <button type="button" className="min-h-11 flex-1 rounded-lg border-2 border-foreground bg-card px-2 font-bold" onClick={() => onLaunch?.("slots")}>🎰 Slots</button>
+          </div>
+        </section>}
         {room.id === "bank" && <button type="button" onClick={() => { setSelectedId(null); setShowLoans(v => !v); }} className="my-2 min-h-11 rounded-xl border-2 border-foreground bg-secondary px-4 text-base font-bold" aria-expanded={showLoans}>🏦 {showLoans ? "Close loan desk" : "Loans · Borrow & repay"} · Debt ${state.loanDebt ?? 0}</button>}
         {room.id === "bank" && showLoans && <section data-bank-loans className="max-h-[35vh] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-lg">
           <div className="flex items-center justify-between gap-2"><strong>Loan desk</strong><span className="text-sm">40% finance charge · 30-day term · 2% daily if overdue</span></div>

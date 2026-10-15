@@ -1,4 +1,5 @@
 import type { GameState } from '@/lib/game-state';
+import { HomePerspectiveScene } from './HomePerspectiveScene';
 import { ownsFurniture, type FurnitureId } from '@/lib/furniture';
 import type { Box } from '@/lib/rooms';
 import { furnitureZone, type HomeZone } from '@/lib/home-zones';
@@ -30,7 +31,7 @@ function Pot({ x, y, luxury = false }: { x: number; y: number; luxury?: boolean 
 }
 
 /** Four intentionally different shells; furniture targets retain their original coordinates. */
-export function HomeShell({ house }: { house: number }) {
+export function HomeShell({ house, zone }: { house: number; zone?: HomeZone }) {
   const tier = Math.max(0, Math.min(3, house));
   const wall = C(['cardboard','studio-wall','suburban-wall','mansion-wall'][tier] ?? 'studio-wall');
   const side = C(['cardboard-dark','studio-side','suburban-side','mansion-side'][tier] ?? 'studio-side');
@@ -42,6 +43,22 @@ export function HomeShell({ house }: { house: number }) {
       <path d="M0 300L34 170H386L420 300Z" fill={floor}/>
       <path d="M34 0V170H386V0" fill="none" stroke={ink} strokeWidth={3}/>
     </g>
+    {zone && tier > 0 && <g data-home-room-theme={zone}>
+      <rect x="115" y="4" width="190" height="31" rx="6" fill={tier===3 ? C('gold') : C('wood-light')} stroke={ink} strokeWidth="2"/>
+      <text x="210" y="25" textAnchor="middle" fontSize="13" fontWeight="bold" fill={ink} stroke="none">{({living:"LIVING ROOM",bedroom:"BEDROOM",kitchen:"KITCHEN",study:"STUDY",gym:"HOME GYM",entertainment:"GAMES ROOM",shelter:"SHELTER"} as const)[zone]}</text>
+      {zone==="kitchen" && <g stroke={ink} strokeWidth="2"><rect x="65" y="86" width="100" height="15" fill={C('metal')}/><rect x="74" y="103" width="80" height="58" fill={C('wood-light')}/><path d="M83 108v46m28 -46v46m28 -46v46" /><circle cx="93" cy="94" r="5" fill={ink}/><circle cx="134" cy="94" r="5" fill={ink}/></g>}
+      {zone==="bedroom" && <g stroke={ink} strokeWidth="2"><rect x="307" y="55" width="61" height="108" fill={C('wood')}/><path d="M335 57v104"/><circle cx="329" cy="108" r="2"/><circle cx="343" cy="108" r="2"/></g>}
+      {zone==="study" && <g stroke={ink} strokeWidth="2"><rect x="62" y="65" width="68" height="93" fill={C('wood')}/>{[85,110,135].map(y=><path key={y} d={`M65 ${y}h62`}/>)}</g>}
+      {zone==="gym" && <g stroke={ink} strokeWidth="3"><path d="M80 80v88m80 -88v88M68 83h104" fill="none"/><circle cx="78" cy="85" r="12" fill={C('metal')}/><circle cx="163" cy="85" r="12" fill={C('metal')}/></g>}
+      {zone==="entertainment" && <g stroke={ink} strokeWidth="2">
+        <rect x="47" y="93" width="92" height="48" rx="12" fill="#226b53"/><path d="M58 111h69M94 99v36" stroke={paper}/><circle cx="94" cy="114" r="13" fill="none" stroke={paper}/>
+        <rect x="294" y="74" width="64" height="88" rx="8" fill="#5d3b78"/><rect x="302" y="84" width="48" height="29" fill="#f0ce71"/><text x="326" y="104" textAnchor="middle" fontSize="11" fill={ink} stroke="none">777</text>
+        <g fill={C('teal')}><circle cx="171" cy="121" r="9"/><circle cx="225" cy="121" r="9"/></g>
+        <g fill={paper}><circle cx="171" cy="96" r="11"/><circle cx="225" cy="96" r="11"/></g>
+        <path d="M161 140q10 -13 20 0m34 0q10 -13 20 0" fill="none"/>
+      </g>}
+      {zone==="living" && <g stroke={ink} strokeWidth="2"><rect x="320" y="70" width="49" height="66" fill={C('wood')}/><rect x="326" y="77" width="37" height="29" fill={C('glass')}/><path d="M343 110v24" /></g>}
+    </g>}
     {tier === 0 && <g>
       {[45,145,245,345].map(x=><g key={x}>
         <path d={`M${x} 4v158m-92 -109h88m-88 69h88`} stroke={C('cardboard-dark')} strokeWidth={2} strokeDasharray="5 4" fill="none"/>
@@ -115,6 +132,7 @@ export function HomeShell({ house }: { house: number }) {
       <path d="M338 267h38m-33 0v10m28 -10v10" stroke={C('gold')} strokeWidth={3}/>
       <ellipse cx={357} cy={261} rx={23} ry={8} fill={C('glass')} stroke={ink} strokeWidth={2}/>
     </g>}
+    {zone && <HomePerspectiveScene house={tier} zone={zone}/>}
   </g>;
 }
 

@@ -380,7 +380,7 @@ function RoomShell({ back, side, dark, floor, trim }: { back: string; side: stri
 }
 
 /** Background people and props are scenery only; the existing hotspots stay interactive. */
-function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
+function PerspectiveRoom({ room, house, homeZone }: { room: Room; house: number; homeZone?: HomeZone }) {
   if (room.id === "casino") return <g data-scene-depth="casino" pointerEvents="none">
     <RoomShell back="#5b4674" side="#493659" dark="#32253f" floor="#4a3659" trim="#cfac7d"/>
     <path d="M34 25H386" stroke="#edba65" strokeWidth="7" opacity=".75"/>
@@ -457,7 +457,7 @@ function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
     {[51,66,81].map((x,i)=><circle key={x} cx={x} cy="154" r={11-i*2} fill="#2d353d" stroke="#aebbc0" strokeWidth="3"/>)}
   </g>;
 
-  return room.id === "home" ? <HomeShell house={house} /> : null;
+  return room.id === "home" ? <HomeShell house={house} zone={homeZone} /> : null;
 }
 
 /* ---------- Per-room decor. Every object is placed inside its hotspot box. ---------- */
@@ -1060,7 +1060,7 @@ export function RoomArt({
       aria-label={`${room.title} interior`}
     >
       <Backdrop room={room} pattern={pattern} />
-      <PerspectiveRoom room={room} house={state.house} />
+      <PerspectiveRoom room={room} house={state.house} homeZone={homeZone} />
       <g pointerEvents="none">{decorFor(room.id, state, B, room, homeZone)}</g>
       {visible.map((h) => (
         <Hotspot key={h.id} h={h} selected={selectedId === h.id} onSelect={onSelect} />
