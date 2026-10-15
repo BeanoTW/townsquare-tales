@@ -99,12 +99,17 @@ export const HOME_WORKOUT: ActionDef = {
   energy: 18,
   resolve: (s) => ({ patch: { str: s.str + 2 }, message: "Home gym session. +2 strength." }),
 };
+/** Each qualification adds one intelligence point to every study session. */
+export const studyGain = (base: number, school: number) => base + Math.max(0, Math.min(4, Math.trunc(school)));
+/** Cumulative study XP milestones for High School, College, University and PhD. */
+export const EDUCATION_XP_REQUIRED = [0, 20, 60, 120, 200] as const;
+
 export const STUDY_DESK: ActionDef = {
   id: "study-desk",
   label: "Study at desk",
   hours: 2,
   energy: 12,
-  resolve: (s) => ({ patch: { int: s.int + 2 }, message: "Quiet study session. +2 intelligence." }),
+  resolve: (s) => ({ patch: { int: s.int + studyGain(2, s.school), studyXp: (s.studyXp ?? 0) + 4 }, message: `Quiet study session. +${studyGain(2, s.school)} intelligence, +4 Study XP.` }),
 };
 export const COOK_AT_HOME: ActionDef = {
   id: "cook",
@@ -276,8 +281,8 @@ export const STUDY_LIBRARY: ActionDef = {
   label: "Study in the library",
   hours: 2,
   energy: 15,
-  note: "+1 intelligence",
-  resolve: (s) => ({ patch: { int: s.int + 1 }, message: "+1 intelligence." }),
+  note: "Base +1 intelligence · education boosts each session",
+  resolve: (s) => ({ patch: { int: s.int + studyGain(1, s.school), studyXp: (s.studyXp ?? 0) + 4 }, message: `+${studyGain(1, s.school)} intelligence, +4 Study XP.` }),
 };
 
 export function enrollAction(s: GameState): ActionDef | null {
@@ -290,14 +295,16 @@ export function enrollAction(s: GameState): ActionDef | null {
     hours: 4,
     energy: 30,
     cost,
-    note: "+10 intelligence",
+    note: `Requires ${EDUCATION_XP_REQUIRED[s.school + 1]} Study XP · +1 intelligence per future study`,
     resolve: (st) => {
       const nextLevel = SCHOOLS[st.school + 1];
       if (!nextLevel) return "No further qualifications.";
+      const requiredXp = EDUCATION_XP_REQUIRED[st.school + 1] ?? Infinity;
+      if ((st.studyXp ?? 0) < requiredXp) return `Study XP ${st.studyXp ?? 0}/${requiredXp}. Keep studying before qualifying.`;
       return st.money >= cost
         ? {
-            patch: { money: st.money - cost, school: st.school + 1, int: st.int + 10 },
-            message: `Graduated: ${nextLevel}! +10 int`,
+            patch: { money: st.money - cost, school: st.school + 1 },
+            message: `Graduated: ${nextLevel}! Future study sessions now earn +${st.school + 1} bonus intelligence.`,
           }
         : "Tuition too high.";
     },

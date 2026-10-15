@@ -33,6 +33,7 @@ import {
   sleepAction,
   STUDY_DESK,
   STUDY_LIBRARY,
+  EDUCATION_XP_REQUIRED,
   TV_CHANNELS,
   watchTvAction,
   WITHDRAW_50,
@@ -367,7 +368,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "ENROL",
         hint: "Classes and qualifications",
         box: { x: 162, y: 44, w: 150, h: 90 },
-        lines: (s) => [`Current level: ${SCHOOLS[s.school] ?? "Dropout"}`],
+        lines: (s) => [`Current level: ${SCHOOLS[s.school] ?? "Dropout"}`, s.school < 4 ? `Study XP: ${s.studyXp ?? 0}/${EDUCATION_XP_REQUIRED[s.school + 1]}` : `Study XP: ${s.studyXp ?? 0} · Maximum qualification`],
         actions: (s) => {
           const e = enrollAction(s);
           return e ? [e] : [];
