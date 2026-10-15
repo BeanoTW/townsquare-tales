@@ -3,11 +3,13 @@ export type HomeZone = "shelter" | "living" | "bedroom" | "kitchen" | "study" | 
 export type VenueZone = "floor" | "vip" | "bar" | "dance" | "weights" | "cardio";
 /** Every zone a 3D plan can use: the home rooms plus the venue regions. */
 export type PlanZone = HomeZone | VenueZone;
-export type VenueId = "casino" | "bar" | "gym";
-export const VENUE_IDS: readonly string[] = ["casino", "bar", "gym"];
+export type VenueId = "casino" | "bar" | "gym" | "pawn";
+export const VENUE_IDS: readonly string[] = ["casino", "bar", "gym", "pawn"];
 export const isVenue = (id: string): id is VenueId => VENUE_IDS.includes(id);
 export const venueZones = (id: VenueId): { id: PlanZone; label: string }[] =>
-  id === "casino"
+  id === "pawn"
+    ? [{ id: "floor", label: "Shop floor" }]
+    : id === "casino"
     ? [{ id: "floor", label: "Casino floor" }, { id: "vip", label: "High-stakes room" }]
     : id === "bar"
       ? [{ id: "bar", label: "The bar" }, { id: "dance", label: "Dance floor & darts" }]

@@ -281,7 +281,7 @@ function ObjectLocationScene({
 
 /** Arcade counters for service locations; object scenes for home, training and the street. */
 /** The bar is a 3D room when WebGL works and otherwise the classic walkable shop. */
-function BarScene(props: Parameters<typeof ObjectLocationScene>[0]) {
+function Walkable3DVenueScene(props: Parameters<typeof ObjectLocationScene>[0]) {
   const renderer = useRenderer3d();
   if (renderer.gl && !renderer.classic) return <ObjectLocationScene {...props} renderer={renderer} />;
   return (
@@ -295,7 +295,7 @@ function BarScene(props: Parameters<typeof ObjectLocationScene>[0]) {
 }
 
 export function LocationScene(props: Parameters<typeof ObjectLocationScene>[0]) {
-  if (props.room.id === "bar") return <BarScene key="bar" {...props} />;
+  if (props.room.id === "bar" || props.room.id === "pawn") return <Walkable3DVenueScene key={props.room.id} {...props} />;
   if (isWalkableShop(props.room.id)) return <WalkableShop key={props.room.id} {...props} />;
   return isArcadeRoom(props.room.id) ? (
     <ArcadeInterior {...props} />
