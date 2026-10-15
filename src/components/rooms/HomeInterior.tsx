@@ -1,6 +1,7 @@
 import type { GameState } from '@/lib/game-state';
 import { ownsFurniture, type FurnitureId } from '@/lib/furniture';
 import type { Box } from '@/lib/rooms';
+import { furnitureZone, type HomeZone } from '@/lib/home-zones';
 
 const C = (name: string) => `var(--home-${name})`;
 const ink = C('ink');
@@ -198,11 +199,12 @@ function FurnitureArt({ id, luxury }: { id: FurnitureId; luxury: boolean }) {
   }
 }
 
-export function HomeFurnishings({ state, box }: { state: GameState; box: (id: string) => Box }) {
+export function HomeFurnishings({ state, box, zone }: { state: GameState; box: (id: string) => Box; zone?: HomeZone }) {
   const ids: FurnitureId[] = ['bed','weights','desk','sofa','tv','bookshelf','console','kitchen'];
   return <g pointerEvents="none" stroke={ink} strokeLinejoin="round" strokeLinecap="round">
     {ids.map(id=>{
       if (!ownsFurniture(state.furniture,id)) return null;
+      if (zone && furnitureZone(id, state.house) !== zone) return null;
       if (state.house < 1 && ['tv','bookshelf','console'].includes(id)) return null;
       const b = box(id==='tv'?'television':id);
       const luxury = ownsFurniture(state.luxuryFurniture ?? 0,id);
@@ -211,14 +213,14 @@ export function HomeFurnishings({ state, box }: { state: GameState; box: (id: st
         <FurnitureArt id={id} luxury={luxury}/>
       </g>;
     })}
-    {!ownsFurniture(state.furniture,'bed') && <g data-makeshift-sleep={state.house===0?true:undefined} data-basic-mattress={state.house>0?true:undefined}>
+    {(!zone || furnitureZone('bed', state.house) === zone) && !ownsFurniture(state.furniture,'bed') && <g data-makeshift-sleep={state.house===0?true:undefined} data-basic-mattress={state.house>0?true:undefined}>
       <path d="M14 158l25 -26h85l18 26l-23 27H16Z" fill={state.house===0?C('cardboard'):C('metal')} strokeWidth={2.5}/>
       <path d="M18 152l22 -23h79l17 23l-21 20H21Z" fill={state.house===0?C('cardboard'):paper} strokeWidth={2.5}/>
       <path d="M29 151l23 -19h48l17 20l-20 16H28Z" fill={C('teal-light')} strokeWidth={1.5}/>
       <path d="M38 140l14 -11h32l15 12l-19 10H38Z" fill={paper} strokeWidth={1.5}/>
       {state.house===0 && <path d="M25 173l19 5m53 -3l16 -6M28 178l18 5" stroke={C('cardboard-dark')} strokeWidth={2}/>}
     </g>}
-    {state.house < 3 && <g transform="translate(330 18)">
+    {state.house < 3 && (!zone || furnitureZone("estate", state.house) === zone) && <g transform="translate(330 18)">
       <rect x={0} y={0} width={76} height={44} rx={2} fill={C('coral')} strokeWidth={2.5}/>
       <rect x={4} y={4} width={68} height={36} fill="none" stroke={paper} strokeWidth={1}/>
       <text x={38} y={18} textAnchor="middle" fontSize={10} fill={paper} stroke="none" fontWeight="bold">FOR SALE</text>

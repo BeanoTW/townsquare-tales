@@ -1,3 +1,4 @@
+import { requiresMainsPower } from "@/lib/home-zones";
 import { useState } from "react";
 import { furnitureAction, type ActionDef } from "@/lib/actions";
 import { FURNITURE, LUXURY_FURNITURE, ownsFurniture } from "@/lib/furniture";
@@ -23,10 +24,11 @@ export function FurnitureShowroom({ state, onRun }: { state: GameState; onRun: (
         {items.map(item => {
           const owned = ownsFurniture(ownedMask, item.id);
           const affordable = state.money >= item.cost;
+          const homeLocked = state.house < 1 && requiresMainsPower(item.id);
           return <article key={item.id} className="rounded-xl border-2 border-current/40 bg-background/70 p-3" data-furniture-item={item.id}>
             <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="font-bold">{item.name}</p><p className="text-sm text-muted-foreground">{item.benefit}</p></div><strong className="whitespace-nowrap">${item.cost.toLocaleString()}</strong></div>
-            <button type="button" className="mt-2 min-h-11 w-full rounded-lg border-2 border-foreground bg-secondary px-3 font-bold disabled:opacity-70" disabled={owned || !affordable} onClick={() => onRun(furnitureAction(item.id, state, luxury))}>
-              {owned ? "✓ OWNED" : affordable ? `Buy for $${item.cost.toLocaleString()}` : `Need $${(item.cost - state.money).toLocaleString()} more`}
+            <button type="button" className="mt-2 min-h-11 w-full rounded-lg border-2 border-foreground bg-secondary px-3 font-bold disabled:opacity-70" disabled={owned || !affordable || homeLocked} onClick={() => onRun(furnitureAction(item.id, state, luxury))}>
+              {owned ? "✓ OWNED" : homeLocked ? "🔒 Requires Studio Flat" : affordable ? `Buy for $${item.cost.toLocaleString()}` : `Need $${(item.cost - state.money).toLocaleString()} more`}
             </button>
           </article>;
         })}

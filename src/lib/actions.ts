@@ -1,3 +1,4 @@
+import { requiresMainsPower } from "@/lib/home-zones";
 import { CAREERS, missingRequirements, nextRole, shiftReward } from "@/lib/careers";
 import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, LUXURY_FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
@@ -199,6 +200,7 @@ export function furnitureAction(id: FurnitureId, s: GameState, luxury = false): 
     note: owned ? "Owned · set up at home" : item?.benefit,
     resolve: (st) => {
       if (!item) return "That item is not for sale.";
+      if (st.house < 1 && requiresMainsPower(id)) return "Requires Studio Flat or better (mains power and space).";
       if (ownsFurniture(luxury ? st.luxuryFurniture ?? 0 : st.furniture, id)) return "You already own that. It is set up at home.";
       if (st.money < item.cost) return `Need ${item.cost} cash.`;
       return {
