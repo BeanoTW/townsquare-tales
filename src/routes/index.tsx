@@ -555,6 +555,7 @@ function Game() {
             <Stat k="Career" v={CAREERS[s.career]?.name ?? "Corporate"} />
             <Stat k="Job" v={job.name} />
             <Stat k="Work XP" v={s.xp} />
+            <Stat k="Study XP" v={s.studyXp ?? 0} />
             <Stat k="School" v={SCHOOLS[s.school] ?? "Dropout"} />
           </div>
           {s.snacks > 0 && <Btn onClick={() => perform(EAT_SNACK)}>Eat snack (+25 energy)</Btn>}
