@@ -4,17 +4,17 @@ import { furnitureAction, type ActionDef } from "@/lib/actions";
 import { FURNITURE, LUXURY_FURNITURE, ownsFurniture } from "@/lib/furniture";
 import type { GameState } from "@/lib/game-state";
 
-export function FurnitureShowroom({ state, onRun }: { state: GameState; onRun: (action: ActionDef) => void }) {
-  const [range, setRange] = useState<"basic" | "luxury">("basic");
+export function FurnitureShowroom({ state, onRun, initialRange = "basic", hideTabs = false }: { state: GameState; onRun: (action: ActionDef) => void; initialRange?: "basic" | "luxury"; hideTabs?: boolean }) {
+  const [range, setRange] = useState<"basic" | "luxury">(initialRange);
   const luxury = range === "luxury";
   const items = luxury ? LUXURY_FURNITURE : FURNITURE;
   const ownedMask = luxury ? state.luxuryFurniture ?? 0 : state.furniture;
   const ownedCount = items.filter(item => ownsFurniture(ownedMask, item.id)).length;
   return <div className="space-y-3" data-furniture-showroom>
-    <div className="arcade-tabs arcade-service-tabs" role="tablist" aria-label="Furniture ranges">
+    {!hideTabs && <div className="arcade-tabs arcade-service-tabs" role="tablist" aria-label="Furniture ranges">
       <button type="button" role="tab" aria-selected={!luxury} onClick={() => setRange("basic")}>Basic collection</button>
       <button type="button" role="tab" aria-selected={luxury} onClick={() => setRange("luxury")}>✨ Premium aisle</button>
-    </div>
+    </div>}
     <section role="tabpanel" aria-label={luxury ? "Premium aisle" : "Basic collection"}>
       <div className="flex items-center justify-between gap-2">
         <div><h3 className="font-bold">{luxury ? "Premium showroom" : "Everyday essentials"}</h3><p className="arcade-subline">{luxury ? "Luxury upgrades for your home." : "Functional furniture to get started."}</p></div>

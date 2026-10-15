@@ -20,6 +20,7 @@ import {
   fixtureNear,
   type ShopId,
 } from "@/lib/walkable-shops";
+import { FurnitureShowroom } from "@/components/rooms/FurnitureShowroom";
 import { ShopCatalogPanel } from "@/components/rooms/ShopCatalogPanel";
 import { DINER_MEALS } from "@/lib/diner-menu";
 import { hotspotActions } from "@/lib/rooms";
@@ -59,7 +60,7 @@ export function WalkableShop({
   const id = room.id as ShopId,
     fixtures = SHOP_LAYOUTS[id];
   const interactionFixtures = [...fixtures, ...SHOP_AISLES[id]];
-  const hotspotId = (target: string) => (target === "aisle" ? "shelves" : target);
+  const hotspotId = (target: string) => (target === "aisle" ? "shelves" : target === "premium" ? "catalogue" : target);
   const pos = useRef<Point>({ ...SHOP_ENTRY }),
     path = useRef<Point[]>([]),
     pending = useRef<string | null>(null),
@@ -68,6 +69,7 @@ export function WalkableShop({
   const [running, setRunning] = useState(false),
     [selectedId, setSelected] = useState<string | null>(null);
   const [pickedGood, setPickedGood] = useState("snack");
+  const [furnitureRange, setFurnitureRange] = useState<"basic" | "luxury">("basic");
   const reduced = useRef(false);
   const visible = visibleHotspots(room, state).filter(
     (h) =>
@@ -105,6 +107,7 @@ export function WalkableShop({
       control.current.onLaunch(spot.launch);
       return;
     }
+    if (id === "furniture") setFurnitureRange(target === "premium" ? "luxury" : "basic");
     setSelected(hotspotId(target));
   };
   const open = (target: string) => {
@@ -292,7 +295,7 @@ export function WalkableShop({
         >
           <ShopShell shop={id} />
           {fixtures
-            .filter((f) => !visible.some((h) => h.id === f.id))
+            .filter((f) => !visible.some((h) => h.id === hotspotId(f.id)))
             .map((f) => (
               <ShopFitting key={f.id} fixture={f} shop={id} />
             ))}
@@ -329,9 +332,9 @@ export function WalkableShop({
             ),
           )}
           {fixtures
-            .filter((f) => visible.some((h) => h.id === f.id))
+            .filter((f) => visible.some((h) => h.id === hotspotId(f.id)))
             .map((f) => {
-              const h = visible.find((h) => h.id === f.id)!;
+              const h = visible.find((h) => h.id === hotspotId(f.id))!;
               return (
                 <g
                   key={f.id}
@@ -458,7 +461,12 @@ export function WalkableShop({
             />
           </g>
         </svg>
-        {panel && id === "shop" && (panel.id === "shelves" || panel.id === "checkout") ? (
+        {panel && id === "furniture" && panel.id === "catalogue" ? (
+          <div data-panel className="absolute inset-x-3 bottom-3 z-30 max-h-[75%] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-xl">
+            <div className="mb-2 flex items-center justify-between gap-2"><strong>{furnitureRange === "luxury" ? "✨ Premium Furniture" : "Basic Furniture"}</strong><button type="button" className="min-h-11 min-w-11 rounded-lg border-2 border-foreground" aria-label="Close furniture collection" onClick={() => setSelected(null)}>✕</button></div>
+            <FurnitureShowroom key={furnitureRange} state={state} onRun={onRun} initialRange={furnitureRange} hideTabs />
+          </div>
+        ) : panel && id === "shop" && (panel.id === "shelves" || panel.id === "checkout") ? (
           <ShopCatalogPanel
             key={panel.id}
             state={state}
