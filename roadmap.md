@@ -1,7 +1,7 @@
 # Home visual upgrades
-- [ ] Draw distinct cardboard, studio, suburban and mansion interiors.
-- [ ] Add luxury versions of all eight furnishings with compatible purchases and saves.
-- [ ] Run focused furniture checks; leave broader verification to the user.
+- [x] Draw distinct cardboard, studio, suburban and mansion interiors.
+- [x] Add luxury versions of all eight furnishings with compatible purchases and saves.
+- [x] Run focused furniture checks; leave broader verification to the user.
 
 # Map polish
 - [x] Preserve irregular streets and arrange a three-building market row.
