@@ -6,6 +6,7 @@ import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
 import { TownMap } from "@/components/TownMap";
+import { PlayerDashboard, InventoryDashboard } from "@/components/CharacterDashboards";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
@@ -504,66 +505,12 @@ function Game() {
 
       {tab === "inventory" && (
         <Sheet title="Inventory" onClose={() => setTab(null)}>
-          <p className="text-sm text-muted-foreground">Your belongings and equipped items.</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Stat k="🚬 Smokes" v={s.smokes} />
-            <Stat k="🍫 Snacks" v={s.snacks} />
-            <Stat k="Weapon" v={weaponName(s)} />
-            <Stat k="⏰ Alarm clock" v={s.alarm ? "Owned" : "—"} />
-            <Stat k="👟 Running shoes" v={s.trainers ? "Owned · 1.35× speed" : "—"} />
-            <Stat k="🛹 Skateboard" v={s.skateboard ? s.skateboardEquipped ? "Equipped · 1.5× speed" : "Owned · Unequipped" : "—"} />
-            <Stat k="🛋️ Furniture" v={`${FURNITURE.filter(item => ownsFurniture(s.furniture, item.id)).length} items`} />
-          </div>
-          {s.skateboard > 0 && (
-            <Btn onClick={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))}>
-              {s.skateboardEquipped ? "Unequip skateboard" : "Equip skateboard"}
-            </Btn>
-          )}
-          {s.snacks > 0 && <Btn onClick={() => perform(EAT_SNACK)}>Eat a snack (+25 energy)</Btn>}
+          <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} />
         </Sheet>
       )}
       {tab === "player" && (
         <Sheet title="Player" onClose={() => setTab(null)}>
-          {won && (
-            <div className="border-2 border-foreground bg-accent p-2 text-center text-xl">
-              🏆 Mansion + CEO in {s.day} days!
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-2 text-lg">
-            <Stat k="Day" v={s.day} />
-            <Stat k="Energy" v={`${s.energy}/100`} />
-            <Stat k="Bank savings" v={`${s.bank}`} />
-            <Stat k="Snacks" v={s.snacks} />
-            <Stat k="Smokes" v={s.smokes} />
-            <Stat k="Skateboard" v={s.skateboard ? "Owned" : "—"} />
-            <Stat
-              k="Furniture"
-              v={`${FURNITURE.filter((item) => ownsFurniture(s.furniture, item.id)).length}/${FURNITURE.length}`}
-            />
-            <Stat k="Running shoes" v={s.trainers ? "Owned" : "—"} />
-            <Stat k="Alarm clock" v={s.alarm ? "Owned" : "—"} />
-            <Stat k="Strength" v={s.str} />
-            <Stat k="Intelligence" v={s.int} />
-            <Stat k="Charm" v={s.cha} />
-            <Stat k="Karma" v={`${s.karma} · ${align}`} />
-            <Stat k="Mara friendship" v={s.relMara} />
-            <Stat k="Nox friendship" v={s.relNox} />
-            <Stat k="Gus friendship" v={s.relGus} />
-            <Stat k="Ivy friendship" v={s.relIvy} />
-            <Stat k="Heat" v={"🔥".repeat(Math.min(5, s.heat)) || "—"} />
-            <Stat k="Home" v={HOUSES[s.house]?.name ?? "Cardboard Box"} />
-            <Stat k="Career" v={CAREERS[s.career]?.name ?? "Corporate"} />
-            <Stat k="Job" v={job.name} />
-            <Stat k="Work XP" v={s.xp} />
-            <Stat k="Study XP" v={s.studyXp ?? 0} />
-            <Stat k="School" v={SCHOOLS[s.school] ?? "Dropout"} />
-          </div>
-          {s.snacks > 0 && <Btn onClick={() => perform(EAT_SNACK)}>Eat snack (+25 energy)</Btn>}
-          {nextJob && (
-            <p className="text-sm text-muted-foreground">
-              Next role: {nextJob.name} · ${nextJob.pay}/hour
-            </p>
-          )}
+          <PlayerDashboard state={s} align={align} won={won} />
         </Sheet>
       )}
       {tab === "log" && (
