@@ -15,6 +15,7 @@ export type Scene3DProps = {
   selectedId: string | null;
   zone: PlanZone;
   hour: number;
+  playerHead?: string;
   onSelect: (id: string) => void;
   /** Tap on empty space. */
   onDeselect?: () => void;

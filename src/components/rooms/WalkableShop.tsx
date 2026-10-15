@@ -1,6 +1,9 @@
+import { karmaHeadColor } from "@/lib/player-appearance";
+import { webglAvailable } from "@/components/home3d/Home3DStage";
+const ShopPlayer3D = lazy(() => import("./ShopPlayer3D"));
 import { CounterRobberyChoice } from "@/components/rooms/CounterRobberyChoice";
 import { COUNTERS } from "@/lib/counter-robbery";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import type { Feedback } from "@/components/LocationScene";
@@ -57,6 +60,15 @@ export function WalkableShop({
   /** A minigame is open on top: ignore the keyboard so it cannot walk the player or leave the room. */
   paused?: boolean;
 }) {
+  const [character3d, setCharacter3d] = useState(false);
+  const [characterReady, setCharacterReady] = useState(false);
+  const readyCharacter = useCallback(() => setCharacterReady(true), []);
+  const failCharacter = useCallback(() => { setCharacterReady(false); setCharacter3d(false); }, []);
+  useEffect(() => {
+    let classic = false;
+    try { classic = localStorage.getItem("tst.home3d") === "classic"; } catch { /* storage unavailable */ }
+    setCharacter3d(!classic && webglAvailable());
+  }, []);
   const id = room.id as ShopId,
     fixtures = SHOP_LAYOUTS[id];
   const interactionFixtures = [...fixtures, ...SHOP_AISLES[id]];
@@ -453,14 +465,16 @@ export function WalkableShop({
             data-x={player.x}
             data-y={player.y}
           >
-            <OverheadPerson
+            {!characterReady && <OverheadPerson
+              head={karmaHeadColor(state.karma)}
               outline="var(--town-player)"
               moving={player.moving && !reduced.current}
               phase={player.phase}
               angle={player.angle}
-            />
+            />}
           </g>
         </svg>
+        {character3d && <Suspense fallback={null}><ShopPlayer3D player={{ ...player, moving: player.moving && !paused && !reduced.current }} head={karmaHeadColor(state.karma)} onReady={readyCharacter} onFail={failCharacter} /></Suspense>}
         {panel && id === "furniture" && panel.id === "catalogue" ? (
           <div data-panel className="absolute inset-x-3 bottom-3 z-30 max-h-[75%] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-xl">
             <div className="mb-2 flex items-center justify-between gap-2"><strong>{furnitureRange === "luxury" ? "✨ Premium Furniture" : "Basic Furniture"}</strong><button type="button" className="min-h-11 min-w-11 rounded-lg border-2 border-foreground" aria-label="Close furniture collection" onClick={() => setSelected(null)}>✕</button></div>
