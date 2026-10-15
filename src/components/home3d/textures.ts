@@ -397,6 +397,87 @@ export const neonTexture = (text: string, colour: string) =>
     g.strokeRect(10, 10, 492, 108);
   });
 
+/** Dance-floor tiles: dark glossy squares with a bright inset, so lights read as a lit grid. */
+export const checkerTexture = () =>
+  make("checker", 128, 128, (g) => {
+    for (let i = 0; i < 2; i++)
+      for (let j = 0; j < 2; j++) {
+        const lit = (i + j) % 2 === 0;
+        g.fillStyle = lit ? "#2b1a3a" : "#14101f";
+        g.fillRect(i * 64, j * 64, 64, 64);
+        g.fillStyle = lit ? "#6b3b9a" : "#27325a";
+        g.fillRect(i * 64 + 5, j * 64 + 5, 54, 54);
+        g.fillStyle = lit ? "#2b1a3a" : "#14101f";
+        g.fillRect(i * 64 + 9, j * 64 + 9, 46, 46);
+      }
+  });
+
+/** Casino carpet: a repeating diamond-and-spot motif in gold on deep colour (tinted by the floor colour). */
+export const patternTexture = () =>
+  make("pattern", 128, 128, (g) => {
+    g.fillStyle = "#cfcfcf";
+    g.fillRect(0, 0, 128, 128);
+    const r = rnd(97);
+    for (let i = 0; i < 900; i++) {
+      g.fillStyle = `rgba(0,0,0,${0.04 + r() * 0.05})`;
+      g.fillRect(r() * 128, r() * 128, 2, 2);
+    }
+    g.strokeStyle = "rgba(255,226,150,.9)";
+    g.lineWidth = 2.5;
+    for (const [cx, cy] of [[32, 32], [96, 96], [96, 32], [32, 96]] as const) {
+      g.beginPath();
+      g.moveTo(cx, cy - 22);
+      g.lineTo(cx + 22, cy);
+      g.lineTo(cx, cy + 22);
+      g.lineTo(cx - 22, cy);
+      g.closePath();
+      g.stroke();
+      g.fillStyle = "rgba(255,226,150,.9)";
+      g.beginPath();
+      g.arc(cx, cy, 3, 0, 7);
+      g.fill();
+    }
+    g.strokeStyle = "rgba(255,226,150,.35)";
+    g.strokeRect(1, 1, 126, 126);
+  });
+
+/** Exposed brick or painted breeze-block, tinted by `colour`, at a real-world scale for a wall piece of w×h metres. */
+const wallMapCache = new Map<string, THREE.CanvasTexture>();
+export function brickTexture(kind: "brick" | "block", colour: string, w: number, h: number): THREE.CanvasTexture {
+  const key = `${kind}|${colour}|${w.toFixed(1)}|${h.toFixed(1)}`;
+  let t = wallMapCache.get(key);
+  if (!t) {
+    const base = make(`${kind}|${colour}`, 256, 256, (g) => {
+      const r = rnd(kind === "brick" ? 5 : 8);
+      g.fillStyle = kind === "brick" ? "#3b2a22" : "#aab3b8";
+      g.fillRect(0, 0, 256, 256);
+      const rows = kind === "brick" ? 8 : 4;
+      const bw = kind === "brick" ? 64 : 128;
+      const bh = 256 / rows;
+      const col = new THREE.Color(colour);
+      for (let j = 0; j < rows; j++)
+        for (let i = -1; i < 256 / bw + 1; i++) {
+          const x = i * bw + (j % 2 ? bw / 2 : 0);
+          const v = 0.82 + r() * 0.3;
+          g.fillStyle = `rgb(${Math.round(col.r * 255 * v)},${Math.round(col.g * 255 * v)},${Math.round(col.b * 255 * v)})`;
+          g.fillRect(x + 2, j * bh + 2, bw - 4, bh - 4);
+          if (kind === "brick" && r() > 0.8) {
+            g.fillStyle = "rgba(0,0,0,.18)";
+            g.fillRect(x + 2, j * bh + 2, bw - 4, bh - 4);
+          }
+        }
+    });
+    t = base.clone();
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(w / (kind === "brick" ? 0.9 : 1.6), h / (kind === "brick" ? 0.9 : 1.6));
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    t.needsUpdate = true;
+    wallMapCache.set(key, t);
+  }
+  return t;
+}
+
 /* ------------------------------------------------------------------ floors at world scale */
 import type { FloorKind } from "@/lib/home3d/layout";
 const FLOOR: Record<FloorKind, { make: () => THREE.CanvasTexture; metres: number; rough: number }> = {
@@ -410,6 +491,8 @@ const FLOOR: Record<FloorKind, { make: () => THREE.CanvasTexture; metres: number
   boards: { make: () => boardsTexture(), metres: 1.5, rough: 0.85 },
   dirt: { make: () => concreteTexture(), metres: 1.8, rough: 1 },
   lawn: { make: () => lawnTexture(), metres: 2.0, rough: 1 },
+  checker: { make: () => checkerTexture(), metres: 0.8, rough: 0.18 },
+  pattern: { make: () => patternTexture(), metres: 1.6, rough: 0.95 },
 };
 const floorCache = new Map<string, THREE.CanvasTexture>();
 /** A floor texture scaled so a tile is the same real size whatever the room's dimensions. */
@@ -447,4 +530,38 @@ export const slotTexture = (n: number) =>
     g.strokeStyle = "#f3bf6a";
     g.lineWidth = 3;
     g.strokeRect(2, 2, 188, 92);
+  });
+
+/** A dartboard: alternating black and cream wedges, red and green double and treble rings, and a bull. */
+export const dartboardTexture = () =>
+  make("dartboard", 256, 256, (g) => {
+    g.fillStyle = "#15151a";
+    g.fillRect(0, 0, 256, 256);
+    const cx = 128;
+    const ring = (r0: number, r1: number, a: string, b: string) => {
+      for (let i = 0; i < 20; i++) {
+        g.fillStyle = i % 2 ? a : b;
+        g.beginPath();
+        g.moveTo(cx, cx);
+        g.arc(cx, cx, r1, (i / 20) * Math.PI * 2 - Math.PI / 20, ((i + 1) / 20) * Math.PI * 2 - Math.PI / 20);
+        g.fill();
+      }
+      g.fillStyle = "#15151a";
+      g.beginPath();
+      g.arc(cx, cx, r0, 0, 7);
+      g.fill();
+    };
+    ring(0, 118, "#1b1b20", "#f1e4bd");
+    ring(112, 118, "#2f8a4a", "#c0392b");
+    ring(70, 112, "#1b1b20", "#f1e4bd");
+    ring(63, 70, "#2f8a4a", "#c0392b");
+    ring(0, 63, "#1b1b20", "#f1e4bd");
+    g.fillStyle = "#2f8a4a";
+    g.beginPath();
+    g.arc(cx, cx, 16, 0, 7);
+    g.fill();
+    g.fillStyle = "#c0392b";
+    g.beginPath();
+    g.arc(cx, cx, 7, 0, 7);
+    g.fill();
   });

@@ -6,14 +6,14 @@
  * walking character will need later: rooms, doorways, spawn points and colliders). The renderer reads every
  * dimension from the plan. The Studio Flat lives here; the other tiers are in `plans.ts`.
  */
-import type { HomeZone } from "@/lib/home-zones";
+import type { PlanZone } from "@/lib/home-zones";
 import type { FurnitureId } from "@/lib/furniture";
 
 export type Rect = { x0: number; z0: number; x1: number; z1: number };
 export type Opening = { kind: "window" | "door" | "doorway"; u0: number; u1: number; v0: number; v1: number };
 export type WallSpec = {
   /** Look of the wall surface. Defaults to smooth plaster. */
-  style?: "plain" | "scrap" | "panel";
+  style?: "plain" | "scrap" | "panel" | "brick" | "block";
   /** Interior walls drop to this fraction of their height when the camera looks at them face-on. */
   fold?: number;
   /** Colour of window frames and door trim. */
@@ -33,21 +33,21 @@ export type WallSpec = {
   colour: string;
   openings: Opening[];
 };
-export type FloorKind = "laminate" | "carpet" | "tile" | "parquet" | "marble" | "rubber" | "concrete" | "boards" | "dirt" | "lawn";
-export type FloorSpec = { zone: HomeZone; rect: Rect; kind: FloorKind; colour: string };
+export type FloorKind = "laminate" | "carpet" | "tile" | "parquet" | "marble" | "rubber" | "concrete" | "boards" | "dirt" | "lawn" | "checker" | "pattern";
+export type FloorSpec = { zone: PlanZone; rect: Rect; kind: FloorKind; colour: string };
 
-export type PropId = "blackjack" | "slots";
+export type PropId = "blackjack" | "slots" | "high-dice" | "bar-counter" | "dance-floor" | "dartboard" | "rack" | "track";
 /** Fixed obstacle. When `when` names a furniture id it exists only while that piece is owned. */
 export type Collider = Rect & { when?: string };
-export type RoomDef = { zone: HomeZone; name: string; rect: Rect };
+export type RoomDef = { zone: PlanZone; name: string; rect: Rect };
 /** A passage between two rooms (or to the outside): the centre line of the opening, in plan coordinates. */
 export type Door = { a: [number, number]; b: [number, number] };
 /** A friend standing or sitting in the 3D world. Decorative: not selectable. */
-export type Npc = { id: string; name: string; x: number; z: number; rot: number; pose: "sit" | "stand"; shirt: string; skin: string; hair: string };
+export type Npc = { id: string; name: string; x: number; z: number; rot: number; pose: "sit" | "stand" | "dance" | "jog"; seat?: number; shirt: string; skin: string; hair: string };
 export type PlanLight = { p: [number, number, number]; colour: string; day: number; night: number; distance: number; decay: number };
 export type PlanLights = { hemi: [sky: string, ground: string]; hemiBase: number; hemiDay: number; sunBase: number; sunDay: number; sunTint: [day: string, dusk: string]; points: PlanLight[] };
 export type PlanBase = { side: string; top: string; margin: number; frontLawn?: number };
-export type PlanKind = "squat" | "studio" | "suburban" | "mansion";
+export type PlanKind = "squat" | "studio" | "suburban" | "mansion" | "casino" | "bar" | "gym";
 
 export type Slot = {
   id: FurnitureId | "estate" | PropId;
@@ -59,11 +59,13 @@ export type Slot = {
   /** Footprint after rotation is applied, used for overlap tests. */
   w: number;
   d: number;
-  zone: HomeZone;
+  zone: PlanZone;
   label: string;
   tag: string;
   /** Height of the floating label above the floor. */
   labelY: number;
+  /** A floor-level feature (dance floor) that people can walk across. */
+  flat?: boolean;
 };
 
 export type HomePlan = {
@@ -75,13 +77,13 @@ export type HomePlan = {
   walls: WallSpec[];
   slots: Slot[];
   /** The region the camera frames for each room button (and "all" for the overview). */
-  focus: Partial<Record<HomeZone | "all", Rect>>;
+  focus: Partial<Record<PlanZone | "all", Rect>>;
   /** Walkable room volumes: continuous floor with defined boundaries. */
   rooms: RoomDef[];
   /** Passages between rooms. The entry door is the first one. */
   doors: Door[];
   /** Where a character appears: at the front door, and a sensible standing spot in each zone. */
-  spawn: { entry: [number, number]; zones: Partial<Record<HomeZone, [number, number]>> };
+  spawn: { entry: [number, number]; zones: Partial<Record<PlanZone, [number, number]>> };
   /** Fixed architecture and decor that blocks walking (never furniture slots, which block when owned). */
   colliders: Collider[];
   lights: PlanLights;

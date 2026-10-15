@@ -10,13 +10,34 @@ import { isWalkableShop } from "@/lib/walkable-shops";
 import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { isArcadeRoom } from "@/lib/arcade-rooms";
 import { Home3DStage, webglAvailable } from "@/components/home3d/Home3DStage";
-import { homeZones, furnitureZone, type HomeZone } from "@/lib/home-zones";
+import { homeZones, furnitureZone, isVenue, venueZones, type HomeZone, type PlanZone } from "@/lib/home-zones";
+import { venuePlan } from "@/lib/home3d/venues";
+import { CounterRobberyChoice } from "@/components/rooms/CounterRobberyChoice";
+import { COUNTERS } from "@/lib/counter-robbery";
+import { STAFF } from "@/components/rooms/ArcadeInterior";
 import { VIEW, visibleHotspots, type Box, type Room, type Hotspot } from "@/lib/rooms";
 
 const panel3d = (cw: number, ch: number): CSSProperties =>
   cw <= 600
     ? { left: 8, bottom: 8, width: cw - 16, maxHeight: Math.max(80, ch - 16) }
     : { right: 8, bottom: 8, width: Math.min(290, cw - 16), maxHeight: Math.max(140, ch - 16) };
+
+/** Whether the real 3D renderer can be used, and the player's saved choice between it and the classic view. */
+export function useRenderer3d() {
+  // Both are resolved after mount so server and client markup match.
+  const [classic, setClassicState] = useState(false);
+  const [gl, setGl] = useState(false);
+  useEffect(() => {
+    setGl(webglAvailable());
+    try { setClassicState(localStorage.getItem("tst.home3d") === "classic"); } catch { /* storage unavailable */ }
+  }, []);
+  const setClassic = (c: boolean) => {
+    setClassicState(c);
+    try { localStorage.setItem("tst.home3d", c ? "classic" : "3d"); } catch { /* storage unavailable */ }
+  };
+  return { gl, classic, setClassic, failed: () => setClassicState(true) };
+}
+export type Renderer3d = ReturnType<typeof useRenderer3d>;
 
 export type Feedback = { message: string; success: boolean; changes: string[]; timeLine?: string };
 
@@ -29,7 +50,9 @@ function ObjectLocationScene({
   godMode = false,
   onLaunch,
   paused = false,
+  renderer,
 }: {
+  renderer?: Renderer3d | undefined;
   room: Room;
   state: GameState;
   feedback: Feedback | null;
@@ -43,21 +66,16 @@ function ObjectLocationScene({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showLoans, setShowLoans] = useState(false);
-  const [homeZone, setHomeZone] = useState<HomeZone>(room.id === "home" ? homeZones(state.house)[0]!.id : "shelter");
+  const venue = isVenue(room.id) ? room.id : null;
+  const [homeZone, setHomeZone] = useState<PlanZone>(room.id === "home" ? homeZones(state.house)[0]!.id : venue ? venueZones(venue)[0]!.id : "shelter");
   const [size, setSize] = useState<Size>({ w: 0, h: 0 });
-  // Studio Flat renders as a real 3D scene when WebGL works; the classic SVG renderer remains the fallback.
-  // Both are resolved after mount so server and client markup match.
-  const [classic, setClassic] = useState(false);
-  const [gl, setGl] = useState(false);
-  useEffect(() => {
-    setGl(webglAvailable());
-    try { setClassic(localStorage.getItem("tst.home3d") === "classic"); } catch { /* storage unavailable */ }
-  }, []);
-  const use3d = room.id === "home" && gl && !classic;
+  // Homes, the casino, the bar and the gym render as real 3D scenes when WebGL works; the classic renderer remains the fallback.
+  const own = useRenderer3d();
+  const { gl, classic, setClassic } = renderer ?? own;
+  const use3d = (room.id === "home" || venue !== null) && gl && !classic;
   const setRenderer = (c: boolean) => {
     setSelectedId(null);
     setClassic(c);
-    try { localStorage.setItem("tst.home3d", c ? "classic" : "3d"); } catch { /* storage unavailable */ }
   };
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -119,8 +137,8 @@ function ObjectLocationScene({
         </div>
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
-        {room.id === "home" && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label="Home rooms">{homeZones(state.house).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
-        {room.id === "home" && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
+        {(room.id === "home" || (venue && use3d)) && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
+        {(room.id === "home" || venue) && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
         {room.id === "home" && state.house >= 3 && !use3d && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
           <div className="mt-2 flex gap-2">
@@ -157,9 +175,18 @@ function ObjectLocationScene({
             visible={visible}
             selectedId={selectedId}
             zone={homeZone}
-            onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+            plan={venue ? venuePlan(venue) ?? undefined : undefined}
+            onSelect={(id) => {
+              const spot = visible.find((h) => h.id === id);
+              if (spot?.launch && onLaunch) {
+                setSelectedId(null);
+                onLaunch(spot.launch);
+                return;
+              }
+              setSelectedId((cur) => (cur === id ? null : id));
+            }}
             onDeselect={() => setSelectedId(null)}
-            onFail={() => setClassic(true)}
+            onFail={() => (renderer ?? own).failed()}
             onLaunch={onLaunch}
           />
         )}
@@ -170,7 +197,7 @@ function ObjectLocationScene({
         >
           <RoomArt
             room={room}
-            homeZone={room.id === "home" ? homeZone : undefined}
+            homeZone={room.id === "home" ? (homeZone as HomeZone) : undefined}
             state={state}
             visible={visible}
             selectedId={selectedId}
@@ -194,7 +221,11 @@ function ObjectLocationScene({
             style={use3d ? panel3d(size.w, size.h) : panelStyle(selected.box, fit, size.w, size.h)}
             onRun={onRun}
             onClose={() => setSelectedId(null)}
-          />
+          >
+            {use3d && room.id === "bar" && selected.id === COUNTERS.bar && (
+              <CounterRobberyChoice key={selected.id} state={state} venue="bar" godMode={godMode} onRun={onRun} />
+            )}
+          </ActionPanel>
         )}
       </div>
 
@@ -230,7 +261,7 @@ function ObjectLocationScene({
             </div>
           ) : (
             <div>
-              <p className="text-muted-foreground">Tap an object to see what you can do.</p>
+              <p className="text-muted-foreground">{use3d && room.id === "bar" ? `${STAFF.bar!.name}: “${STAFF.bar!.greeting}”` : "Tap an object to see what you can do."}</p>
               {chatter && (
                 <p
                   aria-live="off"
@@ -249,7 +280,22 @@ function ObjectLocationScene({
 }
 
 /** Arcade counters for service locations; object scenes for home, training and the street. */
+/** The bar is a 3D room when WebGL works and otherwise the classic walkable shop. */
+function BarScene(props: Parameters<typeof ObjectLocationScene>[0]) {
+  const renderer = useRenderer3d();
+  if (renderer.gl && !renderer.classic) return <ObjectLocationScene {...props} renderer={renderer} />;
+  return (
+    <>
+      <WalkableShop {...props} />
+      {renderer.gl && (
+        <button type="button" onClick={() => renderer.setClassic(false)} className="absolute right-3 top-[100px] z-30 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>Switch to 3D view</button>
+      )}
+    </>
+  );
+}
+
 export function LocationScene(props: Parameters<typeof ObjectLocationScene>[0]) {
+  if (props.room.id === "bar") return <BarScene key="bar" {...props} />;
   if (isWalkableShop(props.room.id)) return <WalkableShop key={props.room.id} {...props} />;
   return isArcadeRoom(props.room.id) ? (
     <ArcadeInterior {...props} />

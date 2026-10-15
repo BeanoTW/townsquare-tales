@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
-import type { HomeZone } from "@/lib/home-zones";
+import type { PlanZone } from "@/lib/home-zones";
 import { daylight, fitToView, partitionDrops, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
 import { Bed, Bookshelf, Console, Desk, EstateBoard, Kitchen, Mattress, Sofa, Television, Weights } from "./furniture";
 import { Floors, Plinth, Wall } from "./parts";
@@ -9,6 +9,9 @@ import { StudioDecor } from "./StudioShell";
 import { CampStove, CrateDesk, OldCouch, PalletBed, ScrapWeights, SquatDecor, SquatMattress } from "./squat";
 import { SuburbanDecor } from "./suburban";
 import { Bedsides, BlackjackTable, Figure, MansionDecor, SlotBank } from "./mansion";
+import { BarCounter, BarDecor, DanceFloor, Dartboard } from "./bar";
+import { CasinoDecor, DiceTable } from "./casino";
+import { GymDecor, PowerRack, Treadmills } from "./gym";
 import type { CameraControls, Scene3DProps } from "./types";
 import { HomeWalker, type WalkerHandle } from "./HomeWalker";
 
@@ -19,7 +22,7 @@ const DIST_MIN = 3.4;
 const DEFAULT_AZ = 0;
 const DEFAULT_EL = Math.PI / 2 - 0.015;
 
-type Cam = { az: number; el: number; dist: number; tx: number; tz: number; gaz: number; gel: number; gdist: number; gtx: number; gtz: number; moved: boolean; zone: HomeZone | "all" };
+type Cam = { az: number; el: number; dist: number; tx: number; tz: number; gaz: number; gel: number; gdist: number; gtx: number; gtz: number; moved: boolean; zone: PlanZone | "all" };
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const mixHex = (a: string, b: string, t: number) => {
@@ -27,7 +30,7 @@ const mixHex = (a: string, b: string, t: number) => {
   return `#${c.getHexString()}`;
 };
 
-const regionOf = (plan: HomePlan, zone: HomeZone | "all"): Rect => plan.focus[zone] ?? plan.focus.all!;
+const regionOf = (plan: HomePlan, zone: PlanZone | "all"): Rect => plan.focus[zone] ?? plan.focus.all!;
 
 function Lights({ plan, day }: { plan: HomePlan; day: number }) {
   const L = plan.lights;
@@ -101,6 +104,18 @@ function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan;
       return <BlackjackTable />;
     case "slots":
       return <SlotBank />;
+    case "high-dice":
+      return <DiceTable />;
+    case "bar-counter":
+      return <BarCounter />;
+    case "dance-floor":
+      return <DanceFloor />;
+    case "dartboard":
+      return <Dartboard />;
+    case "rack":
+      return <PowerRack />;
+    case "track":
+      return <Treadmills />;
     default:
       return null;
   }
@@ -114,6 +129,12 @@ function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) 
       return <SuburbanDecor owned={owned} />;
     case "mansion":
       return <MansionDecor owned={owned} />;
+    case "casino":
+      return <CasinoDecor />;
+    case "bar":
+      return <BarDecor />;
+    case "gym":
+      return <GymDecor />;
     default:
       return <StudioDecor />;
   }
@@ -128,7 +149,7 @@ type Shared = {
   walker: MutableRefObject<WalkerHandle>;
 };
 
-function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zone: HomeZone; shared: Shared }) {
+function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zone: PlanZone; shared: Shared }) {
   const { camera, gl, size, invalidate } = useThree();
   const reduce = useMemo(() => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true, []);
   const aspect = size.width / Math.max(1, size.height);
@@ -138,7 +159,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   slotsRef.current = slots;
 
   const goalFor = useCallback(
-    (z: HomeZone | "all") => {
+    (z: PlanZone | "all") => {
       const r = regionOf(plan, z);
       const az = cam.current?.gaz ?? DEFAULT_AZ;
       return { tx: (r.x0 + r.x1) / 2, tz: (r.z0 + r.z1) / 2, dist: fitToView(r.x1 - r.x0, r.z1 - r.z0, plan.size.h, az, DEFAULT_EL, aspect, FOV) };
@@ -163,7 +184,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   // Public handle used by the on-screen buttons and by tests.
   useEffect(() => {
     const c = cam.current!;
-    const focus = (z: HomeZone | "all") => {
+    const focus = (z: PlanZone | "all") => {
       const g = goalFor(z);
       c.gtx = g.tx;
       c.gtz = g.tz;
