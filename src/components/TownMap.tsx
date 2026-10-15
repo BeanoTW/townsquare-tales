@@ -139,7 +139,7 @@ function Stick({ x, y, phase, walking, jump = null, skating = false, pose = "sta
     {skating && jump && <ellipse data-skate-shadow cx="0" cy="0" rx="11" ry="6" fill="#25242a" opacity=".17"/>}
     {skating ? <g data-skater-pose data-skate-angle={skateAngle} transform={jump ? `translate(0 ${-elevation(jump)}) rotate(${skateAngle + 180})` : `rotate(${skateAngle + 180})`}>
       <g transform={`rotate(${deckRotation(jump)})`}><rect data-skateboard="deck" x="-5" y="-21" width="10" height="36" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/><path d="M-3 -15h6M-3 9h6" stroke="#cbd0d2" strokeWidth="1.2"/></g>
-      <g transform="translate(0 4)"><OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={false} angle={45}/></g>
+      <g transform="translate(0 0)"><OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={false} angle={45}/></g>
     </g> : <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking || feedback === "bin"} angle={(skateAngle + 180) % 360}/>}
     {feedback === "vending" && <g data-drinking-feedback transform="translate(14 -10)"><path d="M-3 -4h7l-1 9h-5Z" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -4v-5l3-2" stroke="var(--town-ink)" fill="none"/></g>}
     {feedback === "bin" && <text data-search-feedback x="15" y="-25" fontSize="15" fill="var(--town-ink)">?</text>}
