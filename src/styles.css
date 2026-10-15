@@ -146,6 +146,29 @@
 
 /* Illustration materials are stable across interface themes. */
 :root {
+  --home-ink: oklch(0.27 0.018 255);
+  --home-paper: oklch(0.97 0.015 90);
+  --home-cardboard: oklch(0.68 0.07 70);
+  --home-cardboard-dark: oklch(0.5 0.045 70);
+  --home-studio-wall: oklch(0.9 0.035 90);
+  --home-studio-side: oklch(0.8 0.03 90);
+  --home-studio-floor: oklch(0.64 0.045 70);
+  --home-suburban-wall: oklch(0.85 0.065 155);
+  --home-suburban-side: oklch(0.69 0.06 155);
+  --home-suburban-floor: oklch(0.7 0.065 65);
+  --home-mansion-wall: oklch(0.93 0.013 235);
+  --home-mansion-side: oklch(0.8 0.025 235);
+  --home-marble: oklch(0.88 0.012 235);
+  --home-wood: oklch(0.52 0.065 55);
+  --home-wood-light: oklch(0.72 0.07 65);
+  --home-teal: oklch(0.55 0.09 185);
+  --home-teal-light: oklch(0.7 0.07 185);
+  --home-gold: oklch(0.79 0.115 85);
+  --home-coral: oklch(0.7 0.13 30);
+  --home-glass: oklch(0.81 0.065 230);
+  --home-metal: oklch(0.66 0.02 245);
+  --home-screen: oklch(0.4 0.065 245);
+  --home-leaf: oklch(0.57 0.1 150);
   --basketball-sky: oklch(0.88 0.065 225);
   --basketball-sun: oklch(0.94 0.15 92);
   --basketball-court: oklch(0.65 0.1 185);

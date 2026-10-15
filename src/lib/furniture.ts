@@ -17,3 +17,15 @@ export function ownsFurniture(mask: number, id: FurnitureId): boolean {
 export function furnitureBonus(mask: number, stat: "sleep"): number {
   return stat === "sleep" && ownsFurniture(mask, "bed") ? 25 : 0;
 }
+
+/** Luxury is a separate purchase; its original furniture benefit is unchanged. */
+export const LUXURY_FURNITURE: FurnitureItem[] = [
+  { id: "bed", bit: 1, name: "Cloud king bed", cost: 1800, benefit: "Tufted headboard, twin pillows and a quilted duvet" },
+  { id: "kitchen", bit: 2, name: "Chef's kitchen", cost: 2500, benefit: "Stone worktops, brass taps and a proper range" },
+  { id: "weights", bit: 4, name: "Pro home gym", cost: 2400, benefit: "Chrome rack, padded bench and matching plates" },
+  { id: "desk", bit: 8, name: "Executive desk", cost: 1600, benefit: "A polished desk, laptop and brass reading lamp" },
+  { id: "sofa", bit: 16, name: "Velvet lounge sofa", cost: 2200, benefit: "Deep teal velvet, gold feet and plush cushions" },
+  { id: "tv", bit: 32, name: "Cinema television", cost: 3200, benefit: "An edge-to-edge screen and a soundbar" },
+  { id: "console", bit: 64, name: "Next-gen game station", cost: 1800, benefit: "A sleek tower, wireless controller and glowing dock" },
+  { id: "bookshelf", bit: 128, name: "Collector's bookcase", cost: 1500, benefit: "A glass-front library with gold-bound volumes" },
+];
