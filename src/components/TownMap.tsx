@@ -118,7 +118,7 @@ function Car({ x, y, dir, color }: { x: number; y: number; dir: "x" | "y"; color
   return (
     <g>
       <polygon points={pts([P(bx, by + d), P(bx + w, by + d), P(bx + w, by + d, h), P(bx, by + d, h)])} fill={color} stroke="var(--town-ink)" />
-      <polygon points={pts([P(bx + w, by), P(bx + w, by + d), P(bx + w, by + d, h), P(bx + w, by, h)])} fill={color} stroke="var(--town-ink)" filter="brightness(0.8)" opacity={0.85} />
+      <polygon points={pts([P(bx + w, by), P(bx + w, by + d), P(bx + w, by + d, h), P(bx + w, by, h)])} fill={color} stroke="var(--town-ink)" opacity={0.85} />
       <polygon points={pts([P(bx, by, h), P(bx + w, by, h), P(bx + w, by + d, h), P(bx, by + d, h)])} fill={color} stroke="var(--town-ink)" />
       <polygon points={pts([P(bx + w * 0.25, by + d * 0.2, h + 8), P(bx + w * 0.75, by + d * 0.2, h + 8), P(bx + w * 0.75, by + d * 0.8, h + 8), P(bx + w * 0.25, by + d * 0.8, h + 8)])} fill="var(--town-windscreen)" stroke="var(--town-ink)" />
     </g>
@@ -131,6 +131,13 @@ export function playerCameraViewBox(x: number, y: number, skating = false, _skat
   // Keep one visual anchor in all travel directions; the board stays screen-upright.
   const boardYOffset = skating ? -5 : -7;
   return `${cx - 165} ${cy + boardYOffset - 275} 330 550`;
+}
+
+/** Camera as a pixel-snapped transform on a fixed viewBox: avoids full SVG re-rasterising each frame. */
+export function playerCameraTransform(x: number, y: number, skating = false): string {
+  const [cx, cy] = P(x, y);
+  const ox = Math.round((165 - cx) * 2) / 2, oy = Math.round((275 - cy - (skating ? -5 : -7)) * 2) / 2;
+  return `translate(${ox} ${oy})`;
 }
 
 function Stick({ x, y, phase, walking, jump = null, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; jump?: SkateJump | null; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
@@ -170,6 +177,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     }
   }, []);
   const svgRef = useRef<SVGSVGElement>(null);
+  const worldRef = useRef<SVGGElement>(null);
   const skateJump = useRef<SkateJump | null>(null);
   const streetGrind = useRef<StreetGrind | null>(null);
   const [grindHud, setGrindHud] = useState<{name:string;balance:number}|null>(null);
@@ -359,7 +367,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     if (!svg) return null;
     const pt = svg.createSVGPoint();
     pt.x = e.clientX; pt.y = e.clientY;
-    const matrix = svg.getScreenCTM();
+    const matrix = (worldRef.current ?? svg).getScreenCTM();
     if (!matrix) return null;
     const p = pt.matrixTransform(matrix.inverse());
     return { x: p.x / TW, y: p.y / TH };
@@ -409,6 +417,81 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     };
   };
 
+  const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
+    <polygon key={k} points={pts([P(x, y), P(x + w, y), P(x + w, y + d), P(x, y + d)])} fill={fill} />
+  );
+  const constructionActive = townAtmosphere(hour).constructionActive;
+  const ground = useMemo(() => <>
+        {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
+        {tile(0,0,N,N,"var(--town-grass)","grass")}
+        {/* Plots intermix naturally; there are no imposed rectangular districts. */}
+        {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
+        {tile(25.5,7.5,4.2,4.8,"var(--town-park-lawn)","park-green")}
+        {/* Road shoulders do not extend across entire neighbourhoods. */}
+        {ROADS.map((r,i) => tile(Math.max(0,r.x-.58),Math.max(0,r.y-.58),
+          Math.min(N,r.x+r.w+.58)-Math.max(0,r.x-.58),
+          Math.min(N,r.y+r.d+.58)-Math.max(0,r.y-.58),
+          "var(--town-pavement)","kerb-"+i))}
+        {/* Individual lawns and building setbacks, rather than continuous square paving. */}
+        {bs.map(b => tile(Math.max(0,b.x-.15),Math.max(0,b.y-.15),b.w+.3,b.d+.3,
+          b.id==="casino" || b.id==="alley"?"var(--town-backlot)":"var(--town-garden)","lot-"+b.id))}
+        {/* Short building approach paths, connected to the closest available road. */}
+        {bs.map(b => {
+          const d=door(b);
+          const r=ROADS.map(road=>{
+            const x=Math.max(road.x,Math.min(road.x+road.w,d.x));
+            const y=Math.max(road.y,Math.min(road.y+road.d,d.y));
+            return {x,y,distance:Math.hypot(d.x-x,d.y-y)};
+          }).sort((a,b)=>a.distance-b.distance)[0];
+          if(!r) return null;
+          return tile(Math.min(d.x,r.x)-.22,Math.min(d.y,r.y)-.22,
+            Math.abs(d.x-r.x)+.44,Math.abs(d.y-r.y)+.44,"var(--town-approach)","approach-"+b.id);
+        })}
+        {/* Central park: not another paved rectangle. */}
+        {tile(25.5,8.1,4.1,4.0,"var(--town-park)","park")}
+        <ellipse cx={P(28.1,10.2)[0]} cy={P(28.1,10.2)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
+        {tile(27.5,8.0,0.45,4.3,"var(--town-park-path)","park-path-ns")}
+        {tile(25.5,10.3,4.1,0.4,"var(--town-park-path)","park-path-ew")}
+        {/* Roads are finite streets with deliberate ends and T-junctions. */}
+        {ROADS.map((r,i)=>tile(r.x,r.y,r.w,r.d,"var(--town-asphalt)","road-"+i))}
+        {/* Lane paint is generated from each actual street, never a removed grid road. */}
+        {ROADS.map((r,i)=>{
+          const vertical=r.d>r.w;
+          const count=Math.floor((vertical?r.d:r.w)/2.4);
+          return Array.from({length:count},(_,j)=>
+            vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"var(--town-lane-paint)","line-"+i+"-"+j):
+              tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
+        })}
+        {/* Visible grind targets, positioned using existing map projection. */}
+        {TOWN_RAILS.map(rail => {
+          const [ax, ay] = P(rail.a.x, rail.a.y);
+          const [bx, by] = P(rail.b.x, rail.b.y);
+          return <g key={"grind-"+rail.id} data-town-rail={rail.id} pointerEvents="none">
+            <path d={`M${ax} ${ay} L${bx} ${by}`} stroke="#2b2c31" strokeWidth={5} strokeLinecap="round"/>
+            <path d={`M${ax} ${ay-2} L${bx} ${by-2}`} stroke="#bbc2c7" strokeWidth={2} strokeLinecap="round"/>
+          </g>;
+        })}
+        {/* Crossings only where the staggered side roads actually meet the spine. */}
+        {[7.1,11.9,18.5,25.5].map((y,i)=>
+          <g key={"crossing-"+i}>{Array.from({length:4},(_,j)=>
+            tile(8.85+j*.62,y-.35,.34,.4,"var(--town-crossing)","stripe-"+i+"-"+j))}</g>)}
+        {/* Every property has a short approach path linking its door to the surrounding pavement. */}
+        {bs.map((b) => {
+          const d = door(b);
+          const south = b.facing === "south";
+          const north = b.facing === "north";
+          const x = south || north ? d.x - 0.33 : Math.min(d.x, b.facing === "east" ? b.x+b.w : b.x) - 0.05;
+          const y = south ? b.y+b.d : north ? d.y : d.y - 0.33;
+          const w = south || north ? 0.66 : 0.7;
+          const depth = south || north ? 0.65 : 0.66;
+          return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
+        })}
+        <Site active={constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
+        {/* Street gang occupy the untouched north-east green, away from the shops. */}
+        {tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
+        <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
+        <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
+  </>, [bs, constructionActive, routeTo]);
   const night = hour >= 19 || hour < 6;
   const dusk = hour >= 17 && hour < 19;
   const m = me.current;
@@ -497,13 +580,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={karmaHeadColor(karma)} /> });
   items.sort((a, b) => a.key - b.key);
 
-  const tile = (x: number, y: number, w: number, d: number, fill: string, k: string) => (
-    <polygon key={k} points={pts([P(x, y), P(x + w, y), P(x + w, y + d), P(x, y + d)])} fill={fill} />
-  );
 
   return (
     <div data-town-paused={paused} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
-      <svg ref={svgRef} viewBox={playerCameraViewBox(m.x, m.y, skating, m.skateAngle)} preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
+      <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {
@@ -514,80 +594,15 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         }}
         onClick={(e) => {
           if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
-        {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
-        {tile(0,0,N,N,"var(--town-grass)","grass")}
-        {/* Plots intermix naturally; there are no imposed rectangular districts. */}
-        {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
-        {tile(25.5,7.5,4.2,4.8,"var(--town-park-lawn)","park-green")}
-        {/* Road shoulders do not extend across entire neighbourhoods. */}
-        {ROADS.map((r,i) => tile(Math.max(0,r.x-.58),Math.max(0,r.y-.58),
-          Math.min(N,r.x+r.w+.58)-Math.max(0,r.x-.58),
-          Math.min(N,r.y+r.d+.58)-Math.max(0,r.y-.58),
-          "var(--town-pavement)","kerb-"+i))}
-        {/* Individual lawns and building setbacks, rather than continuous square paving. */}
-        {bs.map(b => tile(Math.max(0,b.x-.15),Math.max(0,b.y-.15),b.w+.3,b.d+.3,
-          b.id==="casino" || b.id==="alley"?"var(--town-backlot)":"var(--town-garden)","lot-"+b.id))}
-        {/* Short building approach paths, connected to the closest available road. */}
-        {bs.map(b => {
-          const d=door(b);
-          const r=ROADS.map(road=>{
-            const x=Math.max(road.x,Math.min(road.x+road.w,d.x));
-            const y=Math.max(road.y,Math.min(road.y+road.d,d.y));
-            return {x,y,distance:Math.hypot(d.x-x,d.y-y)};
-          }).sort((a,b)=>a.distance-b.distance)[0];
-          if(!r) return null;
-          return tile(Math.min(d.x,r.x)-.22,Math.min(d.y,r.y)-.22,
-            Math.abs(d.x-r.x)+.44,Math.abs(d.y-r.y)+.44,"var(--town-approach)","approach-"+b.id);
-        })}
-        {/* Central park: not another paved rectangle. */}
-        {tile(25.5,8.1,4.1,4.0,"var(--town-park)","park")}
-        <ellipse cx={P(28.1,10.2)[0]} cy={P(28.1,10.2)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
-        {tile(27.5,8.0,0.45,4.3,"var(--town-park-path)","park-path-ns")}
-        {tile(25.5,10.3,4.1,0.4,"var(--town-park-path)","park-path-ew")}
-        {/* Roads are finite streets with deliberate ends and T-junctions. */}
-        {ROADS.map((r,i)=>tile(r.x,r.y,r.w,r.d,"var(--town-asphalt)","road-"+i))}
-        {/* Lane paint is generated from each actual street, never a removed grid road. */}
-        {ROADS.map((r,i)=>{
-          const vertical=r.d>r.w;
-          const count=Math.floor((vertical?r.d:r.w)/2.4);
-          return Array.from({length:count},(_,j)=>
-            vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"var(--town-lane-paint)","line-"+i+"-"+j):
-              tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
-        })}
-        {/* Visible grind targets, positioned using existing map projection. */}
-        {TOWN_RAILS.map(rail => {
-          const [ax, ay] = P(rail.a.x, rail.a.y);
-          const [bx, by] = P(rail.b.x, rail.b.y);
-          return <g key={"grind-"+rail.id} data-town-rail={rail.id} pointerEvents="none">
-            <path d={`M${ax} ${ay} L${bx} ${by}`} stroke="#2b2c31" strokeWidth={5} strokeLinecap="round"/>
-            <path d={`M${ax} ${ay-2} L${bx} ${by-2}`} stroke="#bbc2c7" strokeWidth={2} strokeLinecap="round"/>
-          </g>;
-        })}
-        {/* Crossings only where the staggered side roads actually meet the spine. */}
-        {[7.1,11.9,18.5,25.5].map((y,i)=>
-          <g key={"crossing-"+i}>{Array.from({length:4},(_,j)=>
-            tile(8.85+j*.62,y-.35,.34,.4,"var(--town-crossing)","stripe-"+i+"-"+j))}</g>)}
-        {/* Every property has a short approach path linking its door to the surrounding pavement. */}
-        {bs.map((b) => {
-          const d = door(b);
-          const south = b.facing === "south";
-          const north = b.facing === "north";
-          const x = south || north ? d.x - 0.33 : Math.min(d.x, b.facing === "east" ? b.x+b.w : b.x) - 0.05;
-          const y = south ? b.y+b.d : north ? d.y : d.y - 0.33;
-          const w = south || north ? 0.66 : 0.7;
-          const depth = south || north ? 0.65 : 0.66;
-          return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
-        })}
-        <Site active={townAtmosphere(hour).constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
-        {/* Street gang occupy the untouched north-east green, away from the shops. */}
-        {tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
-        <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
-        <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
+        <g ref={worldRef} transform={playerCameraTransform(m.x, m.y, skating)}>
+        {ground}
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
         <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} />
         {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
+        </g>
       </svg>
+
       
       {stickVisual && (
         <div data-floating-joystick aria-hidden="true" className="pointer-events-none absolute inset-0 z-20">
