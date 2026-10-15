@@ -14,6 +14,7 @@ import { CasinoDecor, DiceTable } from "./casino";
 import { GymDecor, PowerRack, Treadmills } from "./gym";
 import { PawnCounter, PawnCuriosities, PawnDecor } from "./pawn";
 import { PoliceDesk, WantedBoard, PoliceDecor } from "./police";
+import { RemainingVenueFixture, RemainingVenueDecor } from "./remaining-venues";
 import type { CameraControls, Scene3DProps } from "./types";
 import { HomeWalker, type WalkerHandle } from "./HomeWalker";
 
@@ -123,7 +124,7 @@ function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan;
     case "track":
       return <Treadmills />;
     default:
-      return null;
+      return plan.kind === "studio" || plan.kind === "suburban" || plan.kind === "mansion" || plan.kind === "squat" ? null : <RemainingVenueFixture id={slot.id} venue={plan.kind} />;
   }
 }
 
@@ -146,7 +147,7 @@ function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) 
     case "police":
       return <PoliceDecor />;
     default:
-      return <StudioDecor />;
+      return plan.kind === "studio" ? <StudioDecor /> : <RemainingVenueDecor venue={plan.kind} />;
   }
 }
 
