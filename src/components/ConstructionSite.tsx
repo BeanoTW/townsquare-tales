@@ -5,10 +5,18 @@ import { P } from "@/lib/town-projection";
 const polygon = (corners: [number,number][]) => corners.map(([x,y]) => P(x,y).join(",")).join(" ");
 
 /** Large decorative redevelopment plot. Interactions remain with the actual yard office/foreman. */
-export function ConstructionSite({ onForeman, active = true }: { onForeman: () => void; active?: boolean }) {
+export function ConstructionSite({ onForeman, active = true, ghost = false }: { onForeman: () => void; active?: boolean; ghost?: boolean }) {
   const x=16.1, y=15.3, w=6.0, d=9.2;
   const [fx,fy]=P(18.2,24.1);
   const [cx,cy]=P(18.9,16.9);
+  // In the 3D town the site is modelled there; only the foreman's tap target remains.
+  if (ghost) return <g data-construction-site data-active={active}>
+    <g role="button" tabIndex={0} aria-label="Talk to the construction foreman" data-construction-foreman
+      className="cursor-pointer" onClick={e=>{e.stopPropagation();onForeman();}}
+      onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();onForeman();}}}>
+      <rect x={fx-22} y={fy-38} width="44" height="55" fill="transparent"/>
+    </g>
+  </g>;
   return <g data-construction-site data-active={active}>
     <polygon points={polygon([[x,y],[x+w,y],[x+w,y+d],[x,y+d]])} fill="#968b76" stroke="#4a4842" strokeWidth="3"/>
     {/* Layered compacted earth, concrete pads and vehicle ruts. Keep the gate walkable. */}

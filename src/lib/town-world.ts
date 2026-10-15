@@ -58,20 +58,6 @@ export const LAMPS = [[2,6.65],[7,6.65],[8.4,10.35],[12,11.35],[20.8,11.35],[2,1
 
 
 
-/**
- * Screen position of a building point. BuildingExterior lifts raised geometry
- * with extra horizontal drift and landmark setbacks, so 3D walls and tap hulls use
- * this instead of the ground projection. At height 0 it equals P exactly.
- */
-export function buildingPoint(b: Pick<B, "id">, x: number, y: number, z = 0): [number, number] {
-  const p = P(x, y, z);
-  const sx = p[0] + z * 0.25, sy = p[1];
-  const landmark = ["work", "casino", "bar"].includes(b.id);
-  const westSetback = b.id === "work" ? z * 0.15 : 0;
-  const northSetback = ["casino", "bar"].includes(b.id) ? z * 0.44 : 0;
-  return [sx - (landmark ? z * 0.09 : 0) + westSetback, sy - (landmark ? z * 0.15 : 0) + northSetback];
-}
-
 /** Monotone-chain convex hull, counter-clockwise in screen units. */
 export function convexHull(points: readonly (readonly [number, number])[]): [number, number][] {
   const sorted = points.map(([x, y]) => [x, y] as [number, number]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
@@ -87,13 +73,6 @@ export function convexHull(points: readonly (readonly [number, number])[]): [num
   }
   upper.pop(); lower.pop();
   return [...lower, ...upper];
-}
-
-/** Transparent tap area for a building: hull of its eight projected corners. */
-export function buildingHull(b: B): [number, number][] {
-  const corners: [number, number][] = [];
-  for (const x of [b.x, b.x + b.w]) for (const y of [b.y, b.y + b.d]) for (const z of [0, b.h]) corners.push(buildingPoint(b, x, y, z));
-  return convexHull(corners);
 }
 
 /** Offset applied to the world layer so the player stays at the portrait camera's anchor. */
