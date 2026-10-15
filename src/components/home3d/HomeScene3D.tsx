@@ -346,7 +346,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
   const walls = useRef(new Map<string, THREE.Group>());
   const hover = useRef<string | null>(null);
   const dragged = useRef(0);
-  const walker = useRef<WalkerHandle>({position:{x:plan.spawn.entry[0],z:plan.spawn.entry[1]},moving:false});
+  const walker = useRef<WalkerHandle>({position:{x:props.plan.spawn.entry[0],z:props.plan.spawn.entry[1]},moving:false});
   const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged, walker }), [props.controls]);
   const day = daylight(props.hour);
   const { plan } = props;
