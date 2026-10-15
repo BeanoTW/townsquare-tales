@@ -15,6 +15,7 @@ import { GymDecor, PowerRack, Treadmills } from "./gym";
 import { PawnCounter, PawnCuriosities, PawnDecor } from "./pawn";
 import { PoliceDesk, WantedBoard, PoliceDecor } from "./police";
 import { RemainingVenueFixture, RemainingVenueDecor } from "./remaining-venues";
+import { VenueVisualPolish } from "./venue-visual-polish";
 import type { CameraControls, Scene3DProps } from "./types";
 import { HomeWalker, type WalkerHandle } from "./HomeWalker";
 
@@ -140,11 +141,11 @@ function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) 
     case "mansion":
       return <MansionDecor owned={owned} />;
     case "casino":
-      return <CasinoDecor />;
+      return <><CasinoDecor /><VenueVisualPolish venue="casino"/></>;
     case "bar":
-      return <BarDecor />;
+      return <><BarDecor /><VenueVisualPolish venue="bar"/></>;
     case "gym":
-      return <GymDecor />;
+      return <><GymDecor /><VenueVisualPolish venue="gym"/></>;
     case "pawn":
       return <PawnDecor />;
     case "police":
