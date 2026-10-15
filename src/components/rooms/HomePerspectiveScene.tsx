@@ -34,7 +34,7 @@ export function HomePerspectiveScene({house,zone}: {house:number;zone:HomeZone})
   <path d="M0 300L45 181H375L420 300Z" fill={`url(#${key}-grain)`}/>
   <path d="M45 181H375M45 27V181M375 27V181" stroke={t.trim} strokeWidth={tier===3?5:3} fill="none"/>
   {[1,2,3,4].map(n=><path key={n} d={`M${45+n*66} 181L${n*84} 300`} fill="none" stroke={t.shade} strokeWidth="1.1" opacity=".27"/>)}
-  {[213,248,282].map(y=><path key={y} d={`M${45-(y-181)*.38} ${y}H${375+(y-181)*.38}`} stroke={t.trim} strokeWidth="1" opacity=".22" key={y}/>)}
+  {[213,248,282].map(y=><path key={y} d={`M${45-(y-181)*.38} ${y}H${375+(y-181)*.38}`} stroke={t.trim} strokeWidth="1" opacity=".22"/>)}
   <rect x="45" y="27" width="330" height="154" fill={`url(#${key}-light)`}/>
   {tier===0 ? <g>
     <path d="M46 55l328 -7M45 110l330 12M85 29l-4 150m75 -150l8 150m75 -150l-3 150m76 -150l-2 150" stroke="#403b37" strokeWidth="2" strokeDasharray="11 5" opacity=".55"/>
