@@ -1,6 +1,6 @@
 import { CAREERS, missingRequirements, nextRole, shiftReward } from "@/lib/careers";
 import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
-import { FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
+import { FURNITURE, LUXURY_FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
 import type { GameState } from "@/lib/game-state";
 
@@ -187,11 +187,11 @@ export function buyHouseAction(s: GameState): ActionDef {
   };
 }
 
-export function furnitureAction(id: FurnitureId, s: GameState): ActionDef {
-  const item = FURNITURE.find((i) => i.id === id);
-  const owned = ownsFurniture(s.furniture, id);
+export function furnitureAction(id: FurnitureId, s: GameState, luxury = false): ActionDef {
+  const item = (luxury ? LUXURY_FURNITURE : FURNITURE).find((i) => i.id === id);
+  const owned = ownsFurniture(luxury ? s.luxuryFurniture ?? 0 : s.furniture, id);
   return {
-    id: `furniture-${id}`,
+    id: `furniture-${luxury ? "luxury-" : ""}${id}`,
     label: item?.name ?? id,
     hours: 0,
     energy: 0,
@@ -199,10 +199,11 @@ export function furnitureAction(id: FurnitureId, s: GameState): ActionDef {
     note: owned ? "Owned · set up at home" : item?.benefit,
     resolve: (st) => {
       if (!item) return "That item is not for sale.";
-      if (ownsFurniture(st.furniture, id)) return "You already own that. It is set up at home.";
+      if (ownsFurniture(luxury ? st.luxuryFurniture ?? 0 : st.furniture, id)) return "You already own that. It is set up at home.";
       if (st.money < item.cost) return `Need ${item.cost} cash.`;
       return {
-        patch: { money: st.money - item.cost, furniture: st.furniture | item.bit },
+        patch: { money: st.money - item.cost, furniture: st.furniture | item.bit,
+          ...(luxury ? { luxuryFurniture: (st.luxuryFurniture ?? 0) | item.bit } : {}) },
         message: `${item.name} delivered! Check your home.`,
       };
     },

@@ -629,7 +629,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "SOFA",
         hint: "Try before you buy",
         box: { x: 12, y: 130, w: 140, h: 60 },
-        actions: (s) => [furnitureAction("sofa", s)],
+        actions: (s) => [furnitureAction("sofa", s), furnitureAction("sofa", s, true)],
       },
       {
         id: "bed-display",
@@ -637,7 +637,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "BED",
         hint: "Better sleep at home",
         box: { x: 170, y: 96, w: 120, h: 94 },
-        actions: (s) => [furnitureAction("bed", s)],
+        actions: (s) => [furnitureAction("bed", s), furnitureAction("bed", s, true)],
       },
       {
         id: "catalogue",
@@ -652,6 +652,7 @@ export const ROOMS: Record<PlaceId, Room> = {
           furnitureAction("tv", s),
           furnitureAction("console", s),
           furnitureAction("bookshelf", s),
+          ...(["kitchen", "weights", "desk", "tv", "console", "bookshelf"] as const).map(id => furnitureAction(id, s, true)),
         ],
       },
     ],
