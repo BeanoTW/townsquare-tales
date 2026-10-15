@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import * as THREE from "three";
+import { VenueVisualPolish } from "./venue-visual-polish";
 
 const wood = new THREE.MeshStandardMaterial({ color: "#5c3e2d", roughness: .78 });
 const dark = new THREE.MeshStandardMaterial({ color: "#28292b", roughness: .72 });
@@ -63,6 +64,7 @@ function Guitar({ x,z }: {x:number;z:number}) {
 export function PawnDecor() {
   const screen = useMemo(()=>new THREE.MeshStandardMaterial({color:"#253c40",roughness:.18,emissive:"#132a29",emissiveIntensity:.28}),[]);
   return <group>
+    <VenueVisualPolish venue="pawn" />
     {/* Floor-to-ceiling salvage shelving, along the left wall. */}
     {[.7,2.1,3.5].map((z,j)=><group key={z}>
       <Cube p={[.62,1.25,z]} s={[1.15,2.45,1.15]} m={wood}/>

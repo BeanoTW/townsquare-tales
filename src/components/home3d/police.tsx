@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { VenueVisualPolish } from "./venue-visual-polish";
 
 // The reception keeps the classic hotspot arrangement: desk at left/front,
 // wanted board at right/rear. All props are decorative and use the existing actions.
@@ -60,6 +61,7 @@ export function WantedBoard(){
  * Layout-critical desk / wanted fixtures remain owned by their 3D slots. */
 export function PoliceDecor(){
   return <group>
+    <VenueVisualPolish venue="police"/>
     {/* Public waiting area along the west wall: distinct from reception desk. */}
     {[2.5,3.65].map((z,i)=><group key={i}>
       {box([.65,.47,z],[.7,.12,.59],blue)}
