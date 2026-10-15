@@ -10,13 +10,14 @@ import { CampStove, CrateDesk, OldCouch, PalletBed, ScrapWeights, SquatDecor, Sq
 import { SuburbanDecor } from "./suburban";
 import { Bedsides, BlackjackTable, Figure, MansionDecor, SlotBank } from "./mansion";
 import type { CameraControls, Scene3DProps } from "./types";
+import { HomeWalker, type WalkerHandle } from "./HomeWalker";
 
 const FOV = 45;
 const EL_MIN = 0.3;
 const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
-const DEFAULT_AZ = 0.42;
-const DEFAULT_EL = 0.86;
+const DEFAULT_AZ = 0;
+const DEFAULT_EL = Math.PI / 2 - 0.015;
 
 type Cam = { az: number; el: number; dist: number; tx: number; tz: number; gaz: number; gel: number; gdist: number; gtx: number; gtz: number; moved: boolean; zone: HomeZone | "all" };
 
@@ -124,6 +125,7 @@ type Shared = {
   walls: MutableRefObject<Map<string, THREE.Group>>;
   hover: MutableRefObject<string | null>;
   dragged: MutableRefObject<number>;
+  walker: MutableRefObject<WalkerHandle>;
 };
 
 function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zone: HomeZone; shared: Shared }) {
@@ -182,17 +184,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
         limit();
         invalidate();
       },
-      rotate: (r) => {
-        c.gaz += r;
-        c.moved = true;
-        invalidate();
-      },
-      tilt: (r) => {
-        c.gel += r;
-        c.moved = true;
-        limit();
-        invalidate();
-      },
+      rotate: () => { /* Locked overhead perspective. */ },
+      tilt: () => { /* Locked overhead perspective. */ },
       focus,
       read: () => ({ az: c.gaz, el: c.gel, dist: c.gdist, tx: c.gtx, tz: c.gtz }),
     };
@@ -218,110 +211,33 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     invalidate();
   }, [aspect, goalFor, invalidate, reduce]);
 
-  // Gestures: one finger / left mouse orbits, two fingers pinch to zoom and drag to pan, wheel zooms,
-  // right or middle mouse (or shift) pans, arrow keys rotate.
+  // Camera remains bird's-eye. One-finger gestures walk the player; pinch/wheel only zoom.
   useEffect(() => {
-    const el = gl.domElement;
-    const c = cam.current!;
-    const pts = new Map<number, { x: number; y: number }>();
-    let mode: "orbit" | "pan" | null = null;
-    let last = { x: 0, y: 0, d: 0 };
-    const mid = () => {
-      const a = [...pts.values()];
-      return { x: a.reduce((s, p) => s + p.x, 0) / a.length, y: a.reduce((s, p) => s + p.y, 0) / a.length };
-    };
-    const spread = () => {
-      const a = [...pts.values()];
-      return a.length < 2 ? 0 : Math.hypot(a[0]!.x - a[1]!.x, a[0]!.y - a[1]!.y);
-    };
-    const pan = (dx: number, dy: number) => {
-      const k = c.gdist * 0.0016;
-      const sa = Math.sin(c.gaz);
-      const ca = Math.cos(c.gaz);
-      c.gtx += (-dx * ca + dy * sa) * k;
-      c.gtz += (dx * sa + dy * ca) * k;
-    };
-    const down = (e: PointerEvent) => {
-      el.setPointerCapture?.(e.pointerId);
-      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      shared.dragged.current = 0;
-      if (pts.size === 1) {
-        mode = e.pointerType === "mouse" && (e.button === 2 || e.button === 1 || e.shiftKey) ? "pan" : "orbit";
-        last = { ...pts.get(e.pointerId)!, d: 0 };
-      } else {
-        mode = "pan";
-        const m = mid();
-        last = { x: m.x, y: m.y, d: spread() };
-      }
-    };
-    const move = (e: PointerEvent) => {
-      if (!pts.has(e.pointerId)) return;
-      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pts.size >= 2) {
-        const m = mid();
-        const d = spread();
-        if (last.d > 0 && d > 0) c.gdist *= last.d / d;
-        pan(m.x - last.x, m.y - last.y);
-        shared.dragged.current += Math.abs(m.x - last.x) + Math.abs(m.y - last.y) + 8;
-        last = { x: m.x, y: m.y, d };
-      } else {
-        const dx = e.clientX - last.x;
-        const dy = e.clientY - last.y;
-        shared.dragged.current += Math.abs(dx) + Math.abs(dy);
-        if (mode === "pan") pan(dx, dy);
-        else {
-          c.gaz -= dx * 0.0085;
-          c.gel += dy * 0.006;
-        }
-        last = { x: e.clientX, y: e.clientY, d: 0 };
-      }
-      if (shared.dragged.current > 3) c.moved = true;
-      limit();
-      invalidate();
-    };
-    const up = (e: PointerEvent) => {
-      pts.delete(e.pointerId);
-      if (pts.size === 1) {
-        mode = "orbit";
-        last = { ...[...pts.values()][0]!, d: 0 };
-      } else if (pts.size === 0) mode = null;
-    };
-    const wheel = (e: WheelEvent) => {
-      e.preventDefault();
-      c.gdist *= Math.exp(e.deltaY * 0.0012);
-      c.moved = true;
-      limit();
-      invalidate();
-    };
-    const menu = (e: Event) => e.preventDefault();
-    el.addEventListener("pointerdown", down);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
-    el.addEventListener("pointercancel", up);
-    el.addEventListener("wheel", wheel, { passive: false });
-    el.addEventListener("contextmenu", menu);
-    return () => {
-      el.removeEventListener("pointerdown", down);
-      el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", up);
-      el.removeEventListener("pointercancel", up);
-      el.removeEventListener("wheel", wheel);
-      el.removeEventListener("contextmenu", menu);
-    };
-  }, [gl, invalidate, limit, shared.dragged]);
+    const el=gl.domElement;
+    const pts=new Map<number,{x:number;y:number}>();
+    let spread=0;
+    const distance=()=>{const a=[...pts.values()];return a.length<2?0:Math.hypot(a[0]!.x-a[1]!.x,a[0]!.y-a[1]!.y);};
+    const down=(e:PointerEvent)=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2)spread=distance();};
+    const move=(e:PointerEvent)=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size>=2){const d=distance();if(d>0&&spread>0){cam.current!.gdist*=spread/d;limit();invalidate();}spread=d;}};
+    const up=(e:PointerEvent)=>{pts.delete(e.pointerId);spread=distance();};
+    const wheel=(e:WheelEvent)=>{e.preventDefault();cam.current!.gdist*=Math.exp(e.deltaY*0.0012);limit();invalidate();};
+    el.addEventListener("pointerdown",down);el.addEventListener("pointermove",move);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);el.addEventListener("wheel",wheel,{passive:false});
+    return()=>{el.removeEventListener("pointerdown",down);el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);el.removeEventListener("wheel",wheel);};
+  },[gl,limit,invalidate]);
 
   useFrame((state, dtRaw) => {
     const c = cam.current!;
+    if (shared.walker.current.moving) { c.gtx = shared.walker.current.position.x; c.gtz = shared.walker.current.position.z; }
     const dt = Math.min(0.05, dtRaw);
     const k = reduce ? 1 : 1 - Math.exp(-dt * 10);
-    c.az += (c.gaz - c.az) * k;
-    c.el += (c.gel - c.el) * k;
+    c.az = DEFAULT_AZ;
+    c.el = DEFAULT_EL;
     c.dist += (c.gdist - c.dist) * k;
     c.tx += (c.gtx - c.tx) * k;
     c.tz += (c.gtz - c.tz) * k;
     const ce = Math.cos(c.el);
     camera.position.set(c.tx + c.dist * ce * Math.sin(c.az), c.dist * Math.sin(c.el), c.tz + c.dist * ce * Math.cos(c.az));
-    camera.lookAt(c.tx, 0.55, c.tz);
+    camera.lookAt(c.tx, 0, c.tz);
     camera.updateMatrixWorld();
     let busy = Math.abs(c.gaz - c.az) + Math.abs(c.gel - c.el) + Math.abs(c.gdist - c.dist) * 0.2 + Math.abs(c.gtx - c.tx) + Math.abs(c.gtz - c.tz) > 0.0015;
 
@@ -400,7 +316,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           onClick={(e) => {
             e.stopPropagation();
             if (shared.dragged.current > 6) return;
-            p.onSelect(s.id);
+            window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}));
           }}
           onPointerOver={(e) => {
             e.stopPropagation();
@@ -417,6 +333,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
+      <HomeWalker plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} />
       {sel && <Ring slot={sel} />}
     </>
   );
@@ -429,7 +346,8 @@ export default function HomeScene3D(props: HomeScene3DProps) {
   const walls = useRef(new Map<string, THREE.Group>());
   const hover = useRef<string | null>(null);
   const dragged = useRef(0);
-  const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged }), [props.controls]);
+  const walker = useRef<WalkerHandle>({position:{x:plan.spawn.entry[0],z:plan.spawn.entry[1]},moving:false});
+  const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged, walker }), [props.controls]);
   const day = daylight(props.hour);
   const { plan } = props;
   const slots = useMemo(() => visibleSlots(plan, props.visibleIds), [plan, props.visibleIds]);
@@ -450,7 +368,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
         onPointerMissed={() => {
           if (shared.dragged.current <= 6) props.onDeselect?.();
         }}
-        aria-label={`Interactive 3D view of your home: ${plan.name}. Drag to orbit, pinch or scroll to zoom, tap furniture to use it.`}
+        aria-label={`Overhead 3D view of ${plan.name}. Tap or drag on the floor to walk, pinch to zoom, tap furniture to interact.`}
       >
         <World p={props} shared={shared} />
       </Canvas>
@@ -467,7 +385,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
             data-home3d-tag={s.id}
             aria-label={`${s.label}. Tap to use`}
             aria-pressed={props.selectedId === s.id}
-            onClick={() => props.onSelect(s.id)}
+            onClick={() => window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}))}
             className={`pointer-events-auto absolute left-0 top-0 min-h-9 min-w-9 rounded-full border-2 border-foreground px-2.5 text-[11px] font-extrabold tracking-wide shadow-md ${props.selectedId === s.id ? "bg-primary text-primary-foreground" : "bg-card/95 text-foreground"}`}
             style={{ transform: "translate(-9999px,-9999px)" }}
           >
