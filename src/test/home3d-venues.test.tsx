@@ -83,6 +83,15 @@ describe("the 3D venues", () => {
     expect(desk.z).toBeGreaterThan(wanted.z);
     expect(roomFor("police", START as never).hotspots.map(h => h.id).sort()).toEqual(["front-desk", "wanted"]);
   });
+  it("includes every indoor location without replacing the outdoor alley", () => {
+    const indoor = ["shop","diner","furniture","bank","school","work","yard","clinic","depot"];
+    for (const id of indoor) {
+      expect(isVenue(id), id).toBe(true);
+      expect(venuePlan(id), id).not.toBeNull();
+      expect(venuePlan(id)!.slots.map(s => s.id).sort(), id).toEqual(roomFor(id as never, START as never).hotspots.map(h => h.id).sort());
+    }
+    expect(venuePlan("alley")).toBeNull();
+  });
   it("the casino seats real people at its tables", () => {
     expect(VENUES.casino.npcs!.filter((n) => n.pose === "sit").length).toBeGreaterThanOrEqual(2);
   });
