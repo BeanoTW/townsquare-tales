@@ -53,7 +53,7 @@ function ObjectLocationScene({
     setGl(webglAvailable());
     try { setClassic(localStorage.getItem("tst.home3d") === "classic"); } catch { /* storage unavailable */ }
   }, []);
-  const use3d = room.id === "home" && state.house === 1 && gl && !classic;
+  const use3d = room.id === "home" && gl && !classic;
   const setRenderer = (c: boolean) => {
     setSelectedId(null);
     setClassic(c);
@@ -120,8 +120,8 @@ function ObjectLocationScene({
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
         {room.id === "home" && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label="Home rooms">{homeZones(state.house).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
-        {room.id === "home" && state.house === 1 && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
-        {room.id === "home" && state.house >= 3 && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
+        {room.id === "home" && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
+        {room.id === "home" && state.house >= 3 && !use3d && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
           <div className="mt-2 flex gap-2">
             <button type="button" className="min-h-11 flex-1 rounded-lg border-2 border-foreground bg-card px-2 font-bold" onClick={() => onLaunch?.("blackjack")}>♠ Blackjack</button>
@@ -160,6 +160,7 @@ function ObjectLocationScene({
             onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
             onDeselect={() => setSelectedId(null)}
             onFail={() => setClassic(true)}
+            onLaunch={onLaunch}
           />
         )}
         {!use3d && (

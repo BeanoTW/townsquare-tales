@@ -1,8 +1,11 @@
 import type { HomeZone } from "@/lib/home-zones";
+import type { HomePlan } from "@/lib/home3d/layout";
 
 export type OpeningLike = { w: number; h: number; cx: number; T: number };
 
 export type Scene3DProps = {
+  /** The floor plan to draw: one per property tier. */
+  plan: HomePlan;
   /** Hotspot ids that are visible (ownership and tier rules already applied). */
   visibleIds: readonly string[];
   /** Furniture quality per id: true when the luxury version is owned. */
@@ -12,7 +15,6 @@ export type Scene3DProps = {
   selectedId: string | null;
   zone: HomeZone;
   hour: number;
-  /** Used to decide whether the camera should refit after the user changes room. */
   onSelect: (id: string) => void;
   /** Tap on empty space. */
   onDeselect?: () => void;
