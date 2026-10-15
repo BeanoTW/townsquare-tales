@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import * as THREE from "three";
 import { buildings, playerCameraOffset, type B } from "@/lib/town-world";
 import { daylight } from "@/lib/home3d/layout";
@@ -161,6 +162,7 @@ export default function TownWorld3D({ tick, ...scene }: TownWorld3DProps) {
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       >
         <Ticker tick={tick} />
+        <RenderDiagnosticsProbe scene="Town 3D" />
         <Scene {...scene} />
       </Canvas>
     </div>

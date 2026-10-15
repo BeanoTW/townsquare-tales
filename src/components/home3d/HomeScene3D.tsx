@@ -1,4 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { PlanZone } from "@/lib/home-zones";
@@ -406,6 +407,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
         }}
         aria-label={`Overhead 3D view of ${plan.name}. Tap or drag on the floor to walk, pinch to zoom, tap furniture to interact.`}
       >
+        <RenderDiagnosticsProbe scene={plan.name} />
         <World p={props} shared={shared} />
       </Canvas>
       {/* Tags are real buttons, so every object is reachable by keyboard and screen reader too. */}
