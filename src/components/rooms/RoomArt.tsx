@@ -3,6 +3,7 @@ import type { GameState } from "@/lib/game-state";
 import { VIEW, type Box, type Hotspot, type PlaceId, type Room } from "@/lib/rooms";
 import "./room.css";
 import { HomeShell, HomeFurnishings } from "./HomeInterior";
+import type { HomeZone } from "@/lib/home-zones";
 
 const INK = "#25242a";
 const PAPER = "#fff4d6";
@@ -461,9 +462,9 @@ function PerspectiveRoom({ room, house }: { room: Room; house: number }) {
 
 /* ---------- Per-room decor. Every object is placed inside its hotspot box. ---------- */
 
-function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: Room): ReactNode {
+function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: Room, homeZone?: HomeZone): ReactNode {
   switch (id) {
-    case "home": return <HomeFurnishings state={state} box={B} />;
+    case "home": return <HomeFurnishings state={state} box={B} zone={homeZone} />;
     case "gym": {
       const rack = B("rack");
       const track = B("track");
@@ -1039,9 +1040,11 @@ export function RoomArt({
   visible,
   selectedId,
   onSelect,
+  homeZone,
 }: {
   room: Room;
   state: GameState;
+  homeZone?: HomeZone;
   visible: Hotspot[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -1058,7 +1061,7 @@ export function RoomArt({
     >
       <Backdrop room={room} pattern={pattern} />
       <PerspectiveRoom room={room} house={state.house} />
-      <g pointerEvents="none">{decorFor(room.id, state, B, room)}</g>
+      <g pointerEvents="none">{decorFor(room.id, state, B, room, homeZone)}</g>
       {visible.map((h) => (
         <Hotspot key={h.id} h={h} selected={selectedId === h.id} onSelect={onSelect} />
       ))}
