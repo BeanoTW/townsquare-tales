@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { VenueVisualPolish } from "./venue-visual-polish";
 const mat=(color:string,metalness=0)=>new THREE.MeshStandardMaterial({color,metalness,roughness:metalness?.45:.78});
 const m={wood:mat("#7f5d41"),metal:mat("#838d90",.5),ink:mat("#30343b"),paper:mat("#e9e4d5"),glass:new THREE.MeshStandardMaterial({color:"#accbd4",transparent:true,opacity:.37,roughness:.14,depthWrite:false}),green:mat("#456e56"),red:mat("#a74e4c"),gold:mat("#bf974b",.5),cream:mat("#d6c7a8")};
 function B({p,s,material=m.wood}:{p:[number,number,number];s:[number,number,number];material?:THREE.Material}) {
@@ -68,6 +69,7 @@ function Bench({x,z}:{x:number;z:number}) {
 }
 export function RemainingVenueDecor({venue}:{venue:string}){
  return <group>
+   <VenueVisualPolish venue={venue}/>
    {/* Architecture and characteristic stock is positioned along the perimeter,
        preserving a generous route between interactive fixture slots. */}
    {venue==="shop"&&<><group position={[.65,0,.8]}><Shelf/></group><group position={[9.3,0,.9]}><Shelf/></group><B p={[9.24,1.1,6.6]} s={[.68,2.1,.74]} material={m.glass}/></>}
