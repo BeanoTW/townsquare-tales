@@ -8,6 +8,7 @@ import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
 import { hotspotActions, type PlaceId, type Room } from "@/lib/rooms";
 import type { Feedback } from "@/components/LocationScene";
 import { VenueScenery } from "@/components/rooms/VenueScenery";
+import { FurnitureShowroom } from "@/components/rooms/FurnitureShowroom";
 import "./arcade-interior.css";
 
 type SceneProps = {
@@ -300,6 +301,8 @@ export function ArcadeInterior({ room, state, feedback, onRun, onLeave }: SceneP
               ? <DinerCounter state={state} onRun={onRun} />
               : room.id === "bank"
                 ? <BankCounter state={state} onRun={onRun} />
+                : room.id === "furniture"
+                  ? <FurnitureShowroom state={state} onRun={onRun} />
                 : <ServiceDesk room={room} state={state} feedback={feedback} onRun={onRun} />}
         </section>
       </div>
