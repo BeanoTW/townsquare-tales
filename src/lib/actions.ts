@@ -99,12 +99,15 @@ export const HOME_WORKOUT: ActionDef = {
   energy: 18,
   resolve: (s) => ({ patch: { str: s.str + 2 }, message: "Home gym session. +2 strength." }),
 };
+/** Each qualification adds one intelligence point to every study session. */
+export const studyGain = (base: number, school: number) => base + Math.max(0, Math.min(4, Math.trunc(school)));
+
 export const STUDY_DESK: ActionDef = {
   id: "study-desk",
   label: "Study at desk",
   hours: 2,
   energy: 12,
-  resolve: (s) => ({ patch: { int: s.int + 2 }, message: "Quiet study session. +2 intelligence." }),
+  resolve: (s) => ({ patch: { int: s.int + studyGain(2, s.school) }, message: `Quiet study session. +${studyGain(2, s.school)} intelligence.` }),
 };
 export const COOK_AT_HOME: ActionDef = {
   id: "cook",
@@ -276,8 +279,8 @@ export const STUDY_LIBRARY: ActionDef = {
   label: "Study in the library",
   hours: 2,
   energy: 15,
-  note: "+1 intelligence",
-  resolve: (s) => ({ patch: { int: s.int + 1 }, message: "+1 intelligence." }),
+  note: "Base +1 intelligence · education boosts each session",
+  resolve: (s) => ({ patch: { int: s.int + studyGain(1, s.school) }, message: `+${studyGain(1, s.school)} intelligence.` }),
 };
 
 export function enrollAction(s: GameState): ActionDef | null {
@@ -290,14 +293,14 @@ export function enrollAction(s: GameState): ActionDef | null {
     hours: 4,
     energy: 30,
     cost,
-    note: "+10 intelligence",
+    note: "Permanently +1 intelligence per study session",
     resolve: (st) => {
       const nextLevel = SCHOOLS[st.school + 1];
       if (!nextLevel) return "No further qualifications.";
       return st.money >= cost
         ? {
-            patch: { money: st.money - cost, school: st.school + 1, int: st.int + 10 },
-            message: `Graduated: ${nextLevel}! +10 int`,
+            patch: { money: st.money - cost, school: st.school + 1 },
+            message: `Graduated: ${nextLevel}! Future study sessions now earn +${st.school + 1} bonus intelligence.`,
           }
         : "Tuition too high.";
     },
