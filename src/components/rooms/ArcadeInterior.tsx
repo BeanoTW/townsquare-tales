@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { bankTransferAction, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
+import { bankTransferAction, bankLoanAction, repayLoanAction, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
 import {DINER_MEALS} from "@/lib/diner-menu";
 import { currentRole, nextRole } from "@/lib/careers";
 import { SCHOOLS } from "@/lib/game-data";
@@ -174,6 +174,7 @@ function StatStrip({ room, state }: { room: Room; state: GameState }) {
 
 function BankCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef) => void }) {
   const [amountText, setAmountText] = useState("50");
+  const [bankView, setBankView] = useState<"transfer" | "loans">("transfer");
   const amount = Number(amountText);
   const valid = Number.isSafeInteger(amount) && amount > 0;
 
@@ -183,6 +184,22 @@ function BankCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef)
         <span>Cash on hand <strong>${state.money}</strong></span>
         <span>Bank balance <strong>${state.bank}</strong></span>
       </div>
+      <div className="arcade-bank-actions" role="tablist" aria-label="Bank services">
+        <button role="tab" aria-selected={bankView === "transfer"} type="button" onClick={() => setBankView("transfer")}>💵 Deposit & withdraw</button>
+        <button role="tab" aria-selected={bankView === "loans"} type="button" onClick={() => setBankView("loans")}>🏦 Loans {state.loanDebt ? `· ${state.loanDebt} owed` : ""}</button>
+      </div>
+      {bankView === "loans" ? (
+        <section role="tabpanel" aria-label="Loans" className="space-y-3">
+          <h3 className="arcade-mini-title">LOAN DESK</h3>
+          <p className="arcade-subline">40% fixed finance charge · due 30 days after borrowing · 2% daily penalty after the due date.</p>
+          <div className="arcade-stats"><span>Outstanding <strong>${state.loanDebt ?? 0}</strong></span><span>Due <strong>{state.loanDueDay ? `Day ${state.loanDueDay}` : "No loan"}</strong></span></div>
+          <div className="arcade-choice-list">
+          {(state.loanDebt ?? 0) > 0
+            ? [repayLoanAction(100), repayLoanAction(500), repayLoanAction("all")].map(a => <ActionChoice key={a.id} action={a} onRun={onRun} />)
+            : [250, 1000, 2500, 5000].map(n => <div key={n} className="space-y-1"><ActionChoice action={bankLoanAction(n)} onRun={onRun} /><p className="arcade-subline">Borrow ${n} · repay ${Math.ceil(n * 1.4)} · {n > 250 ? "Employment required" : "No job required"}</p></div>)}
+          </div>
+        </section>
+      ) : <>
       <p className="arcade-mini-title">HOW MUCH WOULD YOU LIKE TO MOVE?</p>
       <label className="arcade-amount-label" htmlFor="arcade-bank-amount">Amount ($)</label>
       <input
@@ -205,6 +222,7 @@ function BankCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef)
         <button type="button" disabled={!valid || amount > state.bank} onClick={() => onRun(bankTransferAction("withdraw", amount))}>⬆ Withdraw ${valid ? amount : 0}</button>
       </div>
       <p className="arcade-subline">Savings earn 0.1% overnight. Transfers are instant and free.</p>
+      </>}
     </div>
   );
 }

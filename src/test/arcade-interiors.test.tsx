@@ -184,3 +184,21 @@ describe("service encounters", () => {
     expect(onLeave).toHaveBeenCalledOnce();
   });
 });
+
+describe("bank teller loans", () => {
+  it("exposes loan borrowing on the active arcade bank interface", () => {
+    const onRun = vi.fn();
+    render(<ArcadeInterior room={roomFor("bank", START)} state={START} feedback={null} onRun={onRun} onLeave={vi.fn()} />);
+    fireEvent.click(screen.getByRole("tab", { name: /Loans/ }));
+    expect(screen.getByRole("tabpanel", { name: "Loans" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Borrow 250/ }));
+    expect(onRun.mock.calls.at(-1)?.[0].id).toBe("bank-loan-250");
+  });
+  it("offers debt repayment when a loan is active", () => {
+    const onRun = vi.fn();
+    render(<ArcadeInterior room={roomFor("bank", START)} state={{ ...START, loanDebt: 350, loanDueDay: 31 }} feedback={null} onRun={onRun} onLeave={vi.fn()} />);
+    fireEvent.click(screen.getByRole("tab", { name: /Loans/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Repay loan in full/ }));
+    expect(onRun.mock.calls.at(-1)?.[0].id).toBe("bank-repay-all");
+  });
+});
