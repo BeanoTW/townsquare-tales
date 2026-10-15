@@ -7,6 +7,8 @@ import type { HomePlan } from "@/lib/home3d/layout";
 import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
 
+import { karmaHeadColor } from "@/lib/player-appearance";
+
 const HomeScene3D = lazy(() => import("./HomeScene3D"));
 
 /** Hotspot ids and layout slot ids differ for the television only. */
@@ -87,6 +89,7 @@ export function Home3DStage({
             selectedId={selectedId ? toSlotId(selectedId) : null}
             zone={zone}
             hour={state.hour}
+            playerHead={karmaHeadColor(state.karma)}
             onDeselect={onDeselect}
             onSelect={(slotId) => {
               const game = isHome ? GAME_SLOTS[slotId] : undefined;

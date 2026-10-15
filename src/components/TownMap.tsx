@@ -52,14 +52,8 @@ function useTown3d() {
 }
 const Site = memo(ConstructionSite);
 
-/** Shift the paper-coloured head continuously toward red or blue with karma. */
-export function karmaHeadColor(karma: number): string {
-  const intensity = Math.min(1, Math.abs(karma) / 30);
-  const base = [255, 244, 214];
-  const target = karma < 0 ? [216, 59, 76] : [73, 161, 255];
-  const mix = base.map((c, i) => Math.round(c + ((target[i] ?? c) - c) * intensity));
-  return `rgb(${mix.join(", ")})`;
-}
+import { karmaHeadColor } from "@/lib/player-appearance";
+export { karmaHeadColor } from "@/lib/player-appearance";
 
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 

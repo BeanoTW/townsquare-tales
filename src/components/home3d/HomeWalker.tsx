@@ -1,29 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
+import { Person, type PersonState } from "@/components/Character3D";
+import { townColor } from "@/components/town3d/palette";
 import type { HomePlan } from "@/lib/home3d/layout";
 import { buildNav, walkable } from "@/lib/home3d/nav";
 import { routeHome, type WalkPoint } from "@/lib/home3d/route";
 
 export type WalkerHandle = { position: WalkPoint; moving: boolean };
 const SPEED = 2.5;
-function StickPerson({ angle, phase, moving }: { angle: number; phase: number; moving: boolean }) {
-  const stride = moving ? Math.sin(phase) * 0.16 : 0;
-  return <group rotation={[0, angle, 0]}>
-    <mesh position={[0,0.013,0]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[0.26,24]} /><meshBasicMaterial color="#17202b" transparent opacity={0.22} depthWrite={false}/></mesh>
-    {/* Keep the town's minimal floating head-and-arms silhouette, not a realistic human model. */}
-    <mesh position={[0,0.86,0]} castShadow><sphereGeometry args={[0.24,20,16]}/><meshStandardMaterial color="#edc0a0" roughness={0.9}/></mesh>
-    <mesh position={[0,0.995,-0.055]}><sphereGeometry args={[0.233,16,12,0,Math.PI*2,0,Math.PI*0.41]}/><meshStandardMaterial color="#24202a"/></mesh>
-    {[-1,1].map(s=><group key={s}>
-      <mesh position={[s*0.235,0.48,0]} rotation={[0,0,s*0.35]} castShadow><capsuleGeometry args={[0.045,0.28,4,8]}/><meshStandardMaterial color="#272b36"/></mesh>
-      <mesh position={[s*0.285,0.26,0.055]}><sphereGeometry args={[0.055,8,8]}/><meshStandardMaterial color="#edc0a0"/></mesh>
-      <mesh position={[s*0.11,0.065,s*stride]}><sphereGeometry args={[0.075,8,8]}/><meshStandardMaterial color="#272b36"/></mesh>
-    </group>)}
-    <mesh position={[-0.075,0.88,0.22]}><sphereGeometry args={[0.022,8,8]}/><meshBasicMaterial color="#171923"/></mesh>
-    <mesh position={[0.075,0.88,0.22]}><sphereGeometry args={[0.022,8,8]}/><meshBasicMaterial color="#171923"/></mesh>
-  </group>;
-}
-export function HomeWalker({ plan, visibleIds, handle, onArrive }: {
+export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
+  head: string;
   plan: HomePlan; visibleIds: readonly string[]; handle: MutableRefObject<WalkerHandle>;
   onArrive: (id: string) => void;
 }) {
@@ -36,9 +22,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive }: {
   const keys=useRef(new Set<string>());
   const dir=useRef(0);
   const phase=useRef(0);
-  const [pose,setPose]=useState({angle:0,phase:0,moving:false});
-  const lastPose=useRef(0);
-  const mesh=useRef<THREE.Group>(null);
+  const character = useRef<PersonState>({ x: start[0], z: start[1], angle: 180, walking: false, pose: "standing", visible: true, lift: 0.04, phase: 0 });
   const onArriveRef=useRef(onArrive);
   onArriveRef.current=onArrive;
   handle.current.position=pos.current;
@@ -100,17 +84,13 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive }: {
       if(slot && Math.hypot(slot.x-p.x,slot.z-p.z)<Math.max(slot.w,slot.d)/2+1.1){const id=target.current;target.current=null;onArriveRef.current(id);}
       else target.current=null;
     }
-    if((moved || pose.moving) && phase.current-lastPose.current>0.22){lastPose.current=phase.current;setPose({angle:dir.current,phase:phase.current,moving:moved});}
-    else if(!moved && pose.moving){setPose({angle:dir.current,phase:phase.current,moving:false});}
+    Object.assign(character.current, { x: p.x, z: p.z, angle: 180 - dir.current * 180 / Math.PI, phase: phase.current, walking: moved });
     handle.current.position={...p};
     handle.current.moving=moved;
-    if(mesh.current){mesh.current.position.set(p.x,0.04,p.z);mesh.current.rotation.set(0,0,0);}
     if(moved||waypoints.current.length)invalidate();
-  });
+  }, -1);
   return <>
-    <group ref={mesh} position={[start[0],0.04,start[1]]}>
-      <StickPerson angle={pose.angle} phase={pose.phase} moving={pose.moving}/>
-    </group>
+    <Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} />
     {/* An unobtrusive ground target: pointer events on furniture take precedence. */}
     <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
       onClick={e=>{if(e.delta>8)return;e.stopPropagation();moveTo(e.point.x,e.point.z);}}
