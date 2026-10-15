@@ -1,4 +1,4 @@
-import type { Nav } from "./nav";
+import { reachable, type Nav } from "./nav";
 const neighbors = [[1,0],[-1,0],[0,1],[0,-1]] as const;
 export type WalkPoint = { x: number; z: number };
 /** Grid A*: respects walls, doorways, owned furniture and decorative colliders. */
@@ -9,10 +9,11 @@ export function routeHome(nav: Nav, start: WalkPoint, goal: WalkPoint): WalkPoin
   const gx = Math.round(goal.x/cell), gz = Math.round(goal.z/cell);
   const valid = (x:number,z:number) => x>=0 && z>=0 && x<nav.nx && z<nav.nz && !nav.blocked[idx(x,z)];
   if (!valid(sx,sz)) return [];
+  const visited = reachable(nav,[start.x,start.z]);
   let tx=gx,tz=gz;
-  if (!valid(tx,tz)) {
+  if (!valid(tx,tz) || !visited[idx(tx,tz)]) {
     let best=Infinity;
-    for(let x=0;x<nav.nx;x++)for(let z=0;z<nz;z++)if(valid(x,z)){
+    for(let x=0;x<nav.nx;x++)for(let z=0;z<nz;z++)if(valid(x,z)&&visited[idx(x,z)]){
       const d=Math.hypot((x-gx)*cell,(z-gz)*cell);
       if(d<best){best=d;tx=x;tz=z;}
     }
