@@ -1,4 +1,3 @@
-# Map polish
 # Home visual upgrades
 - [ ] Draw distinct cardboard, studio, suburban and mansion interiors.
 - [ ] Add luxury versions of all eight furnishings with compatible purchases and saves.
