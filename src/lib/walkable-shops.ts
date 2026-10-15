@@ -32,6 +32,7 @@ export const SHOP_LAYOUTS: Record<ShopId, ShopFixture[]> = {
     { id: "sofa-display", x: 2, y: 4, w: 4, d: 2, approach: { x: 7, y: 5 } },
     { id: "bed-display", x: 10, y: 3, w: 4, d: 4, approach: { x: 9, y: 5 } },
     { id: "catalogue", x: 11, y: 9, w: 4, d: 2, approach: { x: 10, y: 10 } },
+    { id: "premium", x: 2, y: 9, w: 4, d: 2, approach: { x: 7, y: 10 } },
   ],
 };
 export const SHOP_STAFF: Record<ShopId, Point> = {
