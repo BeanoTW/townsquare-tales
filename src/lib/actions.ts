@@ -132,8 +132,8 @@ export const RELAX_SOFA: ActionDef = {
   hours: 1,
   energy: 0,
   resolve: (s) => ({
-    patch: { cha: s.cha + 2 },
-    message: "You feel surprisingly sociable. +2 charm.",
+    patch: { energy: Math.min(100, s.energy + 15) },
+    message: "You unwind on the sofa. +15 energy (up to 100)."
   }),
 };
 
@@ -213,7 +213,8 @@ export function furnitureAction(id: FurnitureId, s: GameState): ActionDef {
 export const TV_CHANNELS = [
   { id: "science", name: "Brain Box · science", stat: "int", gain: 2, energy: 8, hours: 2, description: "+2 intelligence" },
   { id: "fitness", name: "Pump TV · fitness", stat: "str", gain: 1, energy: 12, hours: 2, description: "+1 strength" },
-  { id: "social", name: "Drama Hour · social", stat: "cha", gain: 2, energy: 8, hours: 2, description: "+2 charm" },
+  { id: "social", name: "Drama Hour · social", stat: "cha", gain: 1, energy: 8, hours: 2, description: "+1 charm" },
+  { id: "comedy", name: "Laugh Track · comedy", stat: "cha", gain: 1, energy: 8, hours: 2, description: "+1 charm" },
   { id: "career", name: "Business Tonight · career", stat: "xp", gain: 3, energy: 10, hours: 2, description: "+3 work XP" },
 ] as const;
 
