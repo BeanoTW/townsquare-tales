@@ -63,10 +63,10 @@ describe.each(Object.entries(VENUES))("venue plan %s", (id, plan) => {
   });
 });
 
-describe("the three venues", () => {
+describe("the 3D venues", () => {
   it("are genuinely different buildings", () => {
     const sig = Object.values(VENUES).map((p) => JSON.stringify([p.size, [...new Set(p.floors.map((f) => f.kind))].sort(), p.rooms.length]));
-    expect(new Set(sig).size).toBe(3);
+    expect(new Set(sig).size).toBe(Object.keys(VENUES).length);
   });
   it("the casino is windowless and has a separate high-stakes room, a bar has windows, the gym has a changing room", () => {
     expect(VENUES.casino.walls.flatMap((w) => w.openings).some((o) => o.kind === "window")).toBe(false);
