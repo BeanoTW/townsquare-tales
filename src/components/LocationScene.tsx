@@ -9,8 +9,14 @@ import { WalkableShop } from "@/components/rooms/WalkableShop";
 import { isWalkableShop } from "@/lib/walkable-shops";
 import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { isArcadeRoom } from "@/lib/arcade-rooms";
+import { Home3DStage, webglAvailable } from "@/components/home3d/Home3DStage";
 import { homeZones, furnitureZone, type HomeZone } from "@/lib/home-zones";
 import { VIEW, visibleHotspots, type Box, type Room, type Hotspot } from "@/lib/rooms";
+
+const panel3d = (cw: number, ch: number): CSSProperties =>
+  cw <= 600
+    ? { left: 8, bottom: 8, width: cw - 16, maxHeight: Math.max(80, ch - 16) }
+    : { right: 8, bottom: 8, width: Math.min(290, cw - 16), maxHeight: Math.max(140, ch - 16) };
 
 export type Feedback = { message: string; success: boolean; changes: string[]; timeLine?: string };
 
@@ -39,6 +45,20 @@ function ObjectLocationScene({
   const [showLoans, setShowLoans] = useState(false);
   const [homeZone, setHomeZone] = useState<HomeZone>(room.id === "home" ? homeZones(state.house)[0]!.id : "shelter");
   const [size, setSize] = useState<Size>({ w: 0, h: 0 });
+  // Studio Flat renders as a real 3D scene when WebGL works; the classic SVG renderer remains the fallback.
+  // Both are resolved after mount so server and client markup match.
+  const [classic, setClassic] = useState(false);
+  const [gl, setGl] = useState(false);
+  useEffect(() => {
+    setGl(webglAvailable());
+    try { setClassic(localStorage.getItem("tst.home3d") === "classic"); } catch { /* storage unavailable */ }
+  }, []);
+  const use3d = room.id === "home" && state.house === 1 && gl && !classic;
+  const setRenderer = (c: boolean) => {
+    setSelectedId(null);
+    setClassic(c);
+    try { localStorage.setItem("tst.home3d", c ? "classic" : "3d"); } catch { /* storage unavailable */ }
+  };
   const stageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,7 +95,7 @@ function ObjectLocationScene({
     return () => window.clearInterval(id);
   }, [chatter]);
 
-  const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || furnitureZone(h.id, state.house) === homeZone);
+  const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone);
   const selected = visible.find((h) => h.id === selectedId) ?? null;
   const fit = fitRect(size.w, size.h);
   const floorPx = fit.y + VIEW.floorY * (fit.h / VIEW.h);
@@ -100,6 +120,7 @@ function ObjectLocationScene({
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
         {room.id === "home" && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label="Home rooms">{homeZones(state.house).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
+        {room.id === "home" && state.house === 1 && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
         {room.id === "home" && state.house >= 3 && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
           <div className="mt-2 flex gap-2">
@@ -125,11 +146,23 @@ function ObjectLocationScene({
           if (!(e.target as Element).closest("[data-hotspot],[data-panel]")) setSelectedId(null);
         }}
       >
-        {fit.y >= 40 && (
+        {!use3d && fit.y >= 40 && (
           <div className="room-sign" style={{ top: Math.max(10, fit.y / 2 - 15) }}>
             {room.sign}
           </div>
         )}
+        {use3d && (
+          <Home3DStage
+            state={state}
+            visible={visible}
+            selectedId={selectedId}
+            zone={homeZone}
+            onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+            onDeselect={() => setSelectedId(null)}
+            onFail={() => setClassic(true)}
+          />
+        )}
+        {!use3d && (
         <div
           className="room-art-frame absolute"
           style={{ left: fit.x, top: fit.y, width: fit.w, height: fit.h }}
@@ -151,12 +184,13 @@ function ObjectLocationScene({
             }}
           />
         </div>
+        )}
         {selected && (
           <ActionPanel
             hotspot={selected}
             state={state}
             godMode={godMode}
-            style={panelStyle(selected.box, fit, size.w, size.h)}
+            style={use3d ? panel3d(size.w, size.h) : panelStyle(selected.box, fit, size.w, size.h)}
             onRun={onRun}
             onClose={() => setSelectedId(null)}
           />
