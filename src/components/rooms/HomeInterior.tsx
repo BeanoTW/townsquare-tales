@@ -1,4 +1,5 @@
 import type { GameState } from '@/lib/game-state';
+import { HomePerspectiveScene } from './HomePerspectiveScene';
 import { ownsFurniture, type FurnitureId } from '@/lib/furniture';
 import type { Box } from '@/lib/rooms';
 import { furnitureZone, type HomeZone } from '@/lib/home-zones';
@@ -131,6 +132,7 @@ export function HomeShell({ house, zone }: { house: number; zone?: HomeZone }) {
       <path d="M338 267h38m-33 0v10m28 -10v10" stroke={C('gold')} strokeWidth={3}/>
       <ellipse cx={357} cy={261} rx={23} ry={8} fill={C('glass')} stroke={ink} strokeWidth={2}/>
     </g>}
+    {zone && <HomePerspectiveScene house={tier} zone={zone}/>}
   </g>;
 }
 
