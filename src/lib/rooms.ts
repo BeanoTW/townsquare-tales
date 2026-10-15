@@ -24,6 +24,7 @@ import {
   MUG,
   PAY_FINE,
   PROMOTE,
+  QUIT_JOB,
   RELAX_SOFA,
   SELL_ALARM,
   SELL_GOODS,
@@ -106,7 +107,7 @@ const casinoRecord = (game: CasinoGame, s: GameState): string[] => {
   return [`Lifetime: won ${money(r.won)}, lost ${money(r.lost)}, net ${signed(r.net)}.`];
 };
 
-const employed = (s: GameState, career: number) => s.career === career;
+const employed = (s: GameState, career: number) => s.employed !== 0 && s.career === career;
 
 function careerStatus(career: number, s: GameState): string[] {
   if (employed(s, career)) {
@@ -296,7 +297,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Join the trades",
         box: { x: 200, y: 40, w: 96, h: 96 },
         lines: () => [`Apprentice · $${CAREERS[3]?.roles[0]?.pay ?? 10}/hour · 1h application`],
-        actions: () => [applyAction(3)],
+        actions: s => s.employed === 0 ? [applyAction(3)] : employed(s, 3) ? [QUIT_JOB] : [],
       },
       {
         id: "foreman",
@@ -332,7 +333,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Join corporate work",
         box: { x: 160, y: 30, w: 110, h: 100 },
         lines: () => [`Office Intern · $${CAREERS[0]?.roles[0]?.pay ?? 9}/hour · 1h application`],
-        actions: () => [applyAction(0)],
+        actions: s => s.employed === 0 ? [applyAction(0)] : employed(s, 0) ? [QUIT_JOB] : [],
       },
       {
         id: "manager",
@@ -527,7 +528,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Retail vacancies",
         box: { x: 268, y: 28, w: 140, h: 70 },
         lines: () => [`Shop Assistant · $${CAREERS[2]?.roles[0]?.pay ?? 8}/hour · 1h application`],
-        actions: () => [applyAction(2)],
+        actions: s => s.employed === 0 ? [applyAction(2)] : employed(s, 2) ? [QUIT_JOB] : [],
       },
       {
         id: "checkout",
@@ -563,7 +564,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Restaurant vacancies",
         box: { x: 160, y: 24, w: 110, h: 84 },
         lines: () => [`Kitchen Porter · $${CAREERS[1]?.roles[0]?.pay ?? 8}/hour · 1h application`],
-        actions: () => [applyAction(1)],
+        actions: s => s.employed === 0 ? [applyAction(1)] : employed(s, 1) ? [QUIT_JOB] : [],
       },
       {
         id: "booth",
