@@ -1,3 +1,4 @@
+import { HUSTLES, hustleAction } from "@/lib/side-hustles";
 import { CAREERS, currentRole, missingRequirements, nextRole } from "@/lib/careers";
 import {
   ALLEY_DICE,
@@ -700,11 +701,12 @@ export const ROOMS: Record<PlaceId, Room> = {
       },
       {
         id: "ticket-hatch",
-        label: "Ticket hatch",
-        tag: "INFO",
-        hint: "Tickets and travel",
+        label: "Community jobs board",
+        tag: "JOBS",
+        hint: "Local noticeboard · side hustles",
         box: { x: 270, y: 110, w: 130, h: 80 },
-        lines: () => ["No tickets are on sale yet."],
+        lines: (s) => [`Daily side jobs completed: ${s.sideHustleDay===s.day ? s.sideHustlesToday??0 : 0}/3`, "Earn cash between shifts. Hustles take time and energy; skills affect payouts."],
+        actions: () => HUSTLES.map(h => hustleAction(h.id)),
       },
     ],
   },
