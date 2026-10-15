@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { HomePlan } from "@/lib/home3d/layout";
@@ -36,6 +36,8 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive }: {
   const keys=useRef(new Set<string>());
   const dir=useRef(0);
   const phase=useRef(0);
+  const [pose,setPose]=useState({angle:0,phase:0,moving:false});
+  const lastPose=useRef(0);
   const mesh=useRef<THREE.Group>(null);
   const onArriveRef=useRef(onArrive);
   onArriveRef.current=onArrive;
@@ -98,6 +100,8 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive }: {
       if(slot && Math.hypot(slot.x-p.x,slot.z-p.z)<Math.max(slot.w,slot.d)/2+1.1){const id=target.current;target.current=null;onArriveRef.current(id);}
       else target.current=null;
     }
+    if((moved || pose.moving) && phase.current-lastPose.current>0.22){lastPose.current=phase.current;setPose({angle:dir.current,phase:phase.current,moving:moved});}
+    else if(!moved && pose.moving){setPose({angle:dir.current,phase:phase.current,moving:false});}
     handle.current.position={...p};
     handle.current.moving=moved;
     if(mesh.current){mesh.current.position.set(p.x,0.04,p.z);mesh.current.rotation.set(0,0,0);}
@@ -105,7 +109,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive }: {
   });
   return <>
     <group ref={mesh} position={[start[0],0.04,start[1]]}>
-      <StickPerson angle={dir.current} phase={phase.current} moving={handle.current.moving}/>
+      <StickPerson angle={pose.angle} phase={pose.phase} moving={pose.moving}/>
     </group>
     {/* An unobtrusive ground target: pointer events on furniture take precedence. */}
     <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
