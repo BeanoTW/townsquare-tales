@@ -24,7 +24,7 @@ const rnd = (seed: number) => {
 };
 
 /* ------------------------------------------------------------------ small shared pieces */
-function Chandelier({ p, r = 0.7, tiers = 2 }: { p: [number, number, number]; r?: number; tiers?: number }) {
+export function Chandelier({ p, r = 0.7, tiers = 2 }: { p: [number, number, number]; r?: number; tiers?: number }) {
   return (
     <Group p={p}>
       <Cyl rad={0.012} h={0.7} p={[0, 0.45, 0]} c={GOLD} o={BRASS} shadow={false} />
@@ -53,7 +53,7 @@ function Chandelier({ p, r = 0.7, tiers = 2 }: { p: [number, number, number]; r?
   );
 }
 
-function Armchair({ p, rot, c, legs = "#4a3022" }: { p: [number, number]; rot: number; c: string; legs?: string }) {
+export function Armchair({ p, rot, c, legs = "#4a3022" }: { p: [number, number]; rot: number; c: string; legs?: string }) {
   return (
     <Group p={[p[0], 0, p[1]]} r={[0, rot, 0]}>
       {[[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].map(([x, z]) => (
@@ -69,7 +69,7 @@ function Armchair({ p, rot, c, legs = "#4a3022" }: { p: [number, number]; rot: n
   );
 }
 
-function Stool({ p, c = "#a02a2a", h = 0.46 }: { p: [number, number, number]; c?: string; h?: number }) {
+export function Stool({ p, c = "#a02a2a", h = 0.46 }: { p: [number, number, number]; c?: string; h?: number }) {
   return (
     <Group p={p}>
       <Cyl rad={0.018} h={h} p={[0, h / 2, 0]} c="#c9c9cf" o={{ rough: 0.2, metal: 0.9 }} />
@@ -196,10 +196,12 @@ export function SlotBank() {
   );
 }
 
-/** A friend: simplified head-and-arms figure with a body, in the game's flat-colour style. */
+/** A person: simplified head-and-arms figure with a body, in the game's flat-colour style. */
 export function Figure({ npc }: { npc: Npc }) {
   const sit = npc.pose === "sit";
-  const base = sit ? 0.5 : 0;
+  const dance = npc.pose === "dance";
+  const jog = npc.pose === "jog";
+  const base = sit ? (npc.seat ?? 0.5) : 0;
   const outline = "#222530";
   return (
     <Group p={[npc.x, 0, npc.z]} r={[0, npc.rot, 0]}>
@@ -209,14 +211,16 @@ export function Figure({ npc }: { npc: Npc }) {
           {[-0.1, 0.1].map((x) => (
             <Group key={x}>
               <Cyl rad={0.065} h={0.34} p={[x, base - 0.0, 0.17]} r={[Math.PI / 2, 0, 0]} c="#3a4252" />
-              <Cyl rad={0.055} h={0.42} p={[x, 0.22, 0.34]} c="#3a4252" />
+              <Cyl rad={0.055} h={base - 0.06} p={[x, (base - 0.06) / 2, 0.34]} c="#3a4252" />
             </Group>
           ))}
         </>
+      ) : jog ? (
+        [-1, 1].map((s) => <Cyl key={s} rad={0.06} h={0.86} p={[0, 0.43, s * 0.22]} r={[s * 0.5, 0, 0]} c="#3a4252" />)
       ) : (
-        [-0.09, 0.09].map((x) => <Cyl key={x} rad={0.06} h={0.86} p={[x, 0.43, 0]} c="#3a4252" />)
+        [-0.09, 0.09].map((x) => <Cyl key={x} rad={0.06} h={0.86} p={[x, 0.43, 0]} r={dance ? [0, 0, x * 2.2] : [0, 0, 0]} c="#3a4252" />)
       )}
-      <Round s={[0.4, 0.5, 0.24]} p={[0, base + 0.5, 0]} c={npc.shirt} rad={0.08} />
+      <Round s={[0.4, 0.5, 0.24]} p={[0, base + 0.5, 0]} c={npc.shirt} rad={0.08} r={jog ? [0.18, 0, 0] : dance ? [0, 0, 0.12] : [0, 0, 0]} />
       {/* head: skin circle with a dark outline ring and a hair cap */}
       <Ball rad={0.17} p={[0, base + 0.98, 0]} c={outline} sc={[0.185, 0.185, 0.185]} o={{ rough: 1 }} shadow={false} />
       <Ball rad={0.16} p={[0, base + 0.98, 0.012]} c={npc.skin} />
@@ -224,9 +228,13 @@ export function Figure({ npc }: { npc: Npc }) {
       {[-0.06, 0.06].map((x) => (
         <Ball key={x} rad={0.018} p={[x, base + 0.99, 0.16]} c="#1d1d22" shadow={false} />
       ))}
-      {/* arms: reaching forward to hold cards (seated) or pull a lever (standing) */}
+      {/* arms: reaching forward to hold cards (seated), pumping (jogging), up in the air (dancing) or pulling a lever */}
       {[-1, 1].map((s) => (
-        <Group key={s} p={[s * 0.22, base + 0.68, 0.0]} r={sit ? [-1.05, 0, s * 0.18] : [s > 0 ? -1.3 : -0.2, 0, s * 0.25]}>
+        <Group
+          key={s}
+          p={[s * 0.22, base + 0.68, 0.0]}
+          r={sit ? [-1.05, 0, s * 0.18] : dance ? [0, 0, s * 2.6] : jog ? [s * 0.9 - 0.4, 0, s * 0.12] : [s > 0 ? -1.3 : -0.2, 0, s * 0.25]}
+        >
           <Cyl rad={0.03} h={0.42} p={[0, -0.21, 0]} c={outline} />
           <Ball rad={0.04} p={[0, -0.43, 0]} c={npc.skin} shadow={false} />
         </Group>

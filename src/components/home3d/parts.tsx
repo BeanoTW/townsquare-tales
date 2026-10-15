@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { HomePlan, WallSpec } from "@/lib/home3d/layout";
 import type { OpeningLike } from "./types";
 import { Box, Cyl, Group, mat } from "./primitives";
-import { cardboardTexture, corrugatedTexture, floorTexture } from "./textures";
+import { brickTexture, cardboardTexture, corrugatedTexture, floorTexture } from "./textures";
 
 /** Shared architecture: walls, floors and the base slab. Every property tier is drawn from these. */
 const T_CAP = "#2c2d33";
@@ -44,6 +44,7 @@ function SolidBody({ spec }: { spec: WallSpec }) {
   const T = spec.thickness;
   const H = spec.height;
   const panel = spec.style === "panel";
+  const textured = spec.style === "brick" || spec.style === "block";
   const trim = spec.trim ?? FRAME;
   const ops = [...spec.openings].sort((a, b) => a.u0 - b.u0);
   const slabs: { u0: number; u1: number }[] = [];
@@ -57,7 +58,11 @@ function SolidBody({ spec }: { spec: WallSpec }) {
   const baseH = panel ? 0.2 : 0.1;
   const piece = (key: string, u0: number, u1: number, v0: number, v1: number, base = false) => (
     <Group key={key}>
-      <Box s={[u1 - u0, v1 - v0, T]} p={[(u0 + u1) / 2, (v0 + v1) / 2, 0]} c={colour} o={{ rough: panel ? 0.7 : 0.92 }} />
+      {textured ? (
+        <Box s={[u1 - u0, v1 - v0, T]} p={[(u0 + u1) / 2, (v0 + v1) / 2, 0]} m={mat("#ffffff", { rough: 0.9, map: brickTexture(spec.style === "block" ? "block" : "brick", colour, u1 - u0, v1 - v0) })} />
+      ) : (
+        <Box s={[u1 - u0, v1 - v0, T]} p={[(u0 + u1) / 2, (v0 + v1) / 2, 0]} c={colour} o={{ rough: panel ? 0.7 : 0.92 }} />
+      )}
       {v1 >= H - 1e-6 && <Box s={[u1 - u0, 0.025, T + 0.002]} p={[(u0 + u1) / 2, H + 0.0125, 0]} c={T_CAP} shadow={false} />}
       {base && <Box s={[u1 - u0, baseH, T + 0.035]} p={[(u0 + u1) / 2, baseH / 2, 0]} c={trim} shadow={false} />}
       {panel && base && v1 - v0 > 1.1 && <PanelDado u0={u0} u1={u1} T={T} colour={colour} trim={trim} />}

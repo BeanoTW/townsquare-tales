@@ -2,7 +2,8 @@ import { Component, lazy, Suspense, useMemo, useRef, type ReactNode } from "reac
 import type { GameState } from "@/lib/game-state";
 import { ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import type { Hotspot } from "@/lib/rooms";
-import type { HomeZone } from "@/lib/home-zones";
+import type { PlanZone } from "@/lib/home-zones";
+import type { HomePlan } from "@/lib/home3d/layout";
 import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
 
@@ -46,12 +47,14 @@ export function luxuryMap(state: GameState): Record<string, boolean> {
 const BTN = "min-h-11 min-w-11 rounded-lg border-2 border-foreground bg-card/90 px-2 text-lg font-bold shadow";
 
 export function Home3DStage({
-  state, visible, selectedId, zone, onSelect, onDeselect, onFail, onLaunch,
+  state, visible, selectedId, zone, onSelect, onDeselect, onFail, onLaunch, plan: planProp,
 }: {
   state: GameState;
   visible: Hotspot[];
   selectedId: string | null;
-  zone: HomeZone;
+  zone: PlanZone;
+  /** A venue's plan (casino, bar, gym). Omitted for homes, which follow the player's property tier. */
+  plan?: HomePlan | undefined;
   onSelect: (hotspotId: string) => void;
   onDeselect: () => void;
   /** Called if WebGL breaks at runtime so the parent can switch to the classic renderer. */
@@ -60,19 +63,20 @@ export function Home3DStage({
   onLaunch?: ((game: "blackjack" | "slots") => void) | undefined;
 }) {
   const controls = useRef<CameraControls | null>(null);
-  const plan = planFor(state.house) ?? planFor(1)!;
+  const plan = planProp ?? planFor(state.house) ?? planFor(1)!;
+  const isHome = !planProp;
   const visibleIds = useMemo(() => {
     const ids = visible.map((h) => toSlotId(h.id));
-    if (state.house >= 3) ids.push(...Object.keys(GAME_SLOTS));
+    if (isHome && state.house >= 3) ids.push(...Object.keys(GAME_SLOTS));
     return ids;
-  }, [visible, state.house]);
+  }, [visible, state.house, isHome]);
   const luxury = useMemo(() => luxuryMap(state), [state]);
   const hasBed = ownsFurniture(state.furniture, "bed");
   const c = () => controls.current;
   return (
-    <div className="absolute inset-0" data-home3d data-hotspot="home3d">
+    <div className="absolute inset-0" data-home3d data-hotspot="home3d" data-plan={plan.kind}>
       <Boundary fallback={<FailNotice onFail={onFail} />}>
-        <Suspense fallback={<div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Building your home…</div>}>
+        <Suspense fallback={<div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Building the scene…</div>}>
           <HomeScene3D
             key={plan.kind}
             plan={plan}
@@ -85,7 +89,7 @@ export function Home3DStage({
             hour={state.hour}
             onDeselect={onDeselect}
             onSelect={(slotId) => {
-              const game = GAME_SLOTS[slotId];
+              const game = isHome ? GAME_SLOTS[slotId] : undefined;
               if (game && onLaunch) onLaunch(game);
               else if (!game) onSelect(toHotspotId(slotId));
             }}

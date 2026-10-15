@@ -50,7 +50,7 @@ export function buildNav(plan: HomePlan, visibleIds: readonly string[], radius =
   const solids = wallSolids(plan);
   const rects: Rect[] = [
     ...plan.colliders.filter((c) => !c.when || visibleIds.includes(c.when)),
-    ...visibleSlots(plan, visibleIds).map((s) => ({ x0: s.x - s.w / 2, z0: s.z - s.d / 2, x1: s.x + s.w / 2, z1: s.z + s.d / 2 })),
+    ...visibleSlots(plan, visibleIds).filter((s) => !s.flat).map((s) => ({ x0: s.x - s.w / 2, z0: s.z - s.d / 2, x1: s.x + s.w / 2, z1: s.z + s.d / 2 })),
     ...(plan.npcs ?? []).map((n) => ({ x0: n.x - 0.3, z0: n.z - 0.3, x1: n.x + 0.3, z1: n.z + 0.3 })),
   ];
   for (let i = 0; i < nx; i++)

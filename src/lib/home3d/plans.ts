@@ -10,7 +10,7 @@
  * Slots only say where a piece of furniture WOULD stand. Whether it appears is decided by the existing
  * hotspot rules (ownership and tier), never by the plan.
  */
-import type { HomeZone } from "@/lib/home-zones";
+import type { PlanZone } from "@/lib/home-zones";
 import { STUDIO, type HomePlan, type Opening, type Slot, type WallSpec } from "./layout";
 
 type Dim = [w: number, d: number];
@@ -26,20 +26,20 @@ const LABEL: Record<string, [string, string, number]> = {
 };
 
 /** Build a slot; the footprint swaps width and depth when the piece is turned a quarter. */
-function slot(id: Slot["id"], x: number, z: number, rot: number, zone: HomeZone, dim?: Dim, labelY?: number, label?: string): Slot {
+function slot(id: Slot["id"], x: number, z: number, rot: number, zone: PlanZone, dim?: Dim, labelY?: number, label?: string): Slot {
   const [w, d] = dim ?? MODEL[id]!;
   const turned = Math.sin(rot) ** 2 > 0.5;
   const [name, tag, ly] = LABEL[id]!;
   return { id, x, z, rot, w: turned ? d : w, d: turned ? w : d, zone, label: label ?? name, tag, labelY: labelY ?? ly };
 }
 
-const wall = (
+export const wall = (
   id: string, a: [number, number], b: [number, number], height: number, thickness: number, normal: [number, number],
   outer: boolean, colour: string, openings: Opening[] = [], extra: Partial<WallSpec> = {},
 ): WallSpec => ({ id, a, b, height, thickness, normal, outer, colour, openings, ...extra });
-const win = (u0: number, u1: number, v0 = 0.95, v1 = 2.05): Opening => ({ kind: "window", u0, u1, v0, v1 });
-const door = (u0: number, u1: number, v1 = 2.1): Opening => ({ kind: "door", u0, u1, v0: 0, v1 });
-const arch = (u0: number, u1: number, v1 = 2.1): Opening => ({ kind: "doorway", u0, u1, v0: 0, v1 });
+export const win = (u0: number, u1: number, v0 = 0.95, v1 = 2.05): Opening => ({ kind: "window", u0, u1, v0, v1 });
+export const door = (u0: number, u1: number, v1 = 2.1): Opening => ({ kind: "door", u0, u1, v0: 0, v1 });
+export const arch = (u0: number, u1: number, v1 = 2.1): Opening => ({ kind: "doorway", u0, u1, v0: 0, v1 });
 
 /* ------------------------------------------------------------------ squat */
 const SW = 4.6;
