@@ -3,7 +3,7 @@ import { nearbyRail } from "@/lib/town-rails";
 import { TOWN_RAILS } from "@/lib/town-rails";
 import { elevation, deckRotation, stepJump, type SkateJump } from "@/lib/skate-tricks";
 import { OverheadPerson } from "@/components/OverheadPerson";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StreetLife, type ResidentPositions } from "@/components/StreetLife";
 import { townAtmosphere, STREET_OBJECTS, type StreetObjectId } from "@/lib/street-life";
 import { START } from "@/lib/game-data";
@@ -20,10 +20,36 @@ import { GANG_SPOT } from "@/lib/street-gang";
 
 import { PARK_KID_SPOT } from "@/lib/park-kid";
 
-// Upright oblique projection: ground plan matches the minimap; height offsets
-// the roof up and slightly right to reveal front and side walls.
-const TW = 48, TH = 36, N = 30;
+import { TW, TH, N } from "@/lib/town-world";
 const Exterior = memo(BuildingExterior);
+// Three.js is only loaded when a WebGL-capable browser actually shows the 3D town.
+const TownWorld3D = lazy(() => import("@/components/town3d/TownWorld3D"));
+const TOWN_RENDERER_KEY = "tst.home3d";
+
+function townWebgl(): boolean {
+  try {
+    if (typeof document === "undefined") return false;
+    const c = document.createElement("canvas");
+    return Boolean(c.getContext("webgl2") ?? c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+/** Shares the home renderer preference: "classic" keeps the SVG town everywhere. */
+function useTown3d() {
+  const [gl, setGl] = useState(false);
+  const [classic, setClassicState] = useState(false);
+  useEffect(() => {
+    setGl(townWebgl());
+    try { setClassicState(localStorage.getItem(TOWN_RENDERER_KEY) === "classic"); } catch { /* storage unavailable */ }
+  }, []);
+  const setClassic = (c: boolean) => {
+    setClassicState(c);
+    try { localStorage.setItem(TOWN_RENDERER_KEY, c ? "classic" : "3d"); } catch { /* storage unavailable */ }
+  };
+  return { gl, classic, use3d: gl && !classic, setClassic };
+}
 const Site = memo(ConstructionSite);
 
 /** Shift the paper-coloured head continuously toward red or blue with karma. */
@@ -37,57 +63,11 @@ export function karmaHeadColor(karma: number): string {
 
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
-// Streets have deliberate ends and T-junctions rather than an endless grid.
-export const ROADS = [
-  { x: 8.6, y: 0, w: 2.8, d: 30 },       // north-south Main Street, only T-junctions
-  { x: 0, y: 7.1, w: 9.1, d: 2.8 },    // upper west street, joins Main Street
-  { x: 11.1, y: 11.9, w: 12.2, d: 2.8 }, // east market street, offset 4.8 tiles
-  { x: 0, y: 18.5, w: 9.1, d: 2.8 },     // lower west street, staggered again
-  { x: 11.1, y: 25.5, w: 12.2, d: 2.8 },  // lower east street, offset 7 tiles
-  { x: 22.6, y: 11.9, w: 2.8, d: 17.7 }, // east side street with T-junctions
-] as const;
-
-type B = BuildingLot;
-
-const HOUSE_LOOK = [
-  { h: 18, wall: "var(--town-box-wall)", side: "var(--town-box-side)", roof: "var(--town-box-roof)", label: "Box" },
-  { h: 70, wall: "var(--town-flat-wall)", side: "var(--town-flat-side)", roof: "var(--town-flat-roof)", label: "Flat" },
-  { h: 60, wall: "var(--town-house-wall)", side: "var(--town-house-side)", roof: "var(--town-house-roof)", label: "House" },
-  { h: 95, wall: "var(--town-mansion-wall)", side: "var(--town-mansion-side)", roof: "var(--town-mansion-roof)", label: "Mansion" },
-];
-
-export const buildings = (house: number): B[] => {
-  const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0] ?? { h: 18, wall: "var(--town-cardboard)", side: "var(--town-cardboard-side)", roof: "var(--town-cardboard-roof)", label: "Box" };
-  return [
-    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1.1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "var(--town-home-sign)", win: house > 0 },
-    { facing: "north", id: "yard", label: "Construction Office", x: 19.5, y: 22.8, w: 2.1, d: 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
-    { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
-    { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
-    { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "var(--town-bar-wall)", side: "var(--town-bar-side)", roof: "var(--town-bar-roof)", sign: "var(--town-bar-sign)", win: true },
-    { facing: "west", id: "work", label: "MegaCorp", x: 12, y: 20.1, w: 3.7, d: 4, h: 190, wall: "var(--town-work-wall)", side: "var(--town-work-side)", roof: "var(--town-work-roof)", sign: "var(--town-work-sign)", win: true },
-    { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "var(--town-bank-wall)", side: "var(--town-bank-side)", roof: "var(--town-bank-roof)", sign: "var(--town-bank-sign)", win: true },
-    { facing: "south", id: "shop", label: "Corner Shop", x: 15.25, y: 8.05, w: 2.6, d: 3.0, h: 48, wall: "var(--town-shop-wall)", side: "var(--town-shop-side)", roof: "var(--town-shop-roof)", sign: "var(--town-shop-sign)", win: true },
-    { facing: "south", id: "diner", label: "Fryday Diner", x: 5.1, y: 13.2, w: 2.8, d: 3.8, h: 55, wall: "var(--town-diner-wall)", side: "var(--town-diner-side)", roof: "var(--town-diner-roof)", sign: "var(--town-diner-sign)", win: true },
-    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 26, y: 13.3, w: 3, d: 3.2, h: 56, wall: "var(--town-pawn-wall)", side: "var(--town-pawn-side)", roof: "var(--town-pawn-roof)", sign: "var(--town-pawn-sign)", win: true },
-    { facing: "south", id: "furniture", label: "Cosy Corner", x: 18.3, y: 7.25, w: 3.6, d: 3.7, h: 78, wall: "var(--town-furniture-wall)", side: "var(--town-furniture-side)", roof: "var(--town-furniture-roof)", sign: "var(--town-furniture-sign)", win: true },
-    { facing: "north", id: "casino", label: "Lucky Sevens", x: 5.2, y: 22, w: 2.8, d: 4, h: 115, wall: "var(--town-casino-wall)", side: "var(--town-casino-side)", roof: "var(--town-casino-roof)", sign: "var(--town-casino-sign)", win: true },
-    { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 25.6, w: 3, d: 3.1, h: 50, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: true },
-    { facing: "west", id: "police", label: "Town Police", x: 26, y: 19.3, w: 3, d: 3.9, h: 90, wall: "var(--town-police-wall)", side: "var(--town-police-side)", roof: "var(--town-police-roof)", sign: "var(--town-police-sign)", win: true },
-    { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 13, w: 3, d: 4, h: 75, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
-  ];
-};
-
-export const door = (b: B) => {
-  switch (b.facing) {
-    case "north": return { x: b.x + b.w / 2, y: b.y - 0.6 };
-    case "south": return { x: b.x + b.w / 2, y: b.y + b.d + 0.6 };
-    case "east": return { x: b.x + b.w + 0.6, y: b.y + b.d / 2 };
-    case "west": return { x: b.x - 0.6, y: b.y + b.d / 2 };
-  }
-};
-const TREES = [[.6,1],[4.6,1],[8,3],[11.9,.6],[17,4],[21,4],[28.8,6],[1,11],[7.5,11],[12.2,10],[28.8,18],[1,28],[8,28],[13.7,27.7],[29,29]] as const;
-const LAMPS = [[2,6.65],[7,6.65],[8.4,10.35],[12,11.35],[20.8,11.35],[2,18.05],[7,18.05],[8.4,22],[12,25.05],[20,25.05],[25.5,16],[25.5,23]] as const;
-
+export { ROADS, buildings, door, HOUSE_LOOK } from "@/lib/town-world";
+import { ROADS, buildings, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
+import { buildingHull3d } from "@/components/town3d/specs";
+import { DINER_CHIMNEY, screenOf, townSky } from "@/components/town3d/screen";
+import type { StreetLive, TownLive } from "@/components/town3d/actors";
 
 const Tree = memo(function Tree({ x, y }: { x: number; y: number }) {
   const [sx, sy] = P(x, y);
@@ -135,8 +115,7 @@ export function playerCameraViewBox(x: number, y: number, skating = false, _skat
 
 /** Camera as a pixel-snapped transform on a fixed viewBox: avoids full SVG re-rasterising each frame. */
 export function playerCameraTransform(x: number, y: number, skating = false): string {
-  const [cx, cy] = P(x, y);
-  const ox = Math.round((165 - cx) * 2) / 2, oy = Math.round((275 - cy - (skating ? -5 : -7)) * 2) / 2;
+  const [ox, oy] = playerCameraOffset(x, y, skating);
   return `translate(${ox} ${oy})`;
 }
 
@@ -148,15 +127,24 @@ function Stick({ x, y, phase, walking, jump = null, skating = false, pose = "sta
       <g transform={`rotate(${deckRotation(jump)})`}><rect data-skateboard="deck" x="-5" y="-21" width="10" height="36" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/><path d="M-3 -15h6M-3 9h6" stroke="#cbd0d2" strokeWidth="1.2"/></g>
       <g transform="translate(0 0)"><OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={false} angle={45}/></g>
     </g> : <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking || feedback === "bin"} angle={(skateAngle + 180) % 360}/>}
+    <FeedbackIcons feedback={feedback} />
+  </g>;
+}
+
+/** Little action cues next to the player (drinking, searching, reading). */
+function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
+  return <>
     {feedback === "vending" && <g data-drinking-feedback transform="translate(14 -10)"><path d="M-3 -4h7l-1 9h-5Z" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -4v-5l3-2" stroke="var(--town-ink)" fill="none"/></g>}
     {feedback === "bin" && <text data-search-feedback x="15" y="-25" fontSize="15" fill="var(--town-ink)">?</text>}
     {feedback === "newspaper" && <g data-reading-feedback transform="translate(0 7)"><rect x="-8" y="-4" width="16" height="11" fill="var(--town-paper)" stroke="var(--town-ink)"/><path d="M0 -3v9m-6-7h4m4 0h4m-12 4h4m4 0h4" stroke="var(--town-ink)" strokeWidth=".7"/></g>}
-  </g>;
+  </>;
 }
 
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const bs = useMemo(() => buildings(house), [house]);
+  const town3d = useTown3d();
+  const use3d = town3d.use3d;
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
   const seatedUntil = useRef(0);
@@ -189,6 +177,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     else skateJump.current = {trick,elapsed:0};
   };
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
+  // The 3D town reads the same live state the SVG uses; it never owns game logic.
+  const streetLive = useRef<StreetLive | null>(null);
+  const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = useCallback((destination: Point, enter?: string) => {
     if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
@@ -422,6 +413,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   );
   const constructionActive = townAtmosphere(hour).constructionActive;
   const ground = useMemo(() => <>
+        {!use3d && <>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
@@ -462,8 +454,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"var(--town-lane-paint)","line-"+i+"-"+j):
               tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
         })}
+        </>}
         {/* Visible grind targets, positioned using existing map projection. */}
-        {TOWN_RAILS.map(rail => {
+        {!use3d && TOWN_RAILS.map(rail => {
           const [ax, ay] = P(rail.a.x, rail.a.y);
           const [bx, by] = P(rail.b.x, rail.b.y);
           return <g key={"grind-"+rail.id} data-town-rail={rail.id} pointerEvents="none">
@@ -471,6 +464,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             <path d={`M${ax} ${ay-2} L${bx} ${by-2}`} stroke="#bbc2c7" strokeWidth={2} strokeLinecap="round"/>
           </g>;
         })}
+        {!use3d && <>
         {/* Crossings only where the staggered side roads actually meet the spine. */}
         {[7.1,11.9,18.5,25.5].map((y,i)=>
           <g key={"crossing-"+i}>{Array.from({length:4},(_,j)=>
@@ -486,25 +480,34 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           const depth = south || north ? 0.65 : 0.66;
           return tile(x, y, w, depth, "var(--town-door-path)", "walk-" + b.id);
         })}
-        <Site active={constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
+        </>}
+        <Site ghost={use3d} active={constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
         {/* Street gang occupy the untouched north-east green, away from the shops. */}
-        {tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
+        {!use3d && tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
+        {!use3d && <>
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
-  </>, [bs, constructionActive, routeTo]);
+        </>}
+  </>, [bs, constructionActive, routeTo, use3d]);
+  const head = karmaHeadColor(karma);
   const night = hour >= 19 || hour < 6;
   const dusk = hour >= 17 && hour < 19;
   const m = me.current;
+  const playerOffset = playerCameraOffset(m.x, m.y, skating);
 
   // depth-sorted drawables
   const items: { key: number; el: React.ReactNode }[] = [];
   bs.forEach((b) => items.push({ key: (b.y + b.d) * 100 + b.x, el: (
     <g key={b.id} data-world-interactive role="button" tabIndex={0} aria-label={`Enter ${b.label}`} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();routeTo(door(b),b.id);}}} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
-      <Exterior b={b} night={townAtmosphere(hour).lit} />
+      {use3d ? <polygon points={buildingHull3d(b, house).map((p) => p.join(",")).join(" ")} fill="transparent" data-building-hit={b.id} /> : <Exterior b={b} night={townAtmosphere(hour).lit} />}
     </g>) }));
-  TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
-  LAMPS.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
+  // In 3D mode trees and lamps are part of the Three.js world.
+  if (!use3d) {
+    TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
+    LAMPS.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
+  }
   const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
+  if (!use3d) {
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
@@ -517,6 +520,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       <path d="M-17 1l9 -6m5 3l8 7m6 -10l5 5" stroke="#493e39" strokeWidth="2.5" strokeLinecap="round"/>
     </g>
   </g> });
+  }
   // Ordinary people hanging around the north-east green; only tapping them starts an encounter.
   const [gx, gy] = P(GANG_SPOT.x, GANG_SPOT.y);
   items.push({
@@ -527,6 +531,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT, "gang"); }}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT, "gang"); } }}>
         <g transform={`translate(${gx} ${gy})`}>
+          {!use3d && <>
           <ellipse cx="0" cy="8" rx="45" ry="7" fill="#27372f" opacity=".14"/>
           <g data-gang-backlot pointerEvents="none" stroke="var(--town-ink)">
             <rect x="-62" y="-9" width="16" height="23" rx="3" fill="var(--town-bin)"/>
@@ -539,6 +544,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           <g data-gang-sitting transform="translate(-20 0)"><OverheadPerson head="#ae856c" outline="#292735" phase={t} pose="sitting" /></g>
           <g data-gang-standing transform="translate(8 -10)"><OverheadPerson head="#aa7f6b" outline="#292735" phase={t+2} moving/></g>
           <g data-gang-leaning transform="translate(30 0)"><OverheadPerson head="#bd977b" outline="#332c35" phase={t+4} pose="lying"/></g>
+          </>}
           {Math.sin(t*1.3)>.48 && <g transform="translate(4 -42)"><rect x="-21" y="-17" width="42" height="20" rx="8" fill="#eee1c4" stroke="#302b35" strokeWidth="2"/><text y="-3" textAnchor="middle" fontSize="11" fill="#302b35">Oi...</text></g>}
           <rect x="-45" y="-55" width="94" height="73" fill="transparent"/>
         </g>
@@ -553,9 +559,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         onClick={ev=>{ev.stopPropagation();routeTo(PARK_KID_SPOT, "kid");}}
         onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();routeTo(PARK_KID_SPOT, "kid");}}}>
         <g transform={`translate(${kx} ${ky})`}>
+          {!use3d && <>
           <path d="M-24 -8h48M-24 -2h48" stroke="#806249" strokeWidth="5" strokeLinecap="round"/>
           <path d="M-20 -2v12M20 -2v12" stroke="#4d403a" strokeWidth="3"/>
           <g data-kid-sitting><OverheadPerson head="#dbb38b" outline="#292633" pose="sitting"/></g>
+          </>}
           <rect x="-28" y="-36" width="56" height="52" fill="transparent"/>
         </g>
       </g> });
@@ -567,7 +575,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const [sx,sy]=P(px,e.y);
     items.push({key:e.y*100+px,el:<g key="encounter" data-encounter className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" role="button" tabIndex={0} aria-label={e.hint} onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();selectEncounter();}}} onClick={ev=>{ev.stopPropagation();selectEncounter();}}>
       <g transform={`translate(${sx} ${sy})`}>
-        <OverheadPerson head="#f3d7b8" outline="#3c3043" phase={t} moving={e.pose==="pacing"} pose={e.pose==="sitting"?"sitting":"standing"}/>
+        {!use3d && <OverheadPerson head="#f3d7b8" outline="#3c3043" phase={t} moving={e.pose==="pacing"} pose={e.pose==="sitting"?"sitting":"standing"}/>}
         <g transform={`translate(0 ${-36+Math.sin(t*3)*2})`}>
           <rect x="-19" y="-24" width="38" height="29" rx="12" fill="#fff2d4" stroke="#24202b" strokeWidth="3"/>
           <text textAnchor="middle" y="-4" fontSize="18" fontWeight="bold" fill="#25202b">{e.icon}</text>
@@ -577,13 +585,16 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       </g>
     </g>});
   }
-  items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={karmaHeadColor(karma)} /> });
+  const feedbackNow = streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null;
+  if (use3d) items.push({ key: m.y * 100 + m.x, el: <g key="me" transform={`translate(${P(m.x, m.y).join(",")})`} pointerEvents="none" data-player-feedback><FeedbackIcons feedback={feedbackNow} /></g> });
+  else items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={head} /> });
   items.sort((a, b) => a.key - b.key);
 
 
   return (
-    <div data-town-paused={paused} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")}>
-      <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="block h-full w-full touch-none select-none font-hand"
+    <div data-town-paused={paused} data-town-renderer={use3d ? "3d" : "classic"} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")} style={use3d ? { background: townSky(hour) } : undefined}>
+      {use3d && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} /></Suspense>}
+      <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {
@@ -594,12 +605,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         }}
         onClick={(e) => {
           if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
-        <g ref={worldRef} transform={playerCameraTransform(m.x, m.y, skating)}>
+        <g ref={worldRef} transform={`translate(${playerOffset[0]} ${playerOffset[1]})`}>
         {ground}
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
-        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} />
-        {(night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
+        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={feedbackNow} ghost={use3d} live={streetLive} steamAt={use3d ? screenOf(DINER_CHIMNEY.x, DINER_CHIMNEY.y, DINER_CHIMNEY.z) : undefined} />
+        {!use3d && (night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
         </g>
       </svg>
 
@@ -641,6 +652,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </svg>
       </div>
 
+      {town3d.gl && !paused && <button type="button" data-town-renderer-toggle onClick={() => town3d.setClassic(!town3d.classic)} className="absolute right-3 top-3 z-30 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold">{town3d.classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
       {skating && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("a");}} onPointerUp={()=>keys.current.delete("a")} onPointerCancel={()=>keys.current.delete("a")}>◀ Hold</button><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("d");}} onPointerUp={()=>keys.current.delete("d")} onPointerCancel={()=>keys.current.delete("d")}>Hold ▶</button></div></div>}
       {skating && !paused && (
         <div data-skate-trick-controls className="absolute bottom-36 right-3 z-20 flex flex-col gap-2 sm:bottom-20" aria-label="Skateboard tricks">
