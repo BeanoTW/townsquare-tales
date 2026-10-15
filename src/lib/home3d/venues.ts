@@ -11,6 +11,7 @@ import type { VenueId } from "@/lib/home-zones";
 import type { PlanZone } from "@/lib/home-zones";
 import type { HomePlan, Slot } from "./layout";
 import { arch, door, wall, win } from "./plans";
+import { REMAINING_VENUES, isRemainingVenue } from "./remaining-venues";
 
 type Dim = [w: number, d: number];
 /** A venue slot: explicit label and tag (these match the classic hotspots), footprint swapped for quarter turns. */
@@ -321,6 +322,6 @@ export const POLICE: HomePlan = {
   base:{side:"#38495c",top:"#91a0ae",margin:.45},
   npcs:[{id:"desk-sergeant",name:"Desk sergeant",x:3.05,z:3.25,rot:0,pose:"stand",shirt:"#273e58",skin:"#bd9173",hair:"#272832"}],
 };
-export const VENUES: Record<VenueId, HomePlan> = { casino: CASINO, bar: BAR, gym: GYM, pawn: PAWN, police: POLICE };
-const isKnownVenue = (id: string): id is VenueId => id === "casino" || id === "bar" || id === "gym" || id === "pawn" || id === "police";
+export const VENUES: Record<VenueId, HomePlan> = { casino: CASINO, bar: BAR, gym: GYM, pawn: PAWN, police: POLICE, ...REMAINING_VENUES };
+const isKnownVenue = (id: string): id is VenueId => id === "casino" || id === "bar" || id === "gym" || id === "pawn" || id === "police" || isRemainingVenue(id);
 export const venuePlan = (id: string): HomePlan | null => (isKnownVenue(id) ? VENUES[id] : null);

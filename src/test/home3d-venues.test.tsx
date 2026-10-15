@@ -65,7 +65,7 @@ describe.each(Object.entries(VENUES))("venue plan %s", (id, plan) => {
 
 describe("the 3D venues", () => {
   it("are genuinely different buildings", () => {
-    const sig = Object.values(VENUES).map((p) => JSON.stringify([p.size, [...new Set(p.floors.map((f) => f.kind))].sort(), p.rooms.length]));
+    const sig = Object.values(VENUES).map((p) => JSON.stringify([p.size, p.floors.map(f => [f.kind, f.colour]), p.walls.map(w => w.colour), p.rooms.length]));
     expect(new Set(sig).size).toBe(Object.keys(VENUES).length);
   });
   it("the casino is windowless and has a separate high-stakes room, a bar has windows, the gym has a changing room", () => {
@@ -83,11 +83,20 @@ describe("the 3D venues", () => {
     expect(desk.z).toBeGreaterThan(wanted.z);
     expect(roomFor("police", START as never).hotspots.map(h => h.id).sort()).toEqual(["front-desk", "wanted"]);
   });
+  it("includes every indoor location without replacing the outdoor alley", () => {
+    const indoor = ["shop","diner","furniture","bank","school","work","yard","clinic","depot"];
+    for (const id of indoor) {
+      expect(isVenue(id), id).toBe(true);
+      expect(venuePlan(id), id).not.toBeNull();
+      expect(venuePlan(id)!.slots.map(s => s.id).sort(), id).toEqual(roomFor(id as never, START as never).hotspots.map(h => h.id).sort());
+    }
+    expect(venuePlan("alley")).toBeNull();
+  });
   it("the casino seats real people at its tables", () => {
     expect(VENUES.casino.npcs!.filter((n) => n.pose === "sit").length).toBeGreaterThanOrEqual(2);
   });
   it("only venues in the list get a plan", () => {
-    expect(venuePlan("shop")).toBeNull();
+    expect(venuePlan("alley")).toBeNull();
     expect(isVenue("home")).toBe(false);
   });
 });
