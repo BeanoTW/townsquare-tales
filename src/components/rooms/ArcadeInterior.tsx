@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { bankTransferAction, bankLoanAction, repayLoanAction, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
+import { HOUSES } from "@/lib/game-data";
+import { bankTransferAction, bankLoanAction, repayLoanAction, buyHouseAction, PROMOTE, shiftAction, applyAction, type ActionDef } from "@/lib/actions";
 import {DINER_MEALS} from "@/lib/diner-menu";
 import { currentRole, nextRole } from "@/lib/careers";
 import { SCHOOLS } from "@/lib/game-data";
@@ -175,7 +176,7 @@ function StatStrip({ room, state }: { room: Room; state: GameState }) {
 
 function BankCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef) => void }) {
   const [amountText, setAmountText] = useState("50");
-  const [bankView, setBankView] = useState<"transfer" | "loans">("transfer");
+  const [bankView, setBankView] = useState<"transfer" | "loans" | "property">("transfer");
   const amount = Number(amountText);
   const valid = Number.isSafeInteger(amount) && amount > 0;
 
@@ -188,8 +189,23 @@ function BankCounter({ state, onRun }: { state: GameState; onRun: (a: ActionDef)
       <div className="arcade-bank-actions" role="tablist" aria-label="Bank services">
         <button role="tab" aria-selected={bankView === "transfer"} type="button" onClick={() => setBankView("transfer")}>💵 Deposit & withdraw</button>
         <button role="tab" aria-selected={bankView === "loans"} type="button" onClick={() => setBankView("loans")}>🏦 Loans {state.loanDebt ? `· ${state.loanDebt} owed` : ""}</button>
+        <button role="tab" aria-selected={bankView === "property"} type="button" onClick={() => setBankView("property")}>🏠 Property</button>
       </div>
-      {bankView === "loans" ? (
+      {bankView === "property" ? (
+        <section role="tabpanel" aria-label="Property purchases" className="space-y-3" data-bank-property>
+          <h3 className="arcade-mini-title">PROPERTY DESK</h3>
+          <p className="arcade-subline">Current home: {HOUSES[state.house]?.name ?? "Unknown"}. Move to a better home here at the bank.</p>
+          {HOUSES[state.house + 1] ? (
+            <div className="arcade-choice-list">
+              <p className="font-bold">Next property: {HOUSES[state.house + 1]!.name}</p>
+              <p className="arcade-subline">Purchase price: ${HOUSES[state.house + 1]!.cost.toLocaleString()} · Cash available: ${state.money.toLocaleString()}</p>
+              <ActionChoice action={buyHouseAction(state)} onRun={onRun} />
+              {state.money < HOUSES[state.house + 1]!.cost && <p className="arcade-subline">You need ${(HOUSES[state.house + 1]!.cost - state.money).toLocaleString()} more cash.</p>}
+            </div>
+          ) : <p className="arcade-subline">You already own the highest-tier home.</p>}
+          <p className="arcade-subline">Home purchases use cash on hand. Withdraw savings first if needed.</p>
+        </section>
+      ) : bankView === "loans" ? (
         <section role="tabpanel" aria-label="Loans" className="space-y-3">
           <h3 className="arcade-mini-title">LOAN DESK</h3>
           <p className="arcade-subline">40% fixed finance charge · due 30 days after borrowing · 2% daily penalty after the due date.</p>
