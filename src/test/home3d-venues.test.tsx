@@ -74,6 +74,15 @@ describe("the 3D venues", () => {
     expect(VENUES.bar.walls.flatMap((w) => w.openings).some((o) => o.kind === "window")).toBe(true);
     expect(VENUES.gym.rooms.some((r) => r.name === "Changing rooms")).toBe(true);
   });
+  it("keeps Town Police's original front desk and wanted-board layout", () => {
+    const police = VENUES.police;
+    expect(police.slots.map(s => s.id).sort()).toEqual(["front-desk", "wanted"]);
+    const desk = police.slots.find(s => s.id === "front-desk")!;
+    const wanted = police.slots.find(s => s.id === "wanted")!;
+    expect(desk.x).toBeLessThan(wanted.x);
+    expect(desk.z).toBeGreaterThan(wanted.z);
+    expect(roomFor("police", START as never).hotspots.map(h => h.id).sort()).toEqual(["front-desk", "wanted"]);
+  });
   it("the casino seats real people at its tables", () => {
     expect(VENUES.casino.npcs!.filter((n) => n.pose === "sit").length).toBeGreaterThanOrEqual(2);
   });
