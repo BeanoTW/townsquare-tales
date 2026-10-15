@@ -9,6 +9,7 @@ import { WalkableShop } from "@/components/rooms/WalkableShop";
 import { isWalkableShop } from "@/lib/walkable-shops";
 import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { isArcadeRoom } from "@/lib/arcade-rooms";
+import { homeZones, furnitureZone, type HomeZone } from "@/lib/home-zones";
 import { VIEW, visibleHotspots, type Box, type Room, type Hotspot } from "@/lib/rooms";
 
 export type Feedback = { message: string; success: boolean; changes: string[]; timeLine?: string };
@@ -36,6 +37,7 @@ function ObjectLocationScene({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showLoans, setShowLoans] = useState(false);
+  const [homeZone, setHomeZone] = useState<HomeZone>(room.id === "home" ? homeZones(state.house)[0]!.id : "shelter");
   const [size, setSize] = useState<Size>({ w: 0, h: 0 });
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +75,7 @@ function ObjectLocationScene({
     return () => window.clearInterval(id);
   }, [chatter]);
 
-  const visible = visibleHotspots(room, state);
+  const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || furnitureZone(h.id, state.house) === homeZone);
   const selected = visible.find((h) => h.id === selectedId) ?? null;
   const fit = fitRect(size.w, size.h);
   const floorPx = fit.y + VIEW.floorY * (fit.h / VIEW.h);
@@ -97,6 +99,7 @@ function ObjectLocationScene({
         </div>
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
+        {room.id === "home" && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label="Home rooms">{homeZones(state.house).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
         {room.id === "bank" && <button type="button" onClick={() => { setSelectedId(null); setShowLoans(v => !v); }} className="my-2 min-h-11 rounded-xl border-2 border-foreground bg-secondary px-4 text-base font-bold" aria-expanded={showLoans}>🏦 {showLoans ? "Close loan desk" : "Loans · Borrow & repay"} · Debt ${state.loanDebt ?? 0}</button>}
         {room.id === "bank" && showLoans && <section data-bank-loans className="max-h-[35vh] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-lg">
           <div className="flex items-center justify-between gap-2"><strong>Loan desk</strong><span className="text-sm">40% finance charge · 30-day term · 2% daily if overdue</span></div>
@@ -126,6 +129,7 @@ function ObjectLocationScene({
         >
           <RoomArt
             room={room}
+            homeZone={room.id === "home" ? homeZone : undefined}
             state={state}
             visible={visible}
             selectedId={selectedId}
