@@ -290,6 +290,37 @@ export const PAWN: HomePlan = {
   base:{side:"#493a2c",top:"#82705a",margin:.45},
   npcs:[{id:"pawn-broker",name:"The broker",x:5,z:0.95,rot:0,pose:"stand",shirt:"#474137",skin:"#ac8469",hair:"#292322"}],
 };
-export const VENUES: Record<VenueId, HomePlan> = { casino: CASINO, bar: BAR, gym: GYM, pawn: PAWN };
-const isKnownVenue = (id: string): id is VenueId => id === "casino" || id === "bar" || id === "gym" || id === "pawn";
+/** Original police interaction arrangement: service desk to the left/front,
+ * wanted/heat board on the right/back. No changes to action ids or game logic. */
+export const POLICE: HomePlan = {
+  tier: 14, kind: "police", name: "Town Police",
+  size: { w: 10, d: 8, h: 3.15 },
+  floors: [{ zone:"floor", rect:R(0,0,10,8), kind:"tile", colour:"#788593" }],
+  walls: [
+    wall("back",[0,0],[10,0],3.15,.2,[0,-1],true,"#8996a5",[],{style:"panel",trim:"#33475c"}),
+    wall("front",[0,8],[10,8],3.15,.2,[0,1],true,"#a7b1be",[door(4.35,5.75,2.35),win(.65,3,1.1,2.2),win(7,9.3,1.1,2.2)],{style:"panel",trim:"#33475c"}),
+    wall("left",[0,0],[0,8],3.15,.2,[-1,0],true,"#7d8b9c",[],{style:"panel",trim:"#33475c"}),
+    wall("right",[10,0],[10,8],3.15,.2,[1,0],true,"#7d8b9c",[],{style:"panel",trim:"#33475c"}),
+  ],
+  slots: [
+    vslot("front-desk",3.1,4.8,0,"floor",[4.2,1.1],"Front desk","FINE",1.6),
+    vslot("wanted",8,1.7,0,"floor",[1.7,.65],"Wanted board","HEAT",2),
+  ],
+  focus:{all:R(0,0,10,8),floor:R(0,0,10,8)},
+  rooms:[{zone:"floor",name:"Police reception",rect:R(0,0,10,8)}],
+  doors:[{a:[4.35,8],b:[5.75,8]}],
+  spawn:{entry:[5.05,7.4],zones:{floor:[5.05,6.6]}},
+  colliders:[R(.25,.3,2,2.4),R(3,.2,5,.9),R(6,.2,7.4,.9)],
+  lights:{
+    hemi:["#cfdae5","#354350"],hemiBase:.9,hemiDay:.45,
+    sunBase:.35,sunDay:1.45,sunTint:["#f0f5ff","#a7b9d5"],
+    points:[{p:[3.0,2.65,3.8],colour:"#eef4ff",day:6,night:10,distance:7,decay:1.5},
+      {p:[8,2.5,1.5],colour:"#d9e7ff",day:4,night:8,distance:5,decay:1.6}],
+  },
+  sky:{day:["#afbdca","#e1e9ee"],night:["#202e3d","#4a5b71"]},
+  base:{side:"#38495c",top:"#91a0ae",margin:.45},
+  npcs:[{id:"desk-sergeant",name:"Desk sergeant",x:3.05,z:3.25,rot:0,pose:"stand",shirt:"#273e58",skin:"#bd9173",hair:"#272832"}],
+};
+export const VENUES: Record<VenueId, HomePlan> = { casino: CASINO, bar: BAR, gym: GYM, pawn: PAWN, police: POLICE };
+const isKnownVenue = (id: string): id is VenueId => id === "casino" || id === "bar" || id === "gym" || id === "pawn" || id === "police";
 export const venuePlan = (id: string): HomePlan | null => (isKnownVenue(id) ? VENUES[id] : null);

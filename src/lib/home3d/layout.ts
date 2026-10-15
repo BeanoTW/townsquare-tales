@@ -36,7 +36,7 @@ export type WallSpec = {
 export type FloorKind = "laminate" | "carpet" | "tile" | "parquet" | "marble" | "rubber" | "concrete" | "boards" | "dirt" | "lawn" | "checker" | "pattern";
 export type FloorSpec = { zone: PlanZone; rect: Rect; kind: FloorKind; colour: string };
 
-export type PropId = "blackjack" | "slots" | "high-dice" | "bar-counter" | "dance-floor" | "dartboard" | "rack" | "track" | "pawn-counter" | "curiosities";
+export type PropId = "blackjack" | "slots" | "high-dice" | "bar-counter" | "dance-floor" | "dartboard" | "rack" | "track" | "pawn-counter" | "curiosities" | "front-desk" | "wanted";
 /** Fixed obstacle. When `when` names a furniture id it exists only while that piece is owned. */
 export type Collider = Rect & { when?: string };
 export type RoomDef = { zone: PlanZone; name: string; rect: Rect };
@@ -47,7 +47,7 @@ export type Npc = { id: string; name: string; x: number; z: number; rot: number;
 export type PlanLight = { p: [number, number, number]; colour: string; day: number; night: number; distance: number; decay: number };
 export type PlanLights = { hemi: [sky: string, ground: string]; hemiBase: number; hemiDay: number; sunBase: number; sunDay: number; sunTint: [day: string, dusk: string]; points: PlanLight[] };
 export type PlanBase = { side: string; top: string; margin: number; frontLawn?: number };
-export type PlanKind = "squat" | "studio" | "suburban" | "mansion" | "casino" | "bar" | "gym" | "pawn";
+export type PlanKind = "squat" | "studio" | "suburban" | "mansion" | "casino" | "bar" | "gym" | "pawn" | "police";
 
 export type Slot = {
   id: FurnitureId | "estate" | PropId;

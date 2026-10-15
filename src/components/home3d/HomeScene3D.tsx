@@ -13,6 +13,7 @@ import { BarCounter, BarDecor, DanceFloor, Dartboard } from "./bar";
 import { CasinoDecor, DiceTable } from "./casino";
 import { GymDecor, PowerRack, Treadmills } from "./gym";
 import { PawnCounter, PawnCuriosities, PawnDecor } from "./pawn";
+import { PoliceDesk, WantedBoard, PoliceDecor } from "./police";
 import type { CameraControls, Scene3DProps } from "./types";
 import { HomeWalker, type WalkerHandle } from "./HomeWalker";
 
@@ -113,6 +114,8 @@ function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan;
       return <DanceFloor />;
     case "dartboard":
       return <Dartboard />;
+    case "front-desk": return <PoliceDesk />;
+    case "wanted": return <WantedBoard />;
     case "pawn-counter": return <PawnCounter />;
     case "curiosities": return <PawnCuriosities />;
     case "rack":
@@ -140,6 +143,8 @@ function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) 
       return <GymDecor />;
     case "pawn":
       return <PawnDecor />;
+    case "police":
+      return <PoliceDecor />;
     default:
       return <StudioDecor />;
   }

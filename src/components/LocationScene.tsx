@@ -284,6 +284,7 @@ function ObjectLocationScene({
 function Walkable3DVenueScene(props: Parameters<typeof ObjectLocationScene>[0]) {
   const renderer = useRenderer3d();
   if (renderer.gl && !renderer.classic) return <ObjectLocationScene {...props} renderer={renderer} />;
+  if (props.room.id === "police") return <><ArcadeInterior {...props} />{renderer.gl && <button type="button" data-renderer-toggle onClick={() => renderer.setClassic(false)} className="absolute right-3 top-[100px] z-30 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold">Switch to 3D view</button>}</>;
   return (
     <>
       <WalkableShop {...props} />
@@ -295,7 +296,7 @@ function Walkable3DVenueScene(props: Parameters<typeof ObjectLocationScene>[0]) 
 }
 
 export function LocationScene(props: Parameters<typeof ObjectLocationScene>[0]) {
-  if (props.room.id === "bar" || props.room.id === "pawn") return <Walkable3DVenueScene key={props.room.id} {...props} />;
+  if (props.room.id === "bar" || props.room.id === "pawn" || props.room.id === "police") return <Walkable3DVenueScene key={props.room.id} {...props} />;
   if (isWalkableShop(props.room.id)) return <WalkableShop key={props.room.id} {...props} />;
   return isArcadeRoom(props.room.id) ? (
     <ArcadeInterior {...props} />
