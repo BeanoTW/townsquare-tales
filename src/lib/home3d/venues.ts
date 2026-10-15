@@ -256,5 +256,41 @@ export const GYM: HomePlan = {
   ],
 };
 
-export const VENUES: Record<VenueId, HomePlan> = { casino: CASINO, bar: BAR, gym: GYM };
-export const venuePlan = (id: string): HomePlan | null => (id === "casino" || id === "bar" || id === "gym" ? VENUES[id] : null);
+export const PAWN: HomePlan = {
+  tier: 13, kind: "pawn", name: "Oddities Pawn",
+  size: { w: 10, d: 8, h: 3.1 },
+  floors: [{ zone: "floor", rect: R(0,0,10,8), kind: "boards", colour: "#78634c" }],
+  walls: [
+    wall("back", [0,0], [10,0], 3.1, .2, [0,-1], true, "#75624c", [], { style:"panel", trim:"#362d28" }),
+    wall("front", [0,8], [10,8], 3.1, .2, [0,1], true, "#776b58", [door(4.2,5.7,2.3), win(1,3,1,2.2), win(7,9,1,2.2)], { style:"panel", trim:"#362d28" }),
+    wall("left", [0,0], [0,8], 3.1, .2, [-1,0], true, "#695642", [], { style:"panel", trim:"#362d28" }),
+    wall("right", [10,0], [10,8], 3.1, .2, [1,0], true, "#695642", [], { style:"panel", trim:"#362d28" }),
+  ],
+  slots: [
+    vslot("pawn-counter", 5, 2, 0, "floor", [4.1,1.0], "Pawn counter", "SELL", 1.7),
+    vslot("curiosities", 8.35, 3.9, 0, "floor", [1.5,2.4], "Curiosity cabinet", "LOOK", 1.8),
+  ],
+  focus: { all: R(0,0,10,8), floor: R(0,0,10,8) },
+  rooms: [{ zone:"floor", name:"Pawn shop", rect:R(0,0,10,8) }],
+  doors: [{ a:[4.2,8], b:[5.7,8] }],
+  spawn: { entry:[5,7.4], zones:{ floor:[5,6.5] } },
+  colliders: [
+    R(2.9,1.4,7.1,2.6), R(7.5,2.8,9.3,5.1),
+    R(.3,.3,2.3,4.8), R(2.8,.2,7.1,.8),
+    R(3.6,4.0,5.0,5.4), R(5.7,4.2,6.9,5.0),
+  ],
+  lights: {
+    hemi:["#b9a58a","#33271f"], hemiBase:.7, hemiDay:.5,
+    sunBase:.25, sunDay:1.6, sunTint:["#fff1d6","#e7b47e"],
+    points:[
+      {p:[5,2.7,2.9],colour:"#ffce88",day:7,night:12,distance:8,decay:1.5},
+      {p:[8.2,2.4,4],colour:"#e8d8a2",day:5,night:9,distance:5,decay:1.6},
+    ],
+  },
+  sky: {day:["#a28b6b","#dfcbb0"],night:["#29231e","#574531"]},
+  base:{side:"#493a2c",top:"#82705a",margin:.45},
+  npcs:[{id:"pawn-broker",name:"The broker",x:5,z:0.95,rot:0,pose:"stand",shirt:"#474137",skin:"#ac8469",hair:"#292322"}],
+};
+export const VENUES: Record<VenueId, HomePlan> = { casino: CASINO, bar: BAR, gym: GYM, pawn: PAWN };
+const isKnownVenue = (id: string): id is VenueId => id === "casino" || id === "bar" || id === "gym" || id === "pawn";
+export const venuePlan = (id: string): HomePlan | null => (isKnownVenue(id) ? VENUES[id] : null);
