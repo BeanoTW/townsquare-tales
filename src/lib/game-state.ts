@@ -7,6 +7,7 @@ export type GameState = {
   house: number; ownedHomes?: number; housingMode?: number; housingTier?: number; mortgageBalance?: number; housingLastPaidDay?: number; housingArrears?: number; school: number; job: number; heat: number;
   bank: number; caffeinePills?: number; snacks: number; trainers: number; alarm: number; furniture: number;
   luxuryFurniture?: number;
+  laptop?: number; marketShares?: number;
   mailbox?: number;
   mailReadMask?: number; familyReplyMask?: number; pendingReplyMask?: number; familyFirstReplyDay?: number;
   career: number; xp: number; careerXp0?: number; careerXp1?: number; careerXp2?: number; careerXp3?: number; careerBest0?: number; careerBest1?: number; careerBest2?: number; careerBest3?: number; studyXp?: number; employed?: number;
@@ -40,7 +41,8 @@ const ranges: Record<keyof GameState, [number, number]> = {
   basketBest: [0, 5], skateBest: [0, 4], dartsBest: [0, 540], dartsRewardDay: [0, 100000],
   weapon: [0, 2], tillRobberyDay: [0, 100000],
   streetSearchDay: [0, 100000],
-  luxuryFurniture: [0, 255], mailbox: [0, 1], mailReadMask: [0, 2047], familyReplyMask: [0, 2047], pendingReplyMask: [0, 2047], familyFirstReplyDay: [0, 100000],
+  laptop: [0, 1], marketShares: [0, 100000000],
+  luxuryFurniture: [0, 255], mailbox: [0, 1], mailReadMask: [0, 4095], familyReplyMask: [0, 2047], pendingReplyMask: [0, 2047], familyFirstReplyDay: [0, 100000],
   residentFavour:[0,4],residentFavourStage:[0,1],residentFavourDeadline:[0,2400030],residentFavourLastDay:[0,100000],
   streetNewsDay: [0, 100000],
   streetEncounterDay: [0, 100000],
