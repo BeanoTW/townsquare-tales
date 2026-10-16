@@ -5,6 +5,8 @@ import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
 import { ActionPanel } from "@/components/rooms/ActionPanel";
 import { InteriorCommercePanel } from "@/components/rooms/InteriorCommercePanel";
+import { MailInbox } from "@/components/rooms/MailInbox";
+import { unreadCount } from "@/lib/town-mail";
 export { actionBlockReason } from "@/components/rooms/ActionPanel";
 import { WalkableShop } from "@/components/rooms/WalkableShop";
 import { isWalkableShop } from "@/lib/walkable-shops";
@@ -57,6 +59,7 @@ function ObjectLocationScene({
   feedback,
   onRun,
   onLeave,
+  onMailChange,
   godMode = false,
   onLaunch,
   paused = false,
@@ -72,12 +75,14 @@ function ObjectLocationScene({
   godMode?: boolean;
   onRun: (a: ActionDef) => void;
   onLeave: () => void;
+  onMailChange?: (next: GameState) => void;
   /** Open a full-screen minigame from a hotspot (e.g. the casino tables). */
   onLaunch?: ((game: NonNullable<Hotspot["launch"]>) => void) | undefined;
   /** A minigame is open on top: stop reacting to Escape. */
   paused?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mailOpen,setMailOpen] = useState(false);
   const [showLoans, setShowLoans] = useState(false);
   const venue = isVenue(room.id) ? room.id : null;
   const [homeZone, setHomeZone] = useState<PlanZone>(room.id === "home" ? homeZones(state.house)[0]!.id : venue ? venueZones(venue)[0]!.id : "shelter");
@@ -194,6 +199,13 @@ function ObjectLocationScene({
         </div>
         <div className="flex items-center justify-between gap-2">
           <h2 className="min-w-0 text-xl font-bold leading-tight sm:text-2xl">{room.title}</h2>
+          {(room.id==="home"||room.id==="post")&&onMailChange&&<button type="button"
+            onClick={()=>{setSelectedId(null);setMailOpen(true);}}
+            className="min-h-11 shrink-0 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold"
+            aria-label={room.id==="post"?"Collect mail at Post Office":"Check mailbox"}>
+            ✉ {room.id==="post"?"Collect post":"Mail"} {state.mailbox||room.id==="post"?unreadCount(state)>0?`(${unreadCount(state)})`:"":""}
+          </button>}
+
           {(room.id === "home" || venue) && gl && use3d && (
             <button type="button" onClick={() => setRenderer(true)}
               className="min-h-10 shrink-0 rounded-lg border-2 border-foreground bg-secondary px-3 text-xs font-bold"
@@ -315,6 +327,7 @@ function ObjectLocationScene({
         )}
       </div>
 
+      {mailOpen && onMailChange && <MailInbox state={state} atPostOffice={room.id==="post"} onChange={onMailChange} onClose={()=>setMailOpen(false)}/>}
       <footer className="flex shrink-0 items-center gap-2 bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
