@@ -131,21 +131,21 @@ function MansionGate({ open }: { open: boolean }) {
   return (
     <group>
       {/* Single-track access lane from the east-side road to the west-facing porch. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[26.15, 0.026, 10.53]}>
-        <planeGeometry args={[1.58, 0.83]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[26.85, 0.026, 10.53]}>
+        <planeGeometry args={[3.05, 0.83]} />
         <meshStandardMaterial color="#8e8d85" roughness={0.95} />
       </mesh>
       {[10.09, 10.97].map(z => (
-        <mesh key={z} position={[25.7, 0.23, z]} material={gold}>
+        <mesh key={z} position={[26.7, 0.23, z]} material={gold}>
           <boxGeometry args={[0.13, 0.46, 0.13]} />
         </mesh>
       ))}
-      <group ref={left} position={[25.7, 0, 10.13]}>
+      <group ref={left} position={[26.7, 0, 10.13]}>
         <mesh position={[0, 0.22, 0.2]} material={iron}>
           <boxGeometry args={[0.04, 0.33, 0.4]} />
         </mesh>
       </group>
-      <group ref={right} position={[25.7, 0, 10.93]}>
+      <group ref={right} position={[26.7, 0, 10.93]}>
         <mesh position={[0, 0.22, -0.2]} material={iron}>
           <boxGeometry args={[0.42, 0.33, 0.04]} />
         </mesh>
