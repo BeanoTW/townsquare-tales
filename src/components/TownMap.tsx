@@ -350,10 +350,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         carSpeed.current = drivingNow ? Math.min(desired,carSpeed.current+dt*6.5) : 0;
         const sp = (drivingNow?carSpeed.current:desired)*dt;
         const nx = m.x + (dx / len) * sp, ny = m.y + (dy / len) * sp;
-        if (!blocked(nx, ny)) { m.x = nx; m.y = ny; }
-        else if (!blocked(nx, m.y)) m.x = nx;
-        else if (!blocked(m.x, ny)) m.y = ny;
-        else { target.current = null; m.walking = false; }
+        const collision = (x:number,y:number) => drivingNow
+          ? [[-0.24,-0.3],[0.24,-0.3],[-0.24,0.3],[0.24,0.3]].some(([a,b])=>blocked(x+a,y+b))
+          : blocked(x,y);
+        if (!collision(nx, ny)) { m.x = nx; m.y = ny; }
+        else if (!collision(nx, m.y)) m.x = nx;
+        else if (!collision(m.x, ny)) m.y = ny;
+        else { target.current = null; m.walking = false; carSpeed.current=0; }
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
         const targetAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
