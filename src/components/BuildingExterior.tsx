@@ -58,7 +58,7 @@ export function BuildingExterior({ b, night }: { b: BuildingLot; night: boolean 
       {sidePanel(.23,.42,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
       {sidePanel(.6,.79,Math.min(22,h*.3),Math.min(43,h*.6),night?"var(--town-window-lit)":glass)}
     </g>}
-    {panel(.43,.57,0,25,night?"var(--town-window-lit)":glass)}
+    {id==="garage" ? [0,1,2].map(i=>panel(.05+i/3,.28+i/3,0,h*.67,"#66787c")) : panel(.43,.57,0,25,night?"var(--town-window-lit)":glass)}
     {id==="gym" && panel(.08,.35,2,17,glass)}
     {wallSign && <g data-mounted-sign={id}>
       {panel(.1,.9,plaqueLow,plaqueHeight,b.sign)}
