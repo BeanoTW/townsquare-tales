@@ -168,6 +168,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const aspect = size.width / Math.max(1, size.height);
   const cam = useRef<Cam | null>(null);
   const tmp = useMemo(() => new THREE.Vector3(), []);
+  const nearbyRef = useRef<string | null>(null);
   const slotsRef = useRef(slots);
   slotsRef.current = slots;
 
@@ -312,9 +313,16 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
       // Tags step aside while a cutscene plays.
-      const show = visible && !cine.active && !shared.walker.current.scene;
+      const show = visible && !cine.active && !shared.walker.current.scene && shared.walker.current.nearby === s.id;
       el.style.opacity = show ? "1" : "0";
+      el.style.visibility = show ? "visible" : "hidden";
       el.style.pointerEvents = show ? "auto" : "none";
+    }
+    // Low-frequency DOM event only when the nearby actionable object changes.
+    // No React re-render is needed on each joystick movement.
+    if (nearbyRef.current !== shared.walker.current.nearby) {
+      nearbyRef.current = shared.walker.current.nearby ?? null;
+      window.dispatchEvent(new CustomEvent("tst:nearby-action", {detail:{id:nearbyRef.current}}));
     }
     if (busy) invalidate();
   });
