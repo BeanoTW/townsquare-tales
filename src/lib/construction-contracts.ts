@@ -3,9 +3,9 @@ import type { ActionDef } from "@/lib/actions";
 import { trackBest } from "@/lib/career-history";
 
 export const CONTRACTS = [
- {id:1,name:"Home repair contract",minimumRank:1,deposit:450,duration:3,payment:1050,overrun:380},
- {id:2,name:"Commercial renovation",minimumRank:2,deposit:3500,duration:6,payment:8500,overrun:2900},
- {id:3,name:"Luxury property development",minimumRank:3,deposit:26000,duration:12,payment:65000,overrun:23500},
+ {id:1,name:"Home repair contract",minimumRank:1,deposit:450,duration:3,payment:1050,overrun:1400},
+ {id:2,name:"Commercial renovation",minimumRank:2,deposit:3500,duration:6,payment:8500,overrun:10500},
+ {id:3,name:"Luxury property development",minimumRank:3,deposit:26000,duration:12,payment:65000,overrun:78000},
 ] as const;
 
 export function contractOutcome(s:GameState,id:number,dueDay:number){
