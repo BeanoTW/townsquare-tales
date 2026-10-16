@@ -623,7 +623,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} /></Suspense>}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
