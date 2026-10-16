@@ -157,6 +157,43 @@ export function TownGround({ bs }: { bs: B[] }) {
       {pavementRects().map((r, i) => <Flat key={"pv" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.004 + i * 0.0002} c={C.pavement} map={paving} per={0.5} />)}
       {bs.map((b) => { const plot=buildingPlot(b); return <Flat key={"lot" + b.id} x={plot.x} z={plot.y} w={plot.w} d={plot.d} y={0.006} c={b.id === "casino" ? C.backlot : C.garden} map={grass} per={1.2} />; })}
       {approachRects(bs).map((r, i) => <Flat key={"ap" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.0065 + i * 0.0001} c={C.approach} map={paving} per={0.5} />)}
+      {/* Coastal transition and varied ground surfaces. Put these after base plots so
+          details remain visible rather than being covered by the grass overlays. */}
+      {Array.from({ length: 16 }, (_, i) => {
+        const x = i * 2.25;
+        return <Flat key={`wet-sand-${i}`} x={x} z={32.34 + Math.sin(i * 1.3) * 0.12}
+          w={2.27} d={0.34 + (i % 3) * 0.07} y={0.024}
+          c={i % 2 ? "#d4c6a2" : "#d9c9a5"} rough={0.72} />;
+      })}
+      {Array.from({ length: 14 }, (_, i) => (
+        <Flat key={`sea-ripple-${i}`} x={(i * 3.31) % 34.6}
+          z={33.92 + (i * 0.47) % 1.75} w={1.0 + (i % 4) * 0.3}
+          d={0.035} y={0.027} c={i % 2 ? "#6caec0" : "#87baca"} rough={0.3} />
+      ))}
+      {[[2.3, 31.5], [8.8, 31.85], [15.4, 31.25], [24.2, 31.85], [33.1, 31.4]].map(([x, z], i) => (
+        <group key={`shore-rocks-${i}`}>
+          {[0, 0.23, -0.17].map((dx, j) =>
+            <Round key={j} s={[0.17 + j * 0.05, 0.075 + j * 0.015, 0.15]}
+              p={[x! + dx, 0.055, z! + j * 0.08]} c={j % 2 ? "#96998f" : "#b5afa0"} rad={0.045} />)}
+        </group>
+      ))}
+      {/* Worn footpaths through unused east-side green, avoiding the mansion's
+          private grounds and road access, with a few clusters of wild scrub. */}
+      <Flat x={18.0} z={16.2} w={0.52} d={4.25} y={0.0072} c="#87936b" map={soil} per={1.5} />
+      <Flat x={16.1} z={19.9} w={2.4} d={0.43} y={0.0073} c="#8e9472" map={soil} per={1.5} />
+      {[[17.3, 15.6], [19.1, 17.8], [18.8, 20.5], [3.2, 10.8], [6.2, 11.6], [6.8, 5.7]].map(([x, z], i) => (
+        <group key={`scrub-${i}`}>
+          {[-0.17, 0.13].map((dx, j) =>
+            <Round key={j} s={[0.33 + j * 0.09, 0.22, 0.31]}
+              p={[x! + dx, 0.13, z! + j * 0.14]} c={i % 2 ? "#678653" : "#6f8c5b"} rad={0.12} />)}
+        </group>
+      ))}
+      {/* Frontage details for the seaside flat and the suburban home's garden. */}
+      <Flat x={5.1} z={29.42} w={2.7} d={0.16} y={0.024}
+        c="#b9ad93" rough={0.85} />
+      {[[22.12, 1.05], [25.38, 1.05], [22.12, 4.95], [25.38, 4.95]].map(([x, z], i) =>
+        <Round key={`house-shrub-${i}`} s={[0.31, 0.32, 0.31]}
+          p={[x!, 0.17, z!]} c="#527b48" rad={0.12} />)}
       {/* Park, pond and footbridge over the water. */}
       <Flat x={17} z={1.1} w={5.0} d={5.6} y={0.002} c={C.park} map={grass} per={1.2} />
       {/* Recreation corner: the ramp, park grind rail and basketball court share one site. */}
