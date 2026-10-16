@@ -597,7 +597,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
 
   return (
     <div data-town-paused={paused} data-town-renderer={use3d ? "3d" : "classic"} className={"absolute inset-0 overflow-hidden " + (night ? "town-night" : dusk ? "town-dusk" : "town-day")} style={use3d ? { background: townSky(hour) } : undefined}>
-      {use3d && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} /></Suspense>}
+      {/* Interior scenes use their own WebGL canvas. Release the town context while
+          an interior is open; remount a fresh renderer on return to avoid mobile
+          WebGL contexts that resume with a permanently blank frame. Game state,
+          movement and the SVG interaction overlay remain mounted. */}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
