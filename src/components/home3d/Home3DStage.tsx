@@ -6,7 +6,6 @@ import type { PlanZone } from "@/lib/home-zones";
 import type { HomePlan } from "@/lib/home3d/layout";
 import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
-import { InteriorJoystick } from "./InteriorJoystick";
 import { FirstPersonHands } from "./FirstPersonHands";
 import type { Cutscene } from "@/lib/cutscenes";
 
@@ -112,13 +111,16 @@ export function Home3DStage({
           />
         </Suspense>
       </Boundary>
-      {!cutscene && <InteriorJoystick />}
       <FirstPersonHands acting={Boolean(cutscene)} />
       {!cutscene && nearby && visibleIds.includes(nearby) && (
         <button type="button" data-nearby-action
           aria-label={`Interact with ${plan.slots.find(s=>s.id===nearby)?.label??nearby}`}
           className="pointer-events-auto absolute bottom-4 right-3 z-30 min-h-14 max-w-[45%] rounded-full border-2 border-foreground bg-primary px-4 text-base font-bold text-primary-foreground shadow-lg"
-          onClick={() => window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:nearby}}))}>
+          onClick={() => {
+            const game = isHome ? GAME_SLOTS[nearby] : undefined;
+            if (game && onLaunch) onLaunch(game);
+            else if (!game) onSelect(toHotspotId(nearby));
+          }}>
           ✦ {plan.slots.find(s=>s.id===nearby)?.label??"Interact"}
         </button>
       )}
