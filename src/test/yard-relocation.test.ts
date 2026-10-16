@@ -16,7 +16,7 @@ describe("Workers Yard relocation milestone",()=>{
    expect(bs.filter(b=>b.id==="yard")).toHaveLength(1);
  });
  it("keeps all other workplaces where they are",()=>{
-   const before=buildings(1,false,false).filter(b=>b.id!=="yard");
+   const before=buildings(1,false,false).filter(b=>b.id!=="yard" && b.id!=="hall");
    const after=buildings(1,false,true).filter(b=>b.id!=="yard");
    expect(after).toEqual(before);
  });

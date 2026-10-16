@@ -2,6 +2,7 @@ import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
+import { backupSave, readEmergencyBackup, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
@@ -66,6 +67,8 @@ type S = GameState;
 function Game() {
   const [s, setS] = useState<S>(START);
   const [saveReady, setSaveReady] = useState(false);
+  const [slots, setSlots] = useState<SlotSummary[]>([]);
+  const refreshSlots = () => setSlots(localSlots());
   const [godMode, setGodMode] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [movementMode, setMovementMode] = useState<"joystick" | "tap">("joystick");
@@ -106,6 +109,7 @@ function Game() {
     // Always launch the regular save. Developer Mode is an explicit session choice,
     // never a persisted launch preference; retain its separate progress for next time.
     const normal = loadGame(START);
+    refreshSlots();
     setGodMode(false);
     setS(normal);
     try {
@@ -582,7 +586,35 @@ function Game() {
         </Sheet>
       )}
       {tab === "settings" && (
+
         <Sheet title="Settings" onClose={() => setTab(null)}>
+          <section className="rounded-lg border-2 border-foreground p-3" aria-label="Local saves">
+            <p className="font-bold text-lg">💾 Saves & backups</p>
+            <p className="text-sm">Autosave stays in this browser. Manual slots and downloaded files protect your progress. Cloud sync isn't connected yet.</p>
+            <p className="font-bold">Current: Day {s.day}</p>
+            {[1,2,3].map(slot => {
+              const stored=slots.find(item=>item.slot===slot);
+              return <div key={slot} className="rounded-md border border-foreground/40 p-2 my-2">
+                <p>Slot {slot}: {stored ? "Day "+stored.day : "Empty"}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}if(stored&&!confirm("Overwrite this slot?"))return;if(saveSlot(slot,s))refreshSlots();else alert("Save failed.");}}>Save</Btn>
+                  {stored && <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}if(!confirm("Restore Day "+stored.day+"? The current save will be backed up."))return;const data=readSlot(slot,START);if(!data)return;if(!backupSave(s)){alert("Could not back up your current save. Restore cancelled.");return;}setS(data);saveGame(data);setPlace(null);setTab(null);refreshSlots();}}>Load</Btn>}
+                </div>
+              </div>;
+            })}
+            <Btn onClick={()=>exportSave(s)}>Download save file</Btn>
+            <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}const data=readEmergencyBackup(START);if(!data){alert("No recovery backup found in this browser.");return;}if(!confirm("Restore recovery backup from Day "+data.day+"?"))return;if(!saveSlot(3,s)){alert("Could not preserve the current game in Slot 3. Recovery cancelled.");return;}setS(data);saveGame(data);setTab(null);refreshSlots();}}>Restore previous backup</Btn>
+            <label className="block mt-2 text-sm">Import save JSON
+              <input type="file" accept=".json,application/json" className="mt-1 block w-full" onChange={async e=>{
+                const file=e.currentTarget.files?.[0];e.currentTarget.value="";if(!file)return;
+                if(godMode){alert("Exit Developer Mode first.");return;}
+                try{const data=importSave(await file.text(),START);if(!data){alert("Invalid Town Square Tales save.");return;}
+                  if(!confirm("Import Day "+data.day+"? Current progress will be backed up."))return;
+                  backupSave(s);setS(data);saveGame(data);setPlace(null);setTab(null);refreshSlots();
+                }catch{alert("Couldn't read save file.");}
+              }}/>
+            </label>
+          </section>
           <p className="text-base text-muted-foreground">
             Move using your chosen control. Tap buildings and characters to interact. Inside, tap an object to act.
           </p>
@@ -652,7 +684,9 @@ function Game() {
           </Btn>
           <Btn
             onClick={() => {
-              if (confirm("Start a new life?")) {
+              if (confirm("Start a new life? Existing progress will be backed up first.")) {
+                if (!godMode && !backupSave(s)) { alert("Could not back up this save. Restart cancelled."); return; }
+                refreshSlots();
                 if (godMode) {
                   try { window.localStorage.removeItem(GOD_SAVE_KEY); } catch { /* No storage. */ }
                 }
