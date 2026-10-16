@@ -35,6 +35,9 @@ export type TownWorld3DProps = {
   companyCar?: boolean;
   driving?: boolean;
   carPosition?: MutableRefObject<{x:number;y:number;angle:number}>;
+  wreckOwned?: boolean;
+  wreckDriving?: boolean;
+  wreckPosition?: MutableRefObject<{x:number;y:number;angle:number}>;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -199,6 +202,12 @@ function CompletedTownHall() {
   );
 }
 
+function PersonalCar({position}:{position:MutableRefObject<{x:number;y:number;angle:number}>}) {
+ const group=useRef<THREE.Group>(null);
+ useFrame(()=>{if(!group.current)return;const p=position.current;group.current.position.set(p.x,0,p.y);group.current.rotation.y=Math.PI-p.angle*Math.PI/180;});
+ return <group ref={group} position={[5.8,0,11.1]}><Car colour="#677b89"/></group>;
+}
+
 function CompanyCar({live, driving, carPosition}: {live: TownLive; driving: boolean; carPosition: MutableRefObject<{x:number;y:number;angle:number}>}) {
  const ref = useRef<THREE.Group>(null);
 
@@ -240,7 +249,7 @@ function EasternYardEquipment() {
   </group>;
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving, carPosition }: Omit<TownWorld3DProps, "tick">) {
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving, carPosition, wreckOwned, wreckDriving, wreckPosition }: Omit<TownWorld3DProps, "tick">) {
   const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned), Boolean(yardRelocated)), [house, castleOwned, yardRelocated]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
@@ -258,10 +267,11 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         {yardRelocated && <EasternYardEquipment />}
       </StaticBatch>
       {yardRelocated && companyCar && carPosition && <CompanyCar live={live} driving={Boolean(driving)} carPosition={carPosition} />}
+      {wreckOwned && wreckPosition && <PersonalCar position={wreckPosition} /> }
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
-      {!driving && <Player3D live={live} skating={skating} head={head} />}
+      {!driving && !wreckDriving && <Player3D live={live} skating={skating} head={head} />}
       <Residents live={live} hour={hour} />
       <Pedestrians live={live} />
       <Pigeons live={live} />
