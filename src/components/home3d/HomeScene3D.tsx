@@ -21,7 +21,8 @@ import { Director, SKIP_EVENT, type Cine, type CineOverlay } from "./scenes/Dire
 
 const FOV = 45;
 const FP_FOV = 72;
-const FP_YAW = 1.15;
+const FP_PITCH_MIN = -1.35;
+const FP_PITCH_MAX = 1.35;
 /** Player homes (tiers 0–3) are viewed in first person; venues keep the overhead camera. */
 export const isFirstPerson = (_plan: HomePlan) => true;
 const EL_MIN = 0.3;
@@ -175,7 +176,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const nearbyRef = useRef<string | null>(null);
   const fp = isFirstPerson(plan);
-  const fpRef = useRef({ yaw: 0, gyaw: 0 });
+  const fpRef = useRef({ yaw: 0, gyaw: 0, pitch: -0.075, gpitch: -0.075 });
   const firstView = vantageFor(plan, zone);
   const fpEye = useRef(new THREE.Vector3(...firstView.eye));
   const firstYaw = Math.atan2(firstView.eye[0] - firstView.lookAt[0], firstView.eye[2] - firstView.lookAt[2]);
@@ -218,6 +219,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
         fpTargetHeading.current = Math.atan2(v.eye[0] - v.lookAt[0], v.eye[2] - v.lookAt[2]);
         fpRef.current.yaw = 0;
         fpRef.current.gyaw = 0;
+        fpRef.current.gpitch = -0.075;
+        fpRef.current.pitch = -0.075;
         window.dispatchEvent(new CustomEvent("tst:room-vantage", {detail:{x:v.eye[0],z:v.eye[2]}}));
       }
       c.gtx = z === "all" ? shared.walker.current.position.x : g.tx;
@@ -267,24 +270,40 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     invalidate();
   }, [aspect, goalFor, invalidate, reduce]);
 
-  // First-person homes: one-finger horizontal drag turns the view.
+  // Free-look: unlimited 360° yaw, bounded vertical pitch. Capture one
+  // pointer only, so other fingers and the joystick remain independent.
   useEffect(() => {
     if (!fp) return;
     const el = gl.domElement;
-    let last: number | null = null;
-    const down = (e: PointerEvent) => { last = e.clientX; shared.dragged.current = 0; };
+    let pointer: number | null = null;
+    let lastX = 0, lastY = 0;
+    const down = (e: PointerEvent) => {
+      if (pointer !== null || !e.isPrimary) return;
+      pointer = e.pointerId;
+      lastX = e.clientX; lastY = e.clientY;
+      shared.dragged.current = 0;
+    };
     const move = (e: PointerEvent) => {
-      if (last === null) return;
-      const dx = e.clientX - last; last = e.clientX;
-      shared.dragged.current += Math.abs(dx);
+      if (pointer !== e.pointerId) return;
+      const dx = e.clientX-lastX, dy = e.clientY-lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      shared.dragged.current += Math.abs(dx)+Math.abs(dy);
       const f = fpRef.current;
-      f.gyaw = clamp(f.gyaw + dx * 0.006, -FP_YAW, FP_YAW);
+      f.gyaw += dx * 0.006;
+      f.gpitch = clamp(f.gpitch - dy * 0.005, FP_PITCH_MIN, FP_PITCH_MAX);
       invalidate();
     };
-    const up = () => { last = null; };
-    el.addEventListener("pointerdown", down); el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
-    return () => { el.removeEventListener("pointerdown", down); el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up); };
+    const up = (e: PointerEvent) => { if (pointer === e.pointerId) pointer = null; };
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", up);
+    };
   }, [fp, gl, invalidate, shared.dragged]);
 
   // Camera remains bird's-eye. One-finger gestures walk the player; pinch/wheel only zoom.
@@ -331,6 +350,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       // their plan-defined safe zone; the camera glides between viewpoints.
       const f=fpRef.current;
       f.yaw+=(f.gyaw-f.yaw)*(reduce?1:1-Math.exp(-dt*12));
+      f.pitch+=(f.gpitch-f.pitch)*(reduce?1:1-Math.exp(-dt*12));
       const blend=reduce?1:1-Math.exp(-dt*6);
       const angleError=Math.atan2(Math.sin(fpTargetHeading.current-fpHeading.current),Math.cos(fpTargetHeading.current-fpHeading.current));
       fpHeading.current+=angleError*blend;
@@ -340,9 +360,9 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       shared.walker.current.lookYaw=heading;
       if(pc.fov!==FP_FOV){pc.fov=FP_FOV;pc.updateProjectionMatrix();}
       camera.position.copy(fpEye.current);
-      camera.lookAt(fpEye.current.x-Math.sin(heading)*4,fpEye.current.y-0.3,fpEye.current.z-Math.cos(heading)*4);
+      camera.lookAt(fpEye.current.x-Math.sin(heading)*Math.cos(f.pitch)*4,fpEye.current.y+Math.sin(f.pitch)*4,fpEye.current.z-Math.cos(heading)*Math.cos(f.pitch)*4);
       if(Math.abs(fpEye.current.x-player.x)+Math.abs(fpEye.current.z-player.z)>0.004 || Math.abs(angleError)>0.001)invalidate();
-            if (Math.abs(f.gyaw - f.yaw) > 0.001) invalidate();
+            if (Math.abs(f.gyaw - f.yaw) + Math.abs(f.gpitch - f.pitch) > 0.001) invalidate();
     } else {
       if (pc.fov !== FOV) { pc.fov = FOV; pc.updateProjectionMatrix(); }
       const ce = Math.cos(c.el);
