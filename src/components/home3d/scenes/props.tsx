@@ -143,6 +143,43 @@ function MoneyBag() {
   );
 }
 
+function Trophy() {
+  return (
+    <Group p={[0, 0.03, 0.02]}>
+      <Box s={[0.05, 0.02, 0.05]} c="#3a2a22" />
+      <Cyl rad={0.008} h={0.04} p={[0, 0.03, 0]} c="#e0b84a" o={{ metal: 0.8, rough: 0.25 }} shadow={false} />
+      <Cyl rad={0.035} h={0.05} p={[0, 0.07, 0]} c="#e0b84a" o={{ metal: 0.8, rough: 0.25 }} />
+    </Group>
+  );
+}
+function Diploma() {
+  return (
+    <Group p={[0, -0.01, 0.02]} r={[0, 0, Math.PI / 2]}>
+      <Cyl rad={0.014} h={0.12} c="#f4efe2" shadow={false} />
+      <Cyl rad={0.016} h={0.015} c="#b5413a" shadow={false} />
+    </Group>
+  );
+}
+function Keys() {
+  return (
+    <Group p={[0, -0.03, 0.01]}>
+      <Cyl rad={0.014} h={0.004} r={[Math.PI / 2, 0, 0]} c="#c9a24a" o={{ metal: 0.8, rough: 0.3 }} shadow={false} />
+      <Box s={[0.008, 0.035, 0.003]} p={[0.008, -0.025, 0]} c="#c9a24a" o={{ metal: 0.8, rough: 0.3 }} shadow={false} />
+      <Box s={[0.008, 0.03, 0.003]} p={[-0.01, -0.022, 0]} r={[0, 0, 0.3]} c="#9aa5aa" o={{ metal: 0.8, rough: 0.3 }} shadow={false} />
+      <Round s={[0.02, 0.012, 0.006]} p={[0, 0.02, 0]} c="#e05a4f" rad={0.003} shadow={false} />
+    </Group>
+  );
+}
+/** One half of the loan agreement per hand: together they read as one sheet until it's torn. */
+function ContractHalf({ side }: { side: 1 | -1 }) {
+  return (
+    <Group p={[side * -0.055, -0.03, 0.03]} r={[0.3, 0, 0]}>
+      <Box s={[0.11, 0.15, 0.003]} p={[side * -0.0, 0, 0]} c="#f6f0df" shadow={false} />
+      {[0.04, 0.015, -0.01, -0.035].map((y) => <Box key={y} s={[0.08, 0.004, 0.004]} p={[0, y, 0.002]} c="#9a948a" shadow={false} />)}
+    </Group>
+  );
+}
+
 /** What each hand grips for a held prop. */
 export function heldProps(held: HeldProp | null): { left?: ReactNode; right?: ReactNode } {
   switch (held) {
@@ -168,6 +205,10 @@ export function heldProps(held: HeldProp | null): { left?: ReactNode; right?: Re
     case "bricks": return { right: <Level arm={-1.25} up={0.07}><Carton w={0.14} h={0.12} d={0.08} c="#a9553a" tape="#cbbfa8" /></Level> };
     case "trainers": return { right: <Level arm={-1.2} up={0.05}><Carton w={0.18} h={0.08} d={0.11} c="#e07a3a" tape="#f4f1ea" /></Level> };
     case "clock": return { right: <Level arm={-1.2} up={0.05}><Cyl rad={0.045} h={0.03} r={[Math.PI / 2, 0, 0]} c="#c0392b" /><Cyl rad={0.036} h={0.032} r={[Math.PI / 2, 0, 0]} c="#f4f1ea" shadow={false} /></Level> };
+    case "trophy": return { right: <Trophy /> };
+    case "diploma": return { right: <Diploma /> };
+    case "keys": return { right: <Keys /> };
+    case "contract": return { left: <ContractHalf side={-1} />, right: <ContractHalf side={1} /> };
     default: return {};
   }
 }

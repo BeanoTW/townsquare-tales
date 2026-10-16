@@ -15,12 +15,15 @@ export type ActName =
   // phase 2: venues
   | "scan" | "pay" | "collect" | "atm" | "sign" | "munch" | "eat" | "flip" | "serve" | "shovel" | "carry"
   | "write" | "heal" | "board" | "sell" | "payfine" | "drink" | "dance" | "dice-win" | "dice-lose"
-  | "promote" | "apply" | "resign" | "bounce" | "flop" | "rob" | "caught";
+  | "promote" | "apply" | "resign" | "bounce" | "flop" | "rob" | "caught"
+  // phase 3: milestones
+  | "victory" | "keys" | "tear" | "hire";
 
 export type HeldProp =
   | "barbell" | "dumbbells" | "book" | "controller" | "spoon"
   | "cash" | "pen" | "snack" | "fork" | "spatula" | "tray" | "shovel" | "bricks" | "box" | "parcel" | "crate"
-  | "toolbox" | "trainers" | "clock" | "pint" | "dice" | "bag";
+  | "toolbox" | "trainers" | "clock" | "pint" | "dice" | "bag"
+  | "trophy" | "diploma" | "keys" | "contract";
 
 /** How a nearby member of staff or regular reacts. `at` delays the cue (seconds into the scene). */
 export type CastCue = { id: string; cue: "hide" | "face" | "nod" | "cheer"; at?: number };
@@ -65,6 +68,8 @@ export type CutsceneRequest = {
   changes: string[];
   before: GameState;
   after: GameState;
+  /** The player chose short cutscenes in Settings. */
+  short?: boolean;
 };
 
 type Variant = "std" | "lux" | "scrap" | "bare";
@@ -83,6 +88,7 @@ const TITLES: Record<ActName, string> = {
   heal: "PATCHED UP", board: "ON THE MOVE", sell: "CASH IN HAND", payfine: "DEBT TO SOCIETY", drink: "BOTTOMS UP", dance: "MAKING FRIENDS",
   "dice-win": "WINNER WINNER", "dice-lose": "THE HOUSE ALWAYS WINS", promote: "MOVING UP", apply: "NEW START", resign: "CLEARING OUT",
   bounce: "TEST DRIVE", flop: "SWEET DREAMS", rob: "GRAB AND GO", caught: "NOT TODAY",
+  victory: "CHAMPION", keys: "HOME SWEET HOME", tear: "DEBT FREE!", hire: "YOU'RE HIRED!",
 };
 
 const STRENGTH: ActName[] = ["bench", "squat", "deadlift", "press", "jacks", "shovel", "carry"];
@@ -209,7 +215,7 @@ export function planCutscene(
   const slot = plan.slots.find((s) => s.id === pick.slotId)!;
   const w = pick.mark.abs ? { x: pick.mark.x, z: pick.mark.z } : toWorld(slot, pick.mark.x, pick.mark.z);
   const heading = slot.rot + pick.mark.face;
-  const short = ctx.plays.seenToday(req.actionId, req.before.day);
+  const seen = ctx.plays.seenToday(req.actionId, req.before.day);
   const tired = req.after.energy < 15 && pick.act !== "sleep";
   // Outcome beats (wins, promotions, getting caught) outrank milestones, which outrank tiredness.
   const milestone =
@@ -217,6 +223,8 @@ export function planCutscene(
     : BRAINS.includes(pick.act) && Math.floor(req.after.int / 10) > Math.floor(req.before.int / 10) ? `BRAIN WAVE · INTELLIGENCE ${req.after.int}`
     : null;
   const caption = pick.caption ?? milestone ?? (tired ? "RUNNING ON EMPTY" : null);
+  // Short on request (Settings), or on a same-day repeat unless something worth seeing happened.
+  const short = req.short === true || (seen && !caption);
   const key = ctx.plays.record(req.actionId, req.before.day);
   const lying = LYING.includes(pick.act);
   return {
@@ -234,8 +242,8 @@ export function planCutscene(
     gains: gainsOf(req.changes),
     losses: lossesOf(req.changes),
     cast: pick.cast ?? [],
-    duration: ctx.reducedMotion ? 1.4 : short && !caption ? 1.7 : pick.act === "sleep" ? 4.4 : 3.6,
-    short: short && !caption,
+    duration: ctx.reducedMotion ? 1.4 : short ? 1.7 : pick.act === "sleep" ? 4.4 : 3.6,
+    short,
     tired,
     night: pick.act === "sleep",
     frame: { dist: lying ? 5.0 : 5.6, el: lying ? 1.12 : 0.98, ...aim(w, heading, TRAVEL[pick.act]) },

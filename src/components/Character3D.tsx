@@ -42,7 +42,7 @@ export const PERSON_SCALE = 1.45;
 
 /** Rounded, chunky stick-person matching the interior style; heading 0 = north. */
 export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true, scale = PERSON_SCALE, children, heldL, heldR }: {
-  get: () => PersonState | null; outfit: string; skin: string; hat?: string; hatKind?: "cap" | "hard" | "beanie" | "flat"; shadow?: boolean; scale?: number; children?: ReactNode;
+  get: () => PersonState | null; outfit: string; skin: string; hat?: string; hatKind?: "cap" | "hard" | "beanie" | "flat" | "mortar"; shadow?: boolean; scale?: number; children?: ReactNode;
   /** Props gripped in each hand (hand-local space); they follow the arm through any act. */
   heldL?: ReactNode; heldR?: ReactNode;
 }) {
@@ -144,6 +144,13 @@ export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true,
           </>
         )}
         {m.hat && hatKind === "beanie" && <mesh geometry={ball} position={[0, 0.13, -0.005]} scale={[0.115, 0.09, 0.115]} material={m.hat} castShadow />}
+        {m.hat && hatKind === "mortar" && (
+          <>
+            <mesh geometry={ball} position={[0, 0.125, 0]} scale={[0.114, 0.07, 0.114]} material={m.hat} castShadow />
+            <mesh geometry={box} position={[0, 0.18, 0]} rotation={[0, Math.PI / 4, 0]} scale={[0.27, 0.014, 0.27]} material={m.hat} castShadow />
+            <mesh geometry={cyl} position={[0.12, 0.12, 0.05]} scale={[0.008, 0.11, 0.008]} material={m.eye} />
+          </>
+        )}
         {m.hat && hatKind === "flat" && <mesh geometry={cyl} position={[0, 0.18, 0.02]} scale={[0.12, 0.03, 0.13]} material={m.hat} castShadow />}
         {m.hat && hatKind === "cap" && (
           <>
