@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import type { GameState } from "@/lib/game-state";
 import type { ActionDef } from "@/lib/actions";
-import { WITHDRAW_50, WITHDRAW_ALL, bankTransferAction, bankLoanAction, repayLoanAction } from "@/lib/actions";
+import { WITHDRAW_50, WITHDRAW_ALL, bankTransferAction, bankLoanAction, repayLoanAction, buyHouseAction } from "@/lib/actions";
+import { HOUSES } from "@/lib/game-data";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
 import { actionBlockReason } from "@/components/rooms/ActionPanel";
 import { hotspotActions, type Hotspot } from "@/lib/rooms";
@@ -90,13 +91,12 @@ function BankDesk({id,state,godMode,onRun}:{id:string;state:GameState;godMode:bo
   const [service,setService]=useState<TellerService|null>(null);
   const debt=state.loanDebt??0;
   const loan=debt>0;
-  const specialist=id==="loans";
-  const showLoans=specialist || (id==="teller"&&service==="loans");
+  const showLoans=id==="teller"&&service==="loans";
   const showTransfer=id==="teller"&&(service==="deposit"||service==="withdraw");
   return <div className="space-y-2" data-bank-service={showLoans?"loans":service??id}>
     <p className="text-xs text-muted-foreground">
       {id==="teller"?"Cashier: “How can I help?”":
-       specialist?"Mr. Sterling: “Let's see what the numbers say.”":
+       id==="loans"?"Property manager: “Looking for somewhere new?”":
        id==="atm"?"ATM: Quick cash, no queue.":"Vault: Your savings, safely accounted for."}
     </p>
     {id==="teller"&&<div className="grid grid-cols-3 gap-2" role="group" aria-label="Banking services">
@@ -123,6 +123,20 @@ function BankDesk({id,state,godMode,onRun}:{id:string;state:GameState;godMode:bo
         </div>
       </div>}
     </>}
+    {id==="loans"&&<div className="space-y-2" data-property-management>
+      <p className="text-sm font-bold">Your current home</p>
+      <p className="rounded-lg bg-secondary p-2 text-sm">{HOUSES[state.house]?.name ?? "Home"}</p>
+      {HOUSES[state.house+1]?<>
+        <p className="text-sm font-bold">Next property</p>
+        <div className="rounded-lg bg-secondary p-2 text-sm">
+          <p className="font-bold">{HOUSES[state.house+1]!.name}</p>
+          <p>Price: ${HOUSES[state.house+1]!.cost.toLocaleString()}</p>
+          <p>Cash available: ${state.money.toLocaleString()}</p>
+        </div>
+        <QuickAction action={buyHouseAction(state)} state={state} godMode={godMode} onRun={onRun}/>
+      </>:<p className="text-sm">You've reached the highest property tier.</p>}
+      <p className="text-xs text-muted-foreground">For borrowing, repayments and savings, speak to the teller.</p>
+    </div>}
     {id==="atm"&&<div className="grid grid-cols-2 gap-2">{[WITHDRAW_50,WITHDRAW_ALL].map(a=><QuickAction key={a.id} action={a} state={state} godMode={godMode} onRun={onRun}/>)}</div>}
     {id==="vault"&&<p className="text-xs">Savings earn 0.1% interest each night. Visit the teller for everyday banking.</p>}
   </div>;
