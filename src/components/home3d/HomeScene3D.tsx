@@ -177,6 +177,20 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const nearbyRef = useRef<string | null>(null);
   const fp = isFirstPerson(plan);
   const fpRef = useRef({ yaw: 0, gyaw: 0, pitch: -0.075, gpitch: -0.075 });
+  // Settings are independent of town movement settings. Positive values
+  // mean a swipe moves the camera in that same screen direction.
+  const swipeAxes = useRef({ horizontal: 1, vertical: 1 });
+  useEffect(() => {
+    const read = () => {
+      try {
+        swipeAxes.current.horizontal = window.localStorage.getItem("sticktown-look-horizontal") === "inverted" ? -1 : 1;
+        swipeAxes.current.vertical = window.localStorage.getItem("sticktown-look-vertical") === "inverted" ? -1 : 1;
+      } catch { /* Keep usable default controls without storage. */ }
+    };
+    read();
+    window.addEventListener("tst:look-controls-changed", read);
+    return () => window.removeEventListener("tst:look-controls-changed", read);
+  }, []);
   const firstView = vantageFor(plan, zone);
   const fpEye = useRef(new THREE.Vector3(...firstView.eye));
   const fpTargetEye = useRef(new THREE.Vector3(...firstView.eye));
@@ -286,8 +300,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       lastX = e.clientX; lastY = e.clientY;
       shared.dragged.current += Math.abs(dx)+Math.abs(dy);
       const f = fpRef.current;
-      f.gyaw += dx * 0.006;
-      f.gpitch = clamp(f.gpitch - dy * 0.005, FP_PITCH_MIN, FP_PITCH_MAX);
+      f.gyaw += dx * 0.006 * swipeAxes.current.horizontal;
+      f.gpitch = clamp(f.gpitch + dy * 0.005 * swipeAxes.current.vertical, FP_PITCH_MIN, FP_PITCH_MAX);
       invalidate();
     };
     const up = (e: PointerEvent) => { if (pointer === e.pointerId) pointer = null; };
