@@ -643,7 +643,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
           <span>🗺️ Town map</span>
         </div>
-        <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded bg-town-grass" role="img" aria-label="Overhead map showing buildings and your location"
+        <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded bg-town-grass" role="img" aria-label="Town minimap with southern beach and sea"
           onPointerDown={(e) => {
             e.stopPropagation();
             const bounds = e.currentTarget.getBoundingClientRect();
@@ -652,6 +652,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               y: Math.max(0.3, Math.min(N - 0.3, (e.clientY - bounds.top) / bounds.height * N)),
             });
           }}>
+          <rect x="0" y="29.6" width={N} height="0.65" fill="#b8b6a9" />
+          <rect x="0" y="30.25" width={N} height="2.6" fill="#ecd49f" />
+          <rect x="0" y="32.85" width={N} height="0.8" fill="#8ecfd0" />
+          <rect x="0" y="33.65" width={N} height={N-33.65} fill="#397fa4" />
           <rect x="17" y="1.1" width="5" height="5.6" fill="var(--town-mini-park)" />
           {ROADS.map((r,i) => <rect key={"mini-road-"+i} x={r.x} y={r.y} width={r.w} height={r.d} fill="var(--town-mini-road)" />)}
           <circle cx={GANG_SPOT.x} cy={GANG_SPOT.y} r={0.8} fill="#40343d" stroke="#f2d46f" strokeWidth={0.22}><title>Street gang - approach at your own risk</title></circle>
