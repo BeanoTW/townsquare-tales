@@ -3,13 +3,13 @@ import type { ActionDef } from "@/lib/actions";
 
 /** Hidden reputation: players learn the crew's expectations through dialogue, not meters. */
 export function gangAccess(s:GameState): "outsider"|"initiation"|"probation"|"trusted" {
-  if(s.karma > -10) return "outsider";
+  // Everyone can start; the crew judges earned reputation.
   if(s.gangStage===0)return "initiation";
   return s.gangRep>=3 ? "trusted" : "probation";
 }
 export function gangDialogue(s:GameState):string {
   switch(gangAccess(s)){
-    case "outsider":return '"You look like trouble, just not our sort. Go play nice elsewhere."';
+    case "outsider":return '"Come back if you want to prove yourself."';
     case "initiation":return '"You keep coming back. Fancy proving you can keep your mouth shut?"';
     case "probation":return '"Alright, you did what we asked. Maybe there is work for you."';
     case "trusted":return '"There you are. We have a few errands if you want to earn."';
@@ -26,7 +26,6 @@ export function gangJob(id:(typeof GANG_JOBS)[number]["id"]):ActionDef {
   if(!job)throw Error("Unknown job");
   return {id:job.id,label:job.label,hours:job.hours,energy:job.energy,
     resolve:(s)=>{
-      if(s.karma>-10)return '"Not interested. You are too straight for us."';
       if(job.minimum>0 && s.gangStage<1)return '"Prove yourself first."';
       if(job.minimum===2 && s.gangRep<3)return '"You have not earned that kind of trust."';
       if(job.minimum===0 && s.gangStage>0)return '"You already did your bit."';
