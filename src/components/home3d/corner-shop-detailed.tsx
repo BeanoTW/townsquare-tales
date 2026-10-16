@@ -62,7 +62,7 @@ function DrinksFridge({x,z,rotation=0}:{x:number,z:number,rotation?:number}){
   <Block at={[0,2.23,.29]} scale={[1.34,.17,.09]} material={p.blue}/>
   {[.42,.95,1.48,1.91].map((h,i)=><group key={i}>
     <Block at={[0,h,.12]} scale={[1.19,.045,.47]} material={p.silver}/>
-    {Array.from({length:8},(_,j)=><Bottle key={j} x={(j-3.5)*.14} y={h+.035} z={.2} colour={swatches[(i+j)%5]}/>)}
+    {Array.from({length:8},(_,j)=><Bottle key={j} x={(j-3.5)*.14} y={h+.035} z={.2} colour={swatches[(i+j)%5]!}/>)}
   </group>)}
   <Block at={[0,1.22,.348]} scale={[1.23,1.91,.025]} material={p.glass}/>
   <Block at={[.02,1.22,.37]} scale={[.032,1.88,.04]} material={p.silver}/>
@@ -105,7 +105,7 @@ function Stockroom(){
   <Block at={[0,1.81,-.028]} scale={[.93,.067,.015]} material={p.paper}/>
   {[-.38,.12,.59].map((h,i)=><group key={i}>
     <Block at={[0,h+.48,.09]} scale={[1.15,.045,.32]} material={p.silver}/>
-    {[-.32,.08,.41].map((x,j)=><Block key={j} at={[x,h+.63,.08]} scale={[.25,.25,.22]} material={swatches[(i+j)%6]}/>)}
+    {[-.32,.08,.41].map((x,j)=><Block key={j} at={[x,h+.63,.08]} scale={[.25,.25,.22]} material={swatches[(i+j)%6]!}/>)}
   </group>)}
  </group>;
 }
@@ -129,11 +129,10 @@ export function CornerShopDecor(){
   <Block at={[4.95,2.63,.26]} scale={[2.3,.38,.14]} material={p.shelf}/>
   <Block at={[4.95,2.65,.35]} scale={[1.94,.17,.016]} material={p.paper}/>
   <Block at={[4.95,2.52,.352]} scale={[1.55,.027,.018]} material={p.yellow}/>
-  {/* Ceiling unit and security mirrors anchor the scene visually. */}
-  {[2.3,5.25,8.2].map(x=><group key={x}>
-    <Block at={[x,3.02,3.5]} scale={[1.65,.08,.24]} material={p.silver}/>
-    <Block at={[x,2.968,3.5]} scale={[1.5,.025,.13]} material={p.paper}/>
-  </group>)}
+  {/* Downward-facing lights stay out of the overhead camera's view. */}
+  {[2.3,5.25,8.2].map(x=><mesh key={x} position={[x,2.968,3.5]} rotation={[Math.PI/2,0,0]} material={p.paper}>
+    <planeGeometry args={[1.5,.13]}/>
+  </mesh>)}
   <mesh position={[9.5,2.65,7.35]} rotation={[0,-Math.PI/4,0]} material={p.silver}>
     <sphereGeometry args={[.24,16,8,0,Math.PI*2,0,Math.PI/2]}/>
   </mesh>

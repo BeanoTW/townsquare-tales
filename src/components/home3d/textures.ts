@@ -412,6 +412,25 @@ export const checkerTexture = () =>
       }
   });
 
+/** Diner vinyl: black and white tiles with a little wear, four to a repeat. */
+export const chequerTexture = () =>
+  make("chequer", 128, 128, (g) => {
+    const r = rnd(131);
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < 4; j++) {
+        const dark = (i + j) % 2 === 1;
+        g.fillStyle = dark ? "#1d1d22" : "#f2efe8";
+        g.fillRect(i * 32, j * 32, 32, 32);
+        for (let k = 0; k < 14; k++) {
+          g.fillStyle = dark ? `rgba(255,255,255,${0.02 + r() * 0.04})` : `rgba(60,50,40,${0.03 + r() * 0.05})`;
+          g.fillRect(i * 32 + r() * 30, j * 32 + r() * 30, 2 + r() * 4, 1 + r() * 2);
+        }
+        g.fillStyle = "rgba(0,0,0,.25)";
+        g.fillRect(i * 32, j * 32, 32, 0.8);
+        g.fillRect(i * 32, j * 32, 0.8, 32);
+      }
+  });
+
 /** Casino carpet: a repeating diamond-and-spot motif in gold on deep colour (tinted by the floor colour). */
 export const patternTexture = () =>
   make("pattern", 128, 128, (g) => {
@@ -492,6 +511,7 @@ const FLOOR: Record<FloorKind, { make: () => THREE.CanvasTexture; metres: number
   dirt: { make: () => concreteTexture(), metres: 1.8, rough: 1 },
   lawn: { make: () => lawnTexture(), metres: 2.0, rough: 1 },
   checker: { make: () => checkerTexture(), metres: 0.8, rough: 0.18 },
+  chequer: { make: () => chequerTexture(), metres: 1.2, rough: 0.3 },
   pattern: { make: () => patternTexture(), metres: 1.6, rough: 0.95 },
 };
 const floorCache = new Map<string, THREE.CanvasTexture>();
