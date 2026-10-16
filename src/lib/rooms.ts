@@ -1,3 +1,4 @@
+import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
 import { HUSTLES, hustleAction } from "@/lib/side-hustles";
 import { CAREERS, currentRole, missingRequirements, nextRole } from "@/lib/careers";
 import {
@@ -276,6 +277,15 @@ export const ROOMS: Record<PlaceId, Room> = {
     sign: "WORKERS YARD",
     palette: { wall: "#bba981", floor: "#79624d", accent: "#d8a63c" },
     hotspots: [
+      {
+        id: "town-hall",
+        label: "Town Hall project",
+        tag: "CIVICS",
+        hint: "Construction progress and the path into politics",
+        box: { x: 158, y: 155, w: 130, h: 125 },
+        lines: civicStatus,
+        actions: s => townHallBuilt(s) ? [civicVolunteerAction(), civicRunAction()] : [],
+      },
       {
         id: "site",
         label: "Job site",
