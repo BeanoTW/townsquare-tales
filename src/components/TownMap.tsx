@@ -670,6 +670,17 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             fill={b.id === "home" ? "#efd17b" : b.id.startsWith("residence-") ? "#617f8d" : b.sign} stroke={b.id === "home" ? "#fff6be" : "var(--town-paper)"} strokeWidth={b.id === "home" ? 0.36 : 0.18} rx={0.2}>
             <title>{b.label}</title>
           </rect>)}
+          {isTownHallBuilt({day:state?.day??1}) && (
+            <g data-minimap-town-hall aria-label="Completed Town Hall">
+              <rect x="15.8" y="15.1" width="5.9" height="8.6" rx=".25" fill="#bbb5a6" opacity=".9" />
+              <rect x="16.6" y="16.65" width="4.3" height="4.7" rx=".2" fill="#d8c9ab" stroke="#535b63" strokeWidth=".25" />
+              <rect x="16.425" y="16.5" width="4.65" height="5" rx=".15" fill="none" stroke="#535b63" strokeWidth=".35" />
+              <rect x="17.75" y="21.35" width="2" height="2.05" fill="#a6a095" />
+              <rect x="18.4" y="21.35" width=".7" height=".45" fill="#485c63" />
+              <path d="M18.75 16.9 l.9 .75 -.9 .75 -.9 -.75 Z" fill="#bdab84" />
+              <title>Town Hall — completed on day 30</title>
+            </g>
+          )}
           <circle cx={m.x} cy={m.y} r={1.03} fill="#ffffff" stroke="#19212a" strokeWidth={0.35} />
           <path d={`M ${m.x} ${m.y-0.67} l-.45 .86 h.9 Z`} transform={`rotate(${m.skateAngle}, ${m.x}, ${m.y})`} fill="#2376b4" />
         </svg>
