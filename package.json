@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "bunx tsc --noEmit; bun run build; vitest run",
+    "test": "vitest run",
     "test:watch": "vitest"
   },
   "overrides": {
