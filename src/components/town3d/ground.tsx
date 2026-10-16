@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { N, ROADS, laneDashes, door, type B } from "@/lib/town-world";
+import { N, ROADS, laneDashes, buildingPlot, door, type B } from "@/lib/town-world";
 import { TOWN_RAILS } from "@/lib/town-rails";
 import { Box, Cyl, Disc, Flat, Round, mat } from "@/components/town3d/kit";
 import { asphaltTexture, grassTexture, gravelTexture, pavingTexture, soilTexture, timberTexture } from "@/components/town3d/textures";
@@ -103,7 +103,7 @@ export function TownGround({ bs }: { bs: B[] }) {
       <Flat x={0} z={0} w={8.8} d={7.2} y={0.001} c={C.lawn} map={grass} per={1.4} />
       <Flat x={17} z={0.9} w={5.0} d={5.9} y={0.0015} c={C.parkLawn} map={grass} per={1.4} />
       {pavementRects().map((r, i) => <Flat key={"pv" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.004 + i * 0.0002} c={C.pavement} map={paving} per={0.5} />)}
-      {bs.map((b) => <Flat key={"lot" + b.id} x={Math.max(0, b.x - 0.15)} z={Math.max(0, b.y - 0.15)} w={b.w + 0.3} d={b.d + 0.3} y={0.006} c={b.id === "casino" ? C.backlot : C.garden} map={grass} per={1.2} />)}
+      {bs.map((b) => { const plot=buildingPlot(b); return <Flat key={"lot" + b.id} x={plot.x} z={plot.y} w={plot.w} d={plot.d} y={0.006} c={b.id === "casino" ? C.backlot : C.garden} map={grass} per={1.2} />; })}
       {approachRects(bs).map((r, i) => <Flat key={"ap" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.0065 + i * 0.0001} c={C.approach} map={paving} per={0.5} />)}
       {/* Park, pond and footbridge over the water. */}
       <Flat x={17} z={1.1} w={5.0} d={5.6} y={0.002} c={C.park} map={grass} per={1.2} />
