@@ -105,7 +105,7 @@ export const HOME_WORKOUT: ActionDef = {
   resolve: (s) => ({ patch: { str: s.str + 2 }, message: "Home gym session. +2 strength." }),
 };
 /** Each qualification adds one intelligence point to every study session. */
-export const studyGain = (base: number, school: number) => base + Math.max(0, Math.min(4, Math.trunc(school)));
+export const studyGain = (base: number, school: number) => Math.min(2, base + Math.max(0, Math.min(4, Math.trunc(school))));
 /** Cumulative study XP milestones for High School, College, University and PhD. */
 export const EDUCATION_XP_REQUIRED = [0, 20, 60, 120, 200] as const;
 
