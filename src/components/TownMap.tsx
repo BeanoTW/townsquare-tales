@@ -412,7 +412,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {tile(0,0,N,N,"var(--town-grass)","grass")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
         {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
-        {tile(25.5,7.5,4.2,4.8,"var(--town-park-lawn)","park-green")}
+        {tile(17,0.9,5.0,5.9,"var(--town-park-lawn)","park-green")}
         {/* Road shoulders do not extend across entire neighbourhoods. */}
         {ROADS.map((r,i) => tile(Math.max(0,r.x-.58),Math.max(0,r.y-.58),
           Math.min(N,r.x+r.w+.58)-Math.max(0,r.x-.58),
@@ -434,10 +434,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             Math.abs(d.x-r.x)+.44,Math.abs(d.y-r.y)+.44,"var(--town-approach)","approach-"+b.id);
         })}
         {/* Central park: not another paved rectangle. */}
-        {tile(25.5,8.1,4.1,4.0,"var(--town-park)","park")}
-        <ellipse cx={P(28.1,10.2)[0]} cy={P(28.1,10.2)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
-        {tile(27.5,8.0,0.45,4.3,"var(--town-park-path)","park-path-ns")}
-        {tile(25.5,10.3,4.1,0.4,"var(--town-park-path)","park-path-ew")}
+        {tile(17,1.1,5.0,5.6,"var(--town-park)","park")}
+        <ellipse cx={P(20.3,4.4)[0]} cy={P(20.3,4.4)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
+        {tile(19.6,1.2,0.45,5.2,"var(--town-park-path)","park-path-ns")}
+        {tile(17,5.5,5.0,0.4,"var(--town-park-path)","park-path-ew")}
         {/* Roads are finite streets with deliberate ends and T-junctions. */}
         {ROADS.map((r,i)=>tile(r.x,r.y,r.w,r.d,"var(--town-asphalt)","road-"+i))}
         {/* Lane paint is generated from each actual street, never a removed grid road. */}
@@ -476,8 +476,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         })}
         </>}
         <Site ghost={use3d} active={constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />
-        {/* Street gang occupy the untouched north-east green, away from the shops. */}
-        {!use3d && tile(25.5, 6.0, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
+        {/* Rough patch by the starter home where the gang now hang out. */}
+        {!use3d && tile(5.2, 3.6, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
         {!use3d && <>
         <polygon points={pts([P(0, N), P(N, N), P(N, N, -22), P(0, N, -22)])} fill="var(--town-earth-front)" stroke="var(--town-ink)" />
         <polygon points={pts([P(N, 0), P(N, N), P(N, N, -22), P(N, 0, -22)])} fill="var(--town-earth-side)" stroke="var(--town-ink)" />
@@ -634,7 +634,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               y: Math.max(0.3, Math.min(N - 0.3, (e.clientY - bounds.top) / bounds.height * N)),
             });
           }}>
-          <rect x="25.5" y="8.1" width="4.1" height="4" fill="var(--town-mini-park)" />
+          <rect x="17" y="1.1" width="5" height="5.6" fill="var(--town-mini-park)" />
           {ROADS.map((r,i) => <rect key={"mini-road-"+i} x={r.x} y={r.y} width={r.w} height={r.d} fill="var(--town-mini-road)" />)}
           <circle cx={GANG_SPOT.x} cy={GANG_SPOT.y} r={0.8} fill="#40343d" stroke="#f2d46f" strokeWidth={0.22}><title>Street gang - approach at your own risk</title></circle>
           {bs.map((b) => <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.d}
