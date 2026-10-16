@@ -41,6 +41,7 @@ function Building({ b, house }: { b: B; house: number }) {
     case "gym": return <Gym b={b} c={c} />;
     case "school": return <School b={b} c={c} />;
     case "bar": return <Pub b={b} c={c} />;
+    case "garage": return <Garage b={b} />;
     case "work": return <MegaCorp b={b} c={c} />;
     case "bank": return <Bank b={b} c={c} />;
     case "shop": return <CornerShop b={b} c={c} />;
@@ -585,6 +586,20 @@ function PostOffice({ b, c }: { b: B; c: Colours }) {
   </group>;
 }
 
+/** Three-bay local garage with a clear southern frontage. */
+function Garage({ b }: { b: B }) {
+ const H=1.0, bx=b.x, bz=b.y, bw=b.w, bd=b.d;
+ const S=faceOf(bx,bz,bw,bd,"s");
+ return <group>
+  <Walls x={bx} z={bz} w={bw} d={bd} h={H} c="#a49780" map={plasterTexture()} />
+  <FlatRoof x={bx} z={bz} w={bw} d={bd} y={H} c="#535757" trim="#313d40" />
+  {[0,1,2].map(i=><group key={i}>
+   <Box s={[bw/3-0.18,0.71,0.07]} p={[bx+(i+0.5)*bw/3,0.41,bz+bd+0.05]} c="#717d7f"/>
+   {[0.2,0.38,0.56].map(y=><Box key={y} s={[bw/3-0.22,0.025,0.08]} p={[bx+(i+0.5)*bw/3,y,bz+bd+0.10]} c="#36464c"/>)}
+  </group>)}
+  <SignBoard f={S} u={bw/2} v={0.87} w={2.3} h={0.18} text="BAYSIDE GARAGE" bg="#344b52" fg="#f4e5bf" />
+ </group>;
+}
 function Generic({ b, c }: { b: B; c: Colours }) {
   const H = b.h / 50;
   const S = faceOf(b.x, b.y, b.w, b.d, "s"), W = faceOf(b.x, b.y, b.w, b.d, "w");
