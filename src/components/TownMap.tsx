@@ -129,7 +129,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
-  const yardRelocated = Boolean(state?.companyCar && state?.drivingLicence);
+  const yardRelocated = Boolean(isTownHallBuilt({ day: state?.day ?? 1 }) && state?.companyCar && state?.drivingLicence);
   const bs = useMemo(() => buildings(house, castleOwned, yardRelocated), [house, castleOwned, yardRelocated]);
   const solids = useMemo(() => townSolids(bs), [bs]);
   const { use3d } = useTown3d();
