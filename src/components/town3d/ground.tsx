@@ -156,6 +156,9 @@ export function TownGround({ bs }: { bs: B[] }) {
       <Flat x={17} z={0.9} w={5.0} d={5.9} y={0.0015} c={C.parkLawn} map={grass} per={1.4} />
       {pavementRects().map((r, i) => <Flat key={"pv" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.004 + i * 0.0002} c={C.pavement} map={paving} per={0.5} />)}
       {bs.map((b) => { const plot=buildingPlot(b); return <Flat key={"lot" + b.id} x={plot.x} z={plot.y} w={plot.w} d={plot.d} y={0.006} c={b.id === "casino" ? C.backlot : C.garden} map={grass} per={1.2} />; })}
+      {/* Garage access runs along the west of the pub and across the southern frontage. */}
+      <Flat x={0.45} z={21.0} w={0.6} d={8.35} y={0.0081} c={C.approach} map={paving} per={0.5} />
+      <Flat x={0.45} z={29.08} w={8.2} d={0.4} y={0.0082} c={C.approach} map={paving} per={0.5} />
       {approachRects(bs).map((r, i) => <Flat key={"ap" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.0065 + i * 0.0001} c={C.approach} map={paving} per={0.5} />)}
       {/* Coastal transition and varied ground surfaces. Put these after base plots so
           details remain visible rather than being covered by the grass overlays. */}
