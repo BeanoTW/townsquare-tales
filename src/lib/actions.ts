@@ -1,3 +1,4 @@
+import { settleBusinesses } from "@/lib/owned-businesses";
 import { requiresMainsPower } from "@/lib/home-zones";
 import { CAREERS, missingRequirements, nextRole, shiftReward } from "@/lib/careers";
 import { saveCareer, trackBest, trackXp } from "@/lib/career-history";
@@ -166,6 +167,7 @@ export function sleepAction(s: GameState): ActionDef {
             : st.loanDebt ?? 0,
           loanLastDay: st.day + 1,
           heat: Math.max(0, st.heat - 1),
+          ...settleBusinesses(st, st.day + 1),
           ...(() => {
             const weekly = housingWeeklyCost(st);
             if (!weekly || (st.day + 1 - (st.housingLastPaidDay ?? st.day)) < 7) return {};
