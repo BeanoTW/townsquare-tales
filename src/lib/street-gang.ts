@@ -42,7 +42,7 @@ export function meetStreetGang(state: GameState, rng: () => number = Math.random
 
 /** Approaching is free; only an explicit response risks a consequence. */
 export function gangReception(s: GameState): GangMeeting {
-  if(s.gangStage>0 || s.gangRep>=3 || (s.karma<=-10 && s.heat>=10)) return {hostile:false,cashLost:0,patch:{},message:'"There you are. Looking regrettably employable. Fancy a job?"'};
+  if(s.gangStage>0 || s.gangRep>=3 || (s.criminalTrust??0)>=10) return {hostile:false,cashLost:0,patch:{},message:'"There you are. Looking regrettably employable. Fancy a job?"'};
   if(s.str>=22 || s.cha>=22) return {hostile:false,cashLost:0,patch:{},message:'"Alright. Hang about. Just don’t start a motivational podcast."'};
   return {hostile:true,cashLost:0,patch:{},message:'"Private pavement, mate. Donation or demonstration?" You can leave safely, talk them down, or stand your ground.'};
 }
