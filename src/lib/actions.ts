@@ -168,8 +168,9 @@ export function sleepAction(s: GameState): ActionDef {
           ...(() => {
             const weekly = housingWeeklyCost(st);
             if (!weekly || (st.day + 1 - (st.housingLastPaidDay ?? st.day)) < 7) return {};
-            const paid = Math.min(st.money, weekly + (st.housingArrears ?? 0));
-            const remaining = Math.max(0, weekly + (st.housingArrears ?? 0) - paid);
+            const due = st.housingMode === 2 ? Math.min(weekly, st.mortgageBalance ?? 0) + (st.housingArrears ?? 0) : weekly + (st.housingArrears ?? 0);
+            const paid = Math.min(st.money, due);
+            const remaining = Math.max(0, due - paid);
             const loan = st.housingMode === 2 ? Math.max(0, (st.mortgageBalance ?? 0) - Math.max(0, paid)) : 0;
             const settled = st.housingMode === 2 && loan === 0 && remaining === 0;
             return {
@@ -203,6 +204,7 @@ export function buyHouseAction(s: GameState, tier = Math.min(3, s.house + 1)): A
       const mask = st.ownedHomes ?? ((1 << (st.house + 1)) - 1);
       const alreadyOwned = Boolean(mask & (1 << tier));
       if (!alreadyOwned && st.money < target.cost) return "Not enough cash.";
+      if (st.housingMode === 2 && (st.mortgageBalance ?? 0) > 0) return "Pay off your existing mortgage first.";
       return {
         patch: { money: st.money - (alreadyOwned ? 0 : target.cost), house: tier, ownedHomes: mask | (1 << tier), housingMode: 0, housingTier: 0, mortgageBalance: 0, housingArrears: 0 },
         message: alreadyOwned ? `Moved into your ${target.name}.` : `You bought a ${target.name}!`,
@@ -234,6 +236,7 @@ export function housingAction(s: GameState, tier: 1 | 2, mode: 1 | 2): ActionDef
       return {
         patch: {
           money: st.money - deposit, house: tier, housingMode: mode,
+          ownedHomes: st.ownedHomes ?? ((1 << (st.house + 1)) - 1),
           housingTier: tier, mortgageBalance: mode === 2 ? home.cost - deposit : 0,
           housingLastPaidDay: st.day, housingArrears: 0,
         },
