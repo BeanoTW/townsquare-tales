@@ -180,6 +180,15 @@ function CompletedTownHall() {
         <boxGeometry args={[4.65, 0.2, 5.0]} />
         <meshStandardMaterial color="#535b63" />
       </mesh>
+      {/* Community hall: continuous street facade with glazed entrance, windows and name board. */}
+      {[17.45, 19.85].map(x => <mesh key={"window-"+x} position={[x, 1.01, 21.385]} castShadow>
+        <boxGeometry args={[0.72, 0.63, 0.07]} />
+        <meshStandardMaterial color="#7eafb7" metalness={0.1} roughness={0.24} />
+      </mesh>)}
+      <mesh position={[18.75, 1.28, 21.44]}>
+        <boxGeometry args={[2.5, 0.32, 0.1]} />
+        <meshStandardMaterial color="#304f56" />
+      </mesh>
       {[17.5, 18.35, 19.2, 20.05].map(x => (
         <mesh key={x} position={[x, 0.71, 21.5]} castShadow>
           <cylinderGeometry args={[0.115, 0.13, 1.25, 8]} />
@@ -193,6 +202,10 @@ function CompletedTownHall() {
       <mesh position={[18.75, 0.82, 21.39]}>
         <boxGeometry args={[0.7, 0.95, 0.05]} />
         <meshStandardMaterial color="#485c63" roughness={0.35} />
+      </mesh>
+      <mesh position={[18.75, 1.63, 19.0]} castShadow>
+        <boxGeometry args={[4.82, 0.08, 5.12]}/>
+        <meshStandardMaterial color="#d9dbd3"/>
       </mesh>
       <mesh position={[18.75, 2.03, 19.0]} castShadow>
         <cylinderGeometry args={[0.55, 0.75, 0.65, 4]} />
