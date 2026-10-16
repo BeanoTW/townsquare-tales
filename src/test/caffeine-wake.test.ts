@@ -21,11 +21,11 @@ describe("caffeine pills and early alarms", () => {
     expect(r.next.hour).toBe(7);
     expect(r.next.caffeinePills).toBe(1);
   });
-  it("does not consume caffeine without an alarm", () => {
+  it("caffeine alone matches the alarm boost and is consumed", () => {
     const state={...START,hour:22,alarm:0,caffeinePills:1};
-    expect(sleepOutcome(state).hour).toBeGreaterThan(7);
+    expect(sleepOutcome(state).hour).toBe(sleepOutcome({...state,alarm:1,caffeinePills:0}).hour);
     const r=runAction(state,sleepAction(state));
     expect(r.ok).toBe(true);
-    if(r.ok)expect(r.next.caffeinePills).toBe(1);
+    if(r.ok)expect(r.next.caffeinePills).toBe(0);
   });
 });
