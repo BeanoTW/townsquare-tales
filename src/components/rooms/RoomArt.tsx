@@ -960,6 +960,20 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
         </g>
       );
     }
+    case "post": {
+      const counter=B("post-counter"), sorting=B("sorting");
+      return <g>
+        <Counter b={counter} top="#a36445" />
+        <Monitor x={counter.x+counter.w-65} y={counter.y+3} w={52} h={38}/>
+        <Figure x={counter.x+50} y={counter.y+counter.h-7} shirt="#b64145"/>
+        <Fill b={sorting} fill="#e0b881" rx={3}/>
+        {[0,1,2].map(row=><g key={row}>
+          <rect x={sorting.x+8} y={sorting.y+14+row*38} width={sorting.w-16} height={5} fill="#845d40"/>
+          {[0,1,2].map(col=><rect key={col} x={sorting.x+14+col*35} y={sorting.y+20+row*38} width={26} height={19} fill="#fff2d8" stroke="#4b3935" strokeWidth={1}/>)}
+        </g>)}
+        <Label x={sorting.x+sorting.w/2} y={sorting.y+sorting.h-8} text="SORTING" size={12} fill={INK}/>
+      </g>;
+    }
     case "clinic": {
       const bed = B("treatment-bed"),
         cab = B("cabinet");
@@ -1085,6 +1099,7 @@ const PATTERNS: Record<PlaceId, "planks" | "tiles" | "carpet" | "concrete" | "gr
     furniture: "carpet",
     casino: "carpet",
     depot: "tiles",
+    post: "tiles",
     police: "tiles",
     clinic: "tiles",
   };
