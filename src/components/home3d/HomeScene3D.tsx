@@ -466,7 +466,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
-      {<HomeWalker firstPerson={isFirstPerson(plan)} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
+      {<HomeWalker firstPerson={isFirstPerson(plan)} showAvatar={Boolean(p.cutscene)} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
       {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} cast={shared.cast} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
