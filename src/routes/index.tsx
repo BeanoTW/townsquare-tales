@@ -8,7 +8,12 @@ import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/s
 import { TownMap } from "@/components/TownMap";
 import { GlobalRenderingDiagnostics } from "@/components/GlobalRenderingDiagnostics";
 import { PlayerDashboard, InventoryDashboard } from "@/components/CharacterDashboards";
-import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
+import { ActionVignette, VIGNETTE_TITLES, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
+import { SceneStage } from "@/components/scenes/SceneStage";
+import { webglAvailable } from "@/components/home3d/Home3DStage";
+import { karmaHeadColor } from "@/lib/player-appearance";
+import { cardStage, milestoneStage, type StageSpec } from "@/lib/scene-stage";
+import { CUTSCENE_MODE_KEY, milestoneFor, readCutsceneMode, type CutsceneMode } from "@/lib/milestones";
 import type { CutsceneClaim } from "@/lib/cutscenes";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
@@ -78,6 +83,10 @@ function Game() {
   const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
   const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
+  /** Milestone scenes and the 3D action card share one stage overlay. */
+  const [stage, setStage] = useState<StageSpec | null>(null);
+  const [cutsceneMode, setCutsceneMode] = useState<CutsceneMode>("full");
+  const [gl, setGl] = useState(false);
   /** Set by a 3D room that can act an action out in-world instead of showing the vignette card. */
   const cutsceneClaim = useRef<CutsceneClaim | null>(null);
   // Result cards are transient, unlike dialogue that requires a player decision.
@@ -102,6 +111,8 @@ function Game() {
       setLookHorizontal(window.localStorage.getItem("sticktown-look-horizontal") === "inverted" ? "inverted" : "normal");
       setLookVertical(window.localStorage.getItem("sticktown-look-vertical") === "inverted" ? "inverted" : "normal");
     } catch { /* Run with in-memory preferences when storage is unavailable. */ }
+    setCutsceneMode(readCutsceneMode());
+    setGl(webglAvailable());
     setSaveReady(true);
   }, []);
   // Never overwrite a player's existing save with SSR defaults during hydration.
@@ -132,6 +143,7 @@ function Game() {
     }
     setResult(null);
     setVignette(null);
+    setStage(null);
   };
 
   const selectMovement = (mode: "joystick" | "tap") => {
@@ -143,6 +155,10 @@ function Game() {
     else setLookVertical(value);
     try { window.localStorage.setItem(`sticktown-look-${axis}`, value); } catch { /* Session preference only. */ }
     window.dispatchEvent(new Event("tst:look-controls-changed"));
+  };
+  const selectCutscenes = (mode: CutsceneMode) => {
+    setCutsceneMode(mode);
+    try { window.localStorage.setItem(CUTSCENE_MODE_KEY, mode); } catch { /* Session preference still works. */ }
   };
   const selectSound = () => {
     const next = !soundOn;
@@ -169,9 +185,17 @@ function Game() {
     if (!outcome.ok) { notify(outcome.message, false); return false; }
     setS(outcome.next);
     notify(outcome.message, true, outcome.hoursUsed, outcome.changes);
-    const inWorld = cutsceneClaim.current?.({ actionId: def.id, changes: outcome.changes, before: s, after: outcome.next }) ?? false;
+    if (cutsceneMode === "off") return true;
+    // Life milestones get the big stage; everything else plays in-world when the room can, else as a card.
+    const milestone = milestoneFor(s, outcome.next);
+    if (milestone && gl) {
+      setStage(milestoneStage(milestone, { day: s.day, house: outcome.next.house, changes: outcome.changes, message: outcome.message, mode: cutsceneMode }));
+      return true;
+    }
+    const inWorld = cutsceneClaim.current?.({ actionId: def.id, changes: outcome.changes, before: s, after: outcome.next, short: cutsceneMode === "short" }) ?? false;
     const kind = inWorld ? null : vignetteForAction(def.id);
-    if (kind) setVignette({ kind, changes: outcome.changes, message: outcome.message });
+    if (kind && gl) setStage(cardStage(kind, { actionId: def.id, changes: outcome.changes, message: outcome.message, before: s, after: outcome.next, title: VIGNETTE_TITLES[kind], mode: cutsceneMode }));
+    else if (kind) setVignette({ kind, changes: outcome.changes, message: outcome.message });
     return true;
   };
 
@@ -252,7 +276,7 @@ function Game() {
       <TownMap
         state={s}
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
-        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || arcade)}
+        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade)}
         onStreet={(id: StreetObjectId) => {
           if(id==="ramp"){
             // Without an equipped board the game opens on its requirement card instead of charging anything.
@@ -295,6 +319,7 @@ function Game() {
       />
 
       {vignette && <ActionVignette kind={vignette.kind} changes={vignette.changes} message={vignette.message} onDone={() => setVignette(null)} />}
+      {stage && <SceneStage key={stage.key} spec={stage} head={karmaHeadColor(s.karma)} onDone={() => setStage(null)} />}
 
       <GlobalRenderingDiagnostics screen={game ? `Casino: ${game}` : arcade ? `Minigame: ${arcade}` : place ? `Interior: ${place}` : "Town map"} />
       {/* top HUD: always visible, including inside buildings */}
@@ -593,6 +618,20 @@ function Game() {
               </div>
             </div>
           ))}
+          <p className="text-base font-bold">Cutscenes</p>
+          <div className="grid grid-cols-3 gap-2" role="group" aria-label="Cutscenes">
+            {(["full", "short", "off"] as const).map((m) => (
+              <button key={m} type="button" aria-pressed={cutsceneMode === m} onClick={() => selectCutscenes(m)}
+                className={`min-h-12 rounded border-2 border-foreground p-2 font-bold ${cutsceneMode === m ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                {m === "full" ? "Full" : m === "short" ? "Short" : "Off"}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {cutsceneMode === "full" ? "Actions play out in full, shortened when you repeat them the same day. Tap any scene to skip it."
+              : cutsceneMode === "short" ? "Every scene plays a quick version. Milestones stay a little longer."
+              : "No cutscenes. Results still show at the bottom of the screen."}
+          </p>
           <Btn onClick={selectSound}>
             🔊 Action sounds: {soundOn ? "On" : "Off"}
           </Btn>
