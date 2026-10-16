@@ -1,8 +1,8 @@
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 
-/** A permanent street encounter, not a sixteenth building. Open green north-east of the shops. */
-export const GANG_SPOT = { id: "gang", x: 26.4, y: 6.8, approach: 1.45 } as const;
+/** Gang hangout on the rough grass near the starter home. */
+export const GANG_SPOT = { id: "gang", x: 6.1, y: 4.5, approach: 1.45 } as const;
 
 export type GangMeeting =
   | { hostile: true; message: string; patch: Partial<GameState>; cashLost: number }
