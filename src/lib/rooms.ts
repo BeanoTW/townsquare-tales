@@ -1,3 +1,4 @@
+import { licenceTestAction, claimCompanyCarAction, companyCarEligible } from "@/lib/transport";
 import { CONTRACTS, constructionStatus, startContractAction } from "@/lib/construction-contracts";
 import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
@@ -317,8 +318,8 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "PROMOTE",
         hint: "Progress and promotions",
         box: { x: 312, y: 90, w: 96, h: 100 },
-        lines: (s) => [...promotionStatus(3, s),...constructionStatus(s)],
-        actions: s => [...promoteSpot(3)(s),...(!s.contractType ? CONTRACTS.map(job => startContractAction(job.id)) : [])],
+        lines: (s) => [...promotionStatus(3, s),...constructionStatus(s),...(companyCarEligible(s)?[s.companyCar?"Company car collected":"Old company car available · driving licence required"]:[])],
+        actions: s => [...promoteSpot(3)(s),...(!s.contractType ? CONTRACTS.map(job => startContractAction(job.id)) : []), ...(companyCarEligible(s) && !s.companyCar ? [claimCompanyCarAction()] : [])],
       },
     ],
   },
@@ -720,6 +721,15 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "See what's leaving",
         box: { x: 30, y: 30, w: 200, h: 110 },
         actions: () => [CHECK_DEPARTURES],
+      },
+      {
+        id: "driving-desk",
+        label: "Driving test desk",
+        tag: "LICENCE",
+        hint: "Get a licence before collecting or driving a car",
+        box: { x: 215, y: 22, w: 120, h: 78 },
+        lines: s => [s.drivingLicence ? "Driving licence: valid" : "Driving licence: not held", "Theory and safety test · requires 10 intelligence"],
+        actions: s => s.drivingLicence ? [] : [licenceTestAction()],
       },
       {
         id: "ticket-hatch",
