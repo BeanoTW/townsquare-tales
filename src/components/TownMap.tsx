@@ -168,11 +168,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = useCallback((destination: Point, enter?: string) => {
-    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
-    const route = findRoute(me.current, destination, bs);
+    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, solids));
+    const route = findRoute(me.current, destination, solids);
     if (enter === "kid" && Math.hypot(me.current.x-destination.x,me.current.y-destination.y) < PARK_KID_SPOT.approach) { kidRef.current?.(); return; }
     target.current = route.length ? { waypoints: route, enter } : null;
-  }, [bs]);
+  }, [solids]);
   const selectEncounter = () => {
     if (!encounter || pausedRef.current) return;
     if(Math.hypot(me.current.x-encounter.x,me.current.y-encounter.y)<1.5) onEncounter?.();
@@ -251,7 +251,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
-    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
+    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, solids));
     // Keep map animation at 30 FPS on mobile for smoother movement without full 60 FPS scene reconciliation.
     // The browser still schedules RAF normally, but most frames do no React work.
     let last = performance.now(), raf = 0;
