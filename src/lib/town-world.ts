@@ -16,6 +16,26 @@ export const ROADS = [
   { x: 23.3, y: 5.8, w: 6.2, d: 2.8 }, // north-east L-shaped branch to the postal entrance
 ] as const;
 
+/** Shared, junction-aware road paint in map units for both SVG and Three.js.
+ * Dashes stop before side-road crossings instead of floating through intersections. */
+export function laneDashes(roads: readonly {x:number;y:number;w:number;d:number}[] = ROADS) {
+  const dashes: {x:number;y:number;w:number;d:number}[] = [];
+  roads.forEach((r,i) => {
+    const vertical=r.d>r.w;
+    const len=vertical?r.d:r.w;
+    for(let p=0.65;p+0.82<=len-0.35;p+=2.4) {
+      const x=vertical?r.x+r.w/2-0.05:r.x+p;
+      const y=vertical?r.y+p:r.y+r.d/2-0.05;
+      const dash={x,y,w:vertical?0.1:0.82,d:vertical?0.82:0.1};
+      const overlapsOther=roads.some((other,j)=>j!==i &&
+        dash.x<other.x+other.w+0.18 && dash.x+dash.w>other.x-0.18 &&
+        dash.y<other.y+other.d+0.18 && dash.y+dash.d>other.y-0.18);
+      if(!overlapsOther) dashes.push(dash);
+    }
+  });
+  return dashes;
+}
+
 export type B = BuildingLot;
 
 export const HOUSE_LOOK = [
