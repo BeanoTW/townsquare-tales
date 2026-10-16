@@ -57,5 +57,7 @@ export function mailFor(s:GameState):Letter[] {
     body:`You have an outstanding balance of $${s.loanDebt}. Your repayment deadline is day ${s.loanDueDay??"—"}. Speak to the bank teller to arrange repayment.`});
   if(marketUnlocked(s))letters.push({id:11,day:s.day,from:"MegaCorp · Financial Development",subject:"Ever thought about owning shares?",category:"career",
     body:"You\u2019ve demonstrated the analytical skills needed to understand financial markets. Buy a laptop at Cosy Corner and use your home study desk to trade shares. Prices change daily, so your investments can lose money as well as gain it."});
+  if(s.day>=30)letters.push({id:12,day:30,from:"Site Foreman · Workers Yard",subject:"We've moved — new yard east of Town Police",category:"career",
+    body:"Town Hall is finished, so we've cleared out the old site. The whole Workers Yard — my office, the vacancies board and all construction contracts — is now east of the police station. Your construction job hasn't changed. It's a long walk, so check Town Transit about a licence and ask me about the old company car when you're a Site Lead. See you at the new yard. — Foreman."});
   return letters.filter(l=>l.day<=s.day).sort((a,b)=>b.day-a.day || b.id-a.id);
 }
