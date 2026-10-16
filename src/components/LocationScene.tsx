@@ -139,7 +139,7 @@ function ObjectLocationScene({
 
   const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone);
   const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
-  const commerce = Boolean(use3d && selected && ((room.id === "shop" && ["shelves","checkout"].includes(selected.id)) || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
+  const commerce = Boolean(use3d && selected && ((room.id === "shop" && selected.id === "checkout") || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
   const plan3d = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
   // Interactions can be selected from UI even when their fixture belongs
   // to another room. Match the hotspot to the actual plan slot, then move
