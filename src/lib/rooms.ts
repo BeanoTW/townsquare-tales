@@ -1,5 +1,5 @@
 import { licenceTestAction, claimCompanyCarAction, companyCarEligible } from "@/lib/transport";
-import { meetPawnContact, pawnErrand } from "@/lib/underworld";
+import { meetPawnContact, pawnErrand, repairWreck } from "@/lib/underworld";
 import { CONTRACTS, constructionStatus, startContractAction } from "@/lib/construction-contracts";
 import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
@@ -76,6 +76,7 @@ export const PLACE_IDS = [
   "shop",
   "diner",
   "pawn",
+  "garage",
   "furniture",
   "casino",
   "depot",
@@ -598,6 +599,17 @@ export const ROOMS: Record<PlaceId, Room> = {
         box: { x: 150, y: 120, w: 130, h: 70 },
         actions: () => [HOT_MEAL, LUNCH_SHIFT],
       },
+    ],
+  },
+  garage: {
+    id: "garage", title: "Bayside Garage", caption: "Three bays, a battered toolbox and the smell of old oil.", sign: "BAYSIDE GARAGE",
+    palette: {wall:"#a79d8b",floor:"#777a77",accent:"#c6a663"},
+    hotspots: [
+      {id:"service-desk",label:"Mechanic reception",tag:"SERVICE",hint:"Ask about your car",box:{x:18,y:40,w:126,h:100},
+        lines:s=>[s.abandonedCar?"Your old wreck is on the books.":"No personal car registered yet.",`Repair stages complete: ${s.wreckRepairs??0} / 3.`],
+        actions:s=>s.abandonedCar && (s.wreckRepairs??0)<3 ? [repairWreck()] : []},
+      {id:"service-bays",label:"Three repair bays",tag:"BAYS",hint:"Inspect the work area",box:{x:157,y:46,w:244,h:144},
+        lines:s=>[(s.wreckRepairs??0)>=3?"Your personal car has passed its restoration inspection.":"A mechanic is working through the service queue.","Vehicle upgrades and paintwork are coming later."]},
     ],
   },
   pawn: {
