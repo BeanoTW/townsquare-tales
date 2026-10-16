@@ -202,7 +202,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     vehicleRef.current=drivingRef.current?"wreck":null;
     setVehicle(vehicleRef.current);setDriving(drivingRef.current);carSpeed.current=0;target.current=null;
   };
-  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
+  // Initialise only after save hydration, outside the actual owned home rather than
+  // a fixed downtown coordinate that can land in later construction footprints.
+  const initialHome = bs.find(b => b.id === "home");
+  const initialSpawn = initialHome ? nearestWalkable(door(initialHome), solids) : {x:9.95,y:9.0};
+  const me = useRef({ x: initialSpawn.x, y: initialSpawn.y, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
   // The 3D town reads the same live state the SVG uses; it never owns game logic.
   const streetLive = useRef<StreetLive | null>(null);
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
