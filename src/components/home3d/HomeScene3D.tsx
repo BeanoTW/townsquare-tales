@@ -10,6 +10,7 @@ import { StudioDecor } from "./StudioShell";
 import { CampStove, CrateDesk, OldCouch, PalletBed, ScrapWeights, SquatDecor, SquatMattress } from "./squat";
 import { SuburbanDecor } from "./suburban";
 import { Bedsides, BlackjackTable, Figure, MansionDecor, SlotBank } from "./mansion";
+import { CastleDecor } from "./castle-interior";
 import { BarCounter, BarDecor, DanceFloor, Dartboard } from "./bar";
 import { CasinoDecor, DiceTable } from "./casino";
 import { GymDecor, PowerRack, Treadmills } from "./gym";
@@ -143,6 +144,8 @@ function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) 
       return <SquatDecor owned={owned} />;
     case "suburban":
       return <SuburbanDecor owned={owned} />;
+    case "castle":
+      return <CastleDecor owned={owned} />;
     case "mansion":
       return <MansionDecor owned={owned} />;
     case "casino":
