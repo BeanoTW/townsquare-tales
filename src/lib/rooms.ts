@@ -1,4 +1,4 @@
-import { businessStatus, buyBusinessAction, repayBusinessDebtAction } from "@/lib/owned-businesses";
+import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
 import { buyLaptopAction, marketAction, marketUnlocked, sharePrice } from "@/lib/investing";
 import { HUSTLES, hustleAction } from "@/lib/side-hustles";
@@ -531,7 +531,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Retail progression",
         box: { x: 180, y: 40, w: 70, h: 150 },
         lines: (s) => [...promotionStatus(2, s), ...businessStatus(s,"retail")],
-        actions: s => [...promoteSpot(2)(s), ...(!s.retailOwned ? [buyBusinessAction("retail")] : []), ...(s.businessDebt ? [repayBusinessDebtAction()] : [])],
+        actions: s => [...promoteSpot(2)(s), ...(!s.retailOwned ? [buyBusinessAction("retail")] : [hireBusinessManagerAction("retail",1),hireBusinessManagerAction("retail",2),expandBusinessAction("retail")]), ...(s.businessDebt ? [repayBusinessDebtAction()] : [])],
       },
       {
         id: "shop-board",
@@ -585,7 +585,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Progress and promotions",
         box: { x: 290, y: 40, w: 112, h: 140 },
         lines: (s) => [...promotionStatus(1, s), ...businessStatus(s,"restaurant")],
-        actions: s => [...promoteSpot(1)(s), ...(!s.restaurantOwned ? [buyBusinessAction("restaurant")] : []), ...(s.businessDebt ? [repayBusinessDebtAction()] : [])],
+        actions: s => [...promoteSpot(1)(s), ...(!s.restaurantOwned ? [buyBusinessAction("restaurant")] : [hireBusinessManagerAction("restaurant",1),hireBusinessManagerAction("restaurant",2),expandBusinessAction("restaurant")]), ...(s.businessDebt ? [repayBusinessDebtAction()] : [])],
       },
       {
         id: "counter",
