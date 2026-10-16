@@ -344,6 +344,15 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     // Float the tags above their furniture.
     const w = state.size.width;
     const h = state.size.height;
+    // First person: label only the object nearest the centre of view.
+    let centre: string | null = null;
+    if (fp) {
+      let best = 0.45;
+      for (const s of slotsRef.current) {
+        tmp.set(s.x, s.labelY, s.z).project(camera);
+        if (tmp.z < 1 && tmp.z > -1 && Math.abs(tmp.x) < best) { best = Math.abs(tmp.x); centre = s.id; }
+      }
+    }
     for (const s of slotsRef.current) {
       const el = shared.labelEls.current.get(s.id);
       if (!el) continue;
@@ -353,7 +362,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
       // Tags step aside while a cutscene plays.
-      const show = visible && !cine.active && !shared.walker.current.scene && shared.walker.current.nearby === s.id;
+      const show = visible && !cine.active && !shared.walker.current.scene && (fp ? centre === s.id : shared.walker.current.nearby === s.id);
       el.style.opacity = show ? "1" : "0";
       el.style.visibility = show ? "visible" : "hidden";
       el.style.pointerEvents = show ? "auto" : "none";

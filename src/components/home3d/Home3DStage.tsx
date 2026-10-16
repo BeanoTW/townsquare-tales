@@ -7,6 +7,7 @@ import type { HomePlan } from "@/lib/home3d/layout";
 import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
 import { InteriorJoystick } from "./InteriorJoystick";
+import { FirstPersonHands } from "./FirstPersonHands";
 import type { Cutscene } from "@/lib/cutscenes";
 
 import { karmaHeadColor } from "@/lib/player-appearance";
@@ -111,8 +112,9 @@ export function Home3DStage({
           />
         </Suspense>
       </Boundary>
-      {!cutscene && <InteriorJoystick />}
-      {!cutscene && nearby && visibleIds.includes(nearby) && (
+      {!cutscene && !isHome && <InteriorJoystick />}
+      {isHome && <FirstPersonHands acting={Boolean(cutscene)} />}
+      {!cutscene && !isHome && nearby && visibleIds.includes(nearby) && (
         <button type="button" data-nearby-action
           aria-label={`Interact with ${plan.slots.find(s=>s.id===nearby)?.label??nearby}`}
           className="pointer-events-auto absolute bottom-4 right-3 z-30 min-h-14 max-w-[45%] rounded-full border-2 border-foreground bg-primary px-4 text-base font-bold text-primary-foreground shadow-lg"
@@ -120,11 +122,11 @@ export function Home3DStage({
           ✦ {plan.slots.find(s=>s.id===nearby)?.label??"Interact"}
         </button>
       )}
-      <div className={`absolute right-2 top-2 flex flex-col gap-1 transition-opacity ${cutscene ? "pointer-events-none opacity-0" : ""}`} data-home3d-controls onClick={(e) => e.stopPropagation()}>
+      {isHome ? (!cutscene && <button type="button" className={`absolute right-2 top-2 ${BTN}`} aria-label="Look ahead" onClick={() => c()?.reset()}>⌂</button>) : <div className={`absolute right-2 top-2 flex flex-col gap-1 transition-opacity ${cutscene ? "pointer-events-none opacity-0" : ""}`} data-home3d-controls onClick={(e) => e.stopPropagation()}>
         <button type="button" className={BTN} aria-label="Zoom in" onClick={() => c()?.zoom(0.8)}>＋</button>
         <button type="button" className={BTN} aria-label="Zoom out" onClick={() => c()?.zoom(1.25)}>－</button>
         <button type="button" className={BTN} aria-label="Reset camera" onClick={() => c()?.reset()}>⌂</button>
-      </div>
+      </div>}
     </div>
   );
 }
