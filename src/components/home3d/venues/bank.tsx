@@ -56,7 +56,7 @@ function LoanDesk() {
       <Monitor p={[0.4, 0.79, -0.3]} w={0.42} />
       <Box s={[0.3, 0.004, 0.22]} p={[-0.2, 0.795, 0.0]} c="#fdfbf2" shadow={false} />
       <Box s={[0.4, 0.08, 0.06]} p={[-0.5, 0.83, 0.15]} c={GOLD} o={BRASS} shadow={false} />
-      <Sign p={[-0.5, 0.88, 0.185]} w={0.36} h={0.06} text="LOANS" bg={GREEN} border={GOLD} />
+      <Sign p={[-0.5, 0.88, 0.185]} w={0.36} h={0.06} text="HOMES" bg={GREEN} border={GOLD} />
       <Cyl rad={0.035} h={0.1} p={[0.0, 0.84, 0.1]} c="#2f7f79" shadow={false} />
       <OfficeChair p={[0, 0, -0.75]} c="#3a2a22" />
       <Chair p={[-0.4, 0, 0.6]} r={[0, Math.PI, 0]} frame={MAHOGANY} cushion={GREEN} />
