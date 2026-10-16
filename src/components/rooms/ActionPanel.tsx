@@ -1,3 +1,4 @@
+import { durationLabel } from "@/lib/day-cycle";
 import type { CSSProperties, ReactNode } from "react";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
