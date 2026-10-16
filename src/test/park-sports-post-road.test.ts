@@ -29,11 +29,12 @@ describe("joined park recreation and postal road",()=>{
     expect(contains(park,rail.b)).toBe(true);
   });
   it("adds an L-shaped northeast postal road connected to the existing eastern street",()=>{
-    const north=ROADS.find(r=>r.x>23&&r.x+r.w>=29&&r.y<7)!;
+    const north=ROADS.find(r=>r.x===22.6&&r.w>6&&r.x+r.w>=29&&r.y<7)!;
     const east=ROADS.find(r=>r.x===22.6&&r.d>20)!;
     expect(north).toBeDefined();
     expect(east).toBeDefined();
     expect(overlaps(north,east)).toBe(true);
+    expect(north.x).toBe(east.x); // Square inside corner, no stepped kerb.
     expect(post.facing).toBe("south");
     expect(contains(north,door(post))).toBe(true);
     for (const b of lots) for (const road of ROADS)

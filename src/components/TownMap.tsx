@@ -58,7 +58,7 @@ export { karmaHeadColor } from "@/lib/player-appearance";
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 export { ROADS, buildings, door, HOUSE_LOOK } from "@/lib/town-world";
-import { ROADS, laneDashes, buildings, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
+import { ROADS, laneDashes, buildings, buildingPlot, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
 import { buildingHull3d } from "@/components/town3d/specs";
 import { DINER_CHIMNEY, screenOf, townSky } from "@/components/town3d/screen";
 import type { StreetLive, TownLive } from "@/components/town3d/actors";
@@ -419,8 +419,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           Math.min(N,r.y+r.d+.58)-Math.max(0,r.y-.58),
           "var(--town-pavement)","kerb-"+i))}
         {/* Individual lawns and building setbacks, rather than continuous square paving. */}
-        {bs.map(b => tile(Math.max(0,b.x-.15),Math.max(0,b.y-.15),b.w+.3,b.d+.3,
-          b.id==="casino" || b.id==="alley"?"var(--town-backlot)":"var(--town-garden)","lot-"+b.id))}
+        {bs.map(b => {
+          const plot=buildingPlot(b);
+          return tile(plot.x,plot.y,plot.w,plot.d,
+            b.id==="casino" || b.id==="alley"?"var(--town-backlot)":"var(--town-garden)","lot-"+b.id);
+        })}
         {/* Short building approach paths, connected to the closest available road. */}
         {bs.map(b => {
           const d=door(b);
