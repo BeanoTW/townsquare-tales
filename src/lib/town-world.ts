@@ -67,6 +67,16 @@ export const buildings = (house: number): B[] => {
   ];
 };
 
+/** Building landscape stops at the postal pavement, rather than painting turf over it. */
+export function buildingPlot(b: B): {x:number;y:number;w:number;d:number} {
+  const x=Math.max(0,b.x-0.15), y=Math.max(0,b.y-0.15);
+  const w=b.w+0.3;
+  const ordinaryEnd=b.y+b.d+0.15;
+  const branch=ROADS.find(r=>r.x>20&&r.w>5&&r.y<8);
+  const end=b.id==="post"&&branch ? Math.min(ordinaryEnd,branch.y-0.58) : ordinaryEnd;
+  return {x,y,w,d:Math.max(0,end-y)};
+}
+
 export const door = (b: B) => {
   switch (b.facing) {
     case "north": return { x: b.x + b.w / 2, y: b.y - 0.6 };
