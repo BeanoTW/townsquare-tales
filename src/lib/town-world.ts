@@ -12,7 +12,8 @@ export const ROADS = [
   { x: 11.1, y: 11.9, w: 12.2, d: 2.8 }, // east market street, offset 4.8 tiles
   { x: 0, y: 18.5, w: 9.1, d: 2.8 },     // lower west street, staggered again
   { x: 11.1, y: 25.5, w: 12.2, d: 2.8 },  // lower east street, offset 7 tiles
-  { x: 22.6, y: 11.9, w: 2.8, d: 17.7 }, // east side street with T-junctions
+  { x: 22.6, y: 8.0, w: 2.8, d: 21.6 }, // eastern street extends north to the Post Office spur
+  { x: 23.3, y: 5.8, w: 6.2, d: 2.8 }, // north-east L-shaped branch to the postal entrance
 ] as const;
 
 export type B = BuildingLot;
@@ -40,7 +41,7 @@ export const buildings = (house: number): B[] => {
     { facing: "south", id: "furniture", label: "Cosy Corner", x: 18.3, y: 7.25, w: 3.6, d: 3.7, h: 78, wall: "var(--town-furniture-wall)", side: "var(--town-furniture-side)", roof: "var(--town-furniture-roof)", sign: "var(--town-furniture-sign)", win: true },
     { facing: "north", id: "casino", label: "Lucky Sevens", x: 5.2, y: 22, w: 2.8, d: 4, h: 115, wall: "var(--town-casino-wall)", side: "var(--town-casino-side)", roof: "var(--town-casino-roof)", sign: "var(--town-casino-sign)", win: true },
     { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 25.6, w: 3, d: 3.1, h: 50, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: true },
-    { facing: "west", id: "post", label: "Town Post Office", x: 26, y: 2.2, w: 3.1, d: 3.3, h: 58, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
+    { facing: "south", id: "post", label: "Town Post Office", x: 26, y: 2.2, w: 3.1, d: 3.3, h: 58, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
     { facing: "west", id: "police", label: "Town Police", x: 26, y: 19.3, w: 3, d: 3.9, h: 90, wall: "var(--town-police-wall)", side: "var(--town-police-side)", roof: "var(--town-police-roof)", sign: "var(--town-police-sign)", win: true },
     { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 13, w: 3, d: 4, h: 75, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
   ];
@@ -54,7 +55,7 @@ export const door = (b: B) => {
     case "west": return { x: b.x - 0.6, y: b.y + b.d / 2 };
   }
 };
-export const TREES = [[.6,1],[4.6,1],[8,3],[11.9,.6],[16.8,.65],[22.3,5.5],[29.2,6.5],[1,11],[7.5,11],[12.2,10],[28.8,18],[1,28],[8,28],[13.7,27.7],[29,29]] as const;
+export const TREES = [[.6,1],[4.6,1],[8,3],[11.9,.6],[16.8,.65],[22.1,4.2],[29.1,9.5],[1,11],[7.5,11],[12.2,10],[28.8,18],[1,28],[8,28],[13.7,27.7],[29,29]] as const;
 export const LAMPS = [[2,6.65],[7,6.65],[8.4,10.35],[12,11.35],[20.8,11.35],[2,18.05],[7,18.05],[8.4,22],[12,25.05],[20,25.05],[25.5,16],[25.5,23]] as const;
 
 

@@ -96,7 +96,7 @@ export const AMBIENT_ROUTES: readonly AmbientRoute[] = [
   {id:"foreman-helper",color:"var(--town-depot-sign)",morning:[{x:19,y:22.2},{x:21.8,y:24.7}],evening:[{x:7.8,y:21.5},{x:4.7,y:21.5}],line:"They call that a safety briefing?"},
   {id:"delivery",color:"var(--town-depot-sign)",morning:[{x:16.5,y:11.65},{x:21.8,y:11.6}],evening:[{x:16.5,y:11.65},{x:21.8,y:11.6}],line:"Signed for by 'Nobody'. Again."},
   {id:"coffee",color:"var(--town-npc-blue)",morning:[{x:8.5,y:16.8},{x:8,y:10.8}],evening:[{x:8.5,y:16.8},{x:8,y:10.8}],line:"Coffee first. Existential dread later."},
-  {id:"park",color:"var(--town-npc-green)",morning:[{x:26.7,y:10.3},{x:26.7,y:8.5}],evening:[{x:26.7,y:10.3},{x:26.7,y:8.5}],line:"Nature. With suspicious pond foam."},
+  {id:"park",color:"var(--town-npc-green)",morning:[{x:18.3,y:5.4},{x:20.8,y:2.6}],evening:[{x:18.3,y:5.4},{x:20.8,y:2.6}],line:"Nature. With suspicious pond foam."},
   {id:"casino",color:"var(--town-casino-sign)",morning:[{x:8.3,y:21.5},{x:6.6,y:21.4}],evening:[{x:8.3,y:21.5},{x:6.6,y:21.4}],line:"It's only a loss if I go home."},
   {id:"patrol",color:"var(--town-police-sign)",morning:[{x:25.5,y:18.7},{x:25.5,y:24}],evening:[{x:8.1,y:21.5},{x:11.4,y:25}],line:"Nothing to see here. Yet."},
 ] as const;
