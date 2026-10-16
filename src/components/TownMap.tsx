@@ -51,7 +51,7 @@ export { karmaHeadColor } from "@/lib/player-appearance";
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 export { ROADS, buildings, door, HOUSE_LOOK } from "@/lib/town-world";
-import { ROADS, laneDashes, buildings, buildingPlot, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
+import { ROADS, laneDashes, buildings, buildingPlot, townSolids, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
 import { buildingHull3d } from "@/components/town3d/specs";
 import { DINER_CHIMNEY, screenOf, townSky } from "@/components/town3d/screen";
 import type { StreetLive, TownLive } from "@/components/town3d/actors";
@@ -127,7 +127,9 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
 
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
-  const bs = useMemo(() => buildings(house), [house]);
+  const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
+  const bs = useMemo(() => buildings(house, castleOwned), [house, castleOwned]);
+  const solids = useMemo(() => townSolids(bs), [bs]);
   const { use3d } = useTown3d();
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
@@ -606,7 +608,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={isTownHallBuilt({day:state?.day ?? 1})} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} /></Suspense>}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={isTownHallBuilt({day:state?.day ?? 1})} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
