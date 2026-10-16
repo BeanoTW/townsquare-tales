@@ -277,7 +277,7 @@ function Game() {
   };
   return (
     <main className="fixed inset-0 overflow-hidden bg-background text-foreground font-hand">
-      <TownMap
+      {saveReady && <TownMap
         state={s}
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
         paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade || wreckGame)}
@@ -323,7 +323,7 @@ function Game() {
           else if (id === "gang") approachGang();
           else if (isPlace(id) && id !== "alley") walk(id);
         }}
-      />
+      />}
 
       {vignette && <ActionVignette kind={vignette.kind} changes={vignette.changes} message={vignette.message} onDone={() => setVignette(null)} />}
       {stage && <SceneStage key={stage.key} spec={stage} head={karmaHeadColor(s.karma)} onDone={() => setStage(null)} />}
