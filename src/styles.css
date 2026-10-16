@@ -360,3 +360,8 @@
   --pub-seat: #75526d;
   --pub-bottle: #69875b;
 }
+
+@keyframes fp-sway { 0%,100% { transform: translateY(0) } 50% { transform: translateY(5px) } }
+.fp-arm { animation: fp-sway 3.2s ease-in-out infinite; }
+.fp-arm-r { animation-delay: -1.6s; }
+@media (prefers-reduced-motion: reduce) { .fp-arm { animation: none; } }

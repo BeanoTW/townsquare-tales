@@ -20,6 +20,10 @@ import { HomeWalker, type WalkerHandle } from "./HomeWalker";
 import { Director, SKIP_EVENT, type Cine, type CineOverlay } from "./scenes/Director";
 
 const FOV = 45;
+const FP_FOV = 72;
+const FP_YAW = 1.15;
+/** Player homes (tiers 0–3) are viewed in first person; venues keep the overhead camera. */
+export const isFirstPerson = (plan: HomePlan) => plan.tier < 10;
 const EL_MIN = 0.3;
 const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
@@ -169,6 +173,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const cam = useRef<Cam | null>(null);
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const nearbyRef = useRef<string | null>(null);
+  const fp = isFirstPerson(plan);
+  const fpRef = useRef({ yaw: 0, gyaw: 0 });
   const slotsRef = useRef(slots);
   slotsRef.current = slots;
 
@@ -212,6 +218,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     shared.controls.current = {
       reset: () => {
         c.gaz = DEFAULT_AZ;
+        fpRef.current.gyaw = 0;
         focus("all");
       },
       zoom: (f) => {
@@ -246,6 +253,26 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     if (!reduce && c.dist === 0) c.dist = g.dist;
     invalidate();
   }, [aspect, goalFor, invalidate, reduce]);
+
+  // First-person homes: one-finger horizontal drag turns the view.
+  useEffect(() => {
+    if (!fp) return;
+    const el = gl.domElement;
+    let last: number | null = null;
+    const down = (e: PointerEvent) => { last = e.clientX; shared.dragged.current = 0; };
+    const move = (e: PointerEvent) => {
+      if (last === null) return;
+      const dx = e.clientX - last; last = e.clientX;
+      shared.dragged.current += Math.abs(dx);
+      const f = fpRef.current;
+      f.gyaw = clamp(f.gyaw + dx * 0.006, -FP_YAW, FP_YAW);
+      invalidate();
+    };
+    const up = () => { last = null; };
+    el.addEventListener("pointerdown", down); el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+    return () => { el.removeEventListener("pointerdown", down); el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up); };
+  }, [fp, gl, invalidate, shared.dragged]);
 
   // Camera remains bird's-eye. One-finger gestures walk the player; pinch/wheel only zoom.
   useEffect(() => {
@@ -284,9 +311,22 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     c.dist += (c.gdist - c.dist) * k;
     c.tx += (c.gtx - c.tx) * k;
     c.tz += (c.gtz - c.tz) * k;
-    const ce = Math.cos(c.el);
-    camera.position.set(c.tx + c.dist * ce * Math.sin(c.az), c.dist * Math.sin(c.el), c.tz + c.dist * ce * Math.cos(c.az));
-    camera.lookAt(c.tx, 0.45 * (1 - (c.el - EL_MIN) / (DEFAULT_EL - EL_MIN)), c.tz);
+    const pc = camera as THREE.PerspectiveCamera;
+    if (fp && !cine.active) {
+      // First-person: stand just inside the front of the room at eye height; drag turns the head.
+      const f = fpRef.current;
+      f.yaw += (f.gyaw - f.yaw) * (reduce ? 1 : 1 - Math.exp(-dt * 12));
+      const ex = plan.size.w / 2, ez = plan.size.d - 0.35, eh = Math.min(1.6, plan.size.h - 0.5);
+      if (pc.fov !== FP_FOV) { pc.fov = FP_FOV; pc.updateProjectionMatrix(); }
+      camera.position.set(ex, eh, ez);
+      camera.lookAt(ex - Math.sin(f.yaw) * 4, eh - 0.55, ez - Math.cos(f.yaw) * 4);
+      if (Math.abs(f.gyaw - f.yaw) > 0.001) invalidate();
+    } else {
+      if (pc.fov !== FOV) { pc.fov = FOV; pc.updateProjectionMatrix(); }
+      const ce = Math.cos(c.el);
+      camera.position.set(c.tx + c.dist * ce * Math.sin(c.az), c.dist * Math.sin(c.el), c.tz + c.dist * ce * Math.cos(c.az));
+      camera.lookAt(c.tx, 0.45 * (1 - (c.el - EL_MIN) / (DEFAULT_EL - EL_MIN)), c.tz);
+    }
     camera.updateMatrixWorld();
     let busy = Math.abs((cine.active ? cine.el : DEFAULT_EL) - c.el) + Math.abs(c.gaz - c.az) + Math.abs(c.gdist - c.dist) * 0.2 + Math.abs(c.gtx - c.tx) + Math.abs(c.gtz - c.tz) > 0.0015;
 
@@ -304,6 +344,15 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     // Float the tags above their furniture.
     const w = state.size.width;
     const h = state.size.height;
+    // First person: label only the object nearest the centre of view.
+    let centre: string | null = null;
+    if (fp) {
+      let best = 0.45;
+      for (const s of slotsRef.current) {
+        tmp.set(s.x, s.labelY, s.z).project(camera);
+        if (tmp.z < 1 && tmp.z > -1 && Math.abs(tmp.x) < best) { best = Math.abs(tmp.x); centre = s.id; }
+      }
+    }
     for (const s of slotsRef.current) {
       const el = shared.labelEls.current.get(s.id);
       if (!el) continue;
@@ -313,7 +362,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
       // Tags step aside while a cutscene plays.
-      const show = visible && !cine.active && !shared.walker.current.scene && shared.walker.current.nearby === s.id;
+      const show = visible && !cine.active && !shared.walker.current.scene && (fp ? centre === s.id : shared.walker.current.nearby === s.id);
       el.style.opacity = show ? "1" : "0";
       el.style.visibility = show ? "visible" : "hidden";
       el.style.pointerEvents = show ? "auto" : "none";
@@ -374,7 +423,8 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           onClick={(e) => {
             e.stopPropagation();
             if (shared.dragged.current > 6) return;
-            window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}));
+            if (isFirstPerson(plan)) p.onSelect(s.id);
+            else window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}));
           }}
           onPointerOver={(e) => {
             e.stopPropagation();
@@ -391,7 +441,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
-      <HomeWalker head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />
+      {(!isFirstPerson(plan) || p.cutscene) && <HomeWalker key={p.cutscene ? "cut" : "fp"} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
       {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
@@ -448,7 +498,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
             data-home3d-tag={s.id}
             aria-label={`${s.label}. Tap to use`}
             aria-pressed={props.selectedId === s.id}
-            onClick={() => window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}))}
+            onClick={() => isFirstPerson(plan) ? props.onSelect(s.id) : window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}))}
             className={`pointer-events-auto absolute left-0 top-0 min-h-9 min-w-9 rounded-full border-2 border-foreground px-2.5 text-[11px] font-extrabold tracking-wide shadow-md ${props.selectedId === s.id ? "bg-primary text-primary-foreground" : "bg-card/95 text-foreground"}`}
             style={{ transform: "translate(-9999px,-9999px)" }}
           >
