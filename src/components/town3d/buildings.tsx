@@ -94,8 +94,12 @@ function Flats({ b, c }: { b: B; c: Colours }) {
   const bx = b.x + 0.15, bz = b.y + 0.35, bw = b.w - 0.3, bd = b.d - 0.5, H = 1.65;
   const S = faceOf(bx, bz, bw, bd, "s"), W = faceOf(bx, bz, bw, bd, "w");
   const plaster = plasterTexture();
+  // The road-side flat faces west. Rotate its whole model (including entrance
+  // and balconies) around its centre, without changing its lot or pathfinding.
+  const centreX = bx + bw / 2, centreZ = bz + bd / 2;
   return (
-    <group>
+    <group position={[b.facing === "west" ? centreX : 0, 0, b.facing === "west" ? centreZ : 0]} rotation={[0, b.facing === "west" ? -Math.PI / 2 : 0, 0]}>
+      <group position={[b.facing === "west" ? -centreX : 0, 0, b.facing === "west" ? -centreZ : 0]}>
       <Walls x={bx} z={bz} w={bw} d={bd} h={H} c={c.wall} map={plaster} per={0.7} />
       <Band x={bx} z={bz} w={bw} d={bd} y={0} h={0.12} c={shade(c.side, -0.1)} />
       {[0.67, 1.22].map((v) => <Band key={v} x={bx} z={bz} w={bw} d={bd} y={v - 0.02} h={0.035} c={CREAM} out={0.015} />)}
@@ -121,6 +125,7 @@ function Flats({ b, c }: { b: B; c: Colours }) {
       <RoofUnit p={[bx + 0.6, H, bz + 1.4]} />
       <Cyl rad={0.01} h={0.4} p={[bx + 1.2, H + 0.2, bz + 0.5]} c="#3a3a3a" />
       <Box s={[0.3, 0.01, 0.01]} p={[bx + 1.2, H + 0.32, bz + 0.5]} c="#3a3a3a" />
+      </group>
     </group>
   );
 }
