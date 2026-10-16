@@ -142,6 +142,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const encounterRef = useRef({encounter,onEncounter}); encounterRef.current = {encounter,onEncounter};
   const pausedRef = useRef(paused); pausedRef.current = paused;
   const [nearStreet, setNearStreet] = useState<StreetObjectId | null>(null);
+  const [inspectAbandonedCar, setInspectAbandonedCar] = useState(false);
   const nearStreetRef = useRef<StreetObjectId | null>(null);
   const useStreet = useCallback((id: StreetObjectId) => {
     const object = STREET_OBJECTS.find(o=>o.id===id);
@@ -537,8 +538,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
-  // A long-neglected vehicle is a quiet clue for future transport storylines.
-  // Not driveable yet: there is deliberately no ordinary purchase action.
+  // This is an abandoned vehicle, distinct from the Site Lead company car.
   items.push({ key: 11.1 * 100 + 5.8, el: <g key="abandoned-car" data-abandoned-car>
     <title>Rusty abandoned car — its engine has not run in years.</title>
     <Car x={5.8} y={11.1} dir="x" color="#74695e"/>
@@ -654,6 +654,22 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             <div className="h-12 w-12 rounded-full border-[3px] border-white/90 bg-slate-200/75 shadow-lg"
               style={{ transform: `translate(${stickVisual.dx * 52}px, ${stickVisual.dy * 52}px)` }} />
           </div>
+        </div>
+      )}
+      {!active && !paused && Math.hypot(m.x-5.8,m.y-11.1) < 2.2 && (
+        <button type="button" data-inspect-abandoned-car onClick={() => setInspectAbandonedCar(true)}
+          className="absolute bottom-[13.4rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card/95 px-3 text-xs font-bold shadow-lg">
+          🔍 Inspect rusty car
+        </button>
+      )}
+      {inspectAbandonedCar && !active && (
+        <div role="dialog" aria-modal="true" aria-label="Rusty abandoned car" className="absolute inset-x-3 bottom-44 z-30 rounded-xl border-2 border-foreground bg-card p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-2">
+            <strong>Rusty abandoned car</strong>
+            <button type="button" aria-label="Close car inspection" className="min-h-10 min-w-10 rounded-md bg-secondary" onClick={() => setInspectAbandonedCar(false)}>✕</button>
+          </div>
+          <p className="mt-2 text-sm">Years of rust. Flat tyres. The engine hasn't turned over in ages. This isn't the company car the foreman offers at Site Lead.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Nothing to drive here yet. Earn the company car at the Workers Yard after getting your licence to unlock travel between home and work.</p>
         </div>
       )}
       {state && canDrive(state) && !active && !paused && onDrive && (
