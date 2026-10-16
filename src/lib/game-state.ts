@@ -6,6 +6,7 @@ export type GameState = {
   house: number; school: number; job: number; heat: number;
   bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
   luxuryFurniture?: number;
+  mailbox?: number;
   career: number; xp: number; studyXp?: number; employed?: number;
   gangRep: number; gangStage: number;
   relMara: number; relNox: number; relGus: number; relIvy: number;
@@ -37,7 +38,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   basketBest: [0, 5], skateBest: [0, 4], dartsBest: [0, 540], dartsRewardDay: [0, 100000],
   weapon: [0, 2], tillRobberyDay: [0, 100000],
   streetSearchDay: [0, 100000],
-  luxuryFurniture: [0, 255],
+  luxuryFurniture: [0, 255], mailbox: [0, 1],
   residentFavour:[0,4],residentFavourStage:[0,1],residentFavourDeadline:[0,2400030],residentFavourLastDay:[0,100000],
   streetNewsDay: [0, 100000],
   streetEncounterDay: [0, 100000],

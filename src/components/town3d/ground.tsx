@@ -101,21 +101,21 @@ export function TownGround({ bs }: { bs: B[] }) {
       <Box s={[N + 0.02, 0.08, N + 0.02]} p={[N / 2, -0.04, N / 2]} c={C.earth} o={{ rough: 1 }} shadow={false} />
       <Flat x={0} z={0} w={N} d={N} y={0} c={C.grass} map={grass} per={1.4} />
       <Flat x={0} z={0} w={8.8} d={7.2} y={0.001} c={C.lawn} map={grass} per={1.4} />
-      <Flat x={25.5} z={7.5} w={4.2} d={4.8} y={0.0015} c={C.parkLawn} map={grass} per={1.4} />
+      <Flat x={17} z={0.9} w={5.0} d={5.9} y={0.0015} c={C.parkLawn} map={grass} per={1.4} />
       {pavementRects().map((r, i) => <Flat key={"pv" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.004 + i * 0.0002} c={C.pavement} map={paving} per={0.5} />)}
       {bs.map((b) => <Flat key={"lot" + b.id} x={Math.max(0, b.x - 0.15)} z={Math.max(0, b.y - 0.15)} w={b.w + 0.3} d={b.d + 0.3} y={0.006} c={b.id === "casino" ? C.backlot : C.garden} map={grass} per={1.2} />)}
       {approachRects(bs).map((r, i) => <Flat key={"ap" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.0065 + i * 0.0001} c={C.approach} map={paving} per={0.5} />)}
       {/* Park, pond and footbridge over the water. */}
-      <Flat x={25.5} z={8.1} w={4.1} d={4.0} y={0.002} c={C.park} map={grass} per={1.2} />
-      <Disc x={28.1} z={10.2} rx={0.9} rz={0.74} y={0.0075} c={C.pondEdge} rough={0.9} />
-      <Disc x={28.1} z={10.2} rx={0.8} rz={0.64} y={0.009} c={C.pond} rough={0.06} o={{ metal: 0.15 }} />
-      {[[27.6, 9.8], [28.6, 10.55], [28.55, 9.75]].map(([x, z], i) => <Disc key={"lily" + i} x={x!} z={z!} rx={0.09} rz={0.07} y={0.012} c="#5f9a4a" />)}
+      <Flat x={17} z={1.1} w={5.0} d={5.6} y={0.002} c={C.park} map={grass} per={1.2} />
+      <Disc x={20.3} z={4.4} rx={0.9} rz={0.74} y={0.0075} c={C.pondEdge} rough={0.9} />
+      <Disc x={20.3} z={4.4} rx={0.8} rz={0.64} y={0.009} c={C.pond} rough={0.06} o={{ metal: 0.15 }} />
+      {[[19.8, 4.0], [20.8, 4.75], [20.75, 3.95]].map(([x, z], i) => <Disc key={"lily" + i} x={x!} z={z!} rx={0.09} rz={0.07} y={0.012} c="#5f9a4a" />)}
       {Array.from({ length: 16 }, (_, i) => {
         const t = (i / 16) * Math.PI * 2;
-        return <Round key={"st" + i} s={[0.16, 0.06, 0.12]} p={[28.1 + Math.cos(t) * 0.86, 0.025, 10.2 + Math.sin(t) * 0.7]} r={[0, -t, 0]} c={i % 3 ? "#a8a59c" : "#8f8c84"} rad={0.03} />;
+        return <Round key={"st" + i} s={[0.16, 0.06, 0.12]} p={[20.3 + Math.cos(t) * 0.86, 0.025, 4.4 + Math.sin(t) * 0.7]} r={[0, -t, 0]} c={i % 3 ? "#a8a59c" : "#8f8c84"} rad={0.03} />;
       })}
-      <Flat x={27.5} z={8.0} w={0.45} d={4.3} y={0.01} c={C.path} map={gravel} per={0.6} />
-      <Flat x={25.5} z={10.3} w={4.1} d={0.4} y={0.0105} c={C.path} map={gravel} per={0.6} />
+      <Flat x={19.6} z={1.2} w={0.45} d={5.2} y={0.01} c={C.path} map={gravel} per={0.6} />
+      <Flat x={17} z={5.5} w={5.0} d={0.4} y={0.0105} c={C.path} map={gravel} per={0.6} />
       <Bridge />
       {/* Roads, lane paint, crossings and kerbs. */}
       {ROADS.map((r, i) => <Flat key={"rd" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.012 + i * 0.0002} c={C.asphalt} map={asphalt} per={1.2} rough={0.9} />)}
@@ -139,7 +139,7 @@ export function TownGround({ bs }: { bs: B[] }) {
         return <Flat key={"dp" + b.id} x={x} z={y} w={south || north ? 0.66 : 0.7} d={south || north ? 0.65 : 0.66} y={0.0085} c={C.doorPath} map={paving} per={0.33} />;
       })}
       {/* The gang's trodden patch of dirt. */}
-      <Flat x={25.5} z={6.0} w={2.0} d={1.8} y={0.003} c={shade(C.grime, 0.35)} map={soil} per={1.5} />
+      <Flat x={5.2} z={3.6} w={2.0} d={1.8} y={0.003} c={shade(C.grime, 0.35)} map={soil} per={1.5} />
       {/* Storm drains on the kerbside. */}
       {[[8.45, 14.6], [21.95, 15.5], [11.75, 28.0]].map(([x, z], i) => (
         <group key={"dr" + i}>
@@ -160,11 +160,11 @@ function Bridge() {
   );
   return (
     <group>
-      {deck(27.2, 10.28, 1.8, 0.44)}
-      {deck(27.5, 9.45, 0.45, 1.5)}
-      {[27.25, 28.95].map((x) => [10.27, 10.73].map((z) => <Cyl key={`${x}${z}`} rad={0.02} h={0.16} p={[x, 0.11, z]} c="#8a6a48" />))}
-      <Box s={[1.7, 0.025, 0.025]} p={[28.1, 0.18, 10.73]} c="#8a6a48" />
-      <Box s={[1.7, 0.025, 0.025]} p={[28.1, 0.18, 10.27]} c="#8a6a48" />
+      {deck(19.4, 4.48, 1.8, 0.44)}
+      {deck(19.6, 3.65, 0.45, 1.5)}
+      {[19.45, 21.15].map((x) => [4.47, 4.93].map((z) => <Cyl key={`${x}${z}`} rad={0.02} h={0.16} p={[x, 0.11, z]} c="#8a6a48" />))}
+      <Box s={[1.7, 0.025, 0.025]} p={[20.3, 0.18, 4.93]} c="#8a6a48" />
+      <Box s={[1.7, 0.025, 0.025]} p={[20.3, 0.18, 4.47]} c="#8a6a48" />
     </group>
   );
 }

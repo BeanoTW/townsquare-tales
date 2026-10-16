@@ -43,6 +43,7 @@ function Building({ b, house }: { b: B; house: number }) {
     case "furniture": return <Furniture b={b} c={c} />;
     case "casino": return <Casino b={b} c={c} />;
     case "depot": return <Depot b={b} c={c} />;
+    case "post": return <PostOffice b={b} c={c} />;
     case "police": return <Police b={b} c={c} />;
     case "clinic": return <Clinic b={b} c={c} />;
     default: return <Generic b={b} c={c} />;
@@ -556,6 +557,24 @@ function Clinic({ b, c }: { b: B; c: Colours }) {
       <RoofUnit p={[bx + 2.1, H, bz + 1.8]} />
     </group>
   );
+}
+
+/** North-east postal counter: a compact brick-and-cream public building. */
+function PostOffice({ b, c }: { b: B; c: Colours }) {
+  const bx=b.x+0.08, bz=b.y+0.08, bw=b.w-0.16, bd=b.d-0.16, H=1.08;
+  const W=faceOf(bx,bz,bw,bd,"w");
+  const S=faceOf(bx,bz,bw,bd,"s");
+  return <group>
+    <Walls x={bx} z={bz} w={bw} d={bd} h={H} c="#e1caaa" map={brickWallTexture()} per={0.8}/>
+    <Band x={bx} z={bz} w={bw} d={bd} y={0.05} h={0.12} c="#873f36"/>
+    <FlatRoof x={bx} z={bz} w={bw} d={bd} y={H} c="#554b48" trim="#eee6d5"/>
+    <WindowGrid f={S} floors={1} frame={CREAM}/>
+    <WindowGrid f={W} floors={1} skip={[bd/2-0.6,bd/2+0.6]} skipAll frame={CREAM}/>
+    <Door f={W} u={bd/2} w={0.54} h={0.68} glass double frame={CREAM}/>
+    <SignBoard f={W} u={bd/2} v={0.88} w={1.65} h={0.2} text="POST OFFICE" bg="#9d3438" fg="#fff4d8"/>
+    <Box s={[0.42,0.67,0.38]} p={[bx-0.46,0.34,bz+bd*0.8]} c="#c33337"/>
+    <Box s={[0.32,0.04,0.14]} p={[bx-0.46,0.52,bz+bd*0.8+0.21]} c="#28252b"/>
+  </group>;
 }
 
 function Generic({ b, c }: { b: B; c: Colours }) {

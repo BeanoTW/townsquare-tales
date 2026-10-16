@@ -10,12 +10,13 @@ import { roomFor, visibleHotspots } from "@/lib/rooms";
 
 afterEach(() => cleanup());
 
-describe("street gang on the top-right green", () => {
+describe("street gang by the starter home", () => {
   it("is a permanent outdoor location, not an enterable building", () => {
     const lots = buildings(0);
-    expect(lots).toHaveLength(15);
+    expect(lots).toHaveLength(16);
     expect(lots.some(b => b.id === "alley" || b.id === "gang")).toBe(false);
-    expect(GANG_SPOT.x).toBeGreaterThan(25);
+    expect(GANG_SPOT.x).toBeGreaterThan(5);
+    expect(GANG_SPOT.x).toBeLessThan(8);
     expect(GANG_SPOT.y).toBeLessThan(10);
     expect(isWalkable(GANG_SPOT, lots)).toBe(true);
     expect(findRoute({ x: 9.95, y: 9 }, GANG_SPOT, lots).length).toBeGreaterThan(0);

@@ -45,6 +45,7 @@ import {
   enrollAction,
   type ActionDef,
 } from "@/lib/actions";
+import { buyMailboxAction } from "@/lib/post-office";
 import { CASINO_CHATTER } from "@/lib/casino-lines";
 import { lifetime, money, signed, type CasinoGame } from "@/lib/casino";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
@@ -69,6 +70,7 @@ export const PLACE_IDS = [
   "furniture",
   "casino",
   "depot",
+  "post",
   "police",
   "clinic",
 ] as const;
@@ -706,6 +708,34 @@ export const ROOMS: Record<PlaceId, Room> = {
         box: { x: 270, y: 110, w: 130, h: 80 },
         lines: (s) => [`Daily side jobs completed: ${s.sideHustleDay===s.day ? s.sideHustlesToday??0 : 0}/3`, "Earn cash between shifts. Hustles take time and energy; skills affect payouts."],
         actions: () => HUSTLES.map(h => hustleAction(h.id)),
+      },
+    ],
+  },
+  post: {
+    id: "post",
+    title: "Town Post Office",
+    caption: "Your post is safe here. Probably.",
+    sign: "POST OFFICE",
+    palette: { wall: "#f2debe", floor: "#aa8f74", accent: "#a93d37" },
+    hotspots: [
+      {
+        id: "post-counter",
+        label: "Postal counter",
+        tag: "MAIL",
+        hint: "Register a mailbox for home deliveries",
+        box: { x: 15, y: 115, w: 230, h: 85 },
+        lines: s => s.mailbox
+          ? ["Your mailbox is registered. Future letters can be delivered to your home."]
+          : ["Letters are held here until you register an address.", "A permanent mailbox costs $25 and moves with your home."],
+        actions: s => s.mailbox ? [] : [buyMailboxAction(s)],
+      },
+      {
+        id: "sorting",
+        label: "Sorting shelves",
+        tag: "POST",
+        hint: "Letters waiting to be sorted",
+        box: { x: 265, y: 65, w: 135, h: 140 },
+        lines: () => ["Stacks of envelopes and parcels.", "The town's correspondence system is coming soon."],
       },
     ],
   },
