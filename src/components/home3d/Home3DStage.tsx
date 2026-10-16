@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useMemo, useRef, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { GameState } from "@/lib/game-state";
 import { ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import type { Hotspot } from "@/lib/rooms";
@@ -69,6 +69,12 @@ export function Home3DStage({
   onCutsceneDone?: (() => void) | undefined;
 }) {
   const controls = useRef<CameraControls | null>(null);
+  const [nearby,setNearby]=useState<string|null>(null);
+  useEffect(()=>{
+    const onNear=(event:Event)=>setNearby((event as CustomEvent<{id:string|null}>).detail?.id??null);
+    window.addEventListener("tst:nearby-action",onNear);
+    return()=>window.removeEventListener("tst:nearby-action",onNear);
+  },[]);
   const plan = planProp ?? planFor(state.house) ?? planFor(1)!;
   const isHome = !planProp;
   const visibleIds = useMemo(() => {
@@ -106,6 +112,14 @@ export function Home3DStage({
         </Suspense>
       </Boundary>
       {!cutscene && <InteriorJoystick />}
+      {!cutscene && nearby && visibleIds.includes(nearby) && (
+        <button type="button" data-nearby-action
+          aria-label={`Interact with ${plan.slots.find(s=>s.id===nearby)?.label??nearby}`}
+          className="pointer-events-auto absolute bottom-4 right-3 z-30 min-h-14 max-w-[45%] rounded-full border-2 border-foreground bg-primary px-4 text-base font-bold text-primary-foreground shadow-lg"
+          onClick={() => window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:nearby}}))}>
+          ✦ {plan.slots.find(s=>s.id===nearby)?.label??"Interact"}
+        </button>
+      )}
       <div className={`absolute right-2 top-2 flex flex-col gap-1 transition-opacity ${cutscene ? "pointer-events-none opacity-0" : ""}`} data-home3d-controls onClick={(e) => e.stopPropagation()}>
         <button type="button" className={BTN} aria-label="Zoom in" onClick={() => c()?.zoom(0.8)}>＋</button>
         <button type="button" className={BTN} aria-label="Zoom out" onClick={() => c()?.zoom(1.25)}>－</button>
