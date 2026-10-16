@@ -166,6 +166,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     if (grind) { streetGrind.current = grind; skateJump.current = null; }
     else skateJump.current = {trick,elapsed:0};
   };
+  const [driving,setDriving]=useState(false);
+  const drivingRef=useRef(false);
+  const carSpeed=useRef(0);
+  const toggleDriving = () => {
+    if(!state?.companyCar || !state.drivingLicence || paused || active)return;
+    const m=me.current;
+    if(!drivingRef.current && Math.hypot(m.x-30.1,m.y-22.1)>2.2)return;
+    drivingRef.current=!drivingRef.current;
+    setDriving(drivingRef.current);
+    carSpeed.current=0;
+    target.current=null;
+  };
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
   // The 3D town reads the same live state the SVG uses; it never owns game logic.
   const streetLive = useRef<StreetLive | null>(null);
@@ -333,27 +345,43 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       m.walking = len > 0;
       if (len) {
         seatedUntil.current=0;
-        const sp = 1.9 * speed * dt;
-        const nx = m.x + (dx / len) * sp, ny = m.y + (dy / len) * sp;
-        if (!blocked(nx, ny)) { m.x = nx; m.y = ny; }
-        else if (!blocked(nx, m.y)) m.x = nx;
-        else if (!blocked(m.x, ny)) m.y = ny;
-        else { target.current = null; m.walking = false; }
+        const drivingNow=drivingRef.current;
+        const desired=drivingNow ? 5.5 : 1.9 * speed;
+        carSpeed.current = drivingNow ? Math.min(desired,carSpeed.current+dt*6.5) : 0;
+        const sp = (drivingNow?carSpeed.current:desired)*dt;
+        let vx=dx/len,vy=dy/len;
+        if(drivingNow){
+          const requested=Math.atan2(dx,-dy)*180/Math.PI;
+          const delta=((requested-m.skateAngle+540)%360)-180;
+          const steer=delta*Math.min(1,dt*5);
+          m.skateAngle=(m.skateAngle+steer+360)%360;
+          m.turnVelocity=Math.max(-1,Math.min(1,steer/Math.max(dt,.001)/180));
+          vx=Math.sin(m.skateAngle*Math.PI/180);
+          vy=-Math.cos(m.skateAngle*Math.PI/180);
+        }
+        const nx = m.x + vx*sp, ny = m.y + vy*sp;
+        const collision = (x:number,y:number) => drivingNow
+          ? [[-0.24,-0.3],[0.24,-0.3],[-0.24,0.3],[0.24,0.3]].some(([a,b])=>blocked(x+a,y+b))
+          : blocked(x,y);
+        if (!collision(nx, ny)) { m.x = nx; m.y = ny; }
+        else if (!collision(nx, m.y)) m.x = nx;
+        else if (!collision(m.x, ny)) m.y = ny;
+        else { target.current = null; m.walking = false; carSpeed.current=0; }
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
         const targetAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
-        if (skating) {
+        if (skating && !drivingNow) {
           const diff = ((targetAngle - m.skateAngle + 540) % 360) - 180;
-          const step = diff * Math.min(1, dt * 14);
+          const step = diff * Math.min(1, dt * (drivingNow?5:14));
           m.skateAngle = (m.skateAngle + step + 360) % 360;
           m.turnVelocity = Math.max(-1, Math.min(1, step / Math.max(dt, 0.001) / 180));
-        } else {
+        } else if(!drivingNow) {
           m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
           m.turnVelocity = 0;
         }
         m.phase += dt * (skating ? 16 : 12);
       }
-      if (!m.walking) m.turnVelocity *= Math.exp(-dt * 12);
+      if (!m.walking) { m.turnVelocity *= Math.exp(-dt * 12); carSpeed.current=Math.max(0,carSpeed.current-dt*10); }
       const object=STREET_OBJECTS.find(o=>Math.hypot(o.x-m.x,o.y-m.y)<1.15)?.id ?? null;
       if(object!==nearStreetRef.current){nearStreetRef.current=object;setNearStreet(object);}
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
@@ -536,7 +564,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   }
   const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % 34) - 2;
   if (!use3d) {
-  if (yardRelocated && state?.companyCar) items.push({key: 22.3*100+30, el:<g key="company-car" data-company-car><title>Your company car — drive home or to work using the travel controls</title><Car x={30} y={22.3} dir="y" color="#788574" /></g>});
+  if (yardRelocated && state?.companyCar) items.push({key: (driving?m.y:22.1)*100+(driving?m.x:30.1), el:<g key="company-car" data-company-car><title>Your company car</title><Car x={driving?m.x:30.1} y={driving?m.y:22.1} dir={Math.abs(Math.sin(m.skateAngle*Math.PI/180))>0.7?"x":"y"} color="#788574" /></g>});
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
@@ -615,7 +643,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   }
   const feedbackNow = streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null;
   if (use3d) items.push({ key: m.y * 100 + m.x, el: <g key="me" transform={`translate(${P(m.x, m.y).join(",")})`} pointerEvents="none" data-player-feedback><FeedbackIcons feedback={feedbackNow} /></g> });
-  else items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} turnVelocity={m.turnVelocity} pose={t<seatedUntil.current ? "sitting" : "standing"} head={head} /> });
+  else if (!driving) items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} turnVelocity={m.turnVelocity} pose={t<seatedUntil.current ? "sitting" : "standing"} head={head} /> });
   items.sort((a, b) => a.key - b.key);
 
 
@@ -625,7 +653,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} /></Suspense>}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} driving={driving} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
@@ -673,6 +701,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           <p className="mt-2 text-sm">Years of rust. Flat tyres. The engine hasn't turned over in ages. This isn't the company car the foreman offers at Site Lead.</p>
           <p className="mt-2 text-xs text-muted-foreground">Nothing to drive here yet. Earn the company car at the Workers Yard after getting your licence to unlock travel between home and work.</p>
         </div>
+      )}
+      {state && canDrive(state) && !active && !paused && (driving || Math.hypot(m.x-30.1,m.y-22.1)<2.2) && (
+        <button type="button" data-company-car-interact className="absolute bottom-[21rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleDriving}>{driving?"Park and exit":"🚗 Enter company car"}</button>
       )}
       {state && canDrive(state) && !active && !paused && onDrive && (
         <nav aria-label="Company car destinations" className="absolute bottom-[13.4rem] left-3 z-20 flex flex-col gap-1 rounded-lg border-2 border-foreground bg-card/95 p-1.5 text-xs font-bold shadow-lg sm:bottom-44">
