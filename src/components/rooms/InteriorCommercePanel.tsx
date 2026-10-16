@@ -36,19 +36,61 @@ function ShopStock({state,godMode,onRun}:{state:GameState;godMode:boolean;onRun:
     </div>
   </>;
 }
+type TellerService = "savings" | "borrowing" | "repayment" | "accounts";
+const tellerServices: {id:TellerService;name:string;icon:string}[] = [
+  {id:"savings",name:"Cash & savings",icon:"💵"},
+  {id:"borrowing",name:"Apply for loan",icon:"📄"},
+  {id:"repayment",name:"Repay a loan",icon:"🧾"},
+  {id:"accounts",name:"My accounts",icon:"📒"},
+];
+
+function BankBalances({state}:{state:GameState}) {
+  return <div className="grid grid-cols-2 gap-2 rounded-lg bg-secondary/70 p-2 text-xs">
+    <span>Wallet <strong className="block text-base">$${state.money.toLocaleString()}</strong></span>
+    <span>Savings <strong className="block text-base">$${state.bank.toLocaleString()}</strong></span>
+  </div>;
+}
+function BankLoanInfo({state}:{state:GameState}) {
+  return <p className="text-xs">
+    Outstanding: <strong>$${(state.loanDebt??0).toLocaleString()}</strong> · Due day {state.loanDueDay||"—"}.
+    {" "}Loans include a 40% finance charge, with a 2% daily penalty after the deadline. Larger loans require employment.
+  </p>;
+}
 function BankDesk({id,state,godMode,onRun}:{id:string;state:GameState;godMode:boolean;onRun:(a:ActionDef)=>void}) {
+  const [service,setService]=useState<TellerService>("savings");
   const loan=(state.loanDebt??0)>0;
-  const options=id==="teller"?[DEPOSIT_50,DEPOSIT_ALL,WITHDRAW_50,WITHDRAW_ALL]:id==="atm"?[WITHDRAW_50,WITHDRAW_ALL]:id==="loans"?(loan?[repayLoanAction(100),repayLoanAction(500),repayLoanAction("all")]:[bankLoanAction(250),bankLoanAction(1000),bankLoanAction(2500),bankLoanAction(5000)]):[];
-  return <>
-    <p className="text-xs text-muted-foreground">{id==="loans"?"Mr. Sterling: “Let's see what the numbers say.”":id==="atm"?"Quick cash without the conversation.":"Cashier: “How can I help today?”"}</p>
-    <div className="grid grid-cols-2 gap-2 rounded-lg bg-secondary/70 p-2 text-xs">
-      <span>Wallet <strong className="block text-base">$${state.money.toLocaleString()}</strong></span>
-      <span>Savings <strong className="block text-base">$${state.bank.toLocaleString()}</strong></span>
+  const repayment=[repayLoanAction(100),repayLoanAction(500),repayLoanAction("all")];
+  const borrowing=[bankLoanAction(250),bankLoanAction(1000),bankLoanAction(2500),bankLoanAction(5000)];
+  const savings=[DEPOSIT_50,DEPOSIT_ALL,WITHDRAW_50,WITHDRAW_ALL];
+  const specialist=id==="loans";
+  const selected= id==="teller"?service:id==="loans"?(loan?"repayment":"borrowing"):id==="atm"?"savings":"accounts";
+  const options=id==="atm"?[WITHDRAW_50,WITHDRAW_ALL]:
+    selected==="savings"?savings:
+    selected==="borrowing"?(!loan?borrowing:[]):
+    selected==="repayment"?(loan?repayment:[]):[];
+  return <div className="space-y-2" data-bank-service={selected}>
+    <p className="text-xs text-muted-foreground">
+      {id==="teller"?"Cashier: “Good afternoon. What can we help you with?”":
+       specialist?"Mr. Sterling: “Let's see what the numbers say.”":
+       id==="atm"?"ATM: Quick cash, no queue.":"Vault: Your savings, safely accounted for."}
+    </p>
+    <BankBalances state={state}/>
+    {id==="teller"&&<div className="grid grid-cols-2 gap-2" role="group" aria-label="Banking services">
+      {tellerServices.map(item=><button type="button" key={item.id}
+        aria-pressed={service===item.id} onClick={()=>setService(item.id)}
+        className={`${button} ${service===item.id?"bg-primary text-primary-foreground":"bg-secondary"}`}>
+        {item.icon} {item.name}
+      </button>)}
+    </div>}
+    {(selected==="borrowing"||selected==="repayment"||selected==="accounts")&&<BankLoanInfo state={state}/>}
+    {selected==="borrowing"&&loan&&<p className="text-xs">You already have an outstanding loan. Repay it before applying again.</p>}
+    {selected==="repayment"&&!loan&&<p className="text-xs">You have no outstanding loan to repay.</p>}
+    {selected==="accounts"&&<p className="text-xs">Savings earn 0.1% interest each night. Account information and loan details are available here at the teller.</p>}
+    {id==="vault"&&<p className="text-xs">The vault holds the bank's secure deposits. For transactions and loans, speak to the teller.</p>}
+    <div className="grid grid-cols-2 gap-2">
+      {options.map(a=><QuickAction key={a.id} action={a} state={state} godMode={godMode} onRun={onRun}/>)}
     </div>
-    {id==="loans"&&<p className="text-xs">Debt: <strong>$${(state.loanDebt??0).toLocaleString()}</strong> · Due day {state.loanDueDay||"—"} · 40% finance charge · 2% daily if overdue. Larger loans require employment.</p>}
-    {id==="vault"&&<p className="text-sm">Your savings earn 0.1% interest each night.</p>}
-    <div className="grid grid-cols-2 gap-2">{options.map(a=><QuickAction key={a.id} action={a} state={state} godMode={godMode} onRun={onRun}/>)}</div>
-  </>;
+  </div>;
 }
 export function InteriorCommercePanel({venue,hotspot,state,godMode,onRun,onClose}:{venue:string;hotspot:Hotspot;state:GameState;godMode:boolean;onRun:(a:ActionDef)=>void;onClose:()=>void}) {
   const shop=venue==="shop"&&(hotspot.id==="shelves"||hotspot.id==="checkout");
