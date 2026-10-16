@@ -1,4 +1,5 @@
 export type GameState = {
+  restaurantOwned?: number; retailOwned?: number; businessLastDay?: number; businessDebt?: number;
   sideHustleDay?: number; sideHustlesToday?: number;
   loanDebt?: number; loanLastDay?: number; loanDueDay?: number; loanPrincipal?: number;
   day: number; hour: number; energy: number; money: number;
@@ -35,6 +36,7 @@ export type GameState = {
 
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
+  restaurantOwned: [0, 1], retailOwned: [0, 1], businessLastDay: [0, 100000], businessDebt: [0, 1000000000],
   sideHustleDay: [0, 100000], sideHustlesToday: [0, 3],
   loanDebt: [0, 1000000], loanLastDay: [0, 100000], loanDueDay: [0, 100000], loanPrincipal: [0, 1000000],
   parkSkateDay:[0,100000],parkHoopDay:[0,100000],parkHideDay:[0,100000],gangResponseDay:[0,100000],
