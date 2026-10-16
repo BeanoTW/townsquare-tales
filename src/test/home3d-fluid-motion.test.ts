@@ -10,10 +10,10 @@ describe("fluid interior steering",()=>{
   it("slides along a blocked axis instead of crossing a wall",()=>{
     nav.blocked.fill(0);
     mark(5,5);
-    const from={x:.4,z:.5};
-    const next=slideMove(nav,from,.1,-.06);
-    expect(next.x).toBeCloseTo(.4);
-    expect(next.z).toBeCloseTo(.44);
+    const from={x:.4,z:.4};
+    const next=slideMove(nav,from,.1,.1);
+    expect(next.x).toBeCloseTo(.5);
+    expect(next.z).toBeCloseTo(.4);
   });
   it("never commits a blocked diagonal destination",()=>{
     nav.blocked.fill(0);
