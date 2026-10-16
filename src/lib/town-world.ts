@@ -53,7 +53,7 @@ export const buildings = (house: number, castle = house >= 4, yardRelocated = fa
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   const sites = [
     { x: 1.1, y: 2, w: 3, d: 4 },
-    { x: 5.0, y: 26.45, w: 3.0, d: 2.9 },
+    { x: 17.6, y: 16.5, w: 3.0, d: 2.9 },
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
     { x: 32.0, y: 5.375, w: 3.8, d: 3.65 },
   ] as const;
@@ -76,6 +76,7 @@ export const buildings = (house: number, castle = house >= 4, yardRelocated = fa
     { facing: yardRelocated ? "south" : "north", id: "yard", label: "Workers Yard", x: yardRelocated ? 30.8 : 19.5, y: yardRelocated ? 19.0 : 22.8, w: yardRelocated ? 3.2 : 2.1, d: yardRelocated ? 3.1 : 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
     { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
+    { facing: "south", id: "garage", label: "Bayside Garage", x: 4.8, y: 26.4, w: 3.5, d: 2.7, h: 38, wall: "#988c78", side: "#6b685d", roof: "#535757", sign: "#344b52", win: false },
     { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "var(--town-bar-wall)", side: "var(--town-bar-side)", roof: "var(--town-bar-roof)", sign: "var(--town-bar-sign)", win: true },
     { facing: "west", id: "work", label: "MegaCorp", x: 12, y: 20.1, w: 3.7, d: 4, h: 190, wall: "var(--town-work-wall)", side: "var(--town-work-side)", roof: "var(--town-work-roof)", sign: "var(--town-work-sign)", win: true },
     { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "var(--town-bank-wall)", side: "var(--town-bank-side)", roof: "var(--town-bank-roof)", sign: "var(--town-bank-sign)", win: true },
