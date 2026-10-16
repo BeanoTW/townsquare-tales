@@ -180,10 +180,17 @@ function ObjectLocationScene({
         <div className="text-xs uppercase tracking-widest text-muted-foreground">
           Town Square Tales · Inside
         </div>
-        <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
-        <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
-        {(room.id === "home" || (venue && use3d)) && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} disabled={Boolean(cutscene)} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
-        {(room.id === "home" || venue) && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="min-w-0 text-xl font-bold leading-tight sm:text-2xl">{room.title}</h2>
+          {(room.id === "home" || venue) && gl && use3d && (
+            <button type="button" onClick={() => setRenderer(true)}
+              className="min-h-10 shrink-0 rounded-lg border-2 border-foreground bg-secondary px-3 text-xs font-bold sm:hidden"
+              data-renderer-toggle aria-label="Switch to classic view">Classic view</button>
+          )}
+        </div>
+        <p className={`room-caption text-sm text-muted-foreground ${use3d ? "hidden sm:block" : ""}`}>{room.caption}</p>
+        {(room.id === "home" || (venue && use3d)) && <nav className="mt-1 flex gap-2 overflow-x-auto pb-1 sm:mt-2 sm:pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} disabled={Boolean(cutscene)} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
+        {(room.id === "home" || venue) && gl && <button type="button" onClick={() => setRenderer(!classic)} className={`mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold ${use3d ? "hidden sm:inline-block" : ""}`} data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
         {room.id === "home" && state.house >= 3 && !use3d && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
           <div className="mt-2 flex gap-2">
@@ -265,7 +272,7 @@ function ObjectLocationScene({
           />
         </div>
         )}
-        {selected && (
+        {selected && (!use3d || size.w > 600) && (
           <ActionPanel
             hotspot={selected}
             state={state}
@@ -280,6 +287,23 @@ function ObjectLocationScene({
           </ActionPanel>
         )}
       </div>
+      {selected && use3d && size.w > 0 && size.w <= 600 && (
+        <section className="relative z-30 max-h-[34dvh] shrink-0 overflow-y-auto overscroll-contain border-t-2 border-foreground bg-card"
+          aria-label={`Actions: ${selected.label}`} data-mobile-action-sheet>
+          <ActionPanel
+            hotspot={selected}
+            state={state}
+            godMode={godMode}
+            style={{ position: "relative", inset: "auto", top: "auto", right: "auto", bottom: "auto", left: "auto", width: "100%", maxHeight: "none", boxShadow: "none", border: "none", borderRadius: 0 }}
+            onRun={onRun}
+            onClose={() => setSelectedId(null)}
+          >
+            {room.id === "bar" && selected.id === COUNTERS.bar && (
+              <CounterRobberyChoice key={selected.id} state={state} venue="bar" godMode={godMode} onRun={onRun} />
+            )}
+          </ActionPanel>
+        </section>
+      )}
 
       <footer className="flex shrink-0 items-center gap-2 bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <button
