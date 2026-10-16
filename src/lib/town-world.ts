@@ -73,6 +73,7 @@ export const buildings = (house: number, castle = house >= 4, yardRelocated = fa
   }
   return [
     ...residences,
+    ...(yardRelocated ? [{ facing:"south" as const,id:"hall",label:"Community Hall",x:16.6,y:16.65,w:4.3,d:4.7,h:74,wall:"#d8c9ab",side:"#b8ae9b",roof:"#535b63",sign:"#304f56",win:true }] : []),
     { facing: yardRelocated ? "south" : "north", id: "yard", label: "Workers Yard", x: yardRelocated ? 30.8 : 19.5, y: yardRelocated ? 19.0 : 22.8, w: yardRelocated ? 3.2 : 2.1, d: yardRelocated ? 3.1 : 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
     { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },

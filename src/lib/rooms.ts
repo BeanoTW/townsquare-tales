@@ -77,6 +77,7 @@ export const PLACE_IDS = [
   "diner",
   "pawn",
   "garage",
+  "hall",
   "furniture",
   "casino",
   "depot",
@@ -600,6 +601,15 @@ export const ROOMS: Record<PlaceId, Room> = {
         actions: () => [HOT_MEAL, LUNCH_SHIFT],
       },
     ],
+  },
+  hall: {
+    id:"hall",title:"Stick Town Community Hall",caption:"The neighbourhood has somewhere to meet at last.",sign:"COMMUNITY HALL",
+    palette:{wall:"#ded8c6",floor:"#ac9d82",accent:"#537782"},
+    hotspots:[
+      {id:"noticeboard",label:"Community noticeboard",tag:"INFO",hint:"What's happening locally",box:{x:12,y:40,w:130,h:125},lines:civicStatus},
+      {id:"volunteer-desk",label:"Volunteer desk",tag:"HELP",hint:"Get involved around town",box:{x:155,y:40,w:118,h:125},actions:s=>townHallBuilt(s)?[civicVolunteerAction()]:[]},
+      {id:"meeting-room",label:"Meeting room",tag:"MEET",hint:"Local council meetings",box:{x:282,y:50,w:120,h:130},lines:civicStatus,actions:s=>townHallBuilt(s)?[civicRunAction()]:[]},
+    ]
   },
   garage: {
     id: "garage", title: "Bayside Garage", caption: "Three bays, a battered toolbox and the smell of old oil.", sign: "BAYSIDE GARAGE",

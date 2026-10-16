@@ -23,7 +23,7 @@ const GOLD = "#d8b45a";
 export function TownBuildings({ bs, house }: { bs: B[]; house: number }) {
   return (
     <group>
-      {bs.map((b) => <Building key={b.id + (b.id === "home" ? house : "")} b={b} house={house} />)}
+      {bs.filter(b => b.id !== "hall").map((b) => <Building key={b.id + (b.id === "home" ? house : "")} b={b} house={house} />)}
     </group>
   );
 }
