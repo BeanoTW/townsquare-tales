@@ -24,6 +24,8 @@ const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
 /** Match three presses of the existing 0.8× zoom-in control on venue entry. */
 export const VENUE_ENTRY_ZOOM = 0.8 ** 3;
+/** Equivalent to one tap of the existing Zoom Out button on room entry. */
+export const ROOM_ENTRY_ZOOM_OUT = 1.25;
 const initialDistance = (plan: HomePlan, full: number) => plan.tier >= 10 && plan.kind !== "bank" ? Math.max(DIST_MIN, full * VENUE_ENTRY_ZOOM) : full;
 const DEFAULT_AZ = 0;
 const DEFAULT_EL = Math.PI / 2 - 0.015;
@@ -170,7 +172,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     (z: PlanZone | "all") => {
       const r = regionOf(plan, z);
       const az = cam.current?.gaz ?? DEFAULT_AZ;
-      return { tx: (r.x0 + r.x1) / 2, tz: (r.z0 + r.z1) / 2, dist: initialDistance(plan, fitToView(r.x1 - r.x0, r.z1 - r.z0, plan.size.h, az, DEFAULT_EL, aspect, FOV)) };
+      return { tx: (r.x0 + r.x1) / 2, tz: (r.z0 + r.z1) / 2, dist: Math.max(DIST_MIN, initialDistance(plan, fitToView(r.x1 - r.x0, r.z1 - r.z0, plan.size.h, az, DEFAULT_EL, aspect, FOV)) * ROOM_ENTRY_ZOOM_OUT) };
     },
     [aspect, plan],
   );
@@ -178,7 +180,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
 
   if (!cam.current) {
     const g = goalFor("all");
-    cam.current = { az: DEFAULT_AZ, el: DEFAULT_EL, dist: g.dist, tx: g.tx, tz: g.tz, gaz: DEFAULT_AZ, gel: DEFAULT_EL, gdist: g.dist, gtx: g.tx, gtz: g.tz, moved: false, zone: "all" };
+    const [startX, startZ] = plan.spawn.entry;
+    cam.current = { az: DEFAULT_AZ, el: DEFAULT_EL, dist: g.dist, tx: startX, tz: startZ, gaz: DEFAULT_AZ, gel: DEFAULT_EL, gdist: g.dist, gtx: startX, gtz: startZ, moved: false, zone: "all" };
   }
 
   const limit = useCallback(() => {
@@ -194,8 +197,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     const c = cam.current!;
     const focus = (z: PlanZone | "all") => {
       const g = goalFor(z);
-      c.gtx = g.tx;
-      c.gtz = g.tz;
+      c.gtx = z === "all" ? shared.walker.current.position.x : g.tx;
+      c.gtz = z === "all" ? shared.walker.current.position.z : g.tz;
       c.gdist = g.dist;
       c.gel = DEFAULT_EL;
       c.zone = z;
