@@ -192,6 +192,68 @@ export function actFor(name: ActName, tired: boolean): ActSpec {
         r.head.rotation.x = -0.1 + Math.sin(t * 0.8) * 0.04;
       } };
 
+    // ── Phase 3: milestones ──
+    case "victory":
+      return { pose: "standing", run: (r, t) => {
+        // Walk up, then both arms high, hopping, with a spin at the peak.
+        if (t < 0.9) { stride(r, t, 9, 0.4); advance(r, -0.6 + (t / 0.9) * 0.6); return; }
+        const b = Math.abs(Math.sin((t - 0.9) * 6));
+        r.armL.rotation.x = -2.95; r.armR.rotation.x = -3.05;
+        r.armL.rotation.z = -0.3 - 0.1 * b; r.armR.rotation.z = 0.25;
+        r.reach("l", 0.75 + 0.25 * b); r.reach("r", 1);
+        r.root.position.y += 0.09 * b;
+        r.head.rotation.x = -0.25;
+        r.root.rotation.y += Math.PI * 2 * ease((t - 2.4) / 0.8);
+      } };
+    case "keys":
+      return { pose: "standing", run: (r, t) => {
+        if (t < 2.0) {
+          // Jangle the new keys at the camera.
+          r.armR.rotation.x = -2.7 + Math.sin(t * 18) * 0.08; r.armR.rotation.z = Math.sin(t * 18) * 0.12; r.reach("r", 0.9);
+          r.armL.rotation.x = -0.3; r.root.position.y += 0.03 * Math.abs(Math.sin(t * 5));
+          r.head.rotation.x = -0.2;
+          return;
+        }
+        if (t < 3.6) {
+          // Turn and stride up the path to the front door.
+          turn(r, t, 2.0);
+          stride(r, t, 9, 0.45);
+          advance(r, Math.min(0.9, (t - 2.2) * 0.65));
+          return;
+        }
+        // At the door: turn back round to wave goodbye to the old life.
+        turn(r, t, 2.0);
+        advance(r, 0.9);
+        turn(r, t, 3.6);
+        r.armR.rotation.x = -2.8; r.armR.rotation.z = 0.35 * Math.sin(t * 9); r.reach("r", 1);
+      } };
+    case "hire":
+      return { pose: "standing", run: (r, t) => {
+        if (t < 1.7) {
+          r.armR.rotation.x = -1.45 + Math.sin(t * 11) * 0.09 * (t > 0.5 ? 1 : 0); r.reach("r", 0.95);
+          r.head.rotation.y = 0.15; r.body.rotation.x = 0.06;
+          return;
+        }
+        // Square up to the camera (world-forward) and punch the air.
+        r.root.rotation.y *= 1 - ease((t - 1.7) / 0.4);
+        const b = Math.abs(Math.sin((t - 1.7) * 7));
+        r.armR.rotation.x = -2.95; r.reach("r", 0.65 + 0.35 * b);
+        r.armL.rotation.x = -0.4; r.root.position.y += 0.05 * b; r.head.rotation.x = -0.2;
+      } };
+    case "tear":
+      return { pose: "standing", run: (r, t) => {
+        if (t < 1.8) {
+          // Read it one last time.
+          arms(r, -1.25, 0.65);
+          r.head.rotation.x = 0.35 + Math.sin(t * 2) * 0.05;
+          return;
+        }
+        // Rip! The hands fly apart with a half each, then a victory hop.
+        const k = ease((t - 1.8) / 0.25);
+        arms(r, -1.25 - 1.5 * ease((t - 2.4) / 0.4), 0.65 + 0.35 * k, 0.9 * k);
+        r.head.rotation.x = 0.35 - 0.6 * k;
+        if (t > 2.4) r.root.position.y += 0.08 * Math.abs(Math.sin((t - 2.4) * 6));
+      } };
     // ── Phase 2: venues ──
     case "scan":
       return { pose: "standing", run: (r, t) => {
