@@ -409,10 +409,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {!use3d && <>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
-        {tile(0,29.6,30,0.65,"#b5b6a4","promenade")}
-        {tile(0,30.25,30,2.6,"#ecd49f","coastal-sand")}
-        {tile(0,32.85,30,0.8,"#8ecfd0","shoreline")}
-        {tile(0,33.65,30,2.35,"#397fa4","sea")}
+        {tile(0,29.6,N,0.65,"#b5b6a4","promenade")}
+        {tile(0,30.25,N,2.6,"#ecd49f","coastal-sand")}
+        {tile(0,32.85,N,0.8,"#8ecfd0","shoreline")}
+        {tile(0,33.65,N,2.35,"#397fa4","sea")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
         {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
         {tile(17,0.9,5.0,5.9,"var(--town-park-lawn)","park-green")}
