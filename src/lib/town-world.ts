@@ -13,7 +13,7 @@ export const ROADS = [
   { x: 0, y: 18.5, w: 9.1, d: 2.8 },     // lower west street, staggered again
   { x: 11.1, y: 25.5, w: 12.2, d: 2.8 },  // lower east street, offset 7 tiles
   { x: 22.6, y: 8.0, w: 2.8, d: 21.6 }, // eastern street extends north to the Post Office spur
-  { x: 23.3, y: 5.8, w: 6.2, d: 2.8 }, // north-east L-shaped branch to the postal entrance
+  { x: 22.6, y: 5.8, w: 6.9, d: 2.8 }, // aligned western edge: square right-angle corner at postal branch
 ] as const;
 
 /** Shared, junction-aware road paint in map units for both SVG and Three.js.
