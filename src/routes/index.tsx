@@ -1,6 +1,6 @@
 import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { TownMap } from "@/components/TownMap";
 import { GlobalRenderingDiagnostics } from "@/components/GlobalRenderingDiagnostics";
 import { PlayerDashboard, InventoryDashboard } from "@/components/CharacterDashboards";
 import { ActionVignette, vignetteForAction, type VignetteKind } from "@/components/ActionVignette";
+import type { CutsceneClaim } from "@/lib/cutscenes";
 import { DayClock } from "@/components/DayClock";
 import { playActionCue } from "@/lib/action-audio";
 import { RESIDENT_FAVOURS, activeFavour, favourChoices, favourObjective, favourVisitAction } from "@/lib/resident-favours";
@@ -75,6 +76,8 @@ function Game() {
   const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
   const [result, setResult] = useState<Feedback | null>(null);
   const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
+  /** Set by a 3D room that can act an action out in-world instead of showing the vignette card. */
+  const cutsceneClaim = useRef<CutsceneClaim | null>(null);
   // Result cards are transient, unlike dialogue that requires a player decision.
   useEffect(() => {
     if (!result) return;
@@ -156,7 +159,8 @@ function Game() {
     if (!outcome.ok) { notify(outcome.message, false); return false; }
     setS(outcome.next);
     notify(outcome.message, true, outcome.hoursUsed, outcome.changes);
-    const kind = vignetteForAction(def.id);
+    const inWorld = cutsceneClaim.current?.({ actionId: def.id, changes: outcome.changes, before: s, after: outcome.next }) ?? false;
+    const kind = inWorld ? null : vignetteForAction(def.id);
     if (kind) setVignette({ kind, changes: outcome.changes, message: outcome.message });
     return true;
   };
@@ -406,6 +410,7 @@ function Game() {
           godMode={godMode}
           feedback={result}
           onRun={perform}
+          cutsceneClaim={cutsceneClaim}
           onLeave={close}
           onLaunch={(g) => (g === "darts" ? launchDarts() : launchGame(g))}
           paused={game !== null || arcade === "darts"}

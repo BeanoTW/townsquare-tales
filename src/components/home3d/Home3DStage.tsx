@@ -7,6 +7,7 @@ import type { HomePlan } from "@/lib/home3d/layout";
 import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
 import { InteriorJoystick } from "./InteriorJoystick";
+import type { Cutscene } from "@/lib/cutscenes";
 
 import { karmaHeadColor } from "@/lib/player-appearance";
 
@@ -50,7 +51,7 @@ export function luxuryMap(state: GameState): Record<string, boolean> {
 const BTN = "min-h-11 min-w-11 rounded-lg border-2 border-foreground bg-card/90 px-2 text-lg font-bold shadow";
 
 export function Home3DStage({
-  state, visible, selectedId, zone, onSelect, onDeselect, onFail, onLaunch, plan: planProp,
+  state, visible, selectedId, zone, onSelect, onDeselect, onFail, onLaunch, plan: planProp, cutscene = null, onCutsceneDone,
 }: {
   state: GameState;
   visible: Hotspot[];
@@ -64,6 +65,8 @@ export function Home3DStage({
   onFail: () => void;
   /** Open a full-screen minigame (mansion games room). */
   onLaunch?: ((game: "blackjack" | "slots") => void) | undefined;
+  cutscene?: Cutscene | null;
+  onCutsceneDone?: (() => void) | undefined;
 }) {
   const controls = useRef<CameraControls | null>(null);
   const plan = planProp ?? planFor(state.house) ?? planFor(1)!;
@@ -91,6 +94,8 @@ export function Home3DStage({
             zone={zone}
             hour={state.hour}
             playerHead={karmaHeadColor(state.karma)}
+            cutscene={cutscene}
+            {...(onCutsceneDone ? { onCutsceneDone } : {})}
             onDeselect={onDeselect}
             onSelect={(slotId) => {
               const game = isHome ? GAME_SLOTS[slotId] : undefined;
@@ -100,8 +105,8 @@ export function Home3DStage({
           />
         </Suspense>
       </Boundary>
-      <InteriorJoystick />
-      <div className="absolute right-2 top-2 flex flex-col gap-1" data-home3d-controls onClick={(e) => e.stopPropagation()}>
+      {!cutscene && <InteriorJoystick />}
+      <div className={`absolute right-2 top-2 flex flex-col gap-1 transition-opacity ${cutscene ? "pointer-events-none opacity-0" : ""}`} data-home3d-controls onClick={(e) => e.stopPropagation()}>
         <button type="button" className={BTN} aria-label="Zoom in" onClick={() => c()?.zoom(0.8)}>＋</button>
         <button type="button" className={BTN} aria-label="Zoom out" onClick={() => c()?.zoom(1.25)}>－</button>
         <button type="button" className={BTN} aria-label="Reset camera" onClick={() => c()?.reset()}>⌂</button>

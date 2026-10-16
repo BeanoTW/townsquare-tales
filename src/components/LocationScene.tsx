@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
 import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
 import { bankLoanAction, repayLoanAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
@@ -9,7 +9,11 @@ import { WalkableShop } from "@/components/rooms/WalkableShop";
 import { isWalkableShop } from "@/lib/walkable-shops";
 import { ArcadeInterior } from "@/components/rooms/ArcadeInterior";
 import { isArcadeRoom } from "@/lib/arcade-rooms";
-import { Home3DStage, webglAvailable } from "@/components/home3d/Home3DStage";
+import { Home3DStage, luxuryMap, toSlotId, webglAvailable } from "@/components/home3d/Home3DStage";
+import { planCutscene, ScenePlays, type Cutscene, type CutsceneClaim } from "@/lib/cutscenes";
+import { planFor } from "@/lib/home3d/plans";
+import { ownsFurniture } from "@/lib/furniture";
+import { SKIP_EVENT } from "@/components/home3d/scenes/Director";
 import { homeZones, furnitureZone, isVenue, venueZones, type HomeZone, type PlanZone } from "@/lib/home-zones";
 import { venuePlan } from "@/lib/home3d/venues";
 import { CounterRobberyChoice } from "@/components/rooms/CounterRobberyChoice";
@@ -41,6 +45,10 @@ export type Renderer3d = ReturnType<typeof useRenderer3d>;
 
 export type Feedback = { message: string; success: boolean; changes: string[]; timeLine?: string };
 
+/** Variant rotation and "seen today" shortening persist for the whole session. */
+const PLAYS = new ScenePlays();
+const prefersReducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+
 function ObjectLocationScene({
   room,
   state,
@@ -51,8 +59,11 @@ function ObjectLocationScene({
   onLaunch,
   paused = false,
   renderer,
+  cutsceneClaim,
 }: {
   renderer?: Renderer3d | undefined;
+  /** The game offers each successful action here; a 3D room claims the ones it can act out. */
+  cutsceneClaim?: MutableRefObject<CutsceneClaim | null> | undefined;
   room: Room;
   state: GameState;
   feedback: Feedback | null;
@@ -78,6 +89,16 @@ function ObjectLocationScene({
     setClassic(c);
   };
   const stageRef = useRef<HTMLDivElement>(null);
+  const [cutscene, setCutscene] = useState<Cutscene | null>(null);
+  const resumeId = useRef<string | null>(null);
+
+  // A renderer switch or WebGL failure removes the director; release its UI state too.
+  useEffect(() => {
+    if (use3d || !cutscene) return;
+    setCutscene(null);
+    setSelectedId(resumeId.current);
+    resumeId.current = null;
+  }, [use3d, cutscene]);
 
   useEffect(() => {
     const el = stageRef.current;
@@ -98,12 +119,13 @@ function ObjectLocationScene({
     if (paused) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (selectedId) setSelectedId(null);
+      if (cutscene) window.dispatchEvent(new Event(SKIP_EVENT));
+      else if (selectedId) setSelectedId(null);
       else onLeave();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, onLeave, paused]);
+  }, [selectedId, onLeave, paused, cutscene]);
 
   const [chatterIdx, setChatterIdx] = useState(0);
   const chatter = room.chatter;
@@ -114,7 +136,30 @@ function ObjectLocationScene({
   }, [chatter]);
 
   const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone);
-  const selected = visible.find((h) => h.id === selectedId) ?? null;
+  const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
+  const plan3d = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
+
+  // Claim actions this room can act out; refreshed every render so it always sees the pre-action room.
+  const claim: CutsceneClaim = (req) => {
+    if (!plan3d || cutscene) return false;
+    const cut = planCutscene({ ...req, slotId: selectedId ? toSlotId(selectedId) : null }, plan3d, {
+      visibleSlotIds: visible.map((h) => toSlotId(h.id)),
+      luxury: luxuryMap(state),
+      hasBed: ownsFurniture(state.furniture, "bed"),
+      plays: PLAYS,
+      reducedMotion: prefersReducedMotion(),
+    });
+    if (!cut) return false;
+    resumeId.current = selectedId;
+    setSelectedId(null);
+    setCutscene(cut);
+    return true;
+  };
+  useLayoutEffect(() => {
+    if (!cutsceneClaim) return;
+    cutsceneClaim.current = claim;
+    return () => { if (cutsceneClaim.current === claim) cutsceneClaim.current = null; };
+  });
   const fit = fitRect(size.w, size.h);
   const floorPx = fit.y + VIEW.floorY * (fit.h / VIEW.h);
   // Faint wallpaper dots over the wall/floor split; the sign plate reads from the wall band.
@@ -137,7 +182,7 @@ function ObjectLocationScene({
         </div>
         <h2 className="text-2xl font-bold leading-tight">{room.title}</h2>
         <p className="room-caption text-sm text-muted-foreground">{room.caption}</p>
-        {(room.id === "home" || (venue && use3d)) && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
+        {(room.id === "home" || (venue && use3d)) && <nav className="mt-2 flex gap-2 overflow-x-auto pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} disabled={Boolean(cutscene)} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
         {(room.id === "home" || venue) && gl && <button type="button" onClick={() => setRenderer(!classic)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
         {room.id === "home" && state.house >= 3 && !use3d && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
@@ -188,6 +233,13 @@ function ObjectLocationScene({
             onDeselect={() => setSelectedId(null)}
             onFail={() => (renderer ?? own).failed()}
             onLaunch={onLaunch}
+            cutscene={cutscene}
+            onCutsceneDone={() => {
+              setCutscene(null);
+              // Back to the same panel, ready for another rep.
+              setSelectedId(resumeId.current);
+              resumeId.current = null;
+            }}
           />
         )}
         {!use3d && (
