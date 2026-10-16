@@ -9,7 +9,7 @@ export type GameState = {
   luxuryFurniture?: number;
   mailbox?: number;
   mailReadMask?: number; familyReplyMask?: number; pendingReplyMask?: number; familyFirstReplyDay?: number;
-  career: number; xp: number; studyXp?: number; employed?: number;
+  career: number; xp: number; careerXp0?: number; careerXp1?: number; careerXp2?: number; careerXp3?: number; careerBest0?: number; careerBest1?: number; careerBest2?: number; careerBest3?: number; studyXp?: number; employed?: number;
   gangRep: number; gangStage: number;
   relMara: number; relNox: number; relGus: number; relIvy: number;
   lastMara: number; lastNox: number; lastGus: number; lastIvy: number;
@@ -47,6 +47,8 @@ const ranges: Record<keyof GameState, [number, number]> = {
   streetMaraIncidents: [0, 1000003], streetNoxIncidents: [0, 1000003], streetGusIncidents: [0, 1000003], streetIvyIncidents: [0, 1000003],
   housingMode: [0, 2], housingTier: [0, 3], mortgageBalance: [0, 1000000], housingLastPaidDay: [0, 100000], housingArrears: [0, 1000000],
   gangRep: [0, 100], gangStage: [0, 2],
+  careerXp0: [0, 1000000], careerXp1: [0, 1000000], careerXp2: [0, 1000000], careerXp3: [0, 1000000],
+  careerBest0: [0, 4], careerBest1: [0, 4], careerBest2: [0, 4], careerBest3: [0, 4],
   civicStage: [0, 4], civicSupport: [0, 100],
   day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
