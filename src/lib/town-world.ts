@@ -12,7 +12,7 @@ export const ROADS = [
   { x: 11.1, y: 11.9, w: 12.2, d: 2.8 }, // east market street, offset 4.8 tiles
   { x: 0, y: 18.5, w: 9.1, d: 2.8 },     // lower west street, staggered again
   { x: 11.1, y: 25.5, w: 12.2, d: 2.8 },  // lower east street, offset 7 tiles
-  { x: 22.6, y: 7.1, w: 2.8, d: 22.5 }, // eastern street extends north to the Post Office spur
+  { x: 22.6, y: 8.0, w: 2.8, d: 21.6 }, // eastern street extends north to the Post Office spur
   { x: 23.3, y: 5.8, w: 6.2, d: 2.8 }, // north-east L-shaped branch to the postal entrance
 ] as const;
 
