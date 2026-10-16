@@ -12,12 +12,13 @@ import { slideMove, smoothRoute } from "./fluid-motion";
 
 /** While set, a cutscene drives the character and player input is ignored. */
 export type SceneDrive = { x: number; z: number; angle: number; lift: number; pose: Pose; walking: boolean; phase: number; act: ActFn; actT: number };
-export type WalkerHandle = { position: WalkPoint; moving: boolean; nearby?: string | null; scene?: SceneDrive | null };
+export type WalkerHandle = { position: WalkPoint; moving: boolean; nearby?: string | null; lookYaw?: number; scene?: SceneDrive | null };
 const SPEED = 2.5;
-export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = null }: {
+export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = null, firstPerson = false }: {
   head: string;
   /** Prop in hand during a cutscene. */
   held?: HeldProp | null;
+  firstPerson?: boolean;
   plan: HomePlan; visibleIds: readonly string[]; handle: MutableRefObject<WalkerHandle>;
   onArrive: (id: string) => void;
 }) {
@@ -77,6 +78,20 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     window.addEventListener(INTERIOR_STICK_EVENT,onStick);
     return()=>{stick.current={x:0,z:0};window.removeEventListener(INTERIOR_STICK_EVENT,onStick);};
   },[invalidate]);
+  useEffect(()=>{
+    const go=(e:Event)=>{
+      const next=(e as CustomEvent<{x:number;z:number}>).detail;
+      if(!next || handle.current.scene)return;
+      if(walkable(nav,next.x,next.z)){
+        pos.current={x:next.x,z:next.z};
+        waypoints.current=[];target.current=null;
+        handle.current.position={...pos.current};
+        invalidate();
+      }
+    };
+    window.addEventListener("tst:room-vantage",go);
+    return()=>window.removeEventListener("tst:room-vantage",go);
+  },[nav,invalidate]);
   useFrame((_,raw)=>{
     const dt=Math.min(raw,0.05),p=pos.current;
     const scene=handle.current.scene;
@@ -93,7 +108,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     if(keys.current.has("s")||keys.current.has("arrowdown"))dz+=1;
     if(keys.current.has("a")||keys.current.has("arrowleft"))dx-=1;
     if(keys.current.has("d")||keys.current.has("arrowright"))dx+=1;
-    if(Math.hypot(stick.current.x,stick.current.z)>.06){dx=stick.current.x;dz=stick.current.z;waypoints.current=[];target.current=null;}
+    if(Math.hypot(stick.current.x,stick.current.z)>.06){const yaw=firstPerson?(handle.current.lookYaw??0):0;dx=Math.cos(yaw)*stick.current.x+Math.sin(yaw)*stick.current.z;dz=-Math.sin(yaw)*stick.current.x+Math.cos(yaw)*stick.current.z;waypoints.current=[];target.current=null;}
     if(!dx&&!dz&&waypoints.current.length){
       const next=waypoints.current[0]!;
       dx=next.x-p.x;dz=next.z-p.z;
@@ -131,7 +146,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     if(moved||waypoints.current.length||Math.hypot(stick.current.x,stick.current.z)>.06)invalidate();
   }, -1);
   return <>
-    <Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} heldL={props.left} heldR={props.right} />
+    <group visible={!firstPerson || Boolean(handle.current.scene)}><Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} heldL={props.left} heldR={props.right} /></group>
     {/* Capture a single finger so drag-to-walk continues even when the finger
         crosses a fixture. Pinch gestures are handled by the camera controls. */}
     <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
