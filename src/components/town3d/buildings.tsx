@@ -159,7 +159,8 @@ function Mansion({ b, c }: { b: B; c: Colours }) {
   const cx = bx + bw / 2, front = bz + bd;
   const stone = stoneTexture();
   return (
-    <group>
+    <group position={[b.x + b.w / 2, 0, b.y + b.d / 2]} rotation={[0, -Math.PI / 2, 0]}>
+      <group position={[-(b.x + b.w / 2), 0, -(b.y + b.d / 2)]}>
       <Walls x={bx} z={bz} w={bw} d={bd} h={H} c={c.wall} map={stone} per={0.9} />
       <Band x={bx} z={bz} w={bw} d={bd} y={0} h={0.12} c={shade(c.side, -0.1)} />
       <Band x={bx} z={bz} w={bw} d={bd} y={0.7} h={0.04} c={GOLD} out={0.015} />
@@ -184,6 +185,7 @@ function Mansion({ b, c }: { b: B; c: Colours }) {
       ))}
       <Hedge x={b.x + 0.05} z={b.y + b.d - 0.3} w={0.55} d={0.22} h={0.15} c="#3f7a3a" />
       <Hedge x={b.x + b.w - 0.6} z={b.y + b.d - 0.3} w={0.55} d={0.22} h={0.15} c="#3f7a3a" />
+      </group>
     </group>
   );
 }
