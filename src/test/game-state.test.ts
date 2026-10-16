@@ -18,6 +18,7 @@ describe("save recovery", () => {
   it("rejects non-object saves", () => { expect(parseGame("null", start)).toEqual(start); });
   it("clamps invalid tiers and energy", () => {
     const s = parseGame(JSON.stringify({...start, house: 99, job: -5, energy: 500, money: "oops"}), start);
-    expect(s).toMatchObject({house: 3, job: 0, energy: 100, money: 20});
+    // The castle (tier 4) is the top home.
+    expect(s).toMatchObject({house: 4, job: 0, energy: 100, money: 20});
   });
 });

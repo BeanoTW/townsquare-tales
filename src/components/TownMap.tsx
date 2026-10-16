@@ -51,7 +51,7 @@ export { karmaHeadColor } from "@/lib/player-appearance";
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 export { ROADS, buildings, door, HOUSE_LOOK } from "@/lib/town-world";
-import { ROADS, laneDashes, buildings, buildingPlot, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
+import { ROADS, laneDashes, buildings, buildingPlot, townSolids, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
 import { buildingHull3d } from "@/components/town3d/specs";
 import { DINER_CHIMNEY, screenOf, townSky } from "@/components/town3d/screen";
 import type { StreetLive, TownLive } from "@/components/town3d/actors";
@@ -127,7 +127,9 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
 
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
-  const bs = useMemo(() => buildings(house), [house]);
+  const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
+  const bs = useMemo(() => buildings(house, castleOwned), [house, castleOwned]);
+  const solids = useMemo(() => townSolids(bs), [bs]);
   const { use3d } = useTown3d();
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
@@ -166,11 +168,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = useCallback((destination: Point, enter?: string) => {
-    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
-    const route = findRoute(me.current, destination, bs);
+    if (!isWalkable(me.current, solids)) Object.assign(me.current, nearestWalkable(me.current, solids));
+    const route = findRoute(me.current, destination, solids);
     if (enter === "kid" && Math.hypot(me.current.x-destination.x,me.current.y-destination.y) < PARK_KID_SPOT.approach) { kidRef.current?.(); return; }
     target.current = route.length ? { waypoints: route, enter } : null;
-  }, [bs]);
+  }, [solids]);
   const selectEncounter = () => {
     if (!encounter || pausedRef.current) return;
     if(Math.hypot(me.current.x-encounter.x,me.current.y-encounter.y)<1.5) onEncounter?.();
@@ -228,7 +230,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   enterRef.current = onEnter;
 
   const blocked = (x: number, y: number) =>
-    x < 0.2 || y < 0.2 || x > 35.4 || y > 32.5 || bs.some((b) => x > b.x - 0.15 && x < b.x + b.w + 0.15 && y > b.y - 0.15 && y < b.y + b.d + 0.15);
+    x < 0.2 || y < 0.2 || x > 35.4 || y > 32.5 || solids.some((b) => x > b.x - 0.15 && x < b.x + b.w + 0.15 && y > b.y - 0.15 && y < b.y + b.d + 0.15);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -249,7 +251,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
-    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, bs));
+    if (!isWalkable(me.current, solids)) Object.assign(me.current, nearestWalkable(me.current, solids));
     // Keep map animation at 30 FPS on mobile for smoother movement without full 60 FPS scene reconciliation.
     // The browser still schedules RAF normally, but most frames do no React work.
     let last = performance.now(), raf = 0;
@@ -606,7 +608,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={isTownHallBuilt({day:state?.day ?? 1})} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} /></Suspense>}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={isTownHallBuilt({day:state?.day ?? 1})} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
@@ -617,12 +619,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           }
         }}
         onClick={(e) => {
-          if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
+          if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, solids)); }}>
         <g ref={worldRef} transform={`translate(${playerOffset[0]} ${playerOffset[1]})`}>
         {ground}
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
-        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={feedbackNow} ghost={use3d} live={streetLive} steamAt={use3d ? screenOf(DINER_CHIMNEY.x, DINER_CHIMNEY.y, DINER_CHIMNEY.z) : undefined} />
+        <StreetLife player={me} positions={positions} lots={solids} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={feedbackNow} ghost={use3d} live={streetLive} steamAt={use3d ? screenOf(DINER_CHIMNEY.x, DINER_CHIMNEY.y, DINER_CHIMNEY.z) : undefined} />
         {!use3d && (night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
         </g>
       </svg>

@@ -9,6 +9,7 @@ import { applyTownCamera } from "@/components/town3d/projection";
 import { StaticBatch } from "@/components/town3d/StaticBatch";
 import { TownGround } from "@/components/town3d/ground";
 import { TownBuildings } from "@/components/town3d/buildings";
+import { EstateGrounds } from "@/components/town3d/estate";
 import { ConstructionStatic, Lamps, StreetFurniture, Trees, lampPositions } from "@/components/town3d/props";
 import { BoxSquatter, EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
 import { prepareNightMaterials, setNightLevel } from "@/components/town3d/kit";
@@ -29,6 +30,7 @@ export type TownWorld3DProps = {
   constructionActive: boolean;
   townHallBuilt?: boolean;
   mansionOwned?: boolean;
+  castleOwned?: boolean;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -193,8 +195,8 @@ function CompletedTownHall() {
   );
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt }: Omit<TownWorld3DProps, "tick">) {
-  const bs: B[] = useMemo(() => buildings(house), [house]);
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned }: Omit<TownWorld3DProps, "tick">) {
+  const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned)), [house, castleOwned]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
     <>
@@ -210,12 +212,13 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
       </StaticBatch>
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
+      <EstateGrounds />
       <Player3D live={live} skating={skating} head={head} />
       <Residents live={live} hour={hour} />
       <Pedestrians live={live} />
       <Pigeons live={live} />
       <Gang />
-      <BoxSquatter visible={house > 0} />
+      <BoxSquatter visible={house > 0 && !castleOwned && house < 4} />
       <ParkKid present={kidPresent} />
       <EncounterPerson encounter={encounter} />
       {!townHallBuilt && <SiteCrew active={constructionActive} />}

@@ -3,8 +3,8 @@ export type HomeZone = "shelter" | "living" | "bedroom" | "kitchen" | "study" | 
 export type VenueZone = "floor" | "back" | "vip" | "bar" | "dance" | "weights" | "cardio";
 /** Every zone a 3D plan can use: the home rooms plus the venue regions. */
 export type PlanZone = HomeZone | VenueZone;
-export type VenueId = "casino" | "bar" | "gym" | "pawn" | "police" | "shop" | "diner" | "furniture" | "bank" | "school" | "work" | "yard" | "clinic" | "depot";
-export const VENUE_IDS: readonly string[] = ["casino", "bar", "gym", "pawn", "police", "shop", "diner", "furniture", "bank", "school", "work", "yard", "clinic", "depot"];
+export type VenueId = "casino" | "bar" | "gym" | "pawn" | "police" | "shop" | "diner" | "furniture" | "bank" | "school" | "work" | "yard" | "clinic" | "depot" | "post";
+export const VENUE_IDS: readonly string[] = ["casino", "bar", "gym", "pawn", "police", "shop", "diner", "furniture", "bank", "school", "work", "yard", "clinic", "depot", "post"];
 export const isVenue = (id: string): id is VenueId => VENUE_IDS.includes(id);
 /** Area buttons for the everyday venues: the public floor and the back-of-house space. */
 const AREAS: Partial<Record<VenueId, [string, string]>> = {
@@ -19,6 +19,7 @@ const AREAS: Partial<Record<VenueId, [string, string]>> = {
   depot: ["Concourse", "Bus bays"],
   pawn: ["Shop floor", "Back room"],
   police: ["Reception", "Squad room"],
+  post: ["Public hall", "Sorting office"],
 };
 export const venueZones = (id: VenueId): { id: PlanZone; label: string }[] => {
   const areas = AREAS[id];
@@ -33,6 +34,7 @@ export const homeZones = (house: number): { id: HomeZone; label: string }[] => {
   if (house <= 0) return [{ id: "shelter", label: "Shelter" }];
   if (house === 1) return [{ id: "living", label: "Living / Kitchen" }, { id: "bedroom", label: "Bedroom / Study" }];
   if (house === 2) return [{ id: "living", label: "Living Room" }, { id: "kitchen", label: "Kitchen" }, { id: "bedroom", label: "Bedroom" }, { id: "study", label: "Study / Gym" }];
+  if (house >= 4) return [{ id: "living", label: "Great Hall" }, { id: "kitchen", label: "Banquet Hall" }, { id: "bedroom", label: "Royal Chamber" }, { id: "study", label: "Library Tower" }, { id: "gym", label: "Armoury" }, { id: "entertainment", label: "Games Gallery" }];
   return [{ id: "living", label: "Living Room" }, { id: "kitchen", label: "Luxury Kitchen" }, { id: "bedroom", label: "Master Bedroom" }, { id: "study", label: "Study" }, { id: "gym", label: "Private Gym" }, { id: "entertainment", label: "Entertainment" }];
 };
 export function furnitureZone(id: string, house: number): HomeZone {
@@ -42,7 +44,7 @@ export function furnitureZone(id: string, house: number): HomeZone {
     kitchen: house === 1 ? "living" : "kitchen",
     bed: "bedroom", desk: house === 1 ? "bedroom" : house === 2 ? "study" : "study",
     weights: house <= 2 ? "study" : "gym",
-    console: house === 3 ? "entertainment" : "living",
+    console: house >= 3 ? "entertainment" : "living",
   };
   return map[id] ?? "living";
 }

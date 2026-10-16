@@ -236,6 +236,9 @@
   --town-mansion-wall: oklch(0.9530 0.0156 86.43);
   --town-mansion-side: oklch(0.8310 0.0274 87.87);
   --town-mansion-roof: oklch(0.4638 0.0440 258.34);
+  --town-castle-wall: oklch(0.7600 0.0200 80.00);
+  --town-castle-side: oklch(0.6400 0.0220 78.00);
+  --town-castle-roof: oklch(0.4200 0.0400 255.00);
   --town-gym-wall: oklch(0.6813 0.0218 250.47);
   --town-gym-side: oklch(0.5677 0.0228 250.54);
   --town-gym-roof: oklch(0.3974 0.0206 251.11);

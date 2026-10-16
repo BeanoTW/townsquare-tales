@@ -11,7 +11,7 @@ import type { CutsceneMode, Milestone } from "@/lib/milestones";
 export type StageSet =
   | "gym" | "park" | "bench" | "bar" | "bed" | "desk" | "casino" | "alley" | "counter" | "dancefloor"
   | "clinic" | "busstop" | "atm" | "lounge" | "kitchen"
-  | "podium" | "graduation" | "house-1" | "house-2" | "house-3" | "bank" | "workplace";
+  | "podium" | "graduation" | "house-1" | "house-2" | "house-3" | "house-4" | "bank" | "workplace";
 
 export type StageSpec = {
   key: number;
@@ -47,7 +47,7 @@ export function milestoneStage(m: Milestone, ctx: { day: number; house: number; 
   const duration = ctx.mode === "short" ? 3.2 : 6.2;
   switch (m.kind) {
     case "new-home":
-      return { ...base, set: `house-${Math.min(3, Math.max(1, ctx.house))}` as StageSet, act: "keys", held: "keys", mark: AT(0, 0.2), confetti: "party", duration };
+      return { ...base, set: `house-${Math.min(4, Math.max(1, ctx.house))}` as StageSet, act: "keys", held: "keys", mark: AT(0, 0.2), confetti: "party", duration };
     case "graduated":
       return { ...base, set: "graduation", act: "victory", held: "diploma", hat: "mortar", mark: AT(0, 0, 0, 0.32), confetti: "party", banner: `CLASS OF DAY ${ctx.day}`, duration };
     case "promoted":

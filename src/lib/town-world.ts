@@ -43,9 +43,13 @@ export const HOUSE_LOOK = [
   { h: 70, wall: "var(--town-flat-wall)", side: "var(--town-flat-side)", roof: "var(--town-flat-roof)", label: "Flat" },
   { h: 60, wall: "var(--town-house-wall)", side: "var(--town-house-side)", roof: "var(--town-house-roof)", label: "House" },
   { h: 95, wall: "var(--town-mansion-wall)", side: "var(--town-mansion-side)", roof: "var(--town-mansion-roof)", label: "Mansion" },
+  { h: 160, wall: "var(--town-castle-wall)", side: "var(--town-castle-side)", roof: "var(--town-castle-roof)", label: "Castle" },
 ];
 
-export const buildings = (house: number): B[] => {
+/** Once built, the castle takes over the old cardboard-box plot (and the land around it) for good. */
+export const CASTLE_PLOT = { x: 0.6, y: 0.5, w: 7.2, d: 5.5 } as const;
+
+export const buildings = (house: number, castle = house >= 4): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   const sites = [
     { x: 1.1, y: 2, w: 3, d: 4 },
@@ -53,13 +57,20 @@ export const buildings = (house: number): B[] => {
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
     { x: 32.0, y: 5.375, w: 3.8, d: 3.65 },
   ] as const;
-  const residences = sites.map((plot, tier) => ({
+  const residences: B[] = sites.map((plot, tier) => ({
     facing: (tier === 3 ? "west" : "south") as "west" | "south", id: tier === house ? "home" : `residence-${tier}`,
     label: tier === house ? `Home · ${hl.label}` : ["Cardboard Box", "Studio Flat", "Suburban House", "Mansion"][tier]!,
     ...plot, h: HOUSE_LOOK[tier]!.h, wall: HOUSE_LOOK[tier]!.wall,
     side: HOUSE_LOOK[tier]!.side, roof: HOUSE_LOOK[tier]!.roof,
     sign: "var(--town-home-sign)", win: tier > 0,
   }));
+  if (castle) {
+    const look = HOUSE_LOOK[4]!;
+    residences[0] = {
+      facing: "south", id: house === 4 ? "home" : "residence-4", label: house === 4 ? `Home · ${look.label}` : "Castle",
+      ...CASTLE_PLOT, h: look.h, wall: look.wall, side: look.side, roof: look.roof, sign: "var(--town-home-sign)", win: true,
+    };
+  }
   return [
     ...residences,
     { facing: "north", id: "yard", label: "Construction Office", x: 19.5, y: 22.8, w: 2.1, d: 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
@@ -79,6 +90,22 @@ export const buildings = (house: number): B[] => {
     { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 13, w: 3, d: 4, h: 75, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
   ];
 };
+
+/**
+ * The mansion estate east of the road end: a walled and railed park around the house with one way in,
+ * the gated drive (its gap matches the kerb opening at z 6.67–7.73). Walls are walking obstacles too.
+ */
+export const ESTATE = { x0: 30.25, z0: 0.5, x1: 35.95, z1: 15.5, gate: [6.67, 7.73] as const };
+/** 0.4 thick so the 0.5 m walking grid can never step over a wall; the gate gap still leaves two clear cells. */
+export const ESTATE_WALLS: { x: number; y: number; w: number; d: number }[] = [
+  { x: ESTATE.x0 - 0.2, y: ESTATE.z0, w: 0.4, d: ESTATE.gate[0] - ESTATE.z0 },
+  { x: ESTATE.x0 - 0.2, y: ESTATE.gate[1], w: 0.4, d: ESTATE.z1 - ESTATE.gate[1] },
+  { x: ESTATE.x0 - 0.2, y: ESTATE.z0 - 0.2, w: ESTATE.x1 - ESTATE.x0 + 0.4, d: 0.4 },
+  { x: ESTATE.x0 - 0.2, y: ESTATE.z1 - 0.2, w: ESTATE.x1 - ESTATE.x0 + 0.4, d: 0.4 },
+  { x: ESTATE.x1 - 0.2, y: ESTATE.z0, w: 0.4, d: ESTATE.z1 - ESTATE.z0 },
+];
+/** Everything the player and passers-by must walk around: buildings plus the estate perimeter. */
+export const townSolids = (bs: B[]) => [...bs, ...ESTATE_WALLS];
 
 /** Building landscape stops at the postal pavement, rather than painting turf over it. */
 export function buildingPlot(b: B): {x:number;y:number;w:number;d:number} {

@@ -6,6 +6,7 @@
  *   tier 1  Studio Flat            7.6 × 4.8 m, two spaces (see layout.ts)
  *   tier 2  Suburban House         11.2 × 8.0 m, four rooms plus hall
  *   tier 3  Mansion                19.6 × 13.0 m, six rooms plus foyer, 3.3 m ceilings
+ *   tier 4  Castle                 24.0 × 15.0 m, seven stone rooms, 4 m ceilings
  *
  * Slots only say where a piece of furniture WOULD stand. Whether it appears is decided by the existing
  * hotspot rules (ownership and tier), never by the plan.
@@ -311,6 +312,135 @@ export const MANSION: HomePlan = {
   ],
 };
 
-export const PLANS: readonly HomePlan[] = [SQUAT, STUDIO, SUBURBAN, MANSION];
+/* ---------------------------------------------------------------- castle */
+/**
+ * Tier 4, the castle: dressed-stone walls, 4 m ceilings and seven rooms. The back range holds the great hall,
+ * the banquet hall (with the kitchen) and the games gallery; the front range the royal chamber, the entrance
+ * hall, the library and the armoury. Same zones and furniture slots as the mansion, at castle scale.
+ */
+const CW = 24.0;
+const CD = 15.0;
+const CH = 4.0;
+const ROW = 7.2;
+const cinner = (id: string, a: [number, number], b: [number, number], normal: [number, number], openings: Opening[], colour = "#cfc6b4") =>
+  wall(id, a, b, CH, 0.3, normal, false, colour, openings, { fold: 0.34, style: "block", trim: "#6b4a32", leaf: "#5a3a22" });
+const couter = (id: string, a: [number, number], b: [number, number], normal: [number, number], openings: Opening[], colour = "#c9c0ae") =>
+  wall(id, a, b, CH, 0.45, normal, true, colour, openings, { style: "block", trim: "#6b4a32", leaf: "#4a2f1e" });
+const lancet = (u0: number, u1: number) => win(u0, u1, 1.0, 3.3);
+export const CASTLE: HomePlan = {
+  tier: 4,
+  kind: "castle",
+  name: "Castle",
+  size: { w: CW, d: CD, h: CH },
+  floors: [
+    { zone: "living", rect: { x0: 0, z0: 0, x1: 10, z1: ROW }, kind: "boards", colour: "#a07850" },
+    { zone: "kitchen", rect: { x0: 10, z0: 0, x1: 16, z1: ROW }, kind: "tile", colour: "#d8cdb8" },
+    { zone: "entertainment", rect: { x0: 16, z0: 0, x1: CW, z1: ROW }, kind: "carpet", colour: "#5a2a3a" },
+    { zone: "bedroom", rect: { x0: 0, z0: ROW, x1: 7, z1: CD }, kind: "carpet", colour: "#6a2a34" },
+    { zone: "living", rect: { x0: 7, z0: ROW, x1: 11.5, z1: CD }, kind: "marble", colour: "#d9d2c4" },
+    { zone: "study", rect: { x0: 11.5, z0: ROW, x1: 17, z1: CD }, kind: "parquet", colour: "#7a4e30" },
+    { zone: "gym", rect: { x0: 17, z0: ROW, x1: CW, z1: CD }, kind: "boards", colour: "#8a6a4a" },
+  ],
+  walls: [
+    couter("back-hall", [0, 0], [10, 0], [0, -1], [lancet(0.6, 1.4), lancet(4.4, 5.2), lancet(8.8, 9.6)]),
+    couter("back-banquet", [10, 0], [16, 0], [0, -1], [lancet(0.6, 1.4), lancet(4.8, 5.6)]),
+    couter("back-games", [16, 0], [CW, 0], [0, -1], [lancet(2.0, 2.8), lancet(5.6, 6.4)]),
+    couter("right-games", [CW, 0], [CW, ROW], [1, 0], [lancet(0.6, 1.4)]),
+    couter("right-armoury", [CW, ROW], [CW, CD], [1, 0], []),
+    couter("front-armoury", [17, CD], [CW, CD], [0, 1], [lancet(1.6, 2.6), lancet(4.4, 5.4)]),
+    couter("front-library", [11.5, CD], [17, CD], [0, 1], [lancet(1.2, 2.2), lancet(3.4, 4.4)]),
+    couter("front-entrance", [7, CD], [11.5, CD], [0, 1], [{ kind: "door", u0: 1.4, u1: 3.1, v0: 0, v1: 3.0 }]),
+    couter("front-chamber", [0, CD], [7, CD], [0, 1], [lancet(1.4, 2.4), lancet(4.4, 5.4)]),
+    couter("left-chamber", [0, ROW], [0, CD], [-1, 0], [lancet(2.2, 3.2), lancet(5.0, 6.0)]),
+    couter("left-hall", [0, 0], [0, ROW], [-1, 0], [lancet(0.6, 1.6)]),
+    cinner("wall-hall-banquet", [10, 0], [10, ROW], [-1, 0], [arch(1.5, 5.5, 3.2)]),
+    cinner("wall-banquet-games", [16, 0], [16, ROW], [-1, 0], [arch(1.8, 5.2, 3.2)]),
+    cinner("wall-ranges", [0, ROW], [CW, ROW], [0, -1], [door(1.0, 2.0, 2.6), arch(7.4, 9.6, 3.2), arch(10.2, 11.2, 2.8), door(21.0, 22.2, 2.6)]),
+    cinner("wall-chamber-entrance", [7, ROW], [7, CD], [-1, 0], [door(2.3, 3.3, 2.6)]),
+    cinner("wall-entrance-library", [11.5, ROW], [11.5, CD], [-1, 0], [arch(2.3, 3.8, 3.0)]),
+    cinner("wall-library-armoury", [17, ROW], [17, CD], [-1, 0], [arch(2.6, 4.2, 3.0)]),
+  ],
+  slots: [
+    slot("tv", 0.35, 3.6, Math.PI / 2, "living"),
+    slot("sofa", 3.4, 3.6, -Math.PI / 2, "living"),
+    slot("bookshelf", 5.2, 0.3, 0, "living"),
+    slot("kitchen", 13.0, 0.45, 0, "kitchen"),
+    slot("bed", 3.5, 8.45, 0, "bedroom", [2.32, 2.1]),
+    slot("desk", 14.25, 14.45, Math.PI, "study"),
+    slot("weights", 20.5, 11.0, 0, "gym"),
+    slot("console", 16.4, 1.4, Math.PI / 2, "entertainment"),
+    slot("blackjack", 19.5, 3.6, 0, "entertainment"),
+    slot("slots", 21.2, 0.55, 0, "entertainment"),
+  ],
+  focus: {
+    all: { x0: 0, z0: 0, x1: CW, z1: CD },
+    living: { x0: 0, z0: 0, x1: 10, z1: ROW },
+    kitchen: { x0: 10, z0: 0, x1: 16, z1: ROW },
+    entertainment: { x0: 16, z0: 0, x1: CW, z1: ROW },
+    bedroom: { x0: 0, z0: ROW, x1: 7, z1: CD },
+    study: { x0: 11.5, z0: ROW, x1: 17, z1: CD },
+    gym: { x0: 17, z0: ROW, x1: CW, z1: CD },
+  },
+  rooms: [
+    { zone: "living", name: "Great hall", rect: { x0: 0, z0: 0, x1: 10, z1: ROW } },
+    { zone: "kitchen", name: "Banquet hall and kitchen", rect: { x0: 10, z0: 0, x1: 16, z1: ROW } },
+    { zone: "entertainment", name: "Games gallery", rect: { x0: 16, z0: 0, x1: CW, z1: ROW } },
+    { zone: "bedroom", name: "Royal chamber", rect: { x0: 0, z0: ROW, x1: 7, z1: CD } },
+    { zone: "living", name: "Entrance hall", rect: { x0: 7, z0: ROW, x1: 11.5, z1: CD } },
+    { zone: "study", name: "Library", rect: { x0: 11.5, z0: ROW, x1: 17, z1: CD } },
+    { zone: "gym", name: "Armoury", rect: { x0: 17, z0: ROW, x1: CW, z1: CD } },
+  ],
+  doors: [
+    { a: [8.4, CD], b: [10.1, CD] },
+    { a: [10, 1.5], b: [10, 5.5] },
+    { a: [16, 1.8], b: [16, 5.2] },
+    { a: [1.0, ROW], b: [2.0, ROW] },
+    { a: [7.4, ROW], b: [9.6, ROW] },
+    { a: [10.2, ROW], b: [11.2, ROW] },
+    { a: [21.0, ROW], b: [22.2, ROW] },
+    { a: [7, 9.5], b: [7, 10.5] },
+    { a: [11.5, 9.5], b: [11.5, 11.0] },
+    { a: [17, 9.8], b: [17, 11.4] },
+  ],
+  spawn: { entry: [9.25, 14.3], zones: { living: [5.0, 5.2], kitchen: [13.0, 6.2], entertainment: [18.2, 5.8], bedroom: [1.8, 11.2], study: [13.2, 12.4], gym: [19.0, 9.0] } },
+  colliders: [
+    { x0: 1.4, z0: 0.12, x1: 3.6, z1: 0.8 }, // great hearth
+    { x0: 6.6, z0: 0.12, x1: 8.8, z1: 1.6 }, // throne dais
+    { x0: 1.2, z0: 3.2, x1: 2.3, z1: 4.0, when: "sofa" }, // oak coffee chest
+    { x0: 10.9, z0: 3.1, x1: 15.1, z1: 5.0 }, // banquet table and benches
+    { x0: 23.3, z0: 1.0, x1: 23.9, z1: 5.4 }, // games gallery banquette
+    { x0: 0.08, z0: 12.4, x1: 0.75, z1: 14.6 }, // armoire
+    { x0: 2.9, z0: 9.75, x1: 4.1, z1: 10.3, when: "bed" }, // chest at the foot of the bed
+    { x0: 7.1, z0: 11.0, x1: 8.0, z1: 14.4 }, // grand staircase
+    { x0: 10.85, z0: 13.7, x1: 11.35, z1: 14.3 }, // suit of armour
+    { x0: 11.8, z0: 7.3, x1: 16.8, z1: 7.75 }, // library wall of books
+    { x0: 13.3, z0: 10.2, x1: 15.2, z1: 11.2 }, // reading table
+    { x0: 23.35, z0: 8.0, x1: 23.9, z1: 14.2 }, // weapon racks
+    { x0: 17.9, z0: 13.6, x1: 18.7, z1: 14.4 }, // training dummy
+  ],
+  lights: {
+    hemi: ["#f4e6cc", "#5a4a3a"], hemiBase: 0.55, hemiDay: 0.5, sunBase: 0.2, sunDay: 2.0, sunTint: ["#fff0d8", "#ffc890"],
+    points: [
+      { p: [5.0, 3.6, 3.6], colour: "#ffcf8a", day: 6, night: 24, distance: 12, decay: 1.5 },
+      { p: [13.0, 3.4, 3.6], colour: "#ffd9a0", day: 5, night: 20, distance: 9, decay: 1.5 },
+      { p: [20.0, 3.4, 3.6], colour: "#ffb070", day: 6, night: 18, distance: 9, decay: 1.4 },
+      { p: [3.5, 3.2, 11.0], colour: "#ffc890", day: 3, night: 15, distance: 8, decay: 1.5 },
+      { p: [9.25, 3.4, 11.0], colour: "#ffe0b0", day: 3, night: 14, distance: 8, decay: 1.5 },
+      { p: [14.2, 3.2, 11.0], colour: "#ffcf8f", day: 3, night: 15, distance: 8, decay: 1.5 },
+      { p: [20.5, 3.2, 11.0], colour: "#fff0d8", day: 4, night: 14, distance: 9, decay: 1.5 },
+    ],
+  },
+  sky: { day: ["#bcd9ee", "#f6efdd"], night: ["#141a30", "#2a2a44"] },
+  base: { side: "#6a6256", top: "#8f877a", margin: 0.6, frontLawn: 2.2 },
+  npcs: [
+    // Friends deal from the far side of the table, facing you across the felt.
+    { id: "ivy", name: "Ivy", x: 18.8, z: 2.45, rot: 0, pose: "sit", shirt: "#5c6e98", skin: "#f0d5b7", hair: "#3a2a22" },
+    { id: "gus", name: "Gus", x: 20.2, z: 2.45, rot: 0, pose: "sit", shirt: "#4f8a54", skin: "#e8c7a0", hair: "#8a8a8a" },
+    { id: "butler", name: "Butler", x: 10.4, z: 12.4, rot: -Math.PI / 2, pose: "stand", shirt: "#1f1f26", skin: "#e8c3a0", hair: "#c9c9c9" },
+    { id: "guard", name: "Castle guard", x: 22.8, z: 9.6, rot: -Math.PI / 2, pose: "stand", shirt: "#7a2d3a", skin: "#d9b48f", hair: "#3a2a22" },
+  ],
+};
+
+export const PLANS: readonly HomePlan[] = [SQUAT, STUDIO, SUBURBAN, MANSION, CASTLE];
 /** The plan for a property tier, or null if the tier has none. */
 export const planFor = (house: number): HomePlan | null => PLANS[house] ?? null;

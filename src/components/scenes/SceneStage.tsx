@@ -43,6 +43,7 @@ const LOOKS: Record<StageSet, Look> = {
   "house-1": { floor: "#9aa3a8", wall: "#b9d7ea", sky: ["#9fcbe8", "#eaf5fc"], light: "#fff6dc" },
   "house-2": { floor: "#6f9a52", wall: "#b9d7ea", sky: ["#9fcbe8", "#eaf5fc"], light: "#fff6dc" },
   "house-3": { floor: "#5f8a46", wall: "#b9d7ea", sky: ["#9fcbe8", "#eaf5fc"], light: "#fff6dc" },
+  "house-4": { floor: "#5f8a46", wall: "#b9d7ea", sky: ["#9fcbe8", "#eaf5fc"], light: "#fff6dc" },
   bank: { floor: "#e8e2d4", wall: "#1f4a3a", sky: ["#14241e", "#2f5d4a"], light: "#fff2c4" },
   workplace: { floor: "#3b4f7a", wall: "#d9dfe6", sky: ["#c9d3dd", "#eef2f6"], light: "#ffffff" },
 };
@@ -76,6 +77,24 @@ function House({ tier }: { tier: number }) {
       <Box s={[3.2, 3.2, 0.5]} p={[0, 1.6, -0.25]} c="#b8735a" />
       {[[-1, 2.3], [1, 2.3], [-1, 1.2], [1, 1.2]].map(([x, y]) => <Box key={`${x}${y}`} s={[0.6, 0.6, 0.04]} p={[x!, y!, 0.02]} c="#cfe6f2" />)}
       {door}
+    </Group>
+  );
+  if (tier === 4) return (
+    // The castle gatehouse: twin crenellated towers, slate cones, banners and the open gate.
+    <Group p={[0, 0, -2.1]}>
+      <Box s={[4.6, 2.2, 0.6]} p={[0, 1.1, -0.3]} c="#b9b1a2" />
+      {Array.from({ length: 17 }, (_, i) => <Box key={i} s={[0.16, 0.2, 0.6]} p={[-2.2 + i * 0.275, 2.3, -0.3]} c="#b9b1a2" />)}
+      {[-1.6, 1.6].map((x) => (
+        <Group key={x} p={[x, 0, 0]}>
+          <Cyl rad={0.55} h={3.0} p={[0, 1.5, 0]} c="#b9b1a2" />
+          <Cone rad={0.62} h={1.0} p={[0, 3.5, 0]} c="#4a5a72" />
+          <Cyl rad={0.015} h={0.5} p={[0, 4.2, 0]} c="#2b2a2e" />
+          <Box s={[0.32, 0.16, 0.01]} p={[0.16, 4.35, 0]} c={x < 0 ? "#a93d37" : "#d8b45a"} />
+          <Box s={[0.36, 0.8, 0.02]} p={[0, 1.5, 0.56]} c="#a93d37" />
+        </Group>
+      ))}
+      <Box s={[1.1, 1.5, 0.04]} p={[0, 0.75, 0.02]} c="#2a2420" />
+      {[-0.4, -0.2, 0, 0.2, 0.4].map((x) => <Box key={x} s={[0.03, 0.5, 0.03]} p={[x, 1.3, 0.05]} c="#2b2a2e" />)}
     </Group>
   );
   if (tier === 2) return (
@@ -154,7 +173,7 @@ function SetPieces({ spec }: { spec: StageSpec }) {
     case "kitchen": pieces = <><Round s={[2.4, 0.9, 0.6]} p={[0, 0.45, -0.55]} c="#efe6d6" rad={0.02} /><Box s={[2.4, 0.04, 0.62]} p={[0, 0.92, -0.55]} c="#8a6a45" /><Cyl rad={0.14} h={0.1} p={[0, 0.99, -0.5]} c="#2b2a2e" /></>; break;
     case "podium": pieces = <><Box s={[1.0, 0.5, 1.4]} p={[0, 0.25, 0]} c="#e0b84a" /><Box s={[0.9, 0.32, 1.1]} p={[-1.0, 0.16, 0.1]} c="#c9ccd2" /><Box s={[0.9, 0.2, 1.1]} p={[1.0, 0.1, 0.1]} c="#b88b5f" /><Sign p={[0, 0.25, 0.71]} w={0.36} h={0.3} text="1" bg="#e0b84a" fg="#2b2a2e" /></>; break;
     case "graduation": pieces = <><Box s={[3.2, 0.3, 1.6]} p={[0, 0.15, -0.1]} c="#5a2a2a" /><Round s={[0.6, 1.0, 0.45]} p={[1.1, 0.8, -0.55]} c="#6b4a32" rad={0.03} /></>; break;
-    case "house-1": case "house-2": case "house-3": pieces = <><House tier={Number(spec.set.slice(-1))} /><Box s={[0.9, 0.02, 2.2]} p={[0, 0.01, -0.7]} c="#c9b896" /><Group p={[1.3, 0, -0.3]}><Cyl rad={0.03} h={1.2} p={[0, 0.6, 0]} c="#6b4a32" /><Sign p={[0, 1.15, 0.03]} w={0.6} h={0.36} text="SOLD" bg="#b5413a" /></Group></>; break;
+    case "house-1": case "house-2": case "house-3": case "house-4": pieces = <><House tier={Number(spec.set.slice(-1))} /><Box s={[0.9, 0.02, 2.2]} p={[0, 0.01, -0.7]} c="#c9b896" /><Group p={[1.3, 0, -0.3]}><Cyl rad={0.03} h={1.2} p={[0, 0.6, 0]} c="#6b4a32" /><Sign p={[0, 1.15, 0.03]} w={0.6} h={0.36} text="SOLD" bg="#b5413a" /></Group></>; break;
     case "bank": pieces = <>{[-1.4, -0.7, 0.7, 1.4].map((x) => <Cyl key={x} rad={0.13} h={2.4} p={[x, 1.2, -1.2]} c="#f4f1ea" />)}</>; break;
   }
   return (

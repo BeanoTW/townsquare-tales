@@ -21,11 +21,12 @@ const TOPS: Record<string, number> = {
   police: 2.25,
   clinic: 1.5,
 };
-/** Home models by tier: cardboard box, flat, house, mansion. */
-const HOME_TOPS = [0.8, 2.15, 1.95, 2.15];
+/** Home models by tier: cardboard box, flat, house, mansion, castle. */
+const HOME_TOPS = [0.8, 2.15, 1.95, 2.15, 3.1];
 
 export function buildingTop(b: Pick<B, "id">, house = 0): number {
   if (b.id === "home") return HOME_TOPS[house] ?? HOME_TOPS[0]!;
+  if (b.id === "residence-4") return HOME_TOPS[4]!;
   return TOPS[b.id] ?? 1.5;
 }
 

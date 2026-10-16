@@ -189,7 +189,7 @@ export function sleepAction(s: GameState): ActionDef {
 }
 
 /** Purchase any property tier directly; owned homes can be selected again for free. */
-export function buyHouseAction(s: GameState, tier = Math.min(3, s.house + 1)): ActionDef {
+export function buyHouseAction(s: GameState, tier = Math.min(4, s.house + 1)): ActionDef {
   const property = HOUSES[tier];
   const owned = Boolean(((s.ownedHomes ?? ((1 << (s.house + 1)) - 1)) & (1 << tier)));
   return {

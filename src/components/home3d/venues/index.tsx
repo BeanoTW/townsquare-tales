@@ -7,6 +7,7 @@ import { DinerDecor, DinerFixture } from "./diner";
 import { OfficeDecor, OfficeFixture } from "./office";
 import { PawnDecor, PawnFixture } from "./pawn-shop";
 import { PoliceDecor, PoliceFixture } from "./police-station";
+import { PostDecor, PostFixture } from "./post-office";
 import { SchoolDecor, SchoolFixture } from "./school";
 import { ShopDecor, ShopFixture } from "./shop";
 import { YardDecor, YardFixture } from "./yard";
@@ -28,6 +29,7 @@ const VENUES: Record<string, { Fixture: (p: { id: string }) => ReactNode; Decor:
   depot: { Fixture: DepotFixture, Decor: DepotDecor },
   pawn: { Fixture: PawnFixture, Decor: PawnDecor },
   police: { Fixture: PoliceFixture, Decor: PoliceDecor },
+  post: { Fixture: PostFixture, Decor: PostDecor },
 };
 
 export const hasTownVenue = (kind: string) => Object.prototype.hasOwnProperty.call(VENUES, kind);

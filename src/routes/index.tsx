@@ -265,7 +265,7 @@ function Game() {
           : s.karma > -20
             ? "Crooked"
             : "Kingpin";
-  const won = s.house === 3 && s.career === 0 && s.job === 4;
+  const won = s.house >= 3 && s.career === 0 && s.job === 4;
 
   const close = () => {
     setGame(null);

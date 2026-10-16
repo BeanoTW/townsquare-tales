@@ -17,6 +17,7 @@
  *   depot      15.0 ×  9.5  bus station concourse, ticket office and the bus bays
  *   pawn       12.0 ×  9.0  Oddities Pawn shop floor and back-room workshop
  *   police     13.0 ×  9.5  reception with the front desk, squad room and holding cell
+ *   post       12.0 ×  9.0  Town Post Office: public hall and counter, sorting office behind a staff door
  */
 import type { HomePlan, Slot, WallSpec, Opening } from "./layout";
 import type { PlanZone } from "@/lib/home-zones";
@@ -681,7 +682,70 @@ export const POLICE: HomePlan = {
   ],
 };
 
-export const TOWN_VENUES = { shop: SHOP, diner: DINER, furniture: FURNITURE, bank: BANK, school: SCHOOL, work: WORK, yard: YARD, clinic: CLINIC, depot: DEPOT, pawn: PAWN, police: POLICE } as const;
+/* ------------------------------------------------------------------ Town Post Office */
+/**
+ * A traditional post office: a public hall with a long glazed counter (three serving positions), PO boxes,
+ * a writing ledge and a card stand, and behind a staff door the sorting office with its pigeonhole frame,
+ * mail sacks, roll cages and a parcel conveyor. Clerks work a 1 m aisle between the counter and partition.
+ */
+export const POST: HomePlan = {
+  tier: 30, kind: "post", name: "Town Post Office",
+  size: { w: 12, d: 9, h: 3.2 },
+  floors: [
+    { zone: "floor", rect: R(0, 2.6, 12, 9), kind: "tile", colour: "#e8dcc6" },
+    { zone: "back", rect: R(0, 0, 12, 2.6), kind: "boards", colour: "#b89a74" },
+  ],
+  walls: [
+    ...shell(12, 9, 3.2, "#f2debe", "panel", "#a93d37", {
+      back: [win(9.4, 11.2, 1.3, 2.4)],
+      front: [win(0.8, 4.2, 1.0, 2.5), door(5.2, 6.8, 2.4), win(7.8, 11.2, 1.0, 2.5)],
+      right: [win(4.8, 7.2, 1.1, 2.4)],
+    }, "#a93d37"),
+    part("sorting", [0, 2.6], [12, 2.6], 3.2, [0, 1], "#ead2ad", [door(0.7, 1.7, 2.2)], "panel", "#a93d37", "#8a2f2a"),
+  ],
+  slots: [
+    vslot("post-counter", 6.0, 4.0, 0, "floor", [7.2, 0.8], "Postal counter", "MAIL", 1.9),
+    vslot("sorting", 7.4, 0.42, 0, "back", [5.6, 0.6], "Sorting shelves", "POST", 2.5),
+  ],
+  focus: { all: R(0, 0, 12, 9), floor: R(0, 2.6, 12, 9), back: R(0, 0, 12, 2.6) },
+  rooms: [
+    { zone: "floor", name: "Public hall", rect: R(0, 2.6, 12, 9) },
+    { zone: "back", name: "Sorting office", rect: R(0, 0, 12, 2.6) },
+  ],
+  doors: [{ a: [5.2, 9], b: [6.8, 9] }, { a: [0.7, 2.6], b: [1.7, 2.6] }],
+  spawn: { entry: [6.0, 8.4], zones: { floor: [6.0, 6.4], back: [4.2, 1.5] } },
+  // Stand back in the hall to take in the counter, and just inside the staff door to see the sorting frame.
+  vantagePoints: { floor: [7.0, 8.0], back: [1.4, 1.7] },
+  colliders: [
+    R(0.1, 4.8, 0.55, 8.2), // wall of PO boxes
+    R(11.45, 4.6, 11.9, 7.4), // writing ledge
+    R(10.1, 7.7, 10.7, 8.3), // greetings-card spinner
+    R(0.35, 8.25, 0.95, 8.8), // stamp machine
+    R(9.15, 8.3, 9.65, 8.8), // pillar box by the door
+    R(0.15, 0.2, 2.6, 0.75), // lockers and coat hooks
+    R(2.2, 1.55, 3.6, 2.4), // heap of mail sacks
+    R(10.55, 1.0, 11.75, 2.3), // roll cage of parcels
+  ],
+  lights: {
+    hemi: ["#fff6e8", "#5a4a3a"], hemiBase: 0.8, hemiDay: 0.5, sunBase: 0.3, sunDay: 1.6, sunTint: ["#fff4e2", "#ffd2a0"],
+    points: [
+      { p: [3.0, 2.9, 6.2], colour: "#ffe9c4", day: 4, night: 11, distance: 7, decay: 1.5 },
+      { p: [9.0, 2.9, 6.2], colour: "#ffe9c4", day: 4, night: 11, distance: 7, decay: 1.5 },
+      { p: [6.0, 2.8, 3.4], colour: "#fff4e0", day: 3, night: 8, distance: 6, decay: 1.5 },
+      { p: [6.0, 2.8, 1.3], colour: "#f4f6ff", day: 3, night: 8, distance: 6, decay: 1.5 },
+    ],
+  },
+  sky: { day: ["#f3dfc0", "#fbf3e4"], night: ["#2a1a18", "#4a2a26"] },
+  base: { side: "#a93d37", top: "#efe2c8", margin: 0.45 },
+  npcs: [
+    { id: "clerk-a", name: "Postmistress", x: 4.0, z: 3.1, rot: 0, pose: "stand", shirt: "#a93d37", skin: "#efd0b0", hair: "#9a9a9a" },
+    { id: "clerk-b", name: "Counter clerk", x: 8.0, z: 3.1, rot: 0, pose: "stand", shirt: "#a93d37", skin: "#8d5a3b", hair: "#1e1a1a" },
+    { id: "sorter", name: "Sorter", x: 10.0, z: 0.95, rot: Math.PI, pose: "stand", shirt: "#3d5a8a", skin: "#e8c3a0", hair: "#c98a3a" },
+    { id: "customer", name: "Customer", x: 8.0, z: 5.4, rot: Math.PI, pose: "stand", shirt: "#4f8a54", skin: "#d9b48f", hair: "#5a3a22" },
+  ],
+};
+
+export const TOWN_VENUES = { shop: SHOP, diner: DINER, furniture: FURNITURE, bank: BANK, school: SCHOOL, work: WORK, yard: YARD, clinic: CLINIC, depot: DEPOT, pawn: PAWN, police: POLICE, post: POST } as const;
 export type TownVenueId = keyof typeof TOWN_VENUES;
 export const TOWN_VENUE_IDS = Object.keys(TOWN_VENUES) as TownVenueId[];
 export const isTownVenue = (id: string): id is TownVenueId => Object.prototype.hasOwnProperty.call(TOWN_VENUES, id);
