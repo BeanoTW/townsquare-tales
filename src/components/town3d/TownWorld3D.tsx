@@ -31,6 +31,7 @@ export type TownWorld3DProps = {
   townHallBuilt?: boolean;
   mansionOwned?: boolean;
   castleOwned?: boolean;
+  yardRelocated?: boolean;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -195,20 +196,43 @@ function CompletedTownHall() {
   );
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned }: Omit<TownWorld3DProps, "tick">) {
-  const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned)), [house, castleOwned]);
+/** Equipment and contractor storage travel with the foreman's office to the east site. */
+function EasternYardEquipment() {
+  return <group>
+    <mesh position={[34.8,0.07,20.8]} receiveShadow>
+      <boxGeometry args={[1.3,0.14,4.5]} />
+      <meshStandardMaterial color="#b5a88a" />
+    </mesh>
+    {[19.2,20.0,20.8,21.6].map(z=><mesh key={z} position={[34.6,0.34,z]} castShadow>
+      <boxGeometry args={[0.8,0.65,0.55]} />
+      <meshStandardMaterial color="#a47c49" />
+    </mesh>)}
+    <mesh position={[30.3,0.42,20.2]} castShadow>
+      <boxGeometry args={[0.5,0.84,1.1]} />
+      <meshStandardMaterial color="#dcad36" />
+    </mesh>
+    <mesh position={[30.3,1.3,20.2]} castShadow>
+      <boxGeometry args={[0.12,1.25,0.12]} />
+      <meshStandardMaterial color="#55575a" />
+    </mesh>
+  </group>;
+}
+
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated }: Omit<TownWorld3DProps, "tick">) {
+  const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned), Boolean(yardRelocated)), [house, castleOwned, yardRelocated]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
     <>
       <Rig live={live} skating={skating} />
       <Lights live={live} hour={hour} lamps={lamps} />
-      <StaticBatch version={`town-${house}`}>
+      <StaticBatch version={`town-${house}-${Boolean(townHallBuilt)}-${Boolean(yardRelocated)}`}>
         <TownGround bs={bs} />
         <TownBuildings bs={bs} house={house} />
         <Trees bs={bs} />
         <Lamps bs={bs} />
         <StreetFurniture />
         {townHallBuilt ? <CompletedTownHall /> : <ConstructionStatic />}
+        {yardRelocated && <EasternYardEquipment />}
       </StaticBatch>
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
