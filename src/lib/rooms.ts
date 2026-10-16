@@ -318,7 +318,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "PROMOTE",
         hint: "Progress and promotions",
         box: { x: 312, y: 90, w: 96, h: 100 },
-        lines: (s) => [...promotionStatus(3, s),...constructionStatus(s),...(companyCarEligible(s)?[s.companyCar?"Company car collected":"Old company car available · driving licence required"]:[])],
+        lines: (s) => [...promotionStatus(3, s),...(s.day>=30 ? ["FOREMAN: Town Hall is finished. The entire Workers Yard has relocated east of Town Police. Check the letter I sent you."] : ["FOREMAN: Once Town Hall is complete, our yard moves east of Town Police."]),...constructionStatus(s),...(companyCarEligible(s)?[s.companyCar?"Company car collected":"Old company car available · driving licence required"]:[])],
         actions: s => [...promoteSpot(3)(s),...(!s.contractType ? CONTRACTS.map(job => startContractAction(job.id)) : []), ...(companyCarEligible(s) && !s.companyCar ? [claimCompanyCarAction()] : [])],
       },
     ],
