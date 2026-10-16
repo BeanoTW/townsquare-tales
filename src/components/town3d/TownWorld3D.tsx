@@ -11,7 +11,7 @@ import { TownGround } from "@/components/town3d/ground";
 import { TownBuildings } from "@/components/town3d/buildings";
 import { EstateGrounds } from "@/components/town3d/estate";
 import { ConstructionStatic, Lamps, StreetFurniture, Trees, lampPositions } from "@/components/town3d/props";
-import { BoxSquatter, EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
+import { BoxSquatter, Car, EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
 import { prepareNightMaterials, setNightLevel } from "@/components/town3d/kit";
 import { glowTexture } from "@/components/town3d/textures";
 import { mixColor } from "@/components/town3d/palette";
@@ -33,6 +33,7 @@ export type TownWorld3DProps = {
   castleOwned?: boolean;
   yardRelocated?: boolean;
   companyCar?: boolean;
+  driving?: boolean;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -197,12 +198,16 @@ function CompletedTownHall() {
   );
 }
 
-function CompanyCar() {
- return <group position={[30.1,0.1,22.1]}>
-   <mesh position={[0,0.32,0]} castShadow><boxGeometry args={[1.0,0.38,1.75]} /><meshStandardMaterial color="#788574" metalness={0.15}/></mesh>
-   <mesh position={[0,0.62,-0.08]} castShadow><boxGeometry args={[0.85,0.42,0.9]} /><meshStandardMaterial color="#55656b" metalness={0.15}/></mesh>
-   {[-0.52,0.52].flatMap(x=>[-0.53,0.55].map(z=><mesh key={x+":"+z} position={[x,0.24,z]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[0.19,0.19,0.12,12]}/><meshStandardMaterial color="#272b2c"/></mesh>))}
- </group>;
+function CompanyCar({live, driving}: {live: TownLive; driving: boolean}) {
+ const ref=useRef<THREE.Group>(null);
+ useFrame(() => {
+  const g=ref.current;
+  if(!g)return;
+  const m=live.me.current;
+  g.position.set(driving?m.x:30.1,0,driving?m.y:22.1);
+  g.rotation.y=driving?Math.PI-m.skateAngle*Math.PI/180:0;
+ });
+ return <group ref={ref} position={[30.1,0,22.1]}><Car colour="#788574" /></group>;
 }
 
 /** Equipment and contractor storage travel with the foreman's office to the east site. */
@@ -227,7 +232,7 @@ function EasternYardEquipment() {
   </group>;
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar }: Omit<TownWorld3DProps, "tick">) {
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving }: Omit<TownWorld3DProps, "tick">) {
   const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned), Boolean(yardRelocated)), [house, castleOwned, yardRelocated]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
@@ -243,12 +248,12 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         {townHallBuilt ? <CompletedTownHall /> : <ConstructionStatic />}
         {yardRelocated && <group position={[19.1,0,12.3]} scale={[0.7,1,0.7]}><ConstructionStatic /></group>}
         {yardRelocated && <EasternYardEquipment />}
-        {yardRelocated && companyCar && <CompanyCar /> }
+        {yardRelocated && companyCar && <CompanyCar live={live} driving={Boolean(driving)} /> }
       </StaticBatch>
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
-      <Player3D live={live} skating={skating} head={head} />
+      {!driving && <Player3D live={live} skating={skating} head={head} />}
       <Residents live={live} hour={hour} />
       <Pedestrians live={live} />
       <Pigeons live={live} />
