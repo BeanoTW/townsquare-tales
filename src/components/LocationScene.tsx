@@ -184,13 +184,13 @@ function ObjectLocationScene({
           <h2 className="min-w-0 text-xl font-bold leading-tight sm:text-2xl">{room.title}</h2>
           {(room.id === "home" || venue) && gl && use3d && (
             <button type="button" onClick={() => setRenderer(true)}
-              className="min-h-10 shrink-0 rounded-lg border-2 border-foreground bg-secondary px-3 text-xs font-bold sm:hidden"
+              className="min-h-10 shrink-0 rounded-lg border-2 border-foreground bg-secondary px-3 text-xs font-bold"
               data-renderer-toggle aria-label="Switch to classic view">Classic view</button>
           )}
         </div>
         <p className={`room-caption text-sm text-muted-foreground ${use3d ? "hidden sm:block" : ""}`}>{room.caption}</p>
         {(room.id === "home" || (venue && use3d)) && <nav className="mt-1 flex gap-2 overflow-x-auto pb-1 sm:mt-2 sm:pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} disabled={Boolean(cutscene)} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
-        {(room.id === "home" || venue) && gl && <button type="button" onClick={() => setRenderer(!classic)} className={`mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold ${use3d ? "hidden sm:inline-block" : ""}`} data-renderer-toggle>{classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
+        {(room.id === "home" || venue) && gl && !use3d && <button type="button" onClick={() => setRenderer(false)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>Switch to 3D view</button>}
         {room.id === "home" && state.house >= 3 && !use3d && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
           <div className="mt-2 flex gap-2">
