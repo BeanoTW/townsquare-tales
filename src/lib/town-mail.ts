@@ -1,6 +1,7 @@
 import type { GameState } from "@/lib/game-state";
 import { HOUSES } from "@/lib/game-data";
 import { currentRole } from "@/lib/careers";
+import { marketUnlocked } from "@/lib/investing";
 
 export type Letter = { id: number; day: number; from: string; subject: string; body: string; category: "family"|"career"|"town"|"finance"; response?: boolean };
 export const hasRead = (s:GameState,id:number) => Boolean(((s.mailReadMask??0) & (1<<id)) !== 0);
@@ -54,5 +55,7 @@ export function mailFor(s:GameState):Letter[] {
     body:`Congratulations on your progress as ${currentRole(s).name}. Check your workplace for promotions, and consider improving your living arrangements to support future advancement.`});
   if(s.loanDebt&&s.loanDebt>0)letters.push({id:10,day:s.day,from:"Town Bank",subject:"Loan account reminder",category:"finance",
     body:`You have an outstanding balance of $${s.loanDebt}. Your repayment deadline is day ${s.loanDueDay??"—"}. Speak to the bank teller to arrange repayment.`});
+  if(marketUnlocked(s))letters.push({id:11,day:s.day,from:"MegaCorp · Financial Development",subject:"Ever thought about owning shares?",category:"career",
+    body:"You\u2019ve demonstrated the analytical skills needed to understand financial markets. Buy a laptop at Cosy Corner and use your home study desk to trade shares. Prices change daily, so your investments can lose money as well as gain it."});
   return letters.filter(l=>l.day<=s.day).sort((a,b)=>b.day-a.day || b.id-a.id);
 }
