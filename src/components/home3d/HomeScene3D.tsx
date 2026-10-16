@@ -177,8 +177,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const nearbyRef = useRef<string | null>(null);
   const fp = isFirstPerson(plan);
   const fpRef = useRef({ yaw: 0, gyaw: 0, pitch: -0.075, gpitch: -0.075 });
-  // Settings are independent of town movement settings. Positive values
-  // mean a swipe moves the camera in that same screen direction.
+  // Each axis can be inverted independently; defaults match conventional
+  // drag-to-look input, with horizontal reversed from the old implementation.
   const swipeAxes = useRef({ horizontal: 1, vertical: 1 });
   useEffect(() => {
     const read = () => {
@@ -300,8 +300,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       lastX = e.clientX; lastY = e.clientY;
       shared.dragged.current += Math.abs(dx)+Math.abs(dy);
       const f = fpRef.current;
-      f.gyaw += dx * 0.006 * swipeAxes.current.horizontal;
-      f.gpitch = clamp(f.gpitch + dy * 0.005 * swipeAxes.current.vertical, FP_PITCH_MIN, FP_PITCH_MAX);
+      f.gyaw -= dx * 0.006 * swipeAxes.current.horizontal;
+      f.gpitch = clamp(f.gpitch - dy * 0.005 * swipeAxes.current.vertical, FP_PITCH_MIN, FP_PITCH_MAX);
       invalidate();
     };
     const up = (e: PointerEvent) => { if (pointer === e.pointerId) pointer = null; };
