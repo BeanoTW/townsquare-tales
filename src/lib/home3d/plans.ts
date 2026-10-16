@@ -48,6 +48,9 @@ const SH = 2.1;
 export const SQUAT: HomePlan = {
   tier: 0,
   kind: "squat",
+  vantagePoints: {
+    shelter: { eye: [2.3, 1.4, 2.9], lookAt: [2.3, 1.1, 0.8] },
+  },
   name: "Cardboard box squat",
   size: { w: SW, d: SD, h: SH },
   floors: [
@@ -107,6 +110,12 @@ const inner = (id: string, a: [number, number], b: [number, number], normal: [nu
 export const SUBURBAN: HomePlan = {
   tier: 2,
   kind: "suburban",
+  vantagePoints: {
+    living: { eye: [3, 1.6, 3.6], lookAt: [2.2, 1.25, 1.2] },
+    kitchen: { eye: [8.6, 1.6, 3.6], lookAt: [8.6, 1.25, 1.2] },
+    bedroom: { eye: [2.3, 1.6, 7.2], lookAt: [2.3, 1.25, 5] },
+    study: { eye: [9, 1.6, 7.2], lookAt: [9, 1.25, 5.4] },
+  },
   name: "Suburban house",
   size: { w: UW, d: UD, h: UH },
   floors: [
@@ -200,6 +209,14 @@ const tall = (u0: number, u1: number) => win(u0, u1, 0.45, 2.85);
 export const MANSION: HomePlan = {
   tier: 3,
   kind: "mansion",
+  vantagePoints: {
+    living: { eye: [4, 1.65, 5.4], lookAt: [3.2, 1.3, 2] },
+    kitchen: { eye: [10.7, 1.65, 5.4], lookAt: [10.7, 1.3, 2] },
+    entertainment: { eye: [16.5, 1.65, 5.4], lookAt: [16.5, 1.3, 2.2] },
+    bedroom: { eye: [3, 1.65, 11.4], lookAt: [3, 1.3, 7.5] },
+    study: { eye: [12, 1.65, 11.4], lookAt: [12, 1.3, 7.5] },
+    gym: { eye: [17, 1.65, 11.4], lookAt: [17, 1.3, 8] },
+  },
   name: "Mansion",
   size: { w: MW, d: MD, h: MH },
   floors: [
