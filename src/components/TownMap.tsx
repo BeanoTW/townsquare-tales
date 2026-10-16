@@ -1,3 +1,4 @@
+import { canDrive } from "@/lib/transport";
 import { townHallBuilt as isTownHallBuilt } from "@/lib/civic-career";
 import { beginStreetGrind, advanceStreetGrind, grindPosition, type StreetGrind } from "@/lib/street-grind";
 import { nearbyRail } from "@/lib/town-rails";
@@ -125,7 +126,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
   </>;
 }
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
   const bs = useMemo(() => buildings(house, castleOwned), [house, castleOwned]);
@@ -167,6 +168,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const streetLive = useRef<StreetLive | null>(null);
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
+  const driveSeen = useRef(state?.driveTrip ?? 0);
+  useEffect(() => {
+    if (!state || !canDrive(state) || (state.driveTrip ?? 0) === driveSeen.current) return;
+    driveSeen.current = state.driveTrip ?? 0;
+    const id = state.driveDestination === 1 ? "home" :
+      state.driveDestination === 2 && state.employed ? (["work","diner","shop","yard"][state.career] ?? "") : "";
+    const destination = bs.find(b => b.id === id);
+    if (!destination) return;
+    Object.assign(me.current, nearestWalkable(door(destination), solids));
+    target.current = null;
+  }, [state?.driveTrip, state?.driveDestination, state?.career, state?.employed, bs, solids]);
+
   const routeTo = useCallback((destination: Point, enter?: string) => {
     if (!isWalkable(me.current, solids)) Object.assign(me.current, nearestWalkable(me.current, solids));
     const route = findRoute(me.current, destination, solids);
@@ -640,6 +653,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               style={{ transform: `translate(${stickVisual.dx * 52}px, ${stickVisual.dy * 52}px)` }} />
           </div>
         </div>
+      )}
+      {state && canDrive(state) && !active && !paused && onDrive && (
+        <nav aria-label="Company car destinations" className="absolute bottom-[13.4rem] left-3 z-20 flex flex-col gap-1 rounded-lg border-2 border-foreground bg-card/95 p-1.5 text-xs font-bold shadow-lg sm:bottom-44">
+          <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("home")}>🚗 Drive home</button>
+          {Boolean(state.employed) && <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("work")}>🚗 Drive to work</button>}
+        </nav>
       )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
       <div className="absolute bottom-16 left-3 z-10 w-36 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 sm:w-44" aria-label="Town minimap">
