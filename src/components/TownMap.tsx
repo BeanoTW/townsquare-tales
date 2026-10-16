@@ -731,10 +731,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       {state && canDrive(state) && !active && !paused && (vehicle==="company" || (!driving && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<2.2)) && (
         <button type="button" data-company-car-interact className="absolute bottom-[21rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleDriving}>{vehicle==="company"?"Park and exit":"🚗 Enter company car"}</button>
       )}
-      {state && canDrive(state) && !active && !paused && onDrive && (
-        <nav aria-label="Company car destinations" className="absolute bottom-[13.4rem] left-3 z-20 flex flex-col gap-1 rounded-lg border-2 border-foreground bg-card/95 p-1.5 text-xs font-bold shadow-lg sm:bottom-44">
-          <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("home")}>🚗 Drive home</button>
-          {Boolean(state.employed) && <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("work")}>🚗 Drive to work</button>}
+      {state && canDrive(state) && driving && !active && !paused && onDrive && (
+        <nav aria-label="Car travel shortcuts" className="absolute bottom-[13.4rem] left-3 z-20 flex flex-col gap-1 rounded-lg border-2 border-foreground bg-card/95 p-1.5 text-xs font-bold shadow-lg sm:bottom-44">
+          <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("home")}>🚗 Jump home</button>
+          {Boolean(state.employed) && <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("work")}>🚗 Jump to work</button>}
         </nav>
       )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}

@@ -5,7 +5,7 @@ import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
-import { driveAction } from "@/lib/transport";
+import { canDrive, driveAction } from "@/lib/transport";
 import { TownMap } from "@/components/TownMap";
 import { GlobalRenderingDiagnostics } from "@/components/GlobalRenderingDiagnostics";
 import { PlayerDashboard, InventoryDashboard } from "@/components/CharacterDashboards";
@@ -561,6 +561,7 @@ function Game() {
       {tab === "inventory" && (
         <Sheet title="Inventory" onClose={() => setTab(null)}>
           <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} />
+          {canDrive(s) && <section aria-label="Travel shortcuts" className="mt-3 rounded-lg border border-foreground/30 p-3"><p className="mb-2 font-bold">🚗 Travel shortcuts</p><p className="mb-2 text-sm text-muted-foreground">Travel uses no in-game time, just like walking across town.</p><div className="flex flex-wrap gap-2"><Btn onClick={() => { if(perform(driveAction("home")))setTab(null); }}>Jump home</Btn>{Boolean(s.employed) && <Btn onClick={() => { if(perform(driveAction("work")))setTab(null); }}>Jump to work</Btn>}</div></section> }
         </Sheet>
       )}
       {tab === "player" && (
