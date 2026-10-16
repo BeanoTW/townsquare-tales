@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { N, ROADS, door, type B } from "@/lib/town-world";
+import { N, ROADS, laneDashes, door, type B } from "@/lib/town-world";
 import { TOWN_RAILS } from "@/lib/town-rails";
 import { Box, Cyl, Disc, Flat, Round, mat } from "@/components/town3d/kit";
 import { asphaltTexture, grassTexture, gravelTexture, pavingTexture, soilTexture, timberTexture } from "@/components/town3d/textures";
@@ -125,13 +125,7 @@ export function TownGround({ bs }: { bs: B[] }) {
       <Bridge />
       {/* Roads, lane paint, crossings and kerbs. */}
       {ROADS.map((r, i) => <Flat key={"rd" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.012 + i * 0.0002} c={C.asphalt} map={asphalt} per={1.2} rough={0.9} />)}
-      {ROADS.flatMap((r, i) => {
-        const vertical = r.d > r.w;
-        const count = Math.floor((vertical ? r.d : r.w) / 2.4);
-        return Array.from({ length: count }, (_, j) => vertical
-          ? <Flat key={`ln${i}-${j}`} x={r.x + r.w / 2 - 0.05} z={r.y + 0.6 + j * 2.4} w={0.1} d={0.85} y={0.0145} c={C.paint} rough={0.6} />
-          : <Flat key={`ln${i}-${j}`} x={r.x + 0.6 + j * 2.4} z={r.y + r.d / 2 - 0.05} w={0.85} d={0.1} y={0.0145} c={C.paint} rough={0.6} />);
-      })}
+      {laneDashes().map((dash,i)=><Flat key={"ln"+i} x={dash.x} z={dash.y} w={dash.w} d={dash.d} y={0.0145} c={C.paint} rough={0.6}/>)}
       {[7.1, 11.9, 18.5, 25.5].flatMap((y, i) => Array.from({ length: 4 }, (_, j) => <Flat key={`zb${i}-${j}`} x={8.85 + j * 0.62} z={y - 0.35} w={0.34} d={0.4} y={0.015} c={C.crossing} rough={0.6} />))}
       {kerbs.map((k, i) => k.axis === "z"
         ? <Box key={"kb" + i} s={[0.07, 0.035, k.len]} p={[k.x, 0.0175, k.z + k.len / 2]} c="#d6d1c6" o={{ rough: 0.8 }} />
