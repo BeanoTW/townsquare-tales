@@ -639,11 +639,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </div>
       )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
-      <div className="absolute bottom-16 left-3 z-10 w-32 rounded-lg border-2 border-foreground bg-card/95 p-1 shadow-lg sm:bottom-3 sm:w-40" aria-label="Town minimap">
+      <div className="absolute bottom-16 left-3 z-10 w-36 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 sm:w-44" aria-label="Town minimap">
         <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
-          <span>🗺️ Town map</span>
+          <span>🗺️ Stick Town</span><span className="font-normal text-muted-foreground">Tap to move</span>
         </div>
-        <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded bg-town-grass" role="img" aria-label="Town minimap with southern beach and sea"
+        <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded-md bg-town-grass" role="img" aria-label="Town map showing roads, residences, beach, sea and player"
           onPointerDown={(e) => {
             e.stopPropagation();
             const bounds = e.currentTarget.getBoundingClientRect();
@@ -656,15 +656,19 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           <rect x="0" y="30.25" width={N} height="2.6" fill="#ecd49f" />
           <rect x="0" y="32.85" width={N} height="0.8" fill="#8ecfd0" />
           <rect x="0" y="33.65" width={N} height={N-33.65} fill="#397fa4" />
-          <rect x="17" y="1.1" width="5" height="5.6" fill="var(--town-mini-park)" />
+          <path d="M0 32.95 Q4 32.6 8 32.95 T16 32.95 T24 32.95 T32 32.95" fill="none" stroke="#f7efdf" strokeWidth=".17" />
+          <rect x="17" y="1.1" width="5" height="5.6" rx=".35" fill="var(--town-mini-park)" />
+          <circle cx="20.3" cy="4.4" r=".85" fill="#75bac3" />
           {ROADS.map((r,i) => <rect key={"mini-road-"+i} x={r.x} y={r.y} width={r.w} height={r.d} fill="var(--town-mini-road)" />)}
+          {laneDashes().map((d,i) => <rect key={"mini-lane-"+i} x={d.x} y={d.y} width={d.w} height={d.d} fill="#eed076" opacity=".85" />)}
+          <rect x="29.5" y="6.75" width="2.8" height=".9" fill="#a49c88" />
           <circle cx={GANG_SPOT.x} cy={GANG_SPOT.y} r={0.8} fill="#40343d" stroke="#f2d46f" strokeWidth={0.22}><title>Street gang - approach at your own risk</title></circle>
           {bs.map((b) => <rect key={b.id} x={b.x} y={b.y} width={b.w} height={b.d}
-            fill={b.sign} stroke="var(--town-paper)" strokeWidth={0.18} rx={0.2}>
+            fill={b.id === "home" ? "#efd17b" : b.id.startsWith("residence-") ? "#617f8d" : b.sign} stroke={b.id === "home" ? "#fff6be" : "var(--town-paper)"} strokeWidth={b.id === "home" ? 0.36 : 0.18} rx={0.2}>
             <title>{b.label}</title>
           </rect>)}
-          <circle cx={m.x} cy={m.y} r={0.85} fill="var(--town-paper)" stroke="var(--town-player)" strokeWidth={0.35} />
-          <circle cx={m.x} cy={m.y} r={0.28} fill="var(--town-player-marker)" />
+          <circle cx={m.x} cy={m.y} r={1.03} fill="#ffffff" stroke="#19212a" strokeWidth={0.35} />
+          <path d={`M ${m.x} ${m.y-0.67} l-.45 .86 h.9 Z`} transform={`rotate(${m.skateAngle}, ${m.x}, ${m.y})`} fill="#2376b4" />
         </svg>
       </div>
 
