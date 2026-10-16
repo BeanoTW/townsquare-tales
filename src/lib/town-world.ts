@@ -53,7 +53,7 @@ export const buildings = (house: number, castle = house >= 4, yardRelocated = fa
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   const sites = [
     { x: 1.1, y: 2, w: 3, d: 4 },
-    { x: 17.6, y: 16.5, w: 3.0, d: 2.9 },
+    { x: 16.5, y: 15.15, w: 3.0, d: 2.9 },
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
     { x: 32.0, y: 5.375, w: 3.8, d: 3.65 },
   ] as const;
