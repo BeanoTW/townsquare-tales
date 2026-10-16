@@ -3,7 +3,7 @@ import { RENDER_EVENT, type RenderSample } from "./RenderDiagnosticsProbe";
 
 function snapshot(sceneName: string, sample: RenderSample | null) {
   const canvas = typeof document === "undefined" ? null : document.querySelector("canvas");
-  const glCanvas = canvas instanceof HTMLCanvasElement ? canvas : null;
+  const glCanvas = typeof HTMLCanvasElement !== "undefined" && canvas instanceof HTMLCanvasElement ? canvas : null;
   const data = {
     screen: sceneName,
     graphics: sample?.renderer ?? (glCanvas ? "Canvas detected; no 3D sample yet" : "No active WebGL sample"),
