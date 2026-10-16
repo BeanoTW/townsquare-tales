@@ -1,6 +1,7 @@
 import { karmaHeadColor } from "@/lib/player-appearance";
 import { webglAvailable } from "@/components/home3d/Home3DStage";
 const ShopPlayer3D = lazy(() => import("./ShopPlayer3D"));
+const PawnBackroom3D = lazy(() => import("./PawnBackroom3D"));
 import { CounterRobberyChoice } from "@/components/rooms/CounterRobberyChoice";
 import { COUNTERS } from "@/lib/counter-robbery";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -475,6 +476,9 @@ export function WalkableShop({
           </g>
         </svg>
         {character3d && <Suspense fallback={null}><ShopPlayer3D player={{ ...player, moving: player.moving && !paused && !reduced.current }} head={karmaHeadColor(state.karma)} onReady={readyCharacter} onFail={failCharacter} /></Suspense>}
+        {panel && id === "pawn" && panel.id === "backroom" && state.pawnMet && character3d && (
+          <Suspense fallback={null}><PawnBackroom3D /></Suspense>
+        )}
         {panel && id === "furniture" && panel.id === "catalogue" ? (
           <div data-panel className="absolute inset-x-3 bottom-3 z-30 max-h-[75%] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-xl">
             <div className="mb-2 flex items-center justify-between gap-2"><strong>{furnitureRange === "luxury" ? "✨ Premium Furniture" : "Basic Furniture"}</strong><button type="button" className="min-h-11 min-w-11 rounded-lg border-2 border-foreground" aria-label="Close furniture collection" onClick={() => setSelected(null)}>✕</button></div>
