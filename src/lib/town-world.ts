@@ -3,7 +3,7 @@ import type { BuildingLot } from "@/components/BuildingExterior";
 
 // Shared town data. TownMap (SVG) and the 3D city read the same plan so
 // tiles, doors, trees and hit areas always agree.
-export const TW = 48, TH = 36, N = 30;
+export const TW = 48, TH = 36, N = 36;
 
 // Streets have deliberate ends and T-junctions rather than an endless grid.
 export const ROADS = [
@@ -46,9 +46,22 @@ export const HOUSE_LOOK = [
 ];
 
 export const buildings = (house: number): B[] => {
-  const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0] ?? { h: 18, wall: "var(--town-cardboard)", side: "var(--town-cardboard-side)", roof: "var(--town-cardboard-roof)", label: "Box" };
+  const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
+  const sites = [
+    { x: 1.1, y: 2, w: 3, d: 4 },
+    { x: 0.5, y: 26.2, w: 3.3, d: 3.2 },
+    { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
+    { x: 25.7, y: 8.7, w: 3.8, d: 3.65 },
+  ] as const;
+  const residences = sites.map((plot, tier) => ({
+    facing: "south" as const, id: tier === house ? "home" : `residence-${tier}`,
+    label: tier === house ? `Home · ${hl.label}` : ["Cardboard Box", "Studio Flat", "Suburban House", "Mansion"][tier]!,
+    ...plot, h: HOUSE_LOOK[tier]!.h, wall: HOUSE_LOOK[tier]!.wall,
+    side: HOUSE_LOOK[tier]!.side, roof: HOUSE_LOOK[tier]!.roof,
+    sign: "var(--town-home-sign)", win: tier > 0,
+  }));
   return [
-    { facing: "south", id: "home", label: `Home · ${hl.label}`, x: 1.1, y: 2, w: 3, d: 4, h: hl.h, wall: hl.wall, side: hl.side, roof: hl.roof, sign: "var(--town-home-sign)", win: house > 0 },
+    ...residences,
     { facing: "north", id: "yard", label: "Construction Office", x: 19.5, y: 22.8, w: 2.1, d: 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
     { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
@@ -57,12 +70,12 @@ export const buildings = (house: number): B[] => {
     { facing: "west", id: "bank", label: "Town Bank", x: 12, y: 15.5, w: 3.5, d: 4, h: 85, wall: "var(--town-bank-wall)", side: "var(--town-bank-side)", roof: "var(--town-bank-roof)", sign: "var(--town-bank-sign)", win: true },
     { facing: "south", id: "shop", label: "Corner Shop", x: 15.25, y: 8.05, w: 2.6, d: 3.0, h: 48, wall: "var(--town-shop-wall)", side: "var(--town-shop-side)", roof: "var(--town-shop-roof)", sign: "var(--town-shop-sign)", win: true },
     { facing: "south", id: "diner", label: "Fryday Diner", x: 5.1, y: 13.2, w: 2.8, d: 3.8, h: 55, wall: "var(--town-diner-wall)", side: "var(--town-diner-side)", roof: "var(--town-diner-roof)", sign: "var(--town-diner-sign)", win: true },
-    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 26, y: 13.3, w: 3, d: 3.2, h: 56, wall: "var(--town-pawn-wall)", side: "var(--town-pawn-side)", roof: "var(--town-pawn-roof)", sign: "var(--town-pawn-sign)", win: true },
+    { facing: "west", id: "pawn", label: "Oddities Pawn", x: 26, y: 14.5, w: 3, d: 3.2, h: 56, wall: "var(--town-pawn-wall)", side: "var(--town-pawn-side)", roof: "var(--town-pawn-roof)", sign: "var(--town-pawn-sign)", win: true },
     { facing: "south", id: "furniture", label: "Cosy Corner", x: 18.3, y: 7.25, w: 3.6, d: 3.7, h: 78, wall: "var(--town-furniture-wall)", side: "var(--town-furniture-side)", roof: "var(--town-furniture-roof)", sign: "var(--town-furniture-sign)", win: true },
     { facing: "north", id: "casino", label: "Lucky Sevens", x: 5.2, y: 22, w: 2.8, d: 4, h: 115, wall: "var(--town-casino-wall)", side: "var(--town-casino-side)", roof: "var(--town-casino-roof)", sign: "var(--town-casino-sign)", win: true },
-    { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 25.6, w: 3, d: 3.1, h: 50, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: true },
+    { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 23.2, w: 3, d: 3.1, h: 50, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: true },
     { facing: "south", id: "post", label: "Town Post Office", x: 26, y: 2.2, w: 3.1, d: 3.3, h: 58, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
-    { facing: "west", id: "police", label: "Town Police", x: 26, y: 19.3, w: 3, d: 3.9, h: 90, wall: "var(--town-police-wall)", side: "var(--town-police-side)", roof: "var(--town-police-roof)", sign: "var(--town-police-sign)", win: true },
+    { facing: "west", id: "police", label: "Town Police", x: 26, y: 18.3, w: 3, d: 3.9, h: 90, wall: "var(--town-police-wall)", side: "var(--town-police-side)", roof: "var(--town-police-roof)", sign: "var(--town-police-sign)", win: true },
     { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 13, w: 3, d: 4, h: 75, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
   ];
 };

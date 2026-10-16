@@ -10,7 +10,7 @@ import { StaticBatch } from "@/components/town3d/StaticBatch";
 import { TownGround } from "@/components/town3d/ground";
 import { TownBuildings } from "@/components/town3d/buildings";
 import { ConstructionStatic, Lamps, StreetFurniture, Trees, lampPositions } from "@/components/town3d/props";
-import { EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
+import { BoxSquatter, EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
 import { prepareNightMaterials, setNightLevel } from "@/components/town3d/kit";
 import { glowTexture } from "@/components/town3d/textures";
 import { mixColor } from "@/components/town3d/palette";
@@ -136,6 +136,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
       <Pedestrians live={live} />
       <Pigeons live={live} />
       <Gang />
+      <BoxSquatter visible={house > 0} />
       <ParkKid present={kidPresent} />
       <EncounterPerson encounter={encounter} />
       <SiteCrew active={constructionActive} />

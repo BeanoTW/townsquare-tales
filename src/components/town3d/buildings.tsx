@@ -31,6 +31,10 @@ function Building({ b, house }: { b: B; house: number }) {
   const c = colours(b);
   switch (b.id) {
     case "home": return house === 0 ? <Squat b={b} /> : house === 1 ? <Flats b={b} c={c} /> : house === 2 ? <House b={b} c={c} /> : <Mansion b={b} c={c} />;
+    case "residence-0": return <Squat b={b} />;
+    case "residence-1": return <Flats b={b} c={c} />;
+    case "residence-2": return <House b={b} c={c} />;
+    case "residence-3": return <Mansion b={b} c={c} />;
     case "yard": return <SiteOffice b={b} c={c} />;
     case "gym": return <Gym b={b} c={c} />;
     case "school": return <School b={b} c={c} />;

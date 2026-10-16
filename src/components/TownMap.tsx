@@ -227,7 +227,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   enterRef.current = onEnter;
 
   const blocked = (x: number, y: number) =>
-    x < 0.2 || y < 0.2 || x > N - 0.2 || y > N - 0.2 || bs.some((b) => x > b.x - 0.15 && x < b.x + b.w + 0.15 && y > b.y - 0.15 && y < b.y + b.d + 0.15);
+    x < 0.2 || y < 0.2 || x > 29.8 || y > 33.0 || bs.some((b) => x > b.x - 0.15 && x < b.x + b.w + 0.15 && y > b.y - 0.15 && y < b.y + b.d + 0.15);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -409,6 +409,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {!use3d && <>
         {/* Plot-led map: green blocks first, with pavements sized to actual roads and doors. */}
         {tile(0,0,N,N,"var(--town-grass)","grass")}
+        {tile(0,29.6,N,0.65,"#b5b6a4","promenade")}
+        {tile(0,30.25,N,2.6,"#ecd49f","coastal-sand")}
+        {tile(0,32.85,N,0.8,"#8ecfd0","shoreline")}
+        {tile(0,33.65,N,2.35,"#397fa4","sea")}
         {/* Plots intermix naturally; there are no imposed rectangular districts. */}
         {tile(0,0,8.8,7.2,"var(--town-lawn)","quiet-green")}
         {tile(17,0.9,5.0,5.9,"var(--town-park-lawn)","park-green")}
@@ -502,7 +506,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   // depth-sorted drawables
   const items: { key: number; el: React.ReactNode }[] = [];
   bs.forEach((b) => items.push({ key: (b.y + b.d) * 100 + b.x, el: (
-    <g key={b.id} data-world-interactive role="button" tabIndex={0} aria-label={`Enter ${b.label}`} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();routeTo(door(b),b.id);}}} onClick={(e) => { e.stopPropagation(); routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
+    <g key={b.id} data-world-interactive role="button" tabIndex={0} aria-label={`Enter ${b.label}`} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();if(!b.id.startsWith("residence-"))routeTo(door(b),b.id);}}} onClick={(e) => { e.stopPropagation(); if (!b.id.startsWith("residence-")) routeTo(door(b), b.id); }} className="cursor-pointer" opacity={active === b.id ? 1 : 0.97}>
       {use3d ? <polygon points={buildingHull3d(b, house).map((p) => p.join(",")).join(" ")} fill="transparent" data-building-hit={b.id} /> : <Exterior b={b} night={townAtmosphere(hour).lit} />}
     </g>) }));
   // In 3D mode trees and lamps are part of the Three.js world.
@@ -510,7 +514,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     TREES.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Tree key={`t${i}`} x={x} y={y} /> }));
     LAMPS.forEach(([x, y], i) => items.push({ key: y * 100 + x, el: <Lamp key={`l${i}`} x={x} y={y} night={night || dusk} /> }));
   }
-  const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
+  const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % 34) - 2;
   if (!use3d) {
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });

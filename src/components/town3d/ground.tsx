@@ -100,6 +100,11 @@ export function TownGround({ bs }: { bs: B[] }) {
       <Box s={[N, 0.7, N]} p={[N / 2, -0.35, N / 2]} c={shade(C.earth, -0.15)} o={{ rough: 1 }} shadow={false} />
       <Box s={[N + 0.02, 0.08, N + 0.02]} p={[N / 2, -0.04, N / 2]} c={C.earth} o={{ rough: 1 }} shadow={false} />
       <Flat x={0} z={0} w={N} d={N} y={0} c={C.grass} map={grass} per={1.4} />
+      {/* Southern coastal extension: walkway, dunes, tidal shallows and sea. */}
+      <Flat x={0} z={29.6} w={N} d={0.65} y={0.021} c="#b5b6a4" map={paving} per={0.5} />
+      <Flat x={0} z={30.25} w={N} d={2.6} y={0.021} c="#ecd49f" rough={0.95} />
+      <Flat x={0} z={32.85} w={N} d={0.8} y={0.023} c="#8ecfd0" rough={0.32} />
+      <Flat x={0} z={33.65} w={N} d={2.35} y={0.023} c="#397fa4" rough={0.16} />
       <Flat x={0} z={0} w={8.8} d={7.2} y={0.001} c={C.lawn} map={grass} per={1.4} />
       <Flat x={17} z={0.9} w={5.0} d={5.9} y={0.0015} c={C.parkLawn} map={grass} per={1.4} />
       {pavementRects().map((r, i) => <Flat key={"pv" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.004 + i * 0.0002} c={C.pavement} map={paving} per={0.5} />)}

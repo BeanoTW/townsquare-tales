@@ -262,6 +262,13 @@ export function Gang() {
   );
 }
 
+/** After moving out, a new rough sleeper claims the original cardboard box. */
+export function BoxSquatter({ visible }: { visible: boolean }) {
+  const state = fixed(2.25, 6.35, 165, "sitting");
+  return <Person get={() => visible ? state : null} outfit="#514a3d" skin="#b99b7d"
+    hat="#746e53" hatKind="beanie" />;
+}
+
 export function ParkKid({ present }: { present: boolean }) {
   const s = fixed(PARK_KID_SPOT.x, PARK_KID_SPOT.y + 0.02, 180, "sitting");
   return <Person get={() => (present ? s : null)} outfit="#292633" skin="#dbb38b" hat="#3f6a8c" hatKind="cap" />;
@@ -349,7 +356,7 @@ export function SiteCrew({ active }: { active: boolean }) {
 
 /** Same timing as the classic map's cars, driving on the left in their lane. */
 export function carPositions(t: number) {
-  const c1 = (t * 2.2) % 8, c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
+  const c1 = (t * 2.2) % 8, c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % 34) - 2;
   return [
     { x: c1, z: 8.5 - 0.35, heading: 90 },
     { x: c2, z: 13.3 - 0.35, heading: 90 },
