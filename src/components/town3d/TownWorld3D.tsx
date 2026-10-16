@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import * as THREE from "three";
@@ -34,7 +34,7 @@ export type TownWorld3DProps = {
   yardRelocated?: boolean;
   companyCar?: boolean;
   driving?: boolean;
-  carPosition?: React.MutableRefObject<{x:number;y:number;angle:number}>;
+  carPosition?: MutableRefObject<{x:number;y:number;angle:number}>;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -199,7 +199,7 @@ function CompletedTownHall() {
   );
 }
 
-function CompanyCar({carPosition}: {carPosition: React.MutableRefObject<{x:number;y:number;angle:number}>}) {
+function CompanyCar({carPosition}: {carPosition: MutableRefObject<{x:number;y:number;angle:number}>}) {
  const ref=useRef<THREE.Group>(null);
  useFrame(() => {
   const g=ref.current;
