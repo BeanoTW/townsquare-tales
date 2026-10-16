@@ -38,9 +38,9 @@ const overlaps = (a: Box, b: Box) =>
   a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 describe("room registry", () => {
-  it("defines every one of the sixteen interiors once", () => {
-    expect(PLACE_IDS).toHaveLength(16);
-    expect(new Set(PLACE_IDS).size).toBe(16);
+  it("defines every one of the seventeen interiors once", () => {
+    expect(PLACE_IDS).toHaveLength(17);
+    expect(new Set(PLACE_IDS).size).toBe(17);
     for (const id of PLACE_IDS) expect(ROOMS[id].id).toBe(id);
   });
 
