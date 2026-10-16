@@ -45,6 +45,7 @@ import {
   enrollAction,
   type ActionDef,
 } from "@/lib/actions";
+import { buyMailboxAction } from "@/lib/post-office";
 import { CASINO_CHATTER } from "@/lib/casino-lines";
 import { lifetime, money, signed, type CasinoGame } from "@/lib/casino";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
@@ -69,6 +70,7 @@ export const PLACE_IDS = [
   "furniture",
   "casino",
   "depot",
+  "post",
   "police",
   "clinic",
 ] as const;
