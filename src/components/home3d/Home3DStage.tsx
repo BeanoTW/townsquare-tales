@@ -112,7 +112,7 @@ export function Home3DStage({
         </Suspense>
       </Boundary>
       <FirstPersonHands acting={Boolean(cutscene)} />
-      {!cutscene && nearby && visibleIds.includes(nearby) && (
+      {!cutscene && !selectedId && nearby && visibleIds.includes(nearby) && (
         <button type="button" data-nearby-action
           aria-label={`Interact with ${plan.slots.find(s=>s.id===nearby)?.label??nearby}`}
           className="pointer-events-auto absolute bottom-4 right-3 z-30 min-h-14 max-w-[45%] rounded-full border-2 border-foreground bg-primary px-4 text-base font-bold text-primary-foreground shadow-lg"
