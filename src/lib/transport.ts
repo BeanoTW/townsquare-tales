@@ -26,13 +26,13 @@ export function claimCompanyCarAction():ActionDef {
   return {patch:{companyCar:1},message:"The foreman handed over the keys to the old company car. Home and work fast travel unlocked."};
  }};
 }
-/** Fixed elapsed travel time; fast travel is never a free teleport or arbitrary destination. */
+/** Convenience shortcut: walking takes no game time, so neither does fast travel. */
 export function driveAction(destination:"home"|"work"):ActionDef {
- return {id:"drive-"+destination,label:destination==="home"?"Drive home":"Drive to work",hours:destination==="home"?0.5:0.75,energy:0,
- note:"Car required · only home or your current workplace",
+ return {id:"drive-"+destination,label:destination==="home"?"Drive home":"Drive to work",hours:0,energy:0,
+ note:"No in-game time · home or current workplace",
  resolve:s=>{
    if(!canDrive(s))return "You need your own company car and a driving licence.";
    if(destination==="work" && !s.employed)return "You aren't employed. There is no work destination.";
-   return {patch:{driveDestination:destination==="home"?1:2,driveTrip:(s.driveTrip??0)+1},message:destination==="home"?"Drove home and parked nearby.":"Drove to your workplace and parked nearby."};
+   return {patch:{driveDestination:destination==="home"?1:2,driveTrip:(s.driveTrip??0)+1},message:destination==="home"?"Travelled home.":"Travelled to your workplace."};
  }};
 }
