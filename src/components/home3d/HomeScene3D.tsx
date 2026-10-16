@@ -407,8 +407,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     }
     // Low-frequency DOM event only when the nearby actionable object changes.
     // No React re-render is needed on each joystick movement.
-    if (nearbyRef.current !== shared.walker.current.nearby) {
-      nearbyRef.current = shared.walker.current.nearby ?? null;
+    if (nearbyRef.current !== (fp ? centre : shared.walker.current.nearby)) {
+      nearbyRef.current = (fp ? centre : shared.walker.current.nearby) ?? null;
       window.dispatchEvent(new CustomEvent("tst:nearby-action", {detail:{id:nearbyRef.current}}));
     }
     if (busy) invalidate();
