@@ -179,6 +179,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const fpRef = useRef({ yaw: 0, gyaw: 0, pitch: -0.075, gpitch: -0.075 });
   const firstView = vantageFor(plan, zone);
   const fpEye = useRef(new THREE.Vector3(...firstView.eye));
+  const fpTargetEye = useRef(new THREE.Vector3(...firstView.eye));
   const firstYaw = Math.atan2(firstView.eye[0] - firstView.lookAt[0], firstView.eye[2] - firstView.lookAt[2]);
   const fpHeading = useRef(firstYaw);
   const fpTargetHeading = useRef(firstYaw);
@@ -217,11 +218,12 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       if (fp && z !== "all") {
         const v = vantageFor(plan, z);
         fpTargetHeading.current = Math.atan2(v.eye[0] - v.lookAt[0], v.eye[2] - v.lookAt[2]);
+        fpTargetEye.current.set(...v.eye);
         fpRef.current.yaw = 0;
         fpRef.current.gyaw = 0;
         fpRef.current.gpitch = -0.075;
         fpRef.current.pitch = -0.075;
-        window.dispatchEvent(new CustomEvent("tst:room-vantage", {detail:{x:v.eye[0],z:v.eye[2]}}));
+
       }
       c.gtx = z === "all" ? shared.walker.current.position.x : g.tx;
       c.gtz = z === "all" ? shared.walker.current.position.z : g.tz;
@@ -235,7 +237,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       reset: () => {
         c.gaz = DEFAULT_AZ;
         fpRef.current.gyaw = 0;
-        focus("all");
+        focus(zone);
       },
       zoom: (f) => {
         c.gdist *= f;
@@ -251,12 +253,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   }, [goalFor, invalidate, limit, shared.controls, fp, plan]);
 
   // Room button => fly to that room.
-  const firstZone = useRef(true);
   useEffect(() => {
-    if (firstZone.current) {
-      firstZone.current = false;
-      return;
-    }
     shared.controls.current?.focus(zone);
   }, [zone, shared.controls]);
 
@@ -354,14 +351,13 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       const blend=reduce?1:1-Math.exp(-dt*6);
       const angleError=Math.atan2(Math.sin(fpTargetHeading.current-fpHeading.current),Math.cos(fpTargetHeading.current-fpHeading.current));
       fpHeading.current+=angleError*blend;
-      const player=shared.walker.current.position;
-      fpEye.current.lerp(new THREE.Vector3(player.x,Math.min(1.62,plan.size.h-0.45),player.z),blend);
+      fpEye.current.lerp(fpTargetEye.current,blend);
       const heading=fpHeading.current+f.yaw;
-      shared.walker.current.lookYaw=heading;
+
       if(pc.fov!==FP_FOV){pc.fov=FP_FOV;pc.updateProjectionMatrix();}
       camera.position.copy(fpEye.current);
       camera.lookAt(fpEye.current.x-Math.sin(heading)*Math.cos(f.pitch)*4,fpEye.current.y+Math.sin(f.pitch)*4,fpEye.current.z-Math.cos(heading)*Math.cos(f.pitch)*4);
-      if(Math.abs(fpEye.current.x-player.x)+Math.abs(fpEye.current.z-player.z)>0.004 || Math.abs(angleError)>0.001)invalidate();
+      if(fpEye.current.distanceTo(fpTargetEye.current)>0.004 || Math.abs(angleError)>0.001)invalidate();
             if (Math.abs(f.gyaw - f.yaw) + Math.abs(f.gpitch - f.pitch) > 0.001) invalidate();
     } else {
       if (pc.fov !== FOV) { pc.fov = FOV; pc.updateProjectionMatrix(); }
@@ -389,10 +385,10 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     // First person: label only the object nearest the centre of view.
     let centre: string | null = null;
     if (fp) {
-      let best = 0.45;
+      let best = 0.6;
       for (const s of slotsRef.current) {
         tmp.set(s.x, s.labelY, s.z).project(camera);
-        if (tmp.z < 1 && tmp.z > -1 && Math.abs(tmp.x) < best && Math.hypot(s.x-fpEye.current.x,s.z-fpEye.current.z)<2.3) { best = Math.abs(tmp.x); centre = s.id; }
+        if (tmp.z < 1 && tmp.z > -1 && Math.abs(tmp.x) < best && Math.hypot(s.x-fpEye.current.x,s.z-fpEye.current.z)<Math.max(plan.size.w,plan.size.d)) { best = Math.abs(tmp.x); centre = s.id; }
       }
     }
     for (const s of slotsRef.current) {
@@ -411,8 +407,8 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     }
     // Low-frequency DOM event only when the nearby actionable object changes.
     // No React re-render is needed on each joystick movement.
-    if (nearbyRef.current !== shared.walker.current.nearby) {
-      nearbyRef.current = shared.walker.current.nearby ?? null;
+    if (nearbyRef.current !== (fp ? centre : shared.walker.current.nearby)) {
+      nearbyRef.current = (fp ? centre : shared.walker.current.nearby) ?? null;
       window.dispatchEvent(new CustomEvent("tst:nearby-action", {detail:{id:nearbyRef.current}}));
     }
     if (busy) invalidate();
@@ -486,7 +482,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
-      {<HomeWalker firstPerson={isFirstPerson(plan)} showAvatar={Boolean(p.cutscene)} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
+      {p.cutscene && <HomeWalker firstPerson={false} showAvatar head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
       {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} cast={shared.cast} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
@@ -526,7 +522,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
         onPointerMissed={() => {
           if (shared.dragged.current <= 6) props.onDeselect?.();
         }}
-        aria-label={`First-person 3D view of ${plan.name}. Move with the joystick, swipe to look, and tap objects to interact.`}
+        aria-label={`First-person 3D view of ${plan.name}. Choose a room, swipe to look, and tap objects to interact.`}
       >
         <RenderDiagnosticsProbe scene={plan.name} />
         <World p={props} shared={shared} />
