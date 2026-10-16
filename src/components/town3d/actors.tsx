@@ -57,6 +57,8 @@ export function Player3D({ live, skating, head }: { live: TownLive; skating: boo
   const metal = useMemo(() => mat("#879098", { metal: 0.65, rough: 0.35 }), []);
   const wheel = useMemo(() => mat("#e9e3d0", { rough: 0.4 }), []);
   const marker = useMemo(() => mat("#facc15"), []);
+  const trousers = useMemo(() => mat("#252833", { rough: 0.85 }), []);
+  const shoes = useMemo(() => mat("#d8d9dd", { rough: 0.85 }), []);
   useFrame(() => {
     const m = live.me.current;
     const jump = live.jump.current;
@@ -76,8 +78,8 @@ export function Player3D({ live, skating, head }: { live: TownLive; skating: boo
     const carve = Math.max(-1, Math.min(1, (m as typeof m & { turnVelocity?: number }).turnVelocity ?? 0));
     const lean = carve * 0.19;
     if (torso.current) {
-      torso.current.rotation.set(0, -0.28, lean);
-      torso.current.position.set(lean * 0.10, m.walking ? Math.sin(m.phase * 0.45) * 0.009 : 0, 0);
+      torso.current.rotation.set(0, -Math.PI / 2 + 0.2, lean * 0.65);
+      torso.current.position.set(lean * 0.08, m.walking ? Math.sin(m.phase * 0.45) * 0.006 : 0, 0);
     }
     if (armL.current) armL.current.rotation.set(-0.42 + carve * 0.25, 0, -0.85 + carve * 0.3);
     if (armR.current) armR.current.rotation.set(0.46 - carve * 0.25, 0, 0.95 + carve * 0.3);
@@ -114,22 +116,38 @@ export function Player3D({ live, skating, head }: { live: TownLive; skating: boo
           {[-0.035, 0.035].map(x => <mesh key={x} geometry={box}
             position={[x, 0.024, -0.138]} scale={[0.012, 0.005, 0.012]} material={marker} />)}
         </group>
-        {/* Stick Town silhouette: oversized circular head, torso and exposed balancing arms.
-            No dangling walking legs while riding. */}
+        {/* Two low, bent skating legs connect the body to planted feet over each truck.
+            They are not animated as walking legs. */ }
+        {[-1, 1].map(side => (
+          <group key={side}>
+            <mesh geometry={capsule}
+              position={[0, 0.215, side * 0.105]}
+              rotation={[side * 0.48, 0, 0]}
+              scale={[0.048, 0.095, 0.05]} material={trousers} castShadow />
+            <mesh geometry={capsule}
+              position={[0, 0.133, side * 0.148]}
+              rotation={[-side * 0.42, 0, 0]}
+              scale={[0.039, 0.068, 0.043]} material={trousers} castShadow />
+            <mesh geometry={box}
+              position={[0.006, 0.092, side * 0.134]}
+              scale={[0.125, 0.041, 0.083]} material={shoes} castShadow />
+          </group>
+        ))}
+        {/* Stick Town head and torso swivel sideways while feet remain on the deck. */}
         <group ref={torso} position={[0, 0, 0]}>
-          <mesh geometry={capsule} position={[0, 0.39, 0]} rotation={[0, Math.PI / 2.7, -0.14]}
+          <mesh geometry={capsule} position={[0, 0.355, 0]} rotation={[0, 0, -0.12]}
             scale={[0.087, 0.09, 0.069]} material={shirt} castShadow />
-          <group ref={armL} position={[-0.09, 0.43, 0]}>
+          <group ref={armL} position={[-0.09, 0.405, 0]}>
             <mesh geometry={capsule} position={[0, -0.105, 0]}
               scale={[0.031, 0.115, 0.031]} material={shirt} castShadow />
             <mesh geometry={ball} position={[0, -0.26, 0]} scale={0.036} material={skin} />
           </group>
-          <group ref={armR} position={[0.09, 0.43, 0]}>
+          <group ref={armR} position={[0.09, 0.405, 0]}>
             <mesh geometry={capsule} position={[0, -0.105, 0]}
               scale={[0.031, 0.115, 0.031]} material={shirt} castShadow />
             <mesh geometry={ball} position={[0, -0.26, 0]} scale={0.036} material={skin} />
           </group>
-          <mesh geometry={ball} position={[0, 0.59, 0]} scale={0.16} material={skin} castShadow />
+          <mesh geometry={ball} position={[0, 0.54, 0]} scale={0.16} material={skin} castShadow />
         </group>
       </group>
     </>
