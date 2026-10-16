@@ -33,6 +33,8 @@ export function gangJob(id:(typeof GANG_JOBS)[number]["id"]):ActionDef {
       return {patch:{
         money:Math.min(1e12,s.money+job.money),
         gangRep:Math.min(100,s.gangRep+job.rep),
+        streetSmarts:Math.min(100,(s.streetSmarts??0)+(job.minimum===0?3:job.minimum===2?4:2)),
+        criminalTrust:Math.min(100,(s.criminalTrust??0)+job.rep*4),
         gangStage:Math.max(s.gangStage,job.minimum===0?1:s.gangRep+job.rep>=3?2:s.gangStage),
         heat:Math.min(100,s.heat+job.heat),
         karma:s.karma+job.karma,
