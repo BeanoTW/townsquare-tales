@@ -500,7 +500,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         box: { x: 280, y: 190, w: 126, h: 80 },
         lines: s => [`Current home: ${HOUSES[s.house]?.name ?? "Home"}`, s.housingMode ? `${s.housingMode === 1 ? "Rent" : "Mortgage"}: ${housingWeeklyCost(s)}/week · arrears ${s.housingArrears ?? 0}` : "Owned or starter housing", "Flats and suburban homes may be rented or mortgaged. Mansions must be bought."],
         actions: s => [
-          ...[1, 2, 3].filter(tier => tier !== s.house || Boolean(s.housingMode)).map(tier => buyHouseAction(s, tier)),
+          ...[1, 2, 3, 4].filter(tier => tier !== s.house || Boolean(s.housingMode)).map(tier => buyHouseAction(s, tier)),
           ...([1, 2] as const).filter(tier => tier !== s.house).flatMap(tier => [housingAction(s, tier, 1), housingAction(s, tier, 2)]),
         ],
       },
