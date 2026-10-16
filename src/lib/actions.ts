@@ -73,6 +73,10 @@ export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random):
   if (typeof resolved === "string") return { ok: false, message: resolved };
 
   const { patch, message } = resolved;
+  // Keep any single action from awarding more than +2 to a core attribute.
+  for (const stat of ["str", "int", "cha"] as const) {
+    if (typeof patch[stat] === "number") patch[stat] = Math.min(patch[stat]!, s[stat] + 2);
+  }
   const next: GameState = {
     ...s,
     ...patch,
@@ -101,7 +105,7 @@ export const HOME_WORKOUT: ActionDef = {
   resolve: (s) => ({ patch: { str: s.str + 2 }, message: "Home gym session. +2 strength." }),
 };
 /** Each qualification adds one intelligence point to every study session. */
-export const studyGain = (base: number, school: number) => base + Math.max(0, Math.min(4, Math.trunc(school)));
+export const studyGain = (base: number, school: number) => Math.min(2, base + Math.max(0, Math.min(4, Math.trunc(school))));
 /** Cumulative study XP milestones for High School, College, University and PhD. */
 export const EDUCATION_XP_REQUIRED = [0, 20, 60, 120, 200] as const;
 
@@ -161,6 +165,22 @@ export function sleepAction(s: GameState): ActionDef {
             : st.loanDebt ?? 0,
           loanLastDay: st.day + 1,
           heat: Math.max(0, st.heat - 1),
+          ...(() => {
+            const weekly = housingWeeklyCost(st);
+            if (!weekly || (st.day + 1 - (st.housingLastPaidDay ?? st.day)) < 7) return {};
+            const due = st.housingMode === 2 ? Math.min(weekly, st.mortgageBalance ?? 0) + (st.housingArrears ?? 0) : weekly + (st.housingArrears ?? 0);
+            const paid = Math.min(st.money, due);
+            const remaining = Math.max(0, due - paid);
+            const loan = st.housingMode === 2 ? Math.max(0, (st.mortgageBalance ?? 0) - Math.max(0, paid)) : 0;
+            const settled = st.housingMode === 2 && loan === 0 && remaining === 0;
+            return {
+              money: st.money - paid,
+              housingArrears: remaining,
+              housingLastPaidDay: st.day + 1,
+              mortgageBalance: loan,
+              ...(settled ? { housingMode: 0, ownedHomes: (st.ownedHomes ?? ((1 << (st.house + 1)) - 1)) | (1 << st.housingTier!) } : {}),
+            };
+          })(),
         },
         message: `Day ${st.day + 1}. You wake at ${timeLabel(rested.hour)} in your ${HOUSES[st.house]?.name ?? "home"} with ${rested.energy} energy.`,
       };
@@ -184,9 +204,43 @@ export function buyHouseAction(s: GameState, tier = Math.min(3, s.house + 1)): A
       const mask = st.ownedHomes ?? ((1 << (st.house + 1)) - 1);
       const alreadyOwned = Boolean(mask & (1 << tier));
       if (!alreadyOwned && st.money < target.cost) return "Not enough cash.";
+      if (st.housingMode === 2 && (st.mortgageBalance ?? 0) > 0) return "Pay off your existing mortgage first.";
       return {
-        patch: { money: st.money - (alreadyOwned ? 0 : target.cost), house: tier, ownedHomes: mask | (1 << tier) },
+        patch: { money: st.money - (alreadyOwned ? 0 : target.cost), house: tier, ownedHomes: mask | (1 << tier), housingMode: 0, housingTier: 0, mortgageBalance: 0, housingArrears: 0 },
         message: alreadyOwned ? `Moved into your ${target.name}.` : `You bought a ${target.name}!`,
+      };
+    },
+  };
+}
+
+/** A weekly payment is due every seven days spent in rented/mortgaged housing.
+ * Arrears are recorded explicitly; the balance never silently disappears. */
+export function housingWeeklyCost(s: GameState): number {
+  if (s.housingMode === 1) return s.housingTier === 1 ? 300 : 900;
+  if (s.housingMode === 2 && (s.mortgageBalance ?? 0) > 0) return s.housingTier === 1 ? 220 : 650;
+  return 0;
+}
+export function housingAction(s: GameState, tier: 1 | 2, mode: 1 | 2): ActionDef {
+  const home = HOUSES[tier];
+  const weekly = mode === 1 ? (tier === 1 ? 300 : 900) : (tier === 1 ? 220 : 650);
+  const deposit = mode === 1 ? weekly : Math.floor(home.cost * 0.2);
+  return {
+    id: `housing-${mode}-${tier}`,
+    label: `${mode === 1 ? "Rent" : "Mortgage"} ${home.name} · ${deposit} upfront`,
+    hours: 0, energy: 0, cost: deposit,
+    note: `${weekly} every 7 days${mode === 2 ? " · 20% deposit" : ""}`,
+    resolve: st => {
+      if (st.money < deposit) return "Not enough cash for the deposit.";
+      if (st.housingMode && (st.mortgageBalance ?? 0) > 0)
+        return "Settle your existing mortgage before switching housing.";
+      return {
+        patch: {
+          money: st.money - deposit, house: tier, housingMode: mode,
+          ownedHomes: st.ownedHomes ?? ((1 << (st.house + 1)) - 1),
+          housingTier: tier, mortgageBalance: mode === 2 ? home.cost - deposit : 0,
+          housingLastPaidDay: st.day, housingArrears: 0,
+        },
+        message: `${mode === 1 ? "Rented" : "Mortgaged"} ${home.name}. Weekly payment ${weekly}.`,
       };
     },
   };
@@ -273,10 +327,10 @@ export const LIFT_WEIGHTS: ActionDef = {
   hours: 2,
   energy: 20,
   cost: 5,
-  note: "+3 strength",
+  note: "+2 strength",
   resolve: (s) =>
     s.money >= 5
-      ? { patch: { money: s.money - 5, str: s.str + 3 }, message: "+3 strength. Swole." }
+      ? { patch: { money: s.money - 5, str: s.str + 2 }, message: "+2 strength. Swole." }
       : "Gym costs $5.",
 };
 export const JOG: ActionDef = {
@@ -330,10 +384,10 @@ export const BUY_ROUND: ActionDef = {
   hours: 2,
   energy: 10,
   cost: 15,
-  note: "+3 charm",
+  note: "+2 charm",
   resolve: (s) =>
     s.money >= 15
-      ? { patch: { money: s.money - 15, cha: s.cha + 3 }, message: "Everyone loves you. +3 charm" }
+      ? { patch: { money: s.money - 15, cha: s.cha + 2 }, message: "Everyone loves you. +2 charm" }
       : "Can't afford it.",
 };
 export const CHAT_UP: ActionDef = {
