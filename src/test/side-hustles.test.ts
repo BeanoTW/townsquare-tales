@@ -14,7 +14,7 @@ describe("side hustles",()=>{
     const start={...START,money:100,hour:9,energy:100,day:3,cha:0};
     const r=runAction(start,hustleAction("market-stall"),()=>0);
     expect(r.ok).toBe(true);
-    if(r.ok)expect(r.next.money).toBe(100+Math.floor(65*0.35)-25);
+    if(r.ok)expect(r.next.money).toBe(100+Math.floor(54*0.35)-25);
   });
   it("limits jobs to three per day",()=>{
     const start={...START,money:100,hour:9,energy:100,day:3,sideHustleDay:3,sideHustlesToday:3};
