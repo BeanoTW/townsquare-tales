@@ -13,6 +13,7 @@ import { isArcadeRoom } from "@/lib/arcade-rooms";
 import { Home3DStage, luxuryMap, toSlotId, webglAvailable } from "@/components/home3d/Home3DStage";
 import { planCutscene, ScenePlays, type Cutscene, type CutsceneClaim } from "@/lib/cutscenes";
 import { planFor } from "@/lib/home3d/plans";
+import { zoneForSlot } from "@/lib/home3d/layout";
 import { ownsFurniture } from "@/lib/furniture";
 import { SKIP_EVENT } from "@/components/home3d/scenes/Director";
 import { homeZones, furnitureZone, isVenue, venueZones, type HomeZone, type PlanZone } from "@/lib/home-zones";
@@ -145,8 +146,8 @@ function ObjectLocationScene({
   // the fixed first-person camera to that area before presenting actions.
   useEffect(() => {
     if (!use3d || !selectedId || !plan3d || cutscene) return;
-    const activeSlot = plan3d.slots.find(slot => slot.id === toSlotId(selectedId));
-    if (activeSlot && activeSlot.zone !== homeZone) setHomeZone(activeSlot.zone);
+    const targetZone = zoneForSlot(plan3d, toSlotId(selectedId));
+    if (targetZone && targetZone !== homeZone) setHomeZone(targetZone);
   }, [selectedId, use3d, plan3d, homeZone, cutscene]);
 
 
