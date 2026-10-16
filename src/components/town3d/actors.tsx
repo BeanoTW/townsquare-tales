@@ -90,10 +90,10 @@ export function Player3D({ live, skating, head }: { live: TownLive; skating: boo
     <>
       {!skating && <Person get={() => state.current} outfit={outfit} skin={head} />}
       {/* The rider and board share a world transform, preventing detached tricks. */}
-      <group ref={rider} visible={skating} data-skater-3d>
+      <group ref={rider} visible={skating}>
         <mesh geometry={plane} rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -0.002, 0]} scale={[0.37, 0.7, 1]} material={blob()} />
-        <group ref={deck} position={[0, 0.06, 0]} data-skateboard-3d>
+        <group ref={deck} position={[0, 0.06, 0]}>
           <mesh geometry={box} scale={[0.16, 0.022, 0.37]} material={deckMat} castShadow />
           <mesh geometry={box} position={[0, 0.014, 0]} scale={[0.151, 0.002, 0.34]} material={grip} />
           <mesh geometry={box} position={[0, 0.016, -0.205]} rotation={[-0.2, 0, 0]}
