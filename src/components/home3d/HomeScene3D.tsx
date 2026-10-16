@@ -3,7 +3,7 @@ import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { PlanZone } from "@/lib/home-zones";
-import { daylight, fitToView, partitionDrops, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
+import { daylight, fitToView, partitionDrops, vantageFor, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
 import { Bed, Bookshelf, Console, Desk, EstateBoard, Kitchen, Mattress, Sofa, Television, Weights } from "./furniture";
 import { Floors, Plinth, Wall } from "./parts";
 import { StudioDecor } from "./StudioShell";
@@ -23,7 +23,7 @@ const FOV = 45;
 const FP_FOV = 72;
 const FP_YAW = 1.15;
 /** Player homes (tiers 0–3) are viewed in first person; venues keep the overhead camera. */
-export const isFirstPerson = (plan: HomePlan) => plan.tier < 10;
+export const isFirstPerson = (_plan: HomePlan) => true;
 const EL_MIN = 0.3;
 const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
@@ -176,6 +176,11 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const nearbyRef = useRef<string | null>(null);
   const fp = isFirstPerson(plan);
   const fpRef = useRef({ yaw: 0, gyaw: 0 });
+  const firstView = vantageFor(plan, zone);
+  const fpEye = useRef(new THREE.Vector3(...firstView.eye));
+  const firstYaw = Math.atan2(firstView.eye[0] - firstView.lookAt[0], firstView.eye[2] - firstView.lookAt[2]);
+  const fpHeading = useRef(firstYaw);
+  const fpTargetHeading = useRef(firstYaw);
   const slotsRef = useRef(slots);
   slotsRef.current = slots;
 
@@ -208,6 +213,13 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     const c = cam.current!;
     const focus = (z: PlanZone | "all") => {
       const g = goalFor(z);
+      if (fp && z !== "all") {
+        const v = vantageFor(plan, z);
+        fpTargetHeading.current = Math.atan2(v.eye[0] - v.lookAt[0], v.eye[2] - v.lookAt[2]);
+        fpRef.current.yaw = 0;
+        fpRef.current.gyaw = 0;
+        window.dispatchEvent(new CustomEvent("tst:room-vantage", {detail:{x:v.eye[0],z:v.eye[2]}}));
+      }
       c.gtx = z === "all" ? shared.walker.current.position.x : g.tx;
       c.gtz = z === "all" ? shared.walker.current.position.z : g.tz;
       c.gdist = g.dist;
@@ -233,7 +245,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       focus,
       read: () => ({ az: c.gaz, el: c.gel, dist: c.gdist, tx: c.gtx, tz: c.gtz }),
     };
-  }, [goalFor, invalidate, limit, shared.controls]);
+  }, [goalFor, invalidate, limit, shared.controls, fp, plan]);
 
   // Room button => fly to that room.
   const firstZone = useRef(true);
@@ -277,6 +289,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
 
   // Camera remains bird's-eye. One-finger gestures walk the player; pinch/wheel only zoom.
   useEffect(() => {
+    if (fp) return;
     const el=gl.domElement;
     const pts=new Map<number,{x:number;y:number}>();
     let spread=0;
@@ -287,7 +300,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     const wheel=(e:WheelEvent)=>{e.preventDefault();cam.current!.gdist*=Math.exp(e.deltaY*0.0012);limit();invalidate();};
     el.addEventListener("pointerdown",down);el.addEventListener("pointermove",move);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);el.addEventListener("wheel",wheel,{passive:false});
     return()=>{el.removeEventListener("pointerdown",down);el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);el.removeEventListener("wheel",wheel);};
-  },[gl,limit,invalidate]);
+  },[gl,limit,invalidate,fp]);
 
   // Where the camera was before a cutscene took it, so it can glide back afterwards.
   const saved = useRef<{ tx: number; tz: number; dist: number } | null>(null);
@@ -314,14 +327,22 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     c.tz += (c.gtz - c.tz) * k;
     const pc = camera as THREE.PerspectiveCamera;
     if (fp && !cine.active) {
-      // First-person: stand just inside the front of the room at eye height; drag turns the head.
-      const f = fpRef.current;
-      f.yaw += (f.gyaw - f.yaw) * (reduce ? 1 : 1 - Math.exp(-dt * 12));
-      const ex = plan.size.w / 2, ez = plan.size.d - 0.35, eh = Math.min(1.6, plan.size.h - 0.5);
-      if (pc.fov !== FP_FOV) { pc.fov = FP_FOV; pc.updateProjectionMatrix(); }
-      camera.position.set(ex, eh, ez);
-      camera.lookAt(ex - Math.sin(f.yaw) * 4, eh - 0.55, ez - Math.cos(f.yaw) * 4);
-      if (Math.abs(f.gyaw - f.yaw) > 0.001) invalidate();
+      // The walker is the eye-level camera anchor. Room tabs relocate it to
+      // their plan-defined safe zone; the camera glides between viewpoints.
+      const f=fpRef.current;
+      f.yaw+=(f.gyaw-f.yaw)*(reduce?1:1-Math.exp(-dt*12));
+      const blend=reduce?1:1-Math.exp(-dt*6);
+      const angleError=Math.atan2(Math.sin(fpTargetHeading.current-fpHeading.current),Math.cos(fpTargetHeading.current-fpHeading.current));
+      fpHeading.current+=angleError*blend;
+      const player=shared.walker.current.position;
+      fpEye.current.lerp(new THREE.Vector3(player.x,Math.min(1.62,plan.size.h-0.45),player.z),blend);
+      const heading=fpHeading.current+f.yaw;
+      shared.walker.current.lookYaw=heading;
+      if(pc.fov!==FP_FOV){pc.fov=FP_FOV;pc.updateProjectionMatrix();}
+      camera.position.copy(fpEye.current);
+      camera.lookAt(fpEye.current.x-Math.sin(heading)*4,fpEye.current.y-0.3,fpEye.current.z-Math.cos(heading)*4);
+      if(Math.abs(fpEye.current.x-player.x)+Math.abs(fpEye.current.z-player.z)>0.004 || Math.abs(angleError)>0.001)invalidate();
+            if (Math.abs(f.gyaw - f.yaw) > 0.001) invalidate();
     } else {
       if (pc.fov !== FOV) { pc.fov = FOV; pc.updateProjectionMatrix(); }
       const ce = Math.cos(c.el);
@@ -336,7 +357,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     for (const spec of plan.walls) {
       const g = shared.walls.current.get(spec.id);
       if (!g) continue;
-      const target = Math.min(wallScale(spec, off), partitionDrops(spec, camera.position) ? 0.06 : 1);
+      const target = fp && !cine.active ? 1 : Math.min(wallScale(spec, off), partitionDrops(spec, camera.position) ? 0.06 : 1);
       const next = reduce ? target : g.scale.y + (target - g.scale.y) * k;
       if (Math.abs(next - g.scale.y) > 0.002) busy = true;
       g.scale.y = Math.abs(next - target) < 0.004 ? target : next;
@@ -351,7 +372,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       let best = 0.45;
       for (const s of slotsRef.current) {
         tmp.set(s.x, s.labelY, s.z).project(camera);
-        if (tmp.z < 1 && tmp.z > -1 && Math.abs(tmp.x) < best) { best = Math.abs(tmp.x); centre = s.id; }
+        if (tmp.z < 1 && tmp.z > -1 && Math.abs(tmp.x) < best && Math.hypot(s.x-fpEye.current.x,s.z-fpEye.current.z)<2.3) { best = Math.abs(tmp.x); centre = s.id; }
       }
     }
     for (const s of slotsRef.current) {
@@ -445,7 +466,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
-      {(!isFirstPerson(plan) || p.cutscene) && <HomeWalker key={p.cutscene ? "cut" : "fp"} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
+      {<HomeWalker firstPerson={isFirstPerson(plan)} showAvatar={Boolean(p.cutscene)} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
       {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} cast={shared.cast} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
@@ -485,7 +506,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
         onPointerMissed={() => {
           if (shared.dragged.current <= 6) props.onDeselect?.();
         }}
-        aria-label={`Overhead 3D view of ${plan.name}. Tap or drag on the floor to walk, pinch to zoom, tap furniture to interact.`}
+        aria-label={`First-person 3D view of ${plan.name}. Move with the joystick, swipe to look, and tap objects to interact.`}
       >
         <RenderDiagnosticsProbe scene={plan.name} />
         <World p={props} shared={shared} />
