@@ -414,7 +414,8 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           onClick={(e) => {
             e.stopPropagation();
             if (shared.dragged.current > 6) return;
-            window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}));
+            if (isFirstPerson(plan)) p.onSelect(s.id);
+            else window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}));
           }}
           onPointerOver={(e) => {
             e.stopPropagation();
@@ -431,7 +432,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
-      <HomeWalker head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />
+      {(!isFirstPerson(plan) || p.cutscene) && <HomeWalker key={p.cutscene ? "cut" : "fp"} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
       {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
@@ -488,7 +489,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
             data-home3d-tag={s.id}
             aria-label={`${s.label}. Tap to use`}
             aria-pressed={props.selectedId === s.id}
-            onClick={() => window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}))}
+            onClick={() => isFirstPerson(plan) ? props.onSelect(s.id) : window.dispatchEvent(new CustomEvent("tst-home-walk-to",{detail:{id:s.id}}))}
             className={`pointer-events-auto absolute left-0 top-0 min-h-9 min-w-9 rounded-full border-2 border-foreground px-2.5 text-[11px] font-extrabold tracking-wide shadow-md ${props.selectedId === s.id ? "bg-primary text-primary-foreground" : "bg-card/95 text-foreground"}`}
             style={{ transform: "translate(-9999px,-9999px)" }}
           >
