@@ -27,6 +27,7 @@ export type TownWorld3DProps = {
   kidPresent: boolean;
   encounter: EncounterSpot | null | undefined;
   constructionActive: boolean;
+  townHallBuilt?: boolean;
   mansionOwned?: boolean;
 };
 
@@ -154,7 +155,45 @@ function MansionGate({ open }: { open: boolean }) {
   );
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned }: Omit<TownWorld3DProps, "tick">) {
+/** Completed civic landmark on the original construction plot. The yard office remains open. */
+function CompletedTownHall() {
+  return (
+    <group>
+      <mesh position={[19.1, 0.04, 19.4]} receiveShadow>
+        <boxGeometry args={[5.9, 0.08, 8.6]} />
+        <meshStandardMaterial color="#d2cbb9" roughness={0.95} />
+      </mesh>
+      <mesh position={[18.75, 0.78, 19.0]} castShadow receiveShadow>
+        <boxGeometry args={[4.3, 1.48, 4.7]} />
+        <meshStandardMaterial color="#d8c9ab" />
+      </mesh>
+      <mesh position={[18.75, 1.58, 19.0]} castShadow>
+        <boxGeometry args={[4.65, 0.2, 5.0]} />
+        <meshStandardMaterial color="#535b63" />
+      </mesh>
+      {[17.5, 18.35, 19.2, 20.05].map(x => (
+        <mesh key={x} position={[x, 0.71, 21.5]} castShadow>
+          <cylinderGeometry args={[0.115, 0.13, 1.25, 8]} />
+          <meshStandardMaterial color="#efe9d9" />
+        </mesh>
+      ))}
+      <mesh position={[18.75, 0.035, 22.15]} receiveShadow>
+        <boxGeometry args={[2.0, 0.07, 2.25]} />
+        <meshStandardMaterial color="#b7b2a6" />
+      </mesh>
+      <mesh position={[18.75, 0.82, 21.39]}>
+        <boxGeometry args={[0.7, 0.95, 0.05]} />
+        <meshStandardMaterial color="#485c63" roughness={0.35} />
+      </mesh>
+      <mesh position={[18.75, 2.03, 19.0]} castShadow>
+        <cylinderGeometry args={[0.55, 0.75, 0.65, 4]} />
+        <meshStandardMaterial color="#bdab84" />
+      </mesh>
+    </group>
+  );
+}
+
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt }: Omit<TownWorld3DProps, "tick">) {
   const bs: B[] = useMemo(() => buildings(house), [house]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
@@ -167,7 +206,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         <Trees bs={bs} />
         <Lamps bs={bs} />
         <StreetFurniture />
-        <ConstructionStatic />
+        {townHallBuilt ? <CompletedTownHall /> : <ConstructionStatic />}
       </StaticBatch>
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
@@ -179,7 +218,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
       <BoxSquatter visible={house > 0} />
       <ParkKid present={kidPresent} />
       <EncounterPerson encounter={encounter} />
-      <SiteCrew active={constructionActive} />
+      {!townHallBuilt && <SiteCrew active={constructionActive} />}
       <Traffic />
     </>
   );
