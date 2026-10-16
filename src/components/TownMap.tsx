@@ -1,7 +1,8 @@
 import { beginStreetGrind, advanceStreetGrind, grindPosition, type StreetGrind } from "@/lib/street-grind";
 import { nearbyRail } from "@/lib/town-rails";
 import { TOWN_RAILS } from "@/lib/town-rails";
-import { elevation, deckRotation, stepJump, type SkateJump } from "@/lib/skate-tricks";
+import { stepJump, type SkateJump } from "@/lib/skate-tricks";
+import { SkaterFigure } from "@/components/SkaterFigure";
 import { OverheadPerson } from "@/components/OverheadPerson";
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StreetLife, type ResidentPositions } from "@/components/StreetLife";
@@ -113,14 +114,12 @@ export function playerCameraTransform(x: number, y: number, skating = false): st
   return `translate(${ox} ${oy})`;
 }
 
-function Stick({ x, y, phase, walking, jump = null, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null }: { x: number; y: number; phase: number; walking: boolean; jump?: SkateJump | null; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null }) {
+function Stick({ x, y, phase, walking, jump = null, skating = false, pose = "standing", skateAngle = 90, color = "var(--town-player)", head = "var(--town-paper)", feedback = null, turnVelocity = 0 }: { x: number; y: number; phase: number; walking: boolean; jump?: SkateJump | null; skating?: boolean; pose?: "standing" | "sitting"; idle?: boolean; facing?: "left" | "right" | "up" | "down"; skateAngle?: number; color?: string; head?: string; feedback?: StreetObjectId | null; turnVelocity?: number }) {
   const [sx, sy] = P(x, y);
   return <g transform={`translate(${sx},${sy})`}>
-    {skating && jump && <ellipse data-skate-shadow cx="0" cy="0" rx="11" ry="6" fill="#25242a" opacity=".17"/>}
-    {skating ? <g data-skater-pose data-skate-angle={skateAngle} transform={jump ? `translate(0 ${-elevation(jump)}) rotate(${skateAngle + 180})` : `rotate(${skateAngle + 180})`}>
-      <g transform={`rotate(${deckRotation(jump)})`}><rect data-skateboard="deck" x="-5" y="-21" width="10" height="36" rx="5" fill="#89949c" stroke="#30343c" strokeWidth="1.8"/><path d="M-3 -15h6M-3 9h6" stroke="#cbd0d2" strokeWidth="1.2"/></g>
-      <g transform="translate(0 0)"><OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={false} angle={45}/></g>
-    </g> : <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking || feedback === "bin"} angle={(skateAngle + 180) % 360}/>}
+    {skating
+      ? <SkaterFigure skateAngle={skateAngle} moving={walking} phase={phase} turnVelocity={turnVelocity} head={head} outline={color} jump={jump} />
+      : <OverheadPerson pose={pose} head={head} outline={color} phase={phase} moving={walking || feedback === "bin"} angle={(skateAngle + 180) % 360} />}
     <FeedbackIcons feedback={feedback} />
   </g>;
 }
@@ -170,7 +169,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     if (grind) { streetGrind.current = grind; skateJump.current = null; }
     else skateJump.current = {trick,elapsed:0};
   };
-  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, facing: "right" as "left" | "right" | "up" | "down" });
+  const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
   // The 3D town reads the same live state the SVG uses; it never owns game logic.
   const streetLive = useRef<StreetLive | null>(null);
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
@@ -333,9 +332,19 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         else { target.current = null; m.walking = false; }
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
-        m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
-        m.phase += dt * 12;
+        const targetAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
+        if (skating) {
+          const diff = ((targetAngle - m.skateAngle + 540) % 360) - 180;
+          const step = diff * Math.min(1, dt * 14);
+          m.skateAngle = (m.skateAngle + step + 360) % 360;
+          m.turnVelocity = Math.max(-1, Math.min(1, step / Math.max(dt, 0.001) / 180));
+        } else {
+          m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
+          m.turnVelocity = 0;
+        }
+        m.phase += dt * (skating ? 16 : 12);
       }
+      if (!m.walking) m.turnVelocity *= Math.exp(-dt * 12);
       const object=STREET_OBJECTS.find(o=>Math.hypot(o.x-m.x,o.y-m.y)<1.15)?.id ?? null;
       if(object!==nearStreetRef.current){nearStreetRef.current=object;setNearStreet(object);}
       const n = bs.find((b) => { const dd = door(b); return Math.hypot(dd.x - m.x, dd.y - m.y) < 1; }) ?? null;
@@ -345,7 +354,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [house, speed, hour]);
+  }, [house, speed, hour, skating]);
 
   const toTile = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
@@ -592,7 +601,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   }
   const feedbackNow = streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null;
   if (use3d) items.push({ key: m.y * 100 + m.x, el: <g key="me" transform={`translate(${P(m.x, m.y).join(",")})`} pointerEvents="none" data-player-feedback><FeedbackIcons feedback={feedbackNow} /></g> });
-  else items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} pose={t<seatedUntil.current ? "sitting" : "standing"} head={head} /> });
+  else items.push({ key: m.y * 100 + m.x, el: <Stick key="me" x={m.x} y={m.y} phase={streetFeedback.current && t<streetFeedback.current.until ? (reducedMotion ? 0 : t*8) : m.phase} feedback={streetFeedback.current && t<streetFeedback.current.until ? streetFeedback.current.id : null} walking={m.walking} skating={skating} jump={skateJump.current} facing={m.facing} skateAngle={m.skateAngle} turnVelocity={m.turnVelocity} pose={t<seatedUntil.current ? "sitting" : "standing"} head={head} /> });
   items.sort((a, b) => a.key - b.key);
 
 
