@@ -1,5 +1,6 @@
 import type { PlanZone } from "@/lib/home-zones";
 import type { HomePlan } from "@/lib/home3d/layout";
+import type { Cutscene } from "@/lib/cutscenes";
 
 export type OpeningLike = { w: number; h: number; cx: number; T: number };
 
@@ -20,6 +21,9 @@ export type Scene3DProps = {
   /** Tap on empty space. */
   onDeselect?: () => void;
   onReady?: () => void;
+  /** An in-world cutscene to play (the player acts the action out at the fixture). */
+  cutscene?: Cutscene | null;
+  onCutsceneDone?: () => void;
 };
 
 /** Imperative camera handle shared with the on-screen camera buttons. */

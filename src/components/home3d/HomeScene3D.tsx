@@ -17,6 +17,7 @@ import { TownVenueDecor, TownVenueFixture, hasTownVenue } from "./venues";
 import { VenueVisualPolish } from "./venue-visual-polish";
 import type { CameraControls, Scene3DProps } from "./types";
 import { HomeWalker, type WalkerHandle } from "./HomeWalker";
+import { Director, SKIP_EVENT, type Cine, type CineOverlay } from "./scenes/Director";
 
 const FOV = 45;
 const EL_MIN = 0.3;
@@ -157,6 +158,8 @@ type Shared = {
   hover: MutableRefObject<string | null>;
   dragged: MutableRefObject<number>;
   walker: MutableRefObject<WalkerHandle>;
+  cine: MutableRefObject<Cine>;
+  overlay: MutableRefObject<CineOverlay>;
 };
 
 function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zone: PlanZone; shared: Shared }) {
@@ -257,21 +260,34 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     return()=>{el.removeEventListener("pointerdown",down);el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);el.removeEventListener("wheel",wheel);};
   },[gl,limit,invalidate]);
 
+  // Where the camera was before a cutscene took it, so it can glide back afterwards.
+  const saved = useRef<{ tx: number; tz: number; dist: number } | null>(null);
+  // While filming from a lower angle, slice the room like a dollhouse so ceiling lights and wall tops never block the shot.
+  const cutaway = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.25)], []);
   useFrame((state, dtRaw) => {
     const c = cam.current!;
+    const cine = shared.cine.current;
+    if (cine.active && !saved.current) saved.current = { tx: c.gtx, tz: c.gtz, dist: c.gdist };
+    if (cine.active) { c.gtx = cine.tx; c.gtz = cine.tz; c.gdist = cine.dist; }
+    else if (saved.current) { c.gtx = saved.current.tx; c.gtz = saved.current.tz; c.gdist = saved.current.dist; saved.current = null; }
     if (shared.walker.current.moving) { c.gtx = shared.walker.current.position.x; c.gtz = shared.walker.current.position.z; }
     const dt = Math.min(0.05, dtRaw);
-    const k = reduce ? 1 : 1 - Math.exp(-dt * 10);
+    // Cinematic moves glide; ordinary camera follow stays snappy.
+    const filming = cine.active || Math.abs(c.el - DEFAULT_EL) > 0.002;
+    const k = reduce ? 1 : 1 - Math.exp(-dt * (filming ? 3.6 : 10));
     c.az = DEFAULT_AZ;
-    c.el = DEFAULT_EL;
+    c.el += ((cine.active ? cine.el : DEFAULT_EL) - c.el) * k;
+    if (Math.abs(c.el - DEFAULT_EL) < 0.001) c.el = DEFAULT_EL;
+    const slice = c.el < DEFAULT_EL - 0.08;
+    if (slice !== (gl.clippingPlanes.length > 0)) gl.clippingPlanes = slice ? cutaway : [];
     c.dist += (c.gdist - c.dist) * k;
     c.tx += (c.gtx - c.tx) * k;
     c.tz += (c.gtz - c.tz) * k;
     const ce = Math.cos(c.el);
     camera.position.set(c.tx + c.dist * ce * Math.sin(c.az), c.dist * Math.sin(c.el), c.tz + c.dist * ce * Math.cos(c.az));
-    camera.lookAt(c.tx, 0, c.tz);
+    camera.lookAt(c.tx, 0.45 * (1 - (c.el - EL_MIN) / (DEFAULT_EL - EL_MIN)), c.tz);
     camera.updateMatrixWorld();
-    let busy = Math.abs(c.gaz - c.az) + Math.abs(c.gel - c.el) + Math.abs(c.gdist - c.dist) * 0.2 + Math.abs(c.gtx - c.tx) + Math.abs(c.gtz - c.tz) > 0.0015;
+    let busy = Math.abs((cine.active ? cine.el : DEFAULT_EL) - c.el) + Math.abs(c.gaz - c.az) + Math.abs(c.gdist - c.dist) * 0.2 + Math.abs(c.gtx - c.tx) + Math.abs(c.gtz - c.tz) > 0.0015;
 
     // Cut away whichever exterior walls face the camera, so the view is never blocked.
     const off = { x: camera.position.x - plan.size.w / 2, z: camera.position.z - plan.size.d / 2 };
@@ -295,8 +311,10 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       const x = (tmp.x * 0.5 + 0.5) * w;
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
-      el.style.opacity = visible ? "1" : "0";
-      el.style.pointerEvents = visible ? "auto" : "none";
+      // Tags step aside while a cutscene plays.
+      const show = visible && !cine.active && !shared.walker.current.scene;
+      el.style.opacity = show ? "1" : "0";
+      el.style.pointerEvents = show ? "auto" : "none";
     }
     if (busy) invalidate();
   });
@@ -325,7 +343,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
     },
     [shared.walls],
   );
-  useEffect(() => invalidate(), [p.visibleIds, p.luxury, p.hasBed, p.selectedId, p.hour, invalidate]);
+  useEffect(() => invalidate(), [p.visibleIds, p.luxury, p.hasBed, p.selectedId, p.hour, p.cutscene, invalidate]);
   const sel = p.selectedId ? slots.find((s) => s.id === p.selectedId) : undefined;
   return (
     <>
@@ -365,7 +383,8 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
           <Furniture slot={s} plan={plan} luxury={Boolean(p.luxury[s.id])} hasBed={p.hasBed} />
         </group>
       ))}
-      <HomeWalker head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} />
+      <HomeWalker head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />
+      {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
   );
@@ -379,7 +398,10 @@ export default function HomeScene3D(props: HomeScene3DProps) {
   const hover = useRef<string | null>(null);
   const dragged = useRef(0);
   const walker = useRef<WalkerHandle>({position:{x:props.plan.spawn.entry[0],z:props.plan.spawn.entry[1]},moving:false});
-  const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged, walker }), [props.controls]);
+  const cine = useRef<Cine>({ active: false, tx: 0, tz: 0, dist: 0, el: 0 });
+  const overlay = useRef<CineOverlay>({ barTop: null, barBottom: null, title: null, gains: null, tint: null });
+  const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged, walker, cine, overlay }), [props.controls]);
+  const cut = props.cutscene ?? null;
   const day = daylight(props.hour);
   const { plan } = props;
   const slots = useMemo(() => visibleSlots(plan, props.visibleIds), [plan, props.visibleIds]);
@@ -426,6 +448,38 @@ export default function HomeScene3D(props: HomeScene3DProps) {
           </button>
         ))}
       </div>
+      {cut && (
+        <div
+          key={cut.key}
+          className="absolute inset-0"
+          data-cutscene={cut.act}
+          data-cutscene-action={cut.actionId}
+          role="status"
+          aria-label={`${cut.title}${cut.caption ? `. ${cut.caption}` : ""}${cut.gains.length ? `. ${cut.gains.join(", ")}` : ""}`}
+          onPointerDown={() => window.dispatchEvent(new Event(SKIP_EVENT))}
+        >
+          <div ref={(el) => { overlay.current.tint = el; }} className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle at 50% 45%, #1b2550 0%, #070b1c 80%)", opacity: 0 }} />
+          <div ref={(el) => { overlay.current.barTop = el; }} className="pointer-events-none absolute inset-x-0 top-0 bg-[#111014]" style={{ height: 0 }} />
+          <div ref={(el) => { overlay.current.barBottom = el; }} className="pointer-events-none absolute inset-x-0 bottom-0 bg-[#111014]" style={{ height: 0 }} />
+          <div ref={(el) => { overlay.current.gains = el; }} className="pointer-events-none absolute left-0 top-0 flex flex-col items-center gap-1" style={{ opacity: 0, transform: "translate(-9999px,-9999px)" }}>
+            {cut.caption && <span className="whitespace-nowrap rounded-full border-2 border-[#111014] bg-[#ffd24a] px-3 py-0.5 text-[11px] font-black tracking-wider text-[#111014] shadow-md">{cut.caption}</span>}
+            {cut.gains.map((g) => (
+              <span key={g} className="whitespace-nowrap rounded-full border-2 border-[#111014] bg-card px-2.5 py-0.5 text-sm font-extrabold text-foreground shadow-md">{g}</span>
+            ))}
+          </div>
+          <div ref={(el) => { overlay.current.title = el; }} className="pointer-events-none absolute inset-x-0 top-[2.4%] px-3 text-center text-xs font-black tracking-[0.22em] text-[#f6efe0] sm:text-base sm:tracking-[0.3em]" style={{ opacity: 0 }}>
+            {cut.title}
+          </div>
+          <button
+            type="button"
+            className="absolute bottom-[2%] right-3 min-h-9 rounded-full border-2 border-[#f6efe0]/70 bg-black/40 px-3 text-xs font-extrabold tracking-wider text-[#f6efe0]"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => window.dispatchEvent(new Event(SKIP_EVENT))}
+          >
+            SKIP ▸▸
+          </button>
+        </div>
+      )}
     </div>
   );
 }

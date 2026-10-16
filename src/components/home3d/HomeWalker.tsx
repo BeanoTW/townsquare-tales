@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Person, type PersonState } from "@/components/Character3D";
+import { Person, type ActFn, type PersonState, type Pose } from "@/components/Character3D";
+import type { HeldProp } from "@/lib/cutscenes";
+import { heldProps } from "./scenes/props";
 import { townColor } from "@/components/town3d/palette";
 import type { HomePlan } from "@/lib/home3d/layout";
 import { buildNav, walkable } from "@/lib/home3d/nav";
 import { routeHome, type WalkPoint } from "@/lib/home3d/route";
 import { INTERIOR_STICK_EVENT, type StickVector } from "./InteriorJoystick";
 
-export type WalkerHandle = { position: WalkPoint; moving: boolean };
+/** While set, a cutscene drives the character and player input is ignored. */
+export type SceneDrive = { x: number; z: number; angle: number; lift: number; pose: Pose; walking: boolean; phase: number; act: ActFn; actT: number };
+export type WalkerHandle = { position: WalkPoint; moving: boolean; scene?: SceneDrive | null };
 const SPEED = 2.5;
-export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
+export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = null }: {
   head: string;
+  /** Prop in hand during a cutscene. */
+  held?: HeldProp | null;
   plan: HomePlan; visibleIds: readonly string[]; handle: MutableRefObject<WalkerHandle>;
   onArrive: (id: string) => void;
 }) {
@@ -34,6 +40,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
     waypoints.current=routeHome(nav,pos.current,{x,z});
     invalidate();
   };
+  const props=useMemo(()=>heldProps(held),[held]);
   const actionAt=(id:string)=>{
     const slot=plan.slots.find(s=>s.id===id);
     if(!slot)return;
@@ -55,7 +62,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
   useEffect(()=>{
     const listener=(e:Event)=>{
       const d=(e as CustomEvent<{id:string}>).detail;
-      if(d?.id)actionAt(d.id);
+      if(d?.id && !handle.current.scene)actionAt(d.id);
     };
     window.addEventListener("tst-home-walk-to",listener);
     return()=>window.removeEventListener("tst-home-walk-to",listener);
@@ -71,6 +78,15 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
   },[invalidate]);
   useFrame((_,raw)=>{
     const dt=Math.min(raw,0.05),p=pos.current;
+    const scene=handle.current.scene;
+    if(scene){
+      // The director owns the character; drop any queued walking so the player stays put afterwards.
+      waypoints.current=[];target.current=null;keys.current.clear();
+      Object.assign(character.current,{x:scene.x,z:scene.z,angle:scene.angle,lift:scene.lift,pose:scene.pose,walking:scene.walking,phase:scene.phase,act:scene.act,actT:scene.actT});
+      handle.current.moving=false;
+      return;
+    }
+    if(character.current.act)Object.assign(character.current,{act:undefined,actT:0,pose:"standing",lift:0.04});
     let dx=0,dz=0;
     if(keys.current.has("w")||keys.current.has("arrowup"))dz-=1;
     if(keys.current.has("s")||keys.current.has("arrowdown"))dz+=1;
@@ -104,12 +120,12 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
     if(moved||waypoints.current.length||Math.hypot(stick.current.x,stick.current.z)>.06)invalidate();
   }, -1);
   return <>
-    <Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} />
+    <Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} heldL={props.left} heldR={props.right} />
     {/* Capture a single finger so drag-to-walk continues even when the finger
         crosses a fixture. Pinch gestures are handled by the camera controls. */}
     <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
       onPointerDown={e=>{
-        if (dragPointer.current!==null || !e.isPrimary) return;
+        if (handle.current.scene || dragPointer.current!==null || !e.isPrimary) return;
         e.stopPropagation();
         dragPointer.current=e.pointerId;
         e.target.setPointerCapture(e.pointerId);
