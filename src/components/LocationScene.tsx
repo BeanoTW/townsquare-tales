@@ -282,14 +282,14 @@ function ObjectLocationScene({
         </div>
         )}
         {selected && use3d && (
-          <div className="pointer-events-auto absolute inset-x-2 bottom-2 z-30 min-h-0 max-h-[min(65dvh,85%)] overflow-x-hidden overflow-y-auto overscroll-y-contain rounded-2xl shadow-2xl [touch-action:pan-y] [-webkit-overflow-scrolling:touch] sm:inset-x-auto sm:right-2 sm:w-[min(360px,48%)]"
-            data-mobile-action-sheet onClick={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()}>
+          <div className="pointer-events-auto absolute inset-x-2 bottom-2 z-30 min-h-0 h-[min(65dvh,85%)] overflow-x-hidden overflow-y-scroll overscroll-y-contain rounded-2xl shadow-2xl [touch-action:pan-y] [-webkit-overflow-scrolling:touch] sm:inset-x-auto sm:right-2 sm:w-[min(360px,48%)]"
+            data-mobile-action-sheet onClick={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()}>
             {commerce ? (
               <InteriorCommercePanel venue={room.id} hotspot={selected} state={state} godMode={godMode}
                 onRun={onRun} onClose={()=>setSelectedId(null)}/>
             ) : (
               <ActionPanel hotspot={selected} state={state} godMode={godMode}
-                style={{ position: "relative", inset: "auto", top: "auto", right: "auto", bottom: "auto", left: "auto", width: "100%", maxHeight: "none", borderRadius: 16, boxShadow: "none" }}
+                style={{ position: "relative", inset: "auto", top: "auto", right: "auto", bottom: "auto", left: "auto", width: "100%", maxHeight: "none", overflow: "visible", touchAction: "pan-y", borderRadius: 16, boxShadow: "none" }}
                 onRun={onRun} onClose={()=>setSelectedId(null)}>
                 {room.id === "bar" && selected.id === COUNTERS.bar && <CounterRobberyChoice key={selected.id} state={state} venue="bar" godMode={godMode} onRun={onRun}/>}
               </ActionPanel>
