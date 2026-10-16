@@ -58,7 +58,7 @@ export { karmaHeadColor } from "@/lib/player-appearance";
 const pts = (a: (readonly [number, number])[]) => a.map((p) => p.join(",")).join(" ");
 
 export { ROADS, buildings, door, HOUSE_LOOK } from "@/lib/town-world";
-import { ROADS, buildings, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
+import { ROADS, laneDashes, buildings, door, TREES, LAMPS, playerCameraOffset, type B } from "@/lib/town-world";
 import { buildingHull3d } from "@/components/town3d/specs";
 import { DINER_CHIMNEY, screenOf, townSky } from "@/components/town3d/screen";
 import type { StreetLive, TownLive } from "@/components/town3d/actors";
@@ -454,14 +454,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {tile(17,5.5,5.0,0.4,"var(--town-park-path)","park-path-ew")}
         {/* Roads are finite streets with deliberate ends and T-junctions. */}
         {ROADS.map((r,i)=>tile(r.x,r.y,r.w,r.d,"var(--town-asphalt)","road-"+i))}
-        {/* Lane paint is generated from each actual street, never a removed grid road. */}
-        {ROADS.map((r,i)=>{
-          const vertical=r.d>r.w;
-          const count=Math.floor((vertical?r.d:r.w)/2.4);
-          return Array.from({length:count},(_,j)=>
-            vertical?tile(r.x+r.w/2-.05,r.y+.6+j*2.4,.1,.85,"var(--town-lane-paint)","line-"+i+"-"+j):
-              tile(r.x+.6+j*2.4,r.y+r.d/2-.05,.85,.1,"var(--town-lane-paint)","line-"+i+"-"+j));
-        })}
+        {/* Dashed lane paint stops at junctions in both renderers. */}
+        {laneDashes().map((dash,i)=>tile(dash.x,dash.y,dash.w,dash.d,"var(--town-lane-paint)","line-"+i))}
         </>}
         {/* Visible grind targets, positioned using existing map projection. */}
         {!use3d && TOWN_RAILS.map(rail => {

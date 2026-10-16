@@ -51,11 +51,11 @@ export function GlobalRenderingDiagnostics({ screen }: { screen: string }) {
   ];
   void tick;
   return <>
-    <div className="pointer-events-auto absolute right-3 top-[5.6rem] z-[90]">
+    <div className="pointer-events-auto absolute right-3 top-[5.7rem] z-[90]">
       <button type="button" aria-label="Show rendering diagnostics" aria-expanded={open}
         onClick={()=>{setOpen(x=>!x);setCopied(false);}}
-        className="min-h-10 rounded-lg border-2 border-foreground bg-card/95 px-3 text-sm font-bold shadow-lg">
-        {open?"Hide diagnostics":"Show rendering diagnostics"}
+        title="Rendering diagnostics" className="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/50 bg-card/75 text-lg text-foreground/65 shadow-sm backdrop-blur-sm hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">
+        <span aria-hidden="true">{open?"×":"ⓘ"}</span>
       </button>
     </div>
     {open&&<div role="dialog" aria-label="Rendering diagnostics"
