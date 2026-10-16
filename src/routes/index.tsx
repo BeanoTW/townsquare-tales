@@ -2,7 +2,7 @@ import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
-import { backupSave, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";
+import { backupSave, readEmergencyBackup, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
@@ -598,11 +598,12 @@ function Game() {
                 <p>Slot {slot}: {stored ? "Day "+stored.day : "Empty"}</p>
                 <div className="flex flex-wrap gap-2">
                   <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}if(stored&&!confirm("Overwrite this slot?"))return;if(saveSlot(slot,s))refreshSlots();else alert("Save failed.");}}>Save</Btn>
-                  {stored && <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}if(!confirm("Restore Day "+stored.day+"? The current save will be backed up."))return;const data=readSlot(slot,START);if(!data)return;backupSave(s);setS(data);saveGame(data);setPlace(null);setTab(null);refreshSlots();}}>Load</Btn>}
+                  {stored && <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}if(!confirm("Restore Day "+stored.day+"? The current save will be backed up."))return;const data=readSlot(slot,START);if(!data)return;if(!backupSave(s)){alert("Could not back up your current save. Restore cancelled.");return;}setS(data);saveGame(data);setPlace(null);setTab(null);refreshSlots();}}>Load</Btn>}
                 </div>
               </div>;
             })}
             <Btn onClick={()=>exportSave(s)}>Download save file</Btn>
+            <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}const data=readEmergencyBackup(START);if(!data){alert("No recovery backup found in this browser.");return;}if(!confirm("Restore recovery backup from Day "+data.day+"?"))return;if(!saveSlot(3,s)){alert("Could not preserve the current game in Slot 3. Recovery cancelled.");return;}setS(data);saveGame(data);setTab(null);refreshSlots();}}>Restore previous backup</Btn>
             <label className="block mt-2 text-sm">Import save JSON
               <input type="file" accept=".json,application/json" className="mt-1 block w-full" onChange={async e=>{
                 const file=e.currentTarget.files?.[0];e.currentTarget.value="";if(!file)return;
@@ -684,7 +685,8 @@ function Game() {
           <Btn
             onClick={() => {
               if (confirm("Start a new life? Existing progress will be backed up first.")) {
-                if (!godMode) { backupSave(s); refreshSlots(); }
+                if (!godMode && !backupSave(s)) { alert("Could not back up this save. Restart cancelled."); return; }
+                refreshSlots();
                 if (godMode) {
                   try { window.localStorage.removeItem(GOD_SAVE_KEY); } catch { /* No storage. */ }
                 }
