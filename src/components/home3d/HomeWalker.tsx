@@ -14,11 +14,12 @@ import { slideMove, smoothRoute } from "./fluid-motion";
 export type SceneDrive = { x: number; z: number; angle: number; lift: number; pose: Pose; walking: boolean; phase: number; act: ActFn; actT: number };
 export type WalkerHandle = { position: WalkPoint; moving: boolean; nearby?: string | null; lookYaw?: number; scene?: SceneDrive | null };
 const SPEED = 2.5;
-export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = null, firstPerson = false }: {
+export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = null, firstPerson = false, showAvatar = false }: {
   head: string;
   /** Prop in hand during a cutscene. */
   held?: HeldProp | null;
   firstPerson?: boolean;
+  showAvatar?: boolean;
   plan: HomePlan; visibleIds: readonly string[]; handle: MutableRefObject<WalkerHandle>;
   onArrive: (id: string) => void;
 }) {
@@ -146,7 +147,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     if(moved||waypoints.current.length||Math.hypot(stick.current.x,stick.current.z)>.06)invalidate();
   }, -1);
   return <>
-    <group visible={!firstPerson || Boolean(handle.current.scene)}><Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} heldL={props.left} heldR={props.right} /></group>
+    <group visible={!firstPerson || showAvatar}><Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} heldL={props.left} heldR={props.right} /></group>
     {/* Capture a single finger so drag-to-walk continues even when the finger
         crosses a fixture. Pinch gestures are handled by the camera controls. */}
     <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
