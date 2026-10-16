@@ -12,6 +12,7 @@ import {
   DEPOSIT_50,
   bankLoanAction,
   repayLoanAction,
+  buyHouseAction,
   DEPOSIT_ALL,
   furnitureAction,
   HIGH_DICE,
@@ -478,14 +479,12 @@ export const ROOMS: Record<PlaceId, Room> = {
       },
       {
         id: "loans",
-        label: "Loan desk",
-        tag: "LOANS",
-        hint: "Borrow money or repay debt",
+        label: "Property management",
+        tag: "HOMES",
+        hint: "View and buy your next home",
         box: { x: 280, y: 190, w: 126, h: 80 },
-        lines: s => [`Outstanding debt: ${s.loanDebt ?? 0}`, `Due: day ${s.loanDueDay || "—"}`, "40% upfront finance charge · 2% daily penalty after deadline", "Larger loans require employment"],
-        actions: s => (s.loanDebt ?? 0) > 0
-          ? [repayLoanAction(100), repayLoanAction(500), repayLoanAction("all")]
-          : [bankLoanAction(250), bankLoanAction(1000), bankLoanAction(2500), bankLoanAction(5000)],
+        lines: s => [`Current home: ${HOUSES[s.house]?.name ?? "Home"}`, ...(HOUSES[s.house + 1] ? [`Next: ${HOUSES[s.house + 1]!.name} · $${HOUSES[s.house + 1]!.cost}`] : ["You own the best home."])],
+        actions: s => HOUSES[s.house + 1] ? [buyHouseAction(s)] : [],
       },
     ],
   },
