@@ -167,23 +167,26 @@ export function sleepAction(s: GameState): ActionDef {
   };
 }
 
-export function buyHouseAction(s: GameState): ActionDef {
-  const next = HOUSES[s.house + 1];
+/** Purchase any property tier directly; owned homes can be selected again for free. */
+export function buyHouseAction(s: GameState, tier = Math.min(3, s.house + 1)): ActionDef {
+  const property = HOUSES[tier];
+  const owned = Boolean(((s.ownedHomes ?? ((1 << (s.house + 1)) - 1)) & (1 << tier)));
   return {
-    id: "buy-house",
-    label: `Buy ${next?.name ?? "a new home"}`,
+    id: `buy-house-${tier}`,
+    label: owned ? `Move into ${property?.name ?? "home"}` : `Buy ${property?.name ?? "home"}`,
     hours: 0,
     energy: 0,
-    cost: next?.cost,
+    cost: owned ? 0 : property?.cost,
     resolve: (st) => {
-      const target = HOUSES[st.house + 1];
-      if (!target) return "You already own the best home.";
-      return st.money >= target.cost
-        ? {
-            patch: { money: st.money - target.cost, house: st.house + 1 },
-            message: `You moved into a ${target.name}!`,
-          }
-        : "Not enough cash.";
+      const target = HOUSES[tier];
+      if (!target || tier < 1) return "That property is not available.";
+      const mask = st.ownedHomes ?? ((1 << (st.house + 1)) - 1);
+      const alreadyOwned = Boolean(mask & (1 << tier));
+      if (!alreadyOwned && st.money < target.cost) return "Not enough cash.";
+      return {
+        patch: { money: st.money - (alreadyOwned ? 0 : target.cost), house: tier, ownedHomes: mask | (1 << tier) },
+        message: alreadyOwned ? `Moved into your ${target.name}.` : `You bought a ${target.name}!`,
+      };
     },
   };
 }
