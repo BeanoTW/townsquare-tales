@@ -11,3 +11,6 @@ export function sleepOutcome(s:SleepState) {
  return {hour:wake,energy:Math.min(100,s.energy+Math.max(25,recovery))};
 }
 export function timeLabel(hour:number) {const minutes=Math.round(hour*60);return `${String(Math.floor(minutes/60)%24).padStart(2,"0")}:${String(minutes%60).padStart(2,"0")}`;}
+
+/** Human-readable decimal-hour duration, rounded to the nearest minute. */
+export function durationLabel(hours:number):string { const total=Math.max(0,Math.round(hours*60)); const h=Math.floor(total/60),m=total%60; return h&&m?`${h}h ${m}m`:h?`${h}h`:`${m}m`; }
