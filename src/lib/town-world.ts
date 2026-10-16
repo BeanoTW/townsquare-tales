@@ -49,7 +49,7 @@ export const HOUSE_LOOK = [
 /** Once built, the castle takes over the old cardboard-box plot (and the land around it) for good. */
 export const CASTLE_PLOT = { x: 0.6, y: 0.5, w: 7.2, d: 5.5 } as const;
 
-export const buildings = (house: number, castle = house >= 4): B[] => {
+export const buildings = (house: number, castle = house >= 4, yardRelocated = false): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   const sites = [
     { x: 1.1, y: 2, w: 3, d: 4 },
@@ -73,7 +73,7 @@ export const buildings = (house: number, castle = house >= 4): B[] => {
   }
   return [
     ...residences,
-    { facing: "north", id: "yard", label: "Construction Office", x: 19.5, y: 22.8, w: 2.1, d: 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
+    { facing: yardRelocated ? "south" : "north", id: "yard", label: "Workers Yard", x: yardRelocated ? 30.8 : 19.5, y: yardRelocated ? 19.0 : 22.8, w: yardRelocated ? 3.2 : 2.1, d: yardRelocated ? 3.1 : 1.5, h: 35, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: false },
     { facing: "south", id: "gym", label: "Iron Gym", x: 11.8, y: 7.75, w: 3, d: 3.3, h: 70, wall: "var(--town-gym-wall)", side: "var(--town-gym-side)", roof: "var(--town-gym-roof)", sign: "var(--town-gym-sign)", win: true },
     { facing: "west", id: "school", label: "Stick U", x: 12, y: 2.1, w: 4, d: 4, h: 90, wall: "var(--town-school-wall)", side: "var(--town-school-side)", roof: "var(--town-school-roof)", sign: "var(--town-school-sign)", win: true },
     { facing: "north", id: "bar", label: "The Tipsy Stick", x: 1.2, y: 22, w: 3, d: 4, h: 60, wall: "var(--town-bar-wall)", side: "var(--town-bar-side)", roof: "var(--town-bar-roof)", sign: "var(--town-bar-sign)", win: true },
