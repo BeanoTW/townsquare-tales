@@ -230,7 +230,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   enterRef.current = onEnter;
 
   const blocked = (x: number, y: number) =>
-    x < 0.2 || y < 0.2 || x > 35.4 || y > 32.5 || bs.some((b) => x > b.x - 0.15 && x < b.x + b.w + 0.15 && y > b.y - 0.15 && y < b.y + b.d + 0.15);
+    x < 0.2 || y < 0.2 || x > 35.4 || y > 32.5 || solids.some((b) => x > b.x - 0.15 && x < b.x + b.w + 0.15 && y > b.y - 0.15 && y < b.y + b.d + 0.15);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
