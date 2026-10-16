@@ -126,7 +126,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
   </>;
 }
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire, onWreckRepair }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean; onWreckRepair?: () => boolean }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire, onWreckRepair, onPositionChange }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean; onWreckRepair?: () => boolean; onPositionChange?: (x:number,y:number)=>void }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
   const townHallReady = isTownHallBuilt({ day: state?.day ?? 1 });
@@ -206,8 +206,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   // a fixed downtown coordinate that can land in later construction footprints.
   const initialHome = bs.find(b => b.id === "home");
   const initialSpawn = initialHome ? nearestWalkable(door(initialHome), solids) : {x:9.95,y:9.0};
-  const me = useRef({ x: initialSpawn.x, y: initialSpawn.y, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
+  const restored = state && typeof state.playerX==="number" && typeof state.playerY==="number" ? nearestWalkable({x:state.playerX,y:state.playerY},solids) : initialSpawn;
+  const me = useRef({ x: restored.x, y: restored.y, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
   // The 3D town reads the same live state the SVG uses; it never owns game logic.
+  const positionCallback=useRef(onPositionChange);
+  positionCallback.current=onPositionChange;
+  const lastStoredPosition=useRef({x:restored.x,y:restored.y});
   const streetLive = useRef<StreetLive | null>(null);
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
@@ -223,6 +227,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     target.current = null;
   }, [state?.driveTrip, state?.driveDestination, state?.career, state?.employed, bs, solids]);
 
+  // Store current location periodically, without updating React state every frame.
+  useEffect(()=>{
+    const sync=()=>{
+      const current=me.current,previous=lastStoredPosition.current;
+      if(Math.hypot(current.x-previous.x,current.y-previous.y)<0.15)return;
+      lastStoredPosition.current={x:current.x,y:current.y};
+      positionCallback.current?.(current.x,current.y);
+    };
+    const timer=window.setInterval(sync,1500);
+    window.addEventListener("pagehide",sync);
+    return ()=>{sync();window.clearInterval(timer);window.removeEventListener("pagehide",sync);};
+  },[]);
   const routeTo = useCallback((destination: Point, enter?: string) => {
     if (!isWalkable(me.current, solids)) Object.assign(me.current, nearestWalkable(me.current, solids));
     const route = findRoute(me.current, destination, solids);
