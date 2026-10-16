@@ -122,11 +122,7 @@ export function Home3DStage({
           ✦ {plan.slots.find(s=>s.id===nearby)?.label??"Interact"}
         </button>
       )}
-      {true ? (!cutscene && <button type="button" className={`absolute right-2 top-2 ${BTN}`} aria-label="Look ahead" onClick={() => c()?.reset()}>⌂</button>) : <div className={`absolute right-2 top-2 flex flex-col gap-1 transition-opacity ${cutscene ? "pointer-events-none opacity-0" : ""}`} data-home3d-controls onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={BTN} aria-label="Zoom in" onClick={() => c()?.zoom(0.8)}>＋</button>
-        <button type="button" className={BTN} aria-label="Zoom out" onClick={() => c()?.zoom(1.25)}>－</button>
-        <button type="button" className={BTN} aria-label="Reset camera" onClick={() => c()?.reset()}>⌂</button>
-      </div>}
+      {!cutscene && <button type="button" className={`absolute right-2 top-2 ${BTN}`} aria-label="Look ahead" onClick={() => c()?.reset()}>⌂</button>}
     </div>
   );
 }
