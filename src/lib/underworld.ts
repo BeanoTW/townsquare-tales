@@ -39,7 +39,7 @@ export function pawnIntroductionAction():ActionDef {
   return {id:"pawn-introduction",label:"Ask about the people behind the pawn shop",hours:0.5,energy:2,
     resolve:s=>{
       if(s.pawnIntroduction) return '"You know who to ask for."';
-      if(s.gangRep < 7 && (s.streetSmarts??0)<16) return '"You are not ready to meet them."';
+      if(s.gangRep < 7 || (s.criminalTrust??0)<25 || s.karma > -5) return '"You have not earned that kind of trust yet."';
       return {patch:{pawnIntroduction:1,criminalTrust:Math.min(100,(s.criminalTrust??0)+8)},
         message:'"Ask at the pawn shop. Quietly. Mention that we sent you. They decide if you get through the back door."' };
     }};

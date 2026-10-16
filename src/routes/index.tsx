@@ -405,6 +405,8 @@ function Game() {
               <p className="text-base">Strength 15 holds your ground; Charm 15 talks them down. Each response takes 15m. Leaving costs nothing.</p>
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
+              {s.gangStage === 0 && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
+              <Btn disabled={!!weaponBlock(s,1)} onClick={() => { if(perform(buyWeapon(1))) setGangMeeting(null); }}>Buy an ordinary bat · $180</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Fine. I'm leaving.</Btn>
             </>
           ) : (
@@ -417,8 +419,8 @@ function Game() {
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
               {(s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
-              {(s.gangRep >= 7 || (s.streetSmarts??0) >= 16) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
-              <p className="text-sm">Crew equipment: serious gear takes time, trust and cash. The cheap bat cannot be used for till robberies.</p>
+              {(s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
+              <p className="text-sm">An ordinary bat is available to anyone. Specialist gear requires earned trust; the basic bat cannot be used for till robberies.</p>
               {([1,2] as const).map(tier => <Btn key={tier} disabled={!!weaponBlock(s,tier)} onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · ${buyWeapon(tier).cost} · {buyWeapon(tier).hours}h · {buyWeapon(tier).energy} energy · {weaponBlock(s,tier) ?? buyWeapon(tier).note}</Btn>)}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>
