@@ -172,12 +172,13 @@ export function sleepAction(s: GameState): ActionDef {
             const weekly = housingWeeklyCost(st);
             if (!weekly || (st.day + 1 - (st.housingLastPaidDay ?? st.day)) < 7) return {};
             const due = st.housingMode === 2 ? Math.min(weekly, st.mortgageBalance ?? 0) + (st.housingArrears ?? 0) : weekly + (st.housingArrears ?? 0);
-            const paid = Math.min(st.money, due);
+            const available = settleBusinesses(st, st.day + 1).money ?? st.money;
+            const paid = Math.min(available, due);
             const remaining = Math.max(0, due - paid);
             const loan = st.housingMode === 2 ? Math.max(0, (st.mortgageBalance ?? 0) - Math.max(0, paid)) : 0;
             const settled = st.housingMode === 2 && loan === 0 && remaining === 0;
             return {
-              money: st.money - paid,
+              money: available - paid,
               housingArrears: remaining,
               housingLastPaidDay: st.day + 1,
               mortgageBalance: loan,
