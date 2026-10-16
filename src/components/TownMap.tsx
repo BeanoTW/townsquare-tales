@@ -167,12 +167,15 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     else skateJump.current = {trick,elapsed:0};
   };
   const [driving,setDriving]=useState(false);
+  const [vehicle,setVehicle]=useState<"company"|"wreck"|null>(null);
+  const vehicleRef=useRef<"company"|"wreck"|null>(null);
+  const wreckPosition=useRef({x:5.8,y:11.1,angle:90});
   const drivingRef=useRef(false);
   const carSpeed=useRef(0);
   // Shared with the 3D car, so interaction tests the actual parking position.
   const carPosition=useRef({x:30.1,y:22.1,angle:180});
   const toggleDriving = () => {
-    if(!state?.companyCar || !state.drivingLicence || paused || active)return;
+    if(!state?.companyCar || !state.drivingLicence || paused || active || (drivingRef.current && vehicleRef.current!=="company"))return;
     const m=me.current;
     if(!drivingRef.current && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)>2.2)return;
     if (!drivingRef.current) {
@@ -182,9 +185,22 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       carPosition.current={x:m.x,y:m.y,angle:m.skateAngle};
     }
     drivingRef.current=!drivingRef.current;
+    vehicleRef.current=drivingRef.current?"company":null;
+    setVehicle(vehicleRef.current);
     setDriving(drivingRef.current);
     carSpeed.current=0;
     target.current=null;
+  };
+  const toggleWreck=()=>{
+    if(!state?.abandonedCar || (state.wreckRepairs??0)<3 || !state.drivingLicence || paused || active)return;
+    const m=me.current;
+    if(drivingRef.current && vehicleRef.current!=="wreck")return;
+    if(!drivingRef.current && Math.hypot(m.x-wreckPosition.current.x,m.y-wreckPosition.current.y)>2.2)return;
+    if(!drivingRef.current){Object.assign(m,{x:wreckPosition.current.x,y:wreckPosition.current.y,skateAngle:wreckPosition.current.angle});}
+    else wreckPosition.current={x:m.x,y:m.y,angle:m.skateAngle};
+    drivingRef.current=!drivingRef.current;
+    vehicleRef.current=drivingRef.current?"wreck":null;
+    setVehicle(vehicleRef.current);setDriving(drivingRef.current);carSpeed.current=0;target.current=null;
   };
   const me = useRef({ x: 9.95, y: 9.0, phase: 0, walking: false, skateAngle: 90, turnVelocity: 0, facing: "right" as "left" | "right" | "up" | "down" });
   // The 3D town reads the same live state the SVG uses; it never owns game logic.
@@ -375,6 +391,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         else if (!collision(nx, m.y)) m.x = nx;
         else if (!collision(m.x, ny)) m.y = ny;
         else { target.current = null; m.walking = false; carSpeed.current=0; }
+        if(drivingNow && vehicleRef.current==="wreck") wreckPosition.current={x:m.x,y:m.y,angle:m.skateAngle};
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
         const targetAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
@@ -577,9 +594,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
   // This is an abandoned vehicle, distinct from the Site Lead company car.
-  items.push({ key: 11.1 * 100 + 5.8, el: <g key="abandoned-car" data-abandoned-car>
+  items.push({ key: wreckPosition.current.y * 100 + wreckPosition.current.x, el: <g key="abandoned-car" data-abandoned-car>
     <title>Rusty abandoned car — its engine has not run in years.</title>
-    <Car x={5.8} y={11.1} dir="x" color="#74695e"/>
+    <Car x={wreckPosition.current.x} y={wreckPosition.current.y} dir="x" color={(state?.wreckRepairs??0)>=3?"#677b89":"#74695e"}/>
     <g transform={`translate(${P(5.8,11.1)[0]} ${P(8.4,9.25)[1]-17})`}>
       <path d="M-17 1l9 -6m5 3l8 7m6 -10l5 5" stroke="#493e39" strokeWidth="2.5" strokeLinecap="round"/>
     </g>
@@ -661,7 +678,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} driving={driving} carPosition={carPosition} /></Suspense>}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} driving={vehicle==="company"} carPosition={carPosition} wreckOwned={Boolean(state?.abandonedCar)} wreckPosition={wreckPosition} wreckDriving={vehicle==="wreck"} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
@@ -694,7 +711,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           </div>
         </div>
       )}
-      {!active && !paused && Math.hypot(m.x-5.8,m.y-11.1) < 2.2 && (
+      {!active && !paused && Math.hypot(m.x-wreckPosition.current.x,m.y-wreckPosition.current.y) < 2.2 && (
         <button type="button" data-inspect-abandoned-car onClick={() => setInspectAbandonedCar(true)}
           className="absolute bottom-[13.4rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card/95 px-3 text-xs font-bold shadow-lg">
           🔍 Inspect rusty car
@@ -710,8 +727,9 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           {state?.abandonedCar ? <><p className="mt-2 text-sm">{(state.wreckRepairs??0)>=3?"The old wreck is roadworthy. It belongs to you.":"The engine runs, but the old wreck still needs repairs before it can be driven."}</p>{(state.wreckRepairs??0)<3 && <button type="button" className="mt-3 min-h-11 rounded-md bg-secondary px-3 font-bold" onClick={() => { if(onWreckRepair?.())setInspectAbandonedCar(false); }}>Repair the wreck — stage {(state.wreckRepairs??0)+1} of 3</button>}</> : (state?.criminalTrust ?? 0) >= 10 ? <><p className="mt-2 text-xs text-muted-foreground">You remember the crew's advice. The ignition challenge is a fictional luck-and-skill test.</p><button type="button" className="mt-3 min-h-11 rounded-md bg-secondary px-3 font-bold" onClick={() => { onHotwire?.(); setInspectAbandonedCar(false); }}>Try the ignition challenge</button></> : <p className="mt-2 text-xs text-muted-foreground">The car has been dead for years. Maybe someone around town knows more about it.</p>}
         </div>
       )}
-      {state && canDrive(state) && !active && !paused && (driving || Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<2.2) && (
-        <button type="button" data-company-car-interact className="absolute bottom-[21rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleDriving}>{driving?"Park and exit":"🚗 Enter company car"}</button>
+      {state?.abandonedCar && (state.wreckRepairs??0)>=3 && state.drivingLicence && !active && !paused && (vehicle==="wreck" || (!driving && Math.hypot(m.x-wreckPosition.current.x,m.y-wreckPosition.current.y)<2.2)) && <button type="button" data-personal-car-interact className="absolute bottom-[17rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleWreck}>{vehicle==="wreck"?"Park personal car":"🚙 Enter personal car"}</button>}
+      {state && canDrive(state) && !active && !paused && (vehicle==="company" || (!driving && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<2.2)) && (
+        <button type="button" data-company-car-interact className="absolute bottom-[21rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleDriving}>{vehicle==="company"?"Park and exit":"🚗 Enter company car"}</button>
       )}
       {state && canDrive(state) && !active && !paused && onDrive && (
         <nav aria-label="Company car destinations" className="absolute bottom-[13.4rem] left-3 z-20 flex flex-col gap-1 rounded-lg border-2 border-foreground bg-card/95 p-1.5 text-xs font-bold shadow-lg sm:bottom-44">
