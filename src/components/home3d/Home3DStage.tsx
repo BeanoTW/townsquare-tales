@@ -6,6 +6,7 @@ import type { PlanZone } from "@/lib/home-zones";
 import type { HomePlan } from "@/lib/home3d/layout";
 import { planFor } from "@/lib/home3d/plans";
 import type { CameraControls } from "./types";
+import { InteriorJoystick } from "./InteriorJoystick";
 
 import { karmaHeadColor } from "@/lib/player-appearance";
 
@@ -99,6 +100,7 @@ export function Home3DStage({
           />
         </Suspense>
       </Boundary>
+      <InteriorJoystick />
       <div className="absolute right-2 top-2 flex flex-col gap-1" data-home3d-controls onClick={(e) => e.stopPropagation()}>
         <button type="button" className={BTN} aria-label="Zoom in" onClick={() => c()?.zoom(0.8)}>＋</button>
         <button type="button" className={BTN} aria-label="Zoom out" onClick={() => c()?.zoom(1.25)}>－</button>
