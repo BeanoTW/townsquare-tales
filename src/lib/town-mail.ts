@@ -6,11 +6,22 @@ export type Letter = { id: number; day: number; from: string; subject: string; b
 export const hasRead = (s:GameState,id:number) => Boolean(((s.mailReadMask??0) & (1<<id)) !== 0);
 export const unreadCount = (s:GameState) => mailFor(s).filter(l=>!hasRead(s,l.id)).length;
 export const markRead = (s:GameState,id:number):GameState => ({...s,mailReadMask:(s.mailReadMask??0)|(1<<id)});
+/** Writing prepares a letter; mailing it requires visiting the Post Office. */
+export const hasDraftReply = (s:GameState,id:number) => Boolean((s.pendingReplyMask??0)&(1<<id));
 export const replyFamily = (s:GameState,id:number):GameState => ({
   ...markRead(s,id),
-  familyReplyMask:(s.familyReplyMask??0)|(1<<id),
-  familyFirstReplyDay:s.familyFirstReplyDay||s.day,
+  pendingReplyMask:(s.pendingReplyMask??0)|(1<<id),
 });
+export const sendPendingReplies = (s:GameState):GameState => {
+  const pending = (s.pendingReplyMask??0) & ~(s.familyReplyMask??0);
+  if (!pending) return s;
+  return {
+    ...s,
+    pendingReplyMask:0,
+    familyReplyMask:(s.familyReplyMask??0)|pending,
+    familyFirstReplyDay:s.familyFirstReplyDay||s.day,
+  };
+};
 export const hasReplied = (s:GameState,id:number) => Boolean((s.familyReplyMask??0)&(1<<id));
 
 /** Deterministic lifetime correspondence. Nothing is lost while a mailbox is unregistered. */

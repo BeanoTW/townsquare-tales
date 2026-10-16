@@ -2,7 +2,7 @@ import { describe,expect,it,vi } from "vitest";
 import { fireEvent, render,screen } from "@testing-library/react";
 import { START } from "@/lib/game-data";
 import { parseGame } from "@/lib/game-state";
-import { mailFor,hasRead,markRead,replyFamily,unreadCount,hasReplied } from "@/lib/town-mail";
+import { mailFor,hasRead,markRead,replyFamily,unreadCount,hasReplied,hasDraftReply,sendPendingReplies } from "@/lib/town-mail";
 import { MailInbox } from "@/components/rooms/MailInbox";
 
 describe("persistent town correspondence",()=>{
@@ -19,9 +19,12 @@ describe("persistent town correspondence",()=>{
     const opened=markRead(state,0);
     expect(hasRead(opened,0)).toBe(true);
     const replied=replyFamily(opened,0);
-    expect(hasReplied(replied,0)).toBe(true);
-    expect(replied.familyFirstReplyDay).toBe(19);
-    const restored=parseGame(JSON.stringify(replied),START);
+    expect(hasDraftReply(replied,0)).toBe(true);
+    expect(hasReplied(replied,0)).toBe(false);
+    const posted=sendPendingReplies(replied);
+    expect(hasReplied(posted,0)).toBe(true);
+    expect(posted.familyFirstReplyDay).toBe(19);
+    const restored=parseGame(JSON.stringify(posted),START);
     expect(hasReplied(restored,0)).toBe(true);
     expect(hasRead(restored,0)).toBe(true);
   });

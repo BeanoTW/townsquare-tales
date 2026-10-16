@@ -1,12 +1,13 @@
 import { useState } from "react";
 import type { GameState } from "@/lib/game-state";
-import { hasRead, hasReplied, mailFor, markRead, replyFamily } from "@/lib/town-mail";
+import { hasDraftReply, hasRead, hasReplied, mailFor, markRead, replyFamily, sendPendingReplies } from "@/lib/town-mail";
 
 export function MailInbox({state,atPostOffice,onChange,onClose}:{state:GameState;atPostOffice:boolean;onChange:(next:GameState)=>void;onClose:()=>void}) {
   const [opened,setOpened]=useState<number|null>(null);
   const letters=mailFor(state);
   const selected=letters.find(l=>l.id===opened);
   const registered=Boolean(state.mailbox);
+  const pending = state.pendingReplyMask ?? 0;
   const openLetter=(id:number)=>{
     setOpened(id);
     if(!hasRead(state,id))onChange(markRead(state,id));
@@ -19,6 +20,7 @@ export function MailInbox({state,atPostOffice,onChange,onClose}:{state:GameState
       </div>
       <button type="button" className="min-h-11 min-w-11 rounded-lg border-2 border-foreground bg-secondary font-bold" onClick={onClose} aria-label="Close mail">✕</button>
     </div>
+    {atPostOffice && pending !== 0 && <div className="border-b p-3"><button type="button" className="min-h-12 w-full rounded-xl border-2 border-foreground bg-primary px-3 font-bold text-primary-foreground" onClick={()=>onChange(sendPendingReplies(state))}>Post {pending.toString(2).replace(/0/g,"").length} written letter(s)</button></div>}
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]" onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()}>
     {!registered&&!atPostOffice?<div className="space-y-3">
       <p className="font-bold">You haven't registered a mailbox yet.</p>
@@ -31,8 +33,9 @@ export function MailInbox({state,atPostOffice,onChange,onClose}:{state:GameState
       <p className="whitespace-pre-wrap rounded-xl bg-secondary p-4 leading-relaxed">{selected.body}</p>
       {selected.response&&(hasReplied(state,selected.id)
         ? <p className="rounded-lg border p-3 text-sm">✓ You replied to this letter.</p>
+        : hasDraftReply(state,selected.id) ? <p className="rounded-lg border p-3 text-sm">✉ Letter written. Take it to the Post Office to send it.</p>
         : <button type="button" className="min-h-12 w-full rounded-xl border-2 border-foreground bg-primary px-3 font-bold text-primary-foreground"
-            onClick={()=>onChange(replyFamily(state,selected.id))}>Write a reply</button>)}
+            onClick={()=>onChange(replyFamily(state,selected.id))}>Write a reply (save for posting)</button>)}
       {selected.category==="family"&&<p className="text-xs text-muted-foreground">Keeping in touch affects your relationship with your family, not your money or XP.</p>}
     </div>:<div className="space-y-2">
       <p className="text-sm text-muted-foreground">{letters.length} letters · {letters.filter(l=>!hasRead(state,l.id)).length} unread</p>
