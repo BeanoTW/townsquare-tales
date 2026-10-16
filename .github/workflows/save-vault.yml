@@ -1,0 +1,21 @@
+name: Save vault isolated verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/save-vault.ts'
+      - 'src/test/save-vault.test.ts'
+      - 'src/routes/index.tsx'
+      - '.github/workflows/save-vault.yml'
+jobs:
+  save-vault:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Targeted save tests
+        run: bunx vitest run src/test/save-vault.test.ts
+      - name: TypeScript check
+        run: bunx tsc --noEmit
+      - name: Production build
+        run: bun run build
