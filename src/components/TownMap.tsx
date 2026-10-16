@@ -509,6 +509,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         })}
         </>}
         {!townHallReady && <Site ghost={use3d} active={constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} />}
+        {yardRelocated && !use3d && <g transform={`translate(${19.1*48} ${12.3*36}) scale(0.7)`}><Site active={constructionActive} onForeman={() => {const yard=bs.find(b=>b.id==="yard");if(yard)routeTo(door(yard), "yard");}} /></g>}
         {/* Rough patch by the starter home where the gang now hang out. */}
         {!use3d && tile(5.2, 3.6, 2.0, 1.8, "var(--town-grime)", "gang-patch")}
         {!use3d && <>
