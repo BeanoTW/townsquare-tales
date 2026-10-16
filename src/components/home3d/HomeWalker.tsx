@@ -8,10 +8,11 @@ import type { HomePlan } from "@/lib/home3d/layout";
 import { buildNav, walkable } from "@/lib/home3d/nav";
 import { routeHome, type WalkPoint } from "@/lib/home3d/route";
 import { INTERIOR_STICK_EVENT, type StickVector } from "./InteriorJoystick";
+import { slideMove, smoothRoute } from "./fluid-motion";
 
 /** While set, a cutscene drives the character and player input is ignored. */
 export type SceneDrive = { x: number; z: number; angle: number; lift: number; pose: Pose; walking: boolean; phase: number; act: ActFn; actT: number };
-export type WalkerHandle = { position: WalkPoint; moving: boolean; scene?: SceneDrive | null };
+export type WalkerHandle = { position: WalkPoint; moving: boolean; nearby?: string | null; scene?: SceneDrive | null };
 const SPEED = 2.5;
 export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = null }: {
   head: string;
@@ -37,7 +38,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
   handle.current.position=pos.current;
   const moveTo=(x:number,z:number,id:string|null=null)=>{
     target.current=id;
-    waypoints.current=routeHome(nav,pos.current,{x,z});
+    waypoints.current=smoothRoute(nav,pos.current,routeHome(nav,pos.current,{x,z}));
     invalidate();
   };
   const props=useMemo(()=>heldProps(held),[held]);
@@ -103,11 +104,12 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     if(length>0){
       const analogue=Math.hypot(stick.current.x,stick.current.z)>.06;
       const step=Math.min(SPEED*dt*(analogue?Math.min(1,length):1),analogue?Infinity:length), vx=dx/length*step,vz=dz/length*step;
-      if(walkable(nav,p.x+vx,p.z)){p.x+=vx;p.z+=vz;moved=true;}
-      else if(walkable(nav,p.x+vx,p.z)){p.x+=vx;moved=true;}
-      else if(walkable(nav,p.x,p.z+vz)){p.z+=vz;moved=true;}
-      else waypoints.current=[];
-      if(moved){dir.current=Math.atan2(vx,vz);phase.current+=dt*11;}
+      const next=slideMove(nav,p,vx,vz);
+      const actualX=next.x-p.x, actualZ=next.z-p.z;
+      moved=Math.hypot(actualX,actualZ)>0.0001;
+      if(moved){p.x=next.x;p.z=next.z;}
+      else if(!analogue)waypoints.current=[];
+      if(moved){dir.current=Math.atan2(actualX,actualZ);phase.current+=dt*11;}
     }
     if(!waypoints.current.length && target.current){
       const slot=plan.slots.find(s=>s.id===target.current);
@@ -115,6 +117,15 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
       else target.current=null;
     }
     Object.assign(character.current, { x: p.x, z: p.z, angle: 180 - dir.current * 180 / Math.PI, phase: phase.current, walking: moved });
+    // Find only the closest currently available interaction, within reach.
+    // The render loop reads this without rerendering every scene object.
+    let nearest:string|null=null,best=1.35;
+    for(const slot of plan.slots){
+      if(!visibleIds.includes(slot.id))continue;
+      const distance=Math.hypot(slot.x-p.x,slot.z-p.z);
+      if(distance<best){best=distance;nearest=slot.id;}
+    }
+    handle.current.nearby=nearest;
     handle.current.position={...p};
     handle.current.moving=moved;
     if(moved||waypoints.current.length||Math.hypot(stick.current.x,stick.current.z)>.06)invalidate();
