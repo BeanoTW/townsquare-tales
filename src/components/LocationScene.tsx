@@ -369,7 +369,7 @@ function Walkable3DVenueScene(props: Parameters<typeof ObjectLocationScene>[0]) 
   const renderer = useRenderer3d();
   if (renderer.gl && !renderer.classic) return <ObjectLocationScene {...props} renderer={renderer} />;
   // The post office keeps its object room (with the Collect post control) when 3D is unavailable.
-  if (props.room.id === "post") return <ObjectLocationScene {...props} renderer={renderer} />;
+  if (props.room.id === "post" || props.room.id === "hall" || props.room.id === "garage") return <ObjectLocationScene {...props} renderer={renderer} />;
   if (props.room.id !== "bar" && !isWalkableShop(props.room.id)) return <ArcadeInterior {...props} />;
   return (
     <>
