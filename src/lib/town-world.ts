@@ -51,7 +51,7 @@ export const buildings = (house: number): B[] => {
     { x: 1.1, y: 2, w: 3, d: 4 },
     { x: 5.0, y: 26.45, w: 3.0, d: 2.9 },
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
-    { x: 28.05, y: 6.8, w: 3.8, d: 3.65 },
+    { x: 31.0, y: 6.8, w: 3.8, d: 3.65 },
   ] as const;
   const residences = sites.map((plot, tier) => ({
     facing: (tier === 3 ? "west" : "south") as "west" | "south", id: tier === house ? "home" : `residence-${tier}`,
