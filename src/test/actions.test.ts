@@ -111,11 +111,11 @@ describe("careers and promotion", () => {
     expect(result.message).toContain("work XP");
   });
 
-  it("applying for a new career transfers a quarter of work experience", () => {
+  it("applying for a new career does not transfer work experience", () => {
     const state = base({ career: 0, job: 2, xp: 40 });
     const result = runAction(state, applyAction(3), fixed(0));
     if (!result.ok) throw new Error("expected success");
-    expect(result.next).toMatchObject({ career: 3, job: 0, xp: 10 });
+    expect(result.next).toMatchObject({ career: 3, job: 0, xp: 0, careerXp0: 40 });
     expect(result.message).toContain("Hired as Apprentice");
   });
 
