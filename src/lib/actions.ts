@@ -1,5 +1,6 @@
 import { requiresMainsPower } from "@/lib/home-zones";
 import { CAREERS, missingRequirements, nextRole, shiftReward } from "@/lib/careers";
+import { saveCareer, trackBest, trackXp } from "@/lib/career-history";
 import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, LUXURY_FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
@@ -784,7 +785,7 @@ export function shiftAction(s: GameState): ActionDef {
       if (st.employed === 0) return "Not employed. Apply for a job first.";
       const r = shiftReward(st);
       return {
-        patch: { money: st.money + r.money, xp: st.xp + r.xp, karma: st.karma + r.karma },
+        patch: { money: st.money + r.money, xp: st.xp + r.xp, [`careerXp${st.career}`]: st.xp + r.xp, karma: st.karma + r.karma },
         message: `Earned ${r.money} as ${r.role}. +4 work XP.`,
       };
     },
@@ -804,7 +805,7 @@ export const PROMOTE: ActionDef = {
     return missing.length
       ? `Promotion requires: ${missing.join(", ")}.`
       : {
-          patch: { job: s.job + 1 },
+          patch: { job: s.job + 1, [`careerBest${s.career}`]: Math.max(s.job + 1, trackBest(s, s.career)) },
           message: `Promoted to ${upcoming.name}! New wage ${upcoming.pay}/hour.`,
         };
   },
@@ -828,8 +829,8 @@ export function applyAction(index: number): ActionDef {
       if (!field) return "No such vacancy.";
       if (s.employed !== 0) return `Already employed at ${CAREERS[s.career]?.name ?? "another workplace"}. Resign before applying.`;
       return {
-        patch: { career: index, employed: 1, job: 0, xp: Math.floor(s.xp / 4) },
-        message: `Hired as ${entry?.name ?? field.name}! Some experience transferred.`,
+        patch: { ...saveCareer(s), career: index, employed: 1, job: 0, xp: trackXp(s, index) },
+        message: `Hired as ${entry?.name ?? field.name}! Your prior ${field.name} work experience is preserved.`,
       };
     },
   };
