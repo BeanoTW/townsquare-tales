@@ -1,6 +1,5 @@
 import type { GameState } from "@/lib/game-state";
 import type { ActionDef } from "@/lib/actions";
-import { criminalMilestones } from "@/lib/underworld";
 
 /** Hidden reputation: players learn the crew's expectations through dialogue, not meters. */
 export function gangAccess(s:GameState): "outsider"|"initiation"|"probation"|"trusted" {
