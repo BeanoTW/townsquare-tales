@@ -11,6 +11,7 @@ import {
 } from "@/components/town3d/textures";
 import { cardboardTexture, corrugatedTexture } from "@/components/home3d/textures";
 import { DINER_CHIMNEY } from "@/components/town3d/screen";
+import { Castle } from "@/components/town3d/castle";
 
 type Colours = { wall: string; side: string; roof: string; sign: string };
 const colours = (b: B): Colours => ({ wall: townColor(b.wall), side: townColor(b.side), roof: townColor(b.roof), sign: townColor(b.sign) });
@@ -30,11 +31,12 @@ export function TownBuildings({ bs, house }: { bs: B[]; house: number }) {
 function Building({ b, house }: { b: B; house: number }) {
   const c = colours(b);
   switch (b.id) {
-    case "home": return house === 0 ? <Squat b={b} /> : house === 1 ? <Flats b={b} c={c} /> : house === 2 ? <House b={b} c={c} /> : <Mansion b={b} c={c} />;
+    case "home": return house === 0 ? <Squat b={b} /> : house === 1 ? <Flats b={b} c={c} /> : house === 2 ? <House b={b} c={c} /> : house === 3 ? <Mansion b={b} c={c} /> : <Castle b={b} c={c} />;
     case "residence-0": return <Squat b={b} />;
     case "residence-1": return <Flats b={b} c={c} />;
     case "residence-2": return <House b={b} c={c} />;
     case "residence-3": return <Mansion b={b} c={c} />;
+    case "residence-4": return <Castle b={b} c={c} />;
     case "yard": return <SiteOffice b={b} c={c} />;
     case "gym": return <Gym b={b} c={c} />;
     case "school": return <School b={b} c={c} />;
