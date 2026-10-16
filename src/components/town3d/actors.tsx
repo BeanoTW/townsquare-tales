@@ -68,9 +68,27 @@ export function Player3D({ live, skating, head }: { live: TownLive; skating: boo
     <>
       <Person get={() => state.current} outfit={outfit} skin={head} />
       <group ref={deck}>
-        <mesh geometry={box} scale={[0.13, 0.02, 0.44]} material={deckMat} castShadow />
-        {[[-0.05, 0.15], [0.05, 0.15], [-0.05, -0.15], [0.05, -0.15]].map(([x, z], i) => (
-          <mesh key={i} geometry={cyl} position={[x!, -0.025, z!]} rotation={[0, 0, Math.PI / 2]} scale={[0.022, 0.025, 0.022]} material={mat("#e9e3d0", { rough: 0.4 })} />
+        <mesh geometry={box} scale={[0.13, 0.018, 0.38]} material={deckMat} castShadow />
+        {/* Raised ends distinguish the long nose from the shorter kicktail. */}
+        <mesh geometry={box} position={[0, 0.013, -0.202]} rotation={[-0.2, 0, 0]}
+          scale={[0.123, 0.015, 0.085]} material={deckMat} castShadow />
+        <mesh geometry={box} position={[0, 0.012, 0.198]} rotation={[0.22, 0, 0]}
+          scale={[0.113, 0.015, 0.065]} material={deckMat} castShadow />
+        {[-0.14, 0.14].map(z => (
+          <group key={z}>
+            <mesh geometry={cyl} position={[0, -0.022, z]} rotation={[0, 0, Math.PI / 2]}
+              scale={[0.01, 0.155, 0.01]} material={mat("#879098", { metal: 0.65, rough: 0.35 })} />
+            {[-0.072, 0.072].map(x => (
+              <mesh key={x} geometry={cyl} position={[x, -0.032, z]}
+                rotation={[0, 0, Math.PI / 2]} scale={[0.027, 0.024, 0.027]}
+                material={mat("#e9e3d0", { rough: 0.4 })} castShadow />
+            ))}
+          </group>
+        ))}
+        {/* Front truck marker makes travel direction readable. */}
+        {[-0.034, 0.034].map(x => (
+          <mesh key={x} geometry={box} position={[x, 0.011, -0.135]}
+            scale={[0.012, 0.004, 0.012]} material={mat("#facc15")} />
         ))}
       </group>
     </>
