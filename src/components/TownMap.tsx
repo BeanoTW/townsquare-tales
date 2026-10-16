@@ -130,7 +130,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
   const townHallReady = isTownHallBuilt({ day: state?.day ?? 1 });
-  const yardRelocated = Boolean(townHallReady && state?.companyCar && state?.drivingLicence);
+  const yardRelocated = townHallReady;
   const bs = useMemo(() => buildings(house, castleOwned, yardRelocated), [house, castleOwned, yardRelocated]);
   const solids = useMemo(() => townSolids(bs), [bs]);
   const { use3d } = useTown3d();

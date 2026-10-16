@@ -50,7 +50,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   weapon: [0, 2], tillRobberyDay: [0, 100000],
   streetSearchDay: [0, 100000],
   laptop: [0, 1], marketShares: [0, 100000000],
-  luxuryFurniture: [0, 255], mailbox: [0, 1], mailReadMask: [0, 4095], familyReplyMask: [0, 2047], pendingReplyMask: [0, 2047], familyFirstReplyDay: [0, 100000],
+  luxuryFurniture: [0, 255], mailbox: [0, 1], mailReadMask: [0, 8191], familyReplyMask: [0, 2047], pendingReplyMask: [0, 2047], familyFirstReplyDay: [0, 100000],
   residentFavour:[0,4],residentFavourStage:[0,1],residentFavourDeadline:[0,2400030],residentFavourLastDay:[0,100000],
   streetNewsDay: [0, 100000],
   streetEncounterDay: [0, 100000],
