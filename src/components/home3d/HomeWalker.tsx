@@ -150,7 +150,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     <group visible={!firstPerson || showAvatar}><Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} heldL={props.left} heldR={props.right} /></group>
     {/* Capture a single finger so drag-to-walk continues even when the finger
         crosses a fixture. Pinch gestures are handled by the camera controls. */}
-    <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
+    {!firstPerson && <mesh position={[plan.size.w/2,0.041,plan.size.d/2]} rotation={[-Math.PI/2,0,0]}
       onPointerDown={e=>{
         if (handle.current.scene || dragPointer.current!==null || !e.isPrimary) return;
         e.stopPropagation();
@@ -173,6 +173,6 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
       }}>
       <planeGeometry args={[plan.size.w,plan.size.d]}/>
       <meshBasicMaterial transparent opacity={0} depthWrite={false}/>
-    </mesh>
+    </mesh>}
   </>;
 }
