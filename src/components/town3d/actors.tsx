@@ -262,6 +262,13 @@ export function Gang() {
   );
 }
 
+/** After moving out, a new rough sleeper claims the original cardboard box. */
+export function BoxSquatter({ visible }: { visible: boolean }) {
+  const state = fixed(2.25, 6.35, 165, "sitting");
+  return <Person get={() => visible ? state : null} outfit="#514a3d" skin="#b99b7d"
+    hat="#746e53" hatKind="beanie" />;
+}
+
 export function ParkKid({ present }: { present: boolean }) {
   const s = fixed(PARK_KID_SPOT.x, PARK_KID_SPOT.y + 0.02, 180, "sitting");
   return <Person get={() => (present ? s : null)} outfit="#292633" skin="#dbb38b" hat="#3f6a8c" hatKind="cap" />;
