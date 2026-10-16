@@ -105,6 +105,53 @@ export function TownGround({ bs }: { bs: B[] }) {
       <Flat x={0} z={30.25} w={N} d={2.6} y={0.021} c="#ecd49f" rough={0.95} />
       <Flat x={0} z={32.85} w={N} d={0.8} y={0.023} c="#8ecfd0" rough={0.32} />
       <Flat x={0} z={33.65} w={N} d={2.35} y={0.023} c="#397fa4" rough={0.16} />
+      {/* Deterministic shoreline detail: simple meshes rather than expensive particles. */}
+      {Array.from({ length: 18 }, (_, i) => (
+        <Flat key={`foam-${i}`} x={i * 2.05} z={32.81 + Math.sin(i * 1.7) * 0.13}
+          w={1.3 + (i % 3) * 0.19} d={0.055} y={0.029}
+          c="#f3f6df" rough={0.5} />
+      ))}
+      {Array.from({ length: 32 }, (_, i) => {
+        const x = 0.55 + (i * 7.39) % 35;
+        const z = 30.65 + (i * 1.31) % 1.85;
+        return <Disc key={`shell-${i}`} x={x} z={z} rx={0.045 + i % 3 * 0.012}
+          rz={0.025} y={0.026} c={i % 3 ? "#eee2cb" : "#afaa96"} />;
+      })}
+      {[3.3, 10.8, 21.2, 31.5].map((x, i) => (
+        <group key={`drift-${i}`}>
+          <Round s={[0.55, 0.11, 0.13]} p={[x, 0.08, 31.2 + (i % 2) * 0.6]}
+            r={[0, i * 0.5, 0]} c="#a38b67" rad={0.04} />
+        </group>
+      ))}
+      {/* Low-poly promenade benches, bins and sea-grass tufts. */}
+      {[5.5, 17, 28.5].map(x => (
+        <group key={`bench-${x}`}>
+          <Box s={[0.8, 0.055, 0.23]} p={[x, 0.22, 29.84]} c="#98734d" />
+          <Box s={[0.8, 0.24, 0.05]} p={[x, 0.37, 29.69]} c="#98734d" />
+          {[-0.3, 0.3].map(dx => <Box key={dx} s={[0.05, 0.2, 0.05]} p={[x + dx, 0.1, 29.85]} c="#53595b" />)}
+          <Cyl rad={0.11} h={0.25} p={[x + 0.85, 0.15, 29.86]} c="#4c6972" />
+        </group>
+      ))}
+      {Array.from({ length: 22 }, (_, i) => {
+        const x = 0.6 + (i * 5.43) % 35;
+        return <group key={`dune-${i}`}>
+          {[-0.08, 0, 0.08].map((dx, j) =>
+            <Cone key={j} rad={0.04} h={0.18 + j * 0.035}
+              p={[x + dx, 0.11, 30.43 + (i % 3) * 0.13]} c="#84986b" />)}
+        </group>;
+      })}
+      {/* Starter district: scattered rough ground; estate: maintained shrubs and hedge. */}
+      {Array.from({ length: 12 }, (_, i) => (
+        <Disc key={`rough-${i}`} x={0.4 + (i * 2.71) % 7.8}
+          z={0.5 + (i * 1.81) % 5.8} rx={0.22 + (i % 3) * 0.08}
+          rz={0.13} y={0.003} c={i % 2 ? "#859368" : "#9b967c"} />
+      ))}
+      {Array.from({ length: 14 }, (_, i) => {
+        const x = 30.5 + (i % 7) * 0.73;
+        const z = i < 7 ? 4.85 : 10.85;
+        return <Round key={`estate-hedge-${i}`} s={[0.68, 0.32, 0.28]}
+          p={[x, 0.16, z]} c="#3d7043" rad={0.12} />;
+      })}
       <Flat x={0} z={0} w={8.8} d={7.2} y={0.001} c={C.lawn} map={grass} per={1.4} />
       <Flat x={17} z={0.9} w={5.0} d={5.9} y={0.0015} c={C.parkLawn} map={grass} per={1.4} />
       {pavementRects().map((r, i) => <Flat key={"pv" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.004 + i * 0.0002} c={C.pavement} map={paving} per={0.5} />)}
