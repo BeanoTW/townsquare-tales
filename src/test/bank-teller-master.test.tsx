@@ -19,8 +19,8 @@ describe("bank teller master services",()=>{
     expect(within(dialog).getByRole("button",{name:/Deposit \$50/i})).toBeTruthy();
     expect(within(dialog).getByRole("button",{name:/Withdraw \$50/i})).toBeTruthy();
     fireEvent.click(within(dialog).getByRole("button",{name:/Apply for loan/i}));
-    expect(within(dialog).getByRole("button",{name:/Borrow 250/i})).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("button",{name:/Borrow 250/i}));
+    expect(within(dialog).getByRole("button",{name:/^Borrow 250\b/i})).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button",{name:/^Borrow 250\b/i}));
     expect(onRun).toHaveBeenCalledTimes(1);
     fireEvent.click(within(dialog).getByRole("button",{name:/My accounts/i}));
     expect(within(dialog).getByText(/0.1% interest each night/i)).toBeTruthy();
