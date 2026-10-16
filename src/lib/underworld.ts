@@ -67,3 +67,23 @@ export function pawnErrand(): ActionDef {
     message:'You deliver an unmarked parcel and return without questions. Vince counts your share. "You learn quickly."'};
  }};
 }
+
+/** The found car is a separate asset: restoring it does not grant a company car or driving licence. */
+export function repairWreck(): ActionDef {
+ return {id:"repair-old-wreck",label:"Restore the old wreck",hours:2,energy:12,
+ resolve:s=>{
+  if(!s.abandonedCar)return "You have not claimed the wreck.";
+  const stage=s.wreckRepairs??0;
+  if(stage>=3)return "The old wreck is already roadworthy.";
+  const costs=[120,210,300];
+  const price=costs[stage]!;
+  if(s.money<price)return "Repairs need $"+price+".";
+  const descriptions=[
+   "You replace the ruined tyres and tidy the cabin.",
+   "You repair the brakes and steering.",
+   "You finish the engine work and safety inspection. The old wreck is finally roadworthy."
+  ];
+  return {patch:{money:s.money-price,wreckRepairs:stage+1},message:descriptions[stage]!};
+ }};
+}
+export const wreckRoadworthy=(s:GameState)=>Boolean(s.abandonedCar && (s.wreckRepairs??0)>=3);
