@@ -32,7 +32,7 @@ import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
-import { gangCarLesson, pawnIntroductionAction, attemptHotwire } from "@/lib/underworld";
+import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
 import { hasEquippedBoard, startSession } from "@/lib/minigames";
@@ -302,6 +302,7 @@ function Game() {
           return outcome.ok;
         }}
         onDrive={destination => perform(driveAction(destination))}
+        onWreckRepair={() => perform(repairWreck())}
         onHotwire={() => { if (s.abandonedCar || (s.criminalTrust??0)<10 || s.hotwireLastDay===s.day || s.energy<8 || s.hour>23.5) { notify("You cannot try the wreck right now.",false); return false; } setWreckGame(true); return true; }}
         movementMode={movementMode}
         hour={s.hour}
