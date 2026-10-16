@@ -13,9 +13,7 @@ import { Bedsides, BlackjackTable, Figure, MansionDecor, SlotBank } from "./mans
 import { BarCounter, BarDecor, DanceFloor, Dartboard } from "./bar";
 import { CasinoDecor, DiceTable } from "./casino";
 import { GymDecor, PowerRack, Treadmills } from "./gym";
-import { PawnCounter, PawnCuriosities, PawnDecor } from "./pawn";
-import { PoliceDesk, WantedBoard, PoliceDecor } from "./police";
-import { RemainingVenueFixture, RemainingVenueDecor } from "./remaining-venues";
+import { TownVenueDecor, TownVenueFixture, hasTownVenue } from "./venues";
 import { VenueVisualPolish } from "./venue-visual-polish";
 import type { CameraControls, Scene3DProps } from "./types";
 import { HomeWalker, type WalkerHandle } from "./HomeWalker";
@@ -82,6 +80,7 @@ function Lights({ plan, day }: { plan: HomePlan; day: number }) {
 }
 
 function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan; luxury: boolean; hasBed: boolean }) {
+  if (hasTownVenue(plan.kind)) return <TownVenueFixture kind={plan.kind} id={slot.id} />;
   const scrap = plan.kind === "squat" && !luxury;
   switch (slot.id) {
     case "bed":
@@ -120,20 +119,17 @@ function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan;
       return <DanceFloor />;
     case "dartboard":
       return <Dartboard />;
-    case "front-desk": return <PoliceDesk />;
-    case "wanted": return <WantedBoard />;
-    case "pawn-counter": return <PawnCounter />;
-    case "curiosities": return <PawnCuriosities />;
     case "rack":
       return <PowerRack />;
     case "track":
       return <Treadmills />;
     default:
-      return plan.kind === "studio" || plan.kind === "suburban" || plan.kind === "mansion" || plan.kind === "squat" ? null : <RemainingVenueFixture id={slot.id} venue={plan.kind} />;
+      return null;
   }
 }
 
 function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) {
+  if (hasTownVenue(plan.kind)) return <TownVenueDecor kind={plan.kind} />;
   switch (plan.kind) {
     case "squat":
       return <SquatDecor owned={owned} />;
@@ -147,12 +143,8 @@ function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) 
       return <><BarDecor /><VenueVisualPolish venue="bar"/></>;
     case "gym":
       return <><GymDecor /><VenueVisualPolish venue="gym"/></>;
-    case "pawn":
-      return <PawnDecor />;
-    case "police":
-      return <PoliceDecor />;
     default:
-      return plan.kind === "studio" ? <StudioDecor /> : <RemainingVenueDecor venue={plan.kind} />;
+      return plan.kind === "studio" ? <StudioDecor /> : null;
   }
 }
 

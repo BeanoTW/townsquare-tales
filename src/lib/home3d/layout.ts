@@ -33,7 +33,7 @@ export type WallSpec = {
   colour: string;
   openings: Opening[];
 };
-export type FloorKind = "laminate" | "carpet" | "tile" | "parquet" | "marble" | "rubber" | "concrete" | "boards" | "dirt" | "lawn" | "checker" | "pattern";
+export type FloorKind = "laminate" | "carpet" | "tile" | "parquet" | "marble" | "rubber" | "concrete" | "boards" | "dirt" | "lawn" | "checker" | "chequer" | "pattern";
 export type FloorSpec = { zone: PlanZone; rect: Rect; kind: FloorKind; colour: string };
 
 export type PropId = "blackjack" | "slots" | "high-dice" | "bar-counter" | "dance-floor" | "dartboard" | "rack" | "track" | "pawn-counter" | "curiosities" | "front-desk" | "wanted" | "site" | "trades-board" | "foreman" | "library" | "classroom" | "admissions" | "workstation" | "vacancies" | "manager" | "teller" | "atm" | "vault" | "loans" | "shelves" | "back-office" | "shop-board" | "checkout" | "kitchen" | "hiring" | "booth" | "counter" | "sofa-display" | "bed-display" | "catalogue" | "departures" | "ticket-hatch" | "treatment-bed" | "cabinet";
