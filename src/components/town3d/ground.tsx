@@ -39,7 +39,7 @@ export function kerbSegments(roads: readonly Rect[] = ROADS): Kerb[] {
     for (const x of [r.x, r.x + r.w]) {
       if (x <= edge || x >= N - edge) continue;
       const cuts = others.filter((o) => o.x <= x + edge && o.x + o.w >= x - edge).map((o) => [o.y, o.y + o.d] as [number, number]);
-      for (const [a, b] of subtract(r.y, r.y + r.d, cuts)) out.push({ x, z: a, len: b - a, axis: "z" });
+      for (const [a, b] of subtract(r.y, r.y + r.d, x > 29.45 && r.x > 22 && r.y < 8 ? [...cuts, [6.67, 7.73]] : cuts)) out.push({ x, z: a, len: b - a, axis: "z" });
     }
     for (const z of [r.y, r.y + r.d]) {
       if (z <= edge || z >= N - edge) continue;
