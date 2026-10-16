@@ -60,6 +60,89 @@ function Spoon() {
   );
 }
 
+/**
+ * Keeps a prop level while the arm holds it out at `arm` radians (the act's rotation.x): undoes the
+ * arm's tilt and lifts the prop `up` along world-up so it rests on the hands rather than through them.
+ */
+function Level({ arm, up = 0, x = -0.11, children }: { arm: number; up?: number; x?: number; children: ReactNode }) {
+  return (
+    <group position={[x, Math.cos(arm) * up, -Math.sin(arm) * up]} rotation={[-arm, 0, 0]}>
+      {children}
+    </group>
+  );
+}
+const CARD = "#b88b5f";
+function Carton({ w = 0.22, h = 0.14, d = 0.16, c = CARD, tape = "#d9c7a0" }: { w?: number; h?: number; d?: number; c?: string; tape?: string }) {
+  return (
+    <>
+      <Box s={[w, h, d]} c={c} o={{ rough: 0.9 }} />
+      <Box s={[w + 0.002, 0.004, 0.03]} p={[0, h / 2, 0]} c={tape} shadow={false} />
+    </>
+  );
+}
+function Note() {
+  return <Box s={[0.075, 0.004, 0.038]} p={[0, -0.01, 0.025]} c="#7fb36a" shadow={false} />;
+}
+function Pen() {
+  return <Cyl rad={0.004} h={0.06} p={[0, -0.03, 0.01]} c="#2b3a67" shadow={false} />;
+}
+function Snack() {
+  return <Box s={[0.06, 0.075, 0.018]} p={[0, -0.035, 0.012]} c="#e0b84a" shadow={false} />;
+}
+function Fork() {
+  return <Cyl rad={0.004} h={0.07} p={[0, -0.035, 0.01]} c="#c9ccd2" o={STEEL} shadow={false} />;
+}
+function Spatula() {
+  return (
+    <Group p={[0, -0.05, 0]}>
+      <Cyl rad={0.006} h={0.1} c="#2b2a2e" shadow={false} />
+      <Box s={[0.05, 0.05, 0.004]} p={[0, -0.07, 0]} c="#c9ccd2" o={STEEL} shadow={false} />
+    </Group>
+  );
+}
+function Shovel() {
+  return (
+    <Group p={[0, -0.22, 0]}>
+      <Cyl rad={0.008} h={0.48} c="#8a6a45" shadow={false} />
+      <Box s={[0.1, 0.1, 0.01]} p={[0, -0.28, 0.01]} c="#5d6268" o={STEEL} />
+    </Group>
+  );
+}
+function Tray() {
+  return (
+    <Level arm={-1.5} up={0.02} x={0}>
+      <Cyl rad={0.1} h={0.006} c="#c9ccd2" o={STEEL} shadow={false} />
+      <Cyl rad={0.018} h={0.04} p={[0.04, 0.022, 0.02]} c="#f4f1ea" shadow={false} />
+      <Cyl rad={0.018} h={0.04} p={[-0.035, 0.022, -0.02]} c="#f4f1ea" shadow={false} />
+      <Round s={[0.06, 0.02, 0.05]} p={[-0.02, 0.014, 0.045]} c="#d9a24a" rad={0.008} shadow={false} />
+    </Level>
+  );
+}
+function Pint() {
+  return (
+    <Level arm={-1.1} up={0.03} x={0}>
+      <Cyl rad={0.032} h={0.085} c="#d99a2b" o={{ opacity: 0.85, rough: 0.15 }} shadow={false} />
+      <Cyl rad={0.033} h={0.018} p={[0, 0.05, 0]} c="#f6efe0" shadow={false} />
+    </Level>
+  );
+}
+function Dice() {
+  return (
+    <Group p={[0, -0.02, 0.02]}>
+      <Box s={[0.022, 0.022, 0.022]} r={[0.4, 0.3, 0]} c="#f4f1ea" shadow={false} />
+      <Box s={[0.022, 0.022, 0.022]} p={[0.025, 0.005, 0.005]} r={[0.1, 0.7, 0.2]} c="#c0392b" shadow={false} />
+    </Group>
+  );
+}
+function MoneyBag() {
+  return (
+    <Group p={[0, -0.07, 0]}>
+      <Round s={[0.1, 0.1, 0.08]} c="#9c7650" rad={0.035} />
+      <Box s={[0.03, 0.03, 0.002]} p={[0, 0, 0.041]} c="#e0b84a" shadow={false} />
+    </Group>
+  );
+}
+
 /** What each hand grips for a held prop. */
 export function heldProps(held: HeldProp | null): { left?: ReactNode; right?: ReactNode } {
   switch (held) {
@@ -68,6 +151,23 @@ export function heldProps(held: HeldProp | null): { left?: ReactNode; right?: Re
     case "book": return { right: <Book /> };
     case "controller": return { right: <Controller /> };
     case "spoon": return { right: <Spoon /> };
+    case "cash": return { right: <Note /> };
+    case "pen": return { right: <Pen /> };
+    case "snack": return { right: <Snack /> };
+    case "fork": return { right: <Fork /> };
+    case "spatula": return { right: <Spatula /> };
+    case "shovel": return { right: <Shovel /> };
+    case "tray": return { left: <Tray /> };
+    case "pint": return { right: <Pint /> };
+    case "dice": return { right: <Dice /> };
+    case "bag": return { right: <MoneyBag /> };
+    case "box": return { right: <Level arm={-1.25} up={0.08}><Carton /></Level> };
+    case "parcel": return { right: <Level arm={-1.25} up={0.06}><Carton w={0.18} h={0.1} d={0.13} c="#c9a77c" tape="#6a8fc9" /></Level> };
+    case "crate": return { right: <Level arm={-1.25} up={0.07}><Carton w={0.22} h={0.1} d={0.15} c="#4f8a3e" tape="#e05a4f" /></Level> };
+    case "toolbox": return { right: <Level arm={-1.25} up={0.06}><Carton w={0.2} h={0.09} d={0.1} c="#c0392b" tape="#2b2a2e" /></Level> };
+    case "bricks": return { right: <Level arm={-1.25} up={0.07}><Carton w={0.14} h={0.12} d={0.08} c="#a9553a" tape="#cbbfa8" /></Level> };
+    case "trainers": return { right: <Level arm={-1.2} up={0.05}><Carton w={0.18} h={0.08} d={0.11} c="#e07a3a" tape="#f4f1ea" /></Level> };
+    case "clock": return { right: <Level arm={-1.2} up={0.05}><Cyl rad={0.045} h={0.03} r={[Math.PI / 2, 0, 0]} c="#c0392b" /><Cyl rad={0.036} h={0.032} r={[Math.PI / 2, 0, 0]} c="#f4f1ea" shadow={false} /></Level> };
     default: return {};
   }
 }

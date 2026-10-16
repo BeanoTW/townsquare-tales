@@ -164,6 +164,7 @@ type Shared = {
   walker: MutableRefObject<WalkerHandle>;
   cine: MutableRefObject<Cine>;
   overlay: MutableRefObject<CineOverlay>;
+  cast: MutableRefObject<Map<string, THREE.Group>>;
 };
 
 function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zone: PlanZone; shared: Shared }) {
@@ -413,7 +414,10 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
       ))}
       <Decor plan={plan} owned={owned} />
       {plan.npcs?.map((n) => (
-        <Figure key={n.id} npc={n} />
+        // Each NPC stands in its own pivot so a cutscene can turn, bob, hop or hide them.
+        <group key={n.id} position={[n.x, 0, n.z]} ref={(g) => { if (g) shared.cast.current.set(n.id, g); else shared.cast.current.delete(n.id); }}>
+          <Figure npc={{ ...n, x: 0, z: 0 }} />
+        </group>
       ))}
       {slots.map((s) => (
         <group
@@ -442,7 +446,7 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
         </group>
       ))}
       {(!isFirstPerson(plan) || p.cutscene) && <HomeWalker key={p.cutscene ? "cut" : "fp"} head={p.playerHead ?? "rgb(255, 244, 214)"} plan={plan} visibleIds={p.visibleIds} handle={shared.walker} onArrive={p.onSelect} held={p.cutscene?.held ?? null} />}
-      {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} onDone={() => p.onCutsceneDone?.()} />}
+      {p.cutscene && <Director key={p.cutscene.key} cut={p.cutscene} plan={plan} walker={shared.walker} cine={shared.cine} overlay={shared.overlay} cast={shared.cast} onDone={() => p.onCutsceneDone?.()} />}
       {sel && <Ring slot={sel} />}
     </>
   );
@@ -458,7 +462,8 @@ export default function HomeScene3D(props: HomeScene3DProps) {
   const walker = useRef<WalkerHandle>({position:{x:props.plan.spawn.entry[0],z:props.plan.spawn.entry[1]},moving:false});
   const cine = useRef<Cine>({ active: false, tx: 0, tz: 0, dist: 0, el: 0 });
   const overlay = useRef<CineOverlay>({ barTop: null, barBottom: null, title: null, gains: null, tint: null });
-  const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged, walker, cine, overlay }), [props.controls]);
+  const cast = useRef(new Map<string, THREE.Group>());
+  const shared: Shared = useMemo(() => ({ controls: props.controls, labelEls, walls, hover, dragged, walker, cine, overlay, cast }), [props.controls]);
   const cut = props.cutscene ?? null;
   const day = daylight(props.hour);
   const { plan } = props;
@@ -513,7 +518,7 @@ export default function HomeScene3D(props: HomeScene3DProps) {
           data-cutscene={cut.act}
           data-cutscene-action={cut.actionId}
           role="status"
-          aria-label={`${cut.title}${cut.caption ? `. ${cut.caption}` : ""}${cut.gains.length ? `. ${cut.gains.join(", ")}` : ""}`}
+          aria-label={[cut.title, cut.caption, ...cut.gains, ...cut.losses].filter(Boolean).join(". ")}
           onPointerDown={() => window.dispatchEvent(new Event(SKIP_EVENT))}
         >
           <div ref={(el) => { overlay.current.tint = el; }} className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle at 50% 45%, #1b2550 0%, #070b1c 80%)", opacity: 0 }} />
@@ -523,6 +528,9 @@ export default function HomeScene3D(props: HomeScene3DProps) {
             {cut.caption && <span className="whitespace-nowrap rounded-full border-2 border-[#111014] bg-[#ffd24a] px-3 py-0.5 text-[11px] font-black tracking-wider text-[#111014] shadow-md">{cut.caption}</span>}
             {cut.gains.map((g) => (
               <span key={g} className="whitespace-nowrap rounded-full border-2 border-[#111014] bg-card px-2.5 py-0.5 text-sm font-extrabold text-foreground shadow-md">{g}</span>
+            ))}
+            {cut.losses.map((g) => (
+              <span key={g} className="whitespace-nowrap rounded-full border-2 border-[#111014] bg-[#b5413a] px-2.5 py-0.5 text-sm font-extrabold text-[#fff4ea] shadow-md">{g}</span>
             ))}
           </div>
           <div ref={(el) => { overlay.current.title = el; }} className="pointer-events-none absolute inset-x-0 top-[2.4%] px-3 text-center text-xs font-black tracking-[0.22em] text-[#f6efe0] sm:text-base sm:tracking-[0.3em]" style={{ opacity: 0 }}>

@@ -1,5 +1,6 @@
 import type { GameState } from "@/lib/game-state";
 import type { HomePlan, Slot } from "@/lib/home3d/layout";
+import { venuePick } from "@/lib/cutscene-venues";
 
 /**
  * In-world cutscenes: when an action succeeds inside a 3D room, the player acts it out at the
@@ -10,12 +11,23 @@ import type { HomePlan, Slot } from "@/lib/home3d/layout";
 export type ActName =
   | "bench" | "squat" | "deadlift" | "press" | "run"
   | "sleep" | "cook" | "watch" | "laugh" | "jacks" | "game"
-  | "type" | "read" | "relax";
+  | "type" | "read" | "relax"
+  // phase 2: venues
+  | "scan" | "pay" | "collect" | "atm" | "sign" | "munch" | "eat" | "flip" | "serve" | "shovel" | "carry"
+  | "write" | "heal" | "board" | "sell" | "payfine" | "drink" | "dance" | "dice-win" | "dice-lose"
+  | "promote" | "apply" | "resign" | "bounce" | "flop" | "rob" | "caught";
 
-export type HeldProp = "barbell" | "dumbbells" | "book" | "controller" | "spoon";
+export type HeldProp =
+  | "barbell" | "dumbbells" | "book" | "controller" | "spoon"
+  | "cash" | "pen" | "snack" | "fork" | "spatula" | "tray" | "shovel" | "bricks" | "box" | "parcel" | "crate"
+  | "toolbox" | "trainers" | "clock" | "pint" | "dice" | "bag";
+
+/** How a nearby member of staff or regular reacts. `at` delays the cue (seconds into the scene). */
+export type CastCue = { id: string; cue: "hide" | "face" | "nod" | "cheer"; at?: number };
 export type WorldProp = { kind: "blanket"; w: number; d: number; x: number; z: number; y: number };
 
-export type Mark = { x: number; z: number; face: number; lift: number };
+/** Fixture-local by default; `abs` marks are world metres (room seats). */
+export type Mark = { x: number; z: number; face: number; lift: number; abs?: boolean };
 
 export type Cutscene = {
   /** Unique per play, so the same action twice restarts the scene. */
@@ -31,12 +43,16 @@ export type Cutscene = {
   /** Extra beat for milestones or a tired player. */
   caption: string | null;
   gains: string[];
+  /** Money lost, shown in red for fines, purchases and bad rolls. */
+  losses: string[];
+  cast: CastCue[];
   /** Seconds. */
   duration: number;
   short: boolean;
   tired: boolean;
   night: boolean;
-  frame: { dist: number; el: number };
+  /** Where the camera looks (world); leads the actor in scenes where they walk or run off their mark. */
+  frame: { dist: number; el: number; tx: number; tz: number };
 };
 
 /** Offered every successful action; returns true when the current 3D room will act it out in-world. */
@@ -52,16 +68,28 @@ export type CutsceneRequest = {
 };
 
 type Variant = "std" | "lux" | "scrap" | "bare";
-type Pick = { slotId: string; act: ActName; mark: Mark; held: HeldProp | null; world?: (slot: Slot) => WorldProp[] };
+export type Pick = {
+  slotId: string; act: ActName; mark: Mark; held: HeldProp | null; world?: (slot: Slot) => WorldProp[];
+  /** Overrides the act's default title; `caption` is an outcome beat (wins, promotions, getting caught). */
+  title?: string; caption?: string | null; cast?: CastCue[];
+};
 
 const TITLES: Record<ActName, string> = {
   bench: "BENCH DAY", squat: "NEVER SKIP LEG DAY", deadlift: "PICK IT UP, PUT IT DOWN", press: "FEEL THE BURN",
   run: "ONE MORE KILOMETRE", sleep: "LIGHTS OUT", cook: "CHEF'S SPECIAL", watch: "CHANNEL SURFING",
   laugh: "LAUGH TRACK", jacks: "PUMP TV", game: "PLAYER ONE", type: "BRAIN POWER", read: "PAGE TURNER", relax: "FEET UP",
+  scan: "ON THE TILL", pay: "CHING CHING!", collect: "CASH MONEY", atm: "CASH MONEY", sign: "SIGN HERE", munch: "SNACK ATTACK",
+  eat: "GOOD EATS", flip: "ORDER UP!", serve: "LUNCH RUSH", shovel: "BREAKING GROUND", carry: "HEAVY LIFTING", write: "CLASS IN SESSION",
+  heal: "PATCHED UP", board: "ON THE MOVE", sell: "CASH IN HAND", payfine: "DEBT TO SOCIETY", drink: "BOTTOMS UP", dance: "MAKING FRIENDS",
+  "dice-win": "WINNER WINNER", "dice-lose": "THE HOUSE ALWAYS WINS", promote: "MOVING UP", apply: "NEW START", resign: "CLEARING OUT",
+  bounce: "TEST DRIVE", flop: "SWEET DREAMS", rob: "GRAB AND GO", caught: "NOT TODAY",
 };
 
-const STRENGTH: ActName[] = ["bench", "squat", "deadlift", "press", "jacks"];
-const BRAINS: ActName[] = ["type", "read"];
+const STRENGTH: ActName[] = ["bench", "squat", "deadlift", "press", "jacks", "shovel", "carry"];
+const BRAINS: ActName[] = ["type", "read", "write"];
+const LYING: ActName[] = ["sleep", "bench", "heal", "flop"];
+/** Acts that leave the mark: [metres travelled, whether they turn round first]. */
+const TRAVEL: Partial<Record<ActName, [number, boolean]>> = { rob: [1.3, true], caught: [0.95, true], carry: [0.45, false], resign: [0.4, false] };
 
 /* Marks are fixture-local: +z faces the customer, `face` 0 looks out along +z. Lift is the seat/mattress height the rig rests on. */
 const SIT = { sofa: { std: 0.31, lux: 0.48, scrap: 0.21 }, chair: { std: 0.23, lux: 0.3, scrap: 0.1 } };
@@ -75,7 +103,7 @@ function blanket(v: Variant, squat: boolean) {
 }
 
 /** The scene for an action, given which fixtures this room actually has. */
-function choose(actionId: string, plan: HomePlan, has: (id: string) => boolean, variant: (id: string) => Variant, round: number): Pick | null {
+function choose(actionId: string, plan: HomePlan, has: (id: string) => boolean, variant: (id: string) => Variant, round: number, req: CutsceneRequest): Pick | null {
   const squatHome = plan.kind === "squat";
   if (plan.kind === "gym") {
     if (actionId === "lift" && has("rack")) {
@@ -87,7 +115,7 @@ function choose(actionId: string, plan: HomePlan, has: (id: string) => boolean, 
     if (actionId === "jog" && has("track")) return { slotId: "track", act: "run", mark: { x: 1.35, z: 0.2, face: Math.PI, lift: 0.29 }, held: null };
     return null;
   }
-  if (plan.tier >= 10) return null; // other venues come in a later pass
+  if (plan.tier >= 10) return venuePick(actionId, plan, { before: req.before, after: req.after, round, has });
   if (actionId === "home-workout" && has("weights")) {
     const v = variant("weights");
     const bench: Record<string, Mark> = {
@@ -153,8 +181,17 @@ export function toWorld(slot: Slot, lx: number, lz: number) {
   return { x: slot.x + lx * c + lz * s, z: slot.z - lx * s + lz * c };
 }
 
+/** Floating chips: money reads as +$n, other stats as "Strength +2"; job and career moves are left to the caption. */
+const chip = (c: string) => c.startsWith("Cash: ") ? c.replace(/^Cash: ([+-])/, "$1$") : c.replace(": ", " ");
 export const gainsOf = (changes: string[]) =>
-  changes.filter((c) => /\+\$?\d/.test(c) && !/^Time|hour/i.test(c)).slice(0, 3).map((c) => c.replace(": ", " "));
+  changes.filter((c) => /: \+\$?\d/.test(c) && !/^(Job|Career|Heat|Time)/.test(c)).slice(0, 3).map(chip);
+export const lossesOf = (changes: string[]) => changes.filter((c) => /^Cash: -\d/.test(c)).map(chip).map((c) => c.replace("-", "−"));
+
+function aim(at: { x: number; z: number }, heading: number, travel?: [number, boolean]) {
+  if (!travel) return { tx: at.x, tz: at.z };
+  const dir = heading + (travel[1] ? Math.PI : 0);
+  return { tx: at.x + Math.sin(dir) * travel[0], tz: at.z + Math.cos(dir) * travel[0] };
+}
 
 export function planCutscene(
   req: CutsceneRequest,
@@ -167,19 +204,21 @@ export function planCutscene(
     if (plan.kind === "squat" && !ctx.luxury[id]) return "scrap";
     return ctx.luxury[id] ? "lux" : "std";
   };
-  const pick = choose(req.actionId, plan, has, variant, ctx.plays.round(req.actionId));
+  const pick = choose(req.actionId, plan, has, variant, ctx.plays.round(req.actionId), req);
   if (!pick) return null;
   const slot = plan.slots.find((s) => s.id === pick.slotId)!;
-  const w = toWorld(slot, pick.mark.x, pick.mark.z);
+  const w = pick.mark.abs ? { x: pick.mark.x, z: pick.mark.z } : toWorld(slot, pick.mark.x, pick.mark.z);
   const heading = slot.rot + pick.mark.face;
   const short = ctx.plays.seenToday(req.actionId, req.before.day);
   const tired = req.after.energy < 15 && pick.act !== "sleep";
-  let caption: string | null = null;
-  if (STRENGTH.includes(pick.act) && Math.floor(req.after.str / 10) > Math.floor(req.before.str / 10)) caption = `NEW PERSONAL BEST · STRENGTH ${req.after.str}`;
-  else if (BRAINS.includes(pick.act) && Math.floor(req.after.int / 10) > Math.floor(req.before.int / 10)) caption = `BRAIN WAVE · INTELLIGENCE ${req.after.int}`;
-  else if (tired) caption = "RUNNING ON EMPTY";
+  // Outcome beats (wins, promotions, getting caught) outrank milestones, which outrank tiredness.
+  const milestone =
+    STRENGTH.includes(pick.act) && Math.floor(req.after.str / 10) > Math.floor(req.before.str / 10) ? `NEW PERSONAL BEST · STRENGTH ${req.after.str}`
+    : BRAINS.includes(pick.act) && Math.floor(req.after.int / 10) > Math.floor(req.before.int / 10) ? `BRAIN WAVE · INTELLIGENCE ${req.after.int}`
+    : null;
+  const caption = pick.caption ?? milestone ?? (tired ? "RUNNING ON EMPTY" : null);
   const key = ctx.plays.record(req.actionId, req.before.day);
-  const lying = pick.act === "sleep" || pick.act === "bench";
+  const lying = LYING.includes(pick.act);
   return {
     key,
     actionId: req.actionId,
@@ -190,13 +229,15 @@ export function planCutscene(
     lift: pick.mark.lift,
     held: pick.held,
     world: pick.world?.(slot) ?? [],
-    title: TITLES[pick.act],
+    title: pick.title ?? TITLES[pick.act],
     caption,
     gains: gainsOf(req.changes),
+    losses: lossesOf(req.changes),
+    cast: pick.cast ?? [],
     duration: ctx.reducedMotion ? 1.4 : short && !caption ? 1.7 : pick.act === "sleep" ? 4.4 : 3.6,
     short: short && !caption,
     tired,
     night: pick.act === "sleep",
-    frame: { dist: lying ? 5.0 : 5.6, el: lying ? 1.12 : 0.98 },
+    frame: { dist: lying ? 5.0 : 5.6, el: lying ? 1.12 : 0.98, ...aim(w, heading, TRAVEL[pick.act]) },
   };
 }
