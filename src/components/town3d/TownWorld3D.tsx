@@ -199,13 +199,20 @@ function CompletedTownHall() {
 }
 
 function CompanyCar({live, driving}: {live: TownLive; driving: boolean}) {
- const ref=useRef<THREE.Group>(null);
+ const ref = useRef<THREE.Group>(null);
+ const parked = useRef({x:30.1,y:22.1,angle:180});
+ // Dynamic actors must stay outside StaticBatch: it bakes mesh coordinates at mount.
+ // Keep the last driven position when exiting instead of snapping to the yard.
  useFrame(() => {
-  const g=ref.current;
-  if(!g)return;
-  const m=live.me.current;
-  g.position.set(driving?m.x:30.1,0,driving?m.y:22.1);
-  g.rotation.y=driving?Math.PI-m.skateAngle*Math.PI/180:0;
+  const group = ref.current;
+  if (!group) return;
+  if (driving) {
+   const player = live.me.current;
+   parked.current = {x:player.x,y:player.y,angle:player.skateAngle};
+  }
+  const car = parked.current;
+  group.position.set(car.x,0,car.y);
+  group.rotation.y = Math.PI - car.angle * Math.PI / 180;
  });
  return <group ref={ref} position={[30.1,0,22.1]}><Car colour="#788574" /></group>;
 }
@@ -248,8 +255,8 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         {townHallBuilt ? <CompletedTownHall /> : <ConstructionStatic />}
         {yardRelocated && <group position={[19.1,0,12.3]} scale={[0.7,1,0.7]}><ConstructionStatic /></group>}
         {yardRelocated && <EasternYardEquipment />}
-        {yardRelocated && companyCar && <CompanyCar live={live} driving={Boolean(driving)} /> }
       </StaticBatch>
+      {yardRelocated && companyCar && <CompanyCar live={live} driving={Boolean(driving)} />}
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
