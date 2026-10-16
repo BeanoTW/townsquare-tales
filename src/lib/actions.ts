@@ -273,10 +273,10 @@ export const LIFT_WEIGHTS: ActionDef = {
   hours: 2,
   energy: 20,
   cost: 5,
-  note: "+3 strength",
+  note: "+2 strength",
   resolve: (s) =>
     s.money >= 5
-      ? { patch: { money: s.money - 5, str: s.str + 3 }, message: "+3 strength. Swole." }
+      ? { patch: { money: s.money - 5, str: s.str + 2 }, message: "+2 strength. Swole." }
       : "Gym costs $5.",
 };
 export const JOG: ActionDef = {
@@ -330,10 +330,10 @@ export const BUY_ROUND: ActionDef = {
   hours: 2,
   energy: 10,
   cost: 15,
-  note: "+3 charm",
+  note: "+2 charm",
   resolve: (s) =>
     s.money >= 15
-      ? { patch: { money: s.money - 15, cha: s.cha + 3 }, message: "Everyone loves you. +3 charm" }
+      ? { patch: { money: s.money - 15, cha: s.cha + 2 }, message: "Everyone loves you. +2 charm" }
       : "Can't afford it.",
 };
 export const CHAT_UP: ActionDef = {
