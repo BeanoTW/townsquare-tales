@@ -1,3 +1,4 @@
+import { licenceTestAction, claimCompanyCarAction, companyCarEligible } from "@/lib/transport";
 import { CONTRACTS, constructionStatus, startContractAction } from "@/lib/construction-contracts";
 import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
@@ -317,8 +318,8 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "PROMOTE",
         hint: "Progress and promotions",
         box: { x: 312, y: 90, w: 96, h: 100 },
-        lines: (s) => [...promotionStatus(3, s),...constructionStatus(s)],
-        actions: s => [...promoteSpot(3)(s),...(!s.contractType ? CONTRACTS.map(job => startContractAction(job.id)) : [])],
+        lines: (s) => [...promotionStatus(3, s),...constructionStatus(s),...(companyCarEligible(s)?[s.companyCar?"Company car collected":"Old company car available · driving licence required"]:[])],
+        actions: s => [...promoteSpot(3)(s),...(!s.contractType ? CONTRACTS.map(job => startContractAction(job.id)) : []), ...(companyCarEligible(s) && !s.companyCar ? [claimCompanyCarAction()] : [])],
       },
     ],
   },
@@ -723,12 +724,12 @@ export const ROOMS: Record<PlaceId, Room> = {
       },
       {
         id: "ticket-hatch",
-        label: "Community jobs board",
+        label: "Jobs and driving licences",
         tag: "JOBS",
         hint: "Local noticeboard · side hustles",
         box: { x: 270, y: 110, w: 130, h: 80 },
-        lines: (s) => [`Daily side jobs completed: ${s.sideHustleDay===s.day ? s.sideHustlesToday??0 : 0}/3`, "Earn cash between shifts. Hustles take time and energy; skills affect payouts."],
-        actions: () => HUSTLES.map(h => hustleAction(h.id)),
+        lines: (s) => [`Daily side jobs completed: ${s.sideHustleDay===s.day ? s.sideHustlesToday??0 : 0}/3`, "Earn cash between shifts. Hustles take time and energy; skills affect payouts.", s.drivingLicence ? "Driving licence: valid" : "Driving test: $120 · 2h · requires 10 intelligence"],
+        actions: s => [...HUSTLES.map(h => hustleAction(h.id)), ...(s.drivingLicence ? [] : [licenceTestAction()])],
       },
     ],
   },
