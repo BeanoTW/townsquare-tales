@@ -107,6 +107,20 @@ export function TownGround({ bs }: { bs: B[] }) {
       {approachRects(bs).map((r, i) => <Flat key={"ap" + i} x={r.x} z={r.y} w={r.w} d={r.d} y={0.0065 + i * 0.0001} c={C.approach} map={paving} per={0.5} />)}
       {/* Park, pond and footbridge over the water. */}
       <Flat x={17} z={1.1} w={5.0} d={5.6} y={0.002} c={C.park} map={grass} per={1.2} />
+      {/* Recreation corner: the ramp, park grind rail and basketball court share one site. */}
+      <Flat x={20.05} z={1.25} w={1.85} d={2.5} y={0.008} c="#667d76" rough={0.92} />
+      {[1.25,3.75].map((z,i)=><Box key={"basket-line"+i} s={[1.85,0.012,0.025]} p={[20.975,0.018,z]} c="#f4e7bc" shadow={false}/>)}
+      {[20.06,21.89].map((x,i)=><Box key={"court-side"+i} s={[0.025,0.012,2.48]} p={[x,0.018,2.5]} c="#f4e7bc" shadow={false}/>)}
+      <Cyl rad={0.035} h={1.35} p={[21.25,0.675,1.40]} c="#343c40" o={{metal:0.65,rough:0.35}}/>
+      <Box s={[0.52,0.34,0.055]} p={[21.25,1.27,1.55]} c="#e9e9df"/>
+      <Box s={[0.42,0.02,0.045]} p={[21.25,1.045,1.72]} c="#d35b32" />
+      <mesh position={[21.25,1.045,1.87]} rotation={[-Math.PI/2,0,0]} castShadow>
+        <torusGeometry args={[0.14,0.012,6,18]}/>
+        <meshStandardMaterial color="#d65a30" metalness={0.35} roughness={0.4}/>
+      </mesh>
+      <Flat x={18.28} z={2.28} w={1.2} d={0.8} y={0.01} c="#797f84" rough={0.85}/>
+      <Box s={[1.08,0.16,0.58]} p={[18.88,0.09,2.66]} c="#a8b0b5" o={{metal:0.32,rough:0.73}}/>
+
       <Disc x={20.3} z={4.4} rx={0.9} rz={0.74} y={0.0075} c={C.pondEdge} rough={0.9} />
       <Disc x={20.3} z={4.4} rx={0.8} rz={0.64} y={0.009} c={C.pond} rough={0.06} o={{ metal: 0.15 }} />
       {[[19.8, 4.0], [20.8, 4.75], [20.75, 3.95]].map(([x, z], i) => <Disc key={"lily" + i} x={x!} z={z!} rx={0.09} rz={0.07} y={0.012} c="#5f9a4a" />)}
