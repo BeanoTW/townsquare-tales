@@ -302,6 +302,7 @@ function Game() {
           return outcome.ok;
         }}
         onDrive={destination => perform(driveAction(destination))}
+        onPositionChange={(x,y)=>setS(current=>({...current,playerX:x,playerY:y}))}
         onWreckRepair={() => perform(repairWreck())}
         onHotwire={() => { if (s.abandonedCar || (s.criminalTrust??0)<10 || s.hotwireLastDay===s.day || s.energy<8 || s.hour>23.5) { notify("You cannot try the wreck right now.",false); return false; } setWreckGame(true); return true; }}
         movementMode={movementMode}
