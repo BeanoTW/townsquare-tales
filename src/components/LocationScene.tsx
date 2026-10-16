@@ -4,6 +4,7 @@ import { bankLoanAction, repayLoanAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
 import { ActionPanel } from "@/components/rooms/ActionPanel";
+import { InteriorCommercePanel } from "@/components/rooms/InteriorCommercePanel";
 export { actionBlockReason } from "@/components/rooms/ActionPanel";
 import { WalkableShop } from "@/components/rooms/WalkableShop";
 import { isWalkableShop } from "@/lib/walkable-shops";
@@ -137,6 +138,7 @@ function ObjectLocationScene({
 
   const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone);
   const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
+  const commerce = Boolean(use3d && selected && ((room.id === "shop" && ["shelves","checkout"].includes(selected.id)) || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
   const plan3d = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
 
   // Claim actions this room can act out; refreshed every render so it always sees the pre-action room.
@@ -198,8 +200,8 @@ function ObjectLocationScene({
             <button type="button" className="min-h-11 flex-1 rounded-lg border-2 border-foreground bg-card px-2 font-bold" onClick={() => onLaunch?.("slots")}>🎰 Slots</button>
           </div>
         </section>}
-        {room.id === "bank" && <button type="button" onClick={() => { setSelectedId(null); setShowLoans(v => !v); }} className="my-2 min-h-11 rounded-xl border-2 border-foreground bg-secondary px-4 text-base font-bold" aria-expanded={showLoans}>🏦 {showLoans ? "Close loan desk" : "Loans · Borrow & repay"} · Debt ${state.loanDebt ?? 0}</button>}
-        {room.id === "bank" && showLoans && <section data-bank-loans className="max-h-[35vh] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-lg">
+        {room.id === "bank" && !use3d && <button type="button" onClick={() => { setSelectedId(null); setShowLoans(v => !v); }} className="my-2 min-h-11 rounded-xl border-2 border-foreground bg-secondary px-4 text-base font-bold" aria-expanded={showLoans}>🏦 {showLoans ? "Close loan desk" : "Loans · Borrow & repay"} · Debt ${state.loanDebt ?? 0}</button>}
+        {room.id === "bank" && !use3d && showLoans && <section data-bank-loans className="max-h-[35vh] overflow-y-auto rounded-xl border-2 border-foreground bg-card p-3 shadow-lg">
           <div className="flex items-center justify-between gap-2"><strong>Loan desk</strong><span className="text-sm">40% finance charge · 30-day term · 2% daily if overdue</span></div>
           <p className="my-2 text-sm">Outstanding: <strong>${state.loanDebt ?? 0}</strong>. Due day {state.loanDueDay ?? '—'}. Larger loans require employment. One loan at a time.</p>
           <div className="grid grid-cols-2 gap-2">
@@ -272,7 +274,22 @@ function ObjectLocationScene({
           />
         </div>
         )}
-        {selected && (!use3d || size.w > 600) && (
+        {selected && use3d && (
+          <div className="absolute inset-x-2 bottom-2 z-30 max-h-[min(48dvh,75%)] overflow-y-auto overscroll-contain rounded-2xl sm:inset-x-auto sm:right-2 sm:w-[min(360px,48%)]"
+            data-mobile-action-sheet onClick={e=>e.stopPropagation()}>
+            {commerce ? (
+              <InteriorCommercePanel venue={room.id} hotspot={selected} state={state} godMode={godMode}
+                onRun={onRun} onClose={()=>setSelectedId(null)}/>
+            ) : (
+              <ActionPanel hotspot={selected} state={state} godMode={godMode}
+                style={{ position: "relative", inset: "auto", top: "auto", right: "auto", bottom: "auto", left: "auto", width: "100%", maxHeight: "none", borderRadius: 16, boxShadow: "none" }}
+                onRun={onRun} onClose={()=>setSelectedId(null)}>
+                {room.id === "bar" && selected.id === COUNTERS.bar && <CounterRobberyChoice key={selected.id} state={state} venue="bar" godMode={godMode} onRun={onRun}/>}
+              </ActionPanel>
+            )}
+          </div>
+        )}
+        {selected && !use3d && (
           <ActionPanel
             hotspot={selected}
             state={state}
@@ -287,23 +304,6 @@ function ObjectLocationScene({
           </ActionPanel>
         )}
       </div>
-      {selected && use3d && size.w > 0 && size.w <= 600 && (
-        <section className="relative z-30 max-h-[34dvh] shrink-0 overflow-y-auto overscroll-contain border-t-2 border-foreground bg-card"
-          aria-label={`Actions: ${selected.label}`} data-mobile-action-sheet>
-          <ActionPanel
-            hotspot={selected}
-            state={state}
-            godMode={godMode}
-            style={{ position: "relative", inset: "auto", top: "auto", right: "auto", bottom: "auto", left: "auto", width: "100%", maxHeight: "none", boxShadow: "none", border: "none", borderRadius: 0 }}
-            onRun={onRun}
-            onClose={() => setSelectedId(null)}
-          >
-            {room.id === "bar" && selected.id === COUNTERS.bar && (
-              <CounterRobberyChoice key={selected.id} state={state} venue="bar" godMode={godMode} onRun={onRun} />
-            )}
-          </ActionPanel>
-        </section>
-      )}
 
       <footer className="flex shrink-0 items-center gap-2 bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <button
