@@ -1,7 +1,7 @@
 /** Grid-based navigation. Requests inside buildings resolve to the nearest walkable tile. */
 export type Point = { x: number; y: number };
 export type Obstacle = { x: number; y: number; w: number; d: number };
-const STEP = 0.5, SIZE = 60;
+const STEP = 0.5, SIZE = 72;
 const key = (x: number, y: number) => y * SIZE + x;
 const fromKey = (k: number): Point => ({ x: k % SIZE * STEP, y: Math.floor(k / SIZE) * STEP });
 const cell = (p: Point) => ({
@@ -10,7 +10,7 @@ const cell = (p: Point) => ({
 });
 const manhattan = (a: Point, b: Point) => Math.abs(a.x-b.x) + Math.abs(a.y-b.y);
 export function isWalkable(p: Point, obstacles: Obstacle[]): boolean {
-  return p.x >= STEP && p.y >= STEP && p.x <= 29 && p.y <= 29 &&
+  return p.x >= STEP && p.y >= STEP && p.x <= 35 && p.y <= 32.5 &&
     !obstacles.some(b => p.x > b.x - .15 && p.x < b.x + b.w + .15 &&
                           p.y > b.y - .15 && p.y < b.y + b.d + .15);
 }
