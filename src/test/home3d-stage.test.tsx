@@ -49,20 +49,20 @@ import { homeZones } from "@/lib/home-zones";
 
 describe("every housing tier uses a 3D plan", () => {
   it("maps each house index to a distinct plan", () => {
-    const kinds = [0, 1, 2, 3].map((h) => planFor(h)!.kind);
-    expect(new Set(kinds).size).toBe(4);
-    expect(planFor(4)).toBeNull();
+    const kinds = [0, 1, 2, 3, 4].map((h) => planFor(h)!.kind);
+    expect(new Set(kinds).size).toBe(5);
+    expect(planFor(5)).toBeNull();
   });
 
   it("offers a camera focus for every room button of each tier", () => {
-    for (const h of [0, 1, 2, 3]) {
+    for (const h of [0, 1, 2, 3, 4]) {
       const plan = planFor(h)!;
       for (const z of homeZones(h)) expect(plan.focus[z.id], `house ${h} ${z.id}`).toBeDefined();
     }
   });
 
   it("gives nothing for free: an empty home shows no furniture slots beyond the mattress rule", () => {
-    for (const h of [0, 1, 2, 3]) {
+    for (const h of [0, 1, 2, 3, 4]) {
       const s = { ...START, house: h, furniture: 0 } as never;
       const ids = visibleHotspots(roomFor("home", s), s).map((x) => toSlotId(x.id));
       const slots = visibleSlots(planFor(h)!, ids).map((x) => x.id);
