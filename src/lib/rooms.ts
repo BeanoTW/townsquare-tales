@@ -725,7 +725,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Register a mailbox for home deliveries",
         box: { x: 15, y: 115, w: 230, h: 85 },
         lines: s => s.mailbox
-          ? ["Your mailbox is registered. Future letters can be delivered to your home."]
+          ? ["Your mailbox is registered. Check the mailbox at home or collect letters here."]
           : ["Letters are held here until you register an address.", "A permanent mailbox costs $25 and moves with your home."],
         actions: s => s.mailbox ? [] : [buyMailboxAction(s)],
       },
@@ -735,7 +735,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "POST",
         hint: "Letters waiting to be sorted",
         box: { x: 265, y: 65, w: 135, h: 140 },
-        lines: () => ["Stacks of envelopes and parcels.", "The town's correspondence system is coming soon."],
+        lines: () => ["Stacks of envelopes and parcels.", "Check your held letters using Collect post at the top of this room."],
       },
     ],
   },

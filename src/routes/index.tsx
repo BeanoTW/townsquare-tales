@@ -445,6 +445,7 @@ function Game() {
           godMode={godMode}
           feedback={result}
           onRun={perform}
+          onMailChange={setS}
           cutsceneClaim={cutsceneClaim}
           onLeave={close}
           onLaunch={(g) => (g === "darts" ? launchDarts() : launchGame(g))}
