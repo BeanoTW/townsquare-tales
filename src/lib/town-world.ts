@@ -49,12 +49,12 @@ export const buildings = (house: number): B[] => {
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   const sites = [
     { x: 1.1, y: 2, w: 3, d: 4 },
-    { x: 0.5, y: 26.2, w: 3.3, d: 3.2 },
+    { x: 0.5, y: 25.95, w: 3.3, d: 3.1 },
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
-    { x: 25.7, y: 8.7, w: 3.8, d: 3.65 },
+    { x: 26.55, y: 8.7, w: 3.8, d: 3.65 },
   ] as const;
   const residences = sites.map((plot, tier) => ({
-    facing: "south" as const, id: tier === house ? "home" : `residence-${tier}`,
+    facing: (tier === 3 ? "west" : "south") as "west" | "south", id: tier === house ? "home" : `residence-${tier}`,
     label: tier === house ? `Home · ${hl.label}` : ["Cardboard Box", "Studio Flat", "Suburban House", "Mansion"][tier]!,
     ...plot, h: HOUSE_LOOK[tier]!.h, wall: HOUSE_LOOK[tier]!.wall,
     side: HOUSE_LOOK[tier]!.side, roof: HOUSE_LOOK[tier]!.roof,
@@ -74,7 +74,7 @@ export const buildings = (house: number): B[] => {
     { facing: "south", id: "furniture", label: "Cosy Corner", x: 18.3, y: 7.25, w: 3.6, d: 3.7, h: 78, wall: "var(--town-furniture-wall)", side: "var(--town-furniture-side)", roof: "var(--town-furniture-roof)", sign: "var(--town-furniture-sign)", win: true },
     { facing: "north", id: "casino", label: "Lucky Sevens", x: 5.2, y: 22, w: 2.8, d: 4, h: 115, wall: "var(--town-casino-wall)", side: "var(--town-casino-side)", roof: "var(--town-casino-roof)", sign: "var(--town-casino-sign)", win: true },
     { facing: "west", id: "depot", label: "Town Transit", x: 26, y: 23.2, w: 3, d: 3.1, h: 50, wall: "var(--town-depot-wall)", side: "var(--town-depot-side)", roof: "var(--town-depot-roof)", sign: "var(--town-depot-sign)", win: true },
-    { facing: "south", id: "post", label: "Town Post Office", x: 26, y: 2.2, w: 3.1, d: 3.3, h: 58, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
+    { facing: "south", id: "post", label: "Town Post Office", x: 26, y: 1.25, w: 3.1, d: 3.3, h: 58, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
     { facing: "west", id: "police", label: "Town Police", x: 26, y: 18.3, w: 3, d: 3.9, h: 90, wall: "var(--town-police-wall)", side: "var(--town-police-side)", roof: "var(--town-police-roof)", sign: "var(--town-police-sign)", win: true },
     { facing: "south", id: "clinic", label: "Patch Up Clinic", x: 1.1, y: 13, w: 3, d: 4, h: 75, wall: "var(--town-clinic-wall)", side: "var(--town-clinic-side)", roof: "var(--town-clinic-roof)", sign: "var(--town-clinic-sign)", win: true },
   ];

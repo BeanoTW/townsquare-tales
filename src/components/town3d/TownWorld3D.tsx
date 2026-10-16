@@ -27,6 +27,7 @@ export type TownWorld3DProps = {
   kidPresent: boolean;
   encounter: EncounterSpot | null | undefined;
   constructionActive: boolean;
+  mansionOwned?: boolean;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -115,7 +116,45 @@ function LampPools({ lamps, night }: { lamps: (readonly [number, number])[]; nig
   );
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive }: Omit<TownWorld3DProps, "tick">) {
+/** The mansion's two gate leaves swing inward automatically once purchased. */
+function MansionGate({ open }: { open: boolean }) {
+  const left = useRef<THREE.Group>(null);
+  const right = useRef<THREE.Group>(null);
+  useFrame((_, delta) => {
+    const target = open ? 1.1 : 0;
+    const blend = 1 - Math.exp(-Math.min(delta, 0.1) * 5);
+    if (left.current) left.current.rotation.y += (target - left.current.rotation.y) * blend;
+    if (right.current) right.current.rotation.y += (-target - right.current.rotation.y) * blend;
+  });
+  const iron = useMemo(() => new THREE.MeshStandardMaterial({ color: "#393e39", metalness: 0.65, roughness: 0.32 }), []);
+  const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: "#c7a65b", metalness: 0.65, roughness: 0.32 }), []);
+  return (
+    <group>
+      {/* Single-track access lane from the east-side road to the west-facing porch. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[26.15, 0.026, 10.53]}>
+        <planeGeometry args={[1.58, 0.83]} />
+        <meshStandardMaterial color="#8e8d85" roughness={0.95} />
+      </mesh>
+      {[10.09, 10.97].map(z => (
+        <mesh key={z} position={[25.7, 0.23, z]} material={gold}>
+          <boxGeometry args={[0.13, 0.46, 0.13]} />
+        </mesh>
+      ))}
+      <group ref={left} position={[25.7, 0, 10.13]}>
+        <mesh position={[0, 0.22, 0.2]} material={iron}>
+          <boxGeometry args={[0.04, 0.33, 0.4]} />
+        </mesh>
+      </group>
+      <group ref={right} position={[25.7, 0, 10.93]}>
+        <mesh position={[0, 0.22, -0.2]} material={iron}>
+          <boxGeometry args={[0.42, 0.33, 0.04]} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned }: Omit<TownWorld3DProps, "tick">) {
   const bs: B[] = useMemo(() => buildings(house), [house]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
@@ -131,6 +170,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         <ConstructionStatic />
       </StaticBatch>
       <LampPools lamps={lamps} night={nightLevel(hour)} />
+      <MansionGate open={Boolean(mansionOwned)} />
       <Player3D live={live} skating={skating} head={head} />
       <Residents live={live} hour={hour} />
       <Pedestrians live={live} />
