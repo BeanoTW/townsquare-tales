@@ -1,0 +1,23 @@
+name: Garage and Hall validation
+on:
+  pull_request:
+    paths:
+      - 'src/components/home3d/venues/**'
+      - 'src/components/town3d/**'
+      - 'src/lib/home3d/**'
+      - 'src/test/garage-hall.test.ts'
+      - '.github/workflows/garage-hall.yml'
+jobs:
+  garage-hall:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Dedicated garage and hall tests
+        run: bunx vitest run src/test/garage-hall.test.ts
+      - name: TypeScript diagnostics
+        run: bunx tsc --noEmit
+        continue-on-error: true
+      - name: Production build
+        run: bun run build
