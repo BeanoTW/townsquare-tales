@@ -16,7 +16,7 @@ export function gangCarLesson(): ActionDef {
     }
   };
 }
-export function attemptHotwire(): ActionDef {
+export function attemptHotwire(won = false): ActionDef {
   return { id:"wreck-ignition",label:"Try the ignition",hours:0.5,energy:8,
     resolve:s=>{
       if(s.abandonedCar) return "You've already claimed the old wreck.";
@@ -24,7 +24,7 @@ export function attemptHotwire(): ActionDef {
       if(s.hotwireLastDay===s.day) return "You've already tried today. Give it a rest.";
       const attempts=(s.hotwireAttempts??0)+1;
       // Abstract retry puzzle, deliberately no instructions for real vehicle interference.
-      const success=(s.streetSmarts??0)>=12 || attempts>=3;
+      const success=won;
       return {patch:{
         hotwireAttempts:attempts,hotwireLastDay:s.day,
         streetSmarts:Math.min(100,(s.streetSmarts??0)+2),

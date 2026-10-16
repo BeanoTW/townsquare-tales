@@ -33,6 +33,7 @@ import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire } from "@/lib/underworld";
+import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
 import { hasEquippedBoard, startSession } from "@/lib/minigames";
 import { DartsGame } from "@/components/minigames/DartsGame";
@@ -83,6 +84,7 @@ function Game() {
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
   const [game, setGame] = useState<CasinoGame | null>(null);
   const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
+  const [wreckGame, setWreckGame] = useState(false);
   const [result, setResult] = useState<Feedback | null>(null);
   const [vignette, setVignette] = useState<{ kind: VignetteKind; changes: string[]; message: string } | null>(null);
   /** Milestone scenes and the 3D action card share one stage overlay. */
@@ -278,7 +280,7 @@ function Game() {
       <TownMap
         state={s}
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
-        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade)}
+        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade || wreckGame)}
         onStreet={(id: StreetObjectId) => {
           if(id==="ramp"){
             // Without an equipped board the game opens on its requirement card instead of charging anything.
@@ -300,7 +302,7 @@ function Game() {
           return outcome.ok;
         }}
         onDrive={destination => perform(driveAction(destination))}
-        onHotwire={() => perform(attemptHotwire())}
+        onHotwire={() => { if (s.abandonedCar || (s.criminalTrust??0)<10 || s.hotwireLastDay===s.day || s.energy<8 || s.hour>23.5) { notify("You cannot try the wreck right now.",false); return false; } setWreckGame(true); return true; }}
         movementMode={movementMode}
         hour={s.hour}
         house={s.house}
@@ -483,6 +485,7 @@ function Game() {
         </>
       )}
 
+      {wreckGame && <WreckIgnitionGame day={s.day} attempts={s.hotwireAttempts??0} onExit={() => setWreckGame(false)} onFinish={(won) => { perform(attemptHotwire(won)); setWreckGame(false); }} />}
       {arcade==="basketball" && (
         <BasketballGame
           sound={soundOn}
