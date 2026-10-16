@@ -14,3 +14,4 @@
 - Keep town illustration colors in global semantic CSS tokens so exterior details and the map share one palette.
 - Keep housing artwork in HomeInterior using existing hotspot footprints, and luxury ownership in a separate optional bitmask so original furniture benefits and older saves remain compatible.
 - Basketball arcade rendering and scoring must consume the same deterministic 3D flight frames and shared court geometry; legacy side-view and H-O-R-S-E logic stays separate to preserve reusable code without prediction-based scoring.
+- Player homes render in first person (fixed eye-level camera, drag to look, tap furniture to use); venues keep the overhead walker, and activity cutscenes still use the existing third-person animations so they stay reusable.
