@@ -203,6 +203,7 @@ export function buyHouseAction(s: GameState, tier = Math.min(4, s.house + 1)): A
       if (!target || tier < 1) return "That property is not available.";
       const mask = st.ownedHomes ?? ((1 << (st.house + 1)) - 1);
       const alreadyOwned = Boolean(mask & (1 << tier));
+      if (st.housingMode === 1 && (st.housingArrears ?? 0) > 0) return "Clear outstanding rent before purchasing a new home.";
       if (!alreadyOwned && st.money < target.cost) return "Not enough cash.";
       if (st.housingMode === 2 && (st.mortgageBalance ?? 0) > 0) return "Pay off your existing mortgage first.";
       return {
@@ -230,6 +231,8 @@ export function housingAction(s: GameState, tier: 1 | 2, mode: 1 | 2): ActionDef
     hours: 0, energy: 0, cost: deposit,
     note: `${weekly} every 7 days${mode === 2 ? " · 20% deposit" : ""}`,
     resolve: st => {
+      if (st.housingMode === 1 && (st.housingArrears ?? 0) > 0) return "Clear outstanding rent before changing homes.";
+      if (st.housingMode === mode && st.housingTier === tier) return "You already have this housing agreement.";
       if (st.money < deposit) return "Not enough cash for the deposit.";
       if (st.housingMode && (st.mortgageBalance ?? 0) > 0)
         return "Settle your existing mortgage before switching housing.";
