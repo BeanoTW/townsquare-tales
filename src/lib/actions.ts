@@ -145,14 +145,14 @@ export function sleepAction(s: GameState): ActionDef {
     label: `Sleep · wake around ${timeLabel(wake)}`,
     hours: 0,
     energy: 0,
-    note: s.alarm && (s.caffeinePills ?? 0)>0 ? "Use 1 caffeine pill with your alarm to wake by 07:00" : "Ends the day",
+    note: (s.caffeinePills ?? 0)>0 ? "Use 1 caffeine pill for a two-hour wake-up boost" : "Ends the day",
     resolve: (st) => {
       const rested = sleepOutcome(st);
       return {
         patch: {
           hour: rested.hour,
           energy: rested.energy,
-          caffeinePills: st.alarm && (st.caffeinePills ?? 0)>0 ? (st.caffeinePills ?? 0)-1 : (st.caffeinePills ?? 0),
+          caffeinePills: (st.caffeinePills ?? 0)>0 ? (st.caffeinePills ?? 0)-1 : (st.caffeinePills ?? 0),
           day: st.day + 1,
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
           // Loans have a fixed 40% borrowing charge; only overdue debt incurs additional penalties.
@@ -517,10 +517,10 @@ export function buyCaffeineAction(): ActionDef {
     hours: 0,
     energy: 0,
     cost: 75,
-    note: "Single use · combine with alarm clock for a 07:00 wake-up",
+    note: "Single use · wake two hours earlier; stacks with alarm",
     resolve: s => (s.caffeinePills ?? 0) >= 20 ? "Your bag is already full of caffeine pills."
       : s.money < 75 ? "Not enough cash for caffeine pills."
-      : { patch: { money: s.money-75, caffeinePills: (s.caffeinePills ?? 0)+1 }, message: "Bought one caffeine pill. Use it with an alarm clock when sleeping to wake by 07:00." },
+      : { patch: { money: s.money-75, caffeinePills: (s.caffeinePills ?? 0)+1 }, message: "Bought one caffeine pill. Wake two hours earlier when sleeping; combine with an alarm for an even earlier start." },
   };
 }
 
