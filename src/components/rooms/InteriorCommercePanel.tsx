@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from "react";
 import type { GameState } from "@/lib/game-state";
 import type { ActionDef } from "@/lib/actions";
-import { WITHDRAW_50, WITHDRAW_ALL, bankTransferAction, bankLoanAction, repayLoanAction, buyHouseAction } from "@/lib/actions";
+import { WITHDRAW_50, WITHDRAW_ALL, bankTransferAction, bankLoanAction, repayLoanAction, buyHouseAction, furnitureAction } from "@/lib/actions";
 import { HOUSES } from "@/lib/game-data";
+import { FURNITURE, LUXURY_FURNITURE } from "@/lib/furniture";
 import { SHOP_GOODS, shopAvailability } from "@/lib/shop-catalog";
 import { actionBlockReason } from "@/components/rooms/ActionPanel";
 import { hotspotActions, type Hotspot } from "@/lib/rooms";
@@ -36,6 +37,29 @@ function ShopStock({state,godMode,onRun}:{state:GameState;godMode:boolean;onRun:
       })}
     </div>
   </>;
+}
+/** Separate the first decision from the long furniture catalogue. */
+function FurnitureCatalog({state,godMode,onRun}:{state:GameState;godMode:boolean;onRun:(a:ActionDef)=>void}) {
+  const [quality,setQuality]=useState<"standard"|"premium"|null>(null);
+  const items=quality==="premium"?LUXURY_FURNITURE:FURNITURE;
+  return <div className="space-y-2" data-furniture-quality={quality??"choose"}>
+    {quality===null?<>
+      <p className="text-sm">What kind of furniture are you looking for?</p>
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" className={button} onClick={()=>setQuality("standard")}>Standard goods<span className="block text-xs font-normal opacity-75">Affordable essentials</span></button>
+        <button type="button" className={button} onClick={()=>setQuality("premium")}>Premium goods<span className="block text-xs font-normal opacity-75">Luxury upgrades</span></button>
+      </div>
+    </>:<>
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-bold">{quality==="premium"?"Premium":"Standard"} furniture</h4>
+        <button type="button" className="min-h-10 rounded-lg border border-foreground px-3 text-sm font-bold" onClick={()=>setQuality(null)}>← Change</button>
+      </div>
+      <p className="text-xs text-muted-foreground">Wallet: ${state.money.toLocaleString()} · Scroll for more</p>
+      <div className="grid grid-cols-2 gap-2">
+        {items.map(item=><QuickAction key={item.id} action={furnitureAction(item.id,state,quality==="premium")} state={state} godMode={godMode} onRun={onRun}/>)}
+      </div>
+    </>}
+  </div>;
 }
 type TellerService = "deposit" | "withdraw" | "loans";
 const tellerServices: {id:TellerService;name:string;icon:string}[] = [
@@ -142,15 +166,17 @@ function BankDesk({id,state,godMode,onRun}:{id:string;state:GameState;godMode:bo
   </div>;
 }
 export function InteriorCommercePanel({venue,hotspot,state,godMode,onRun,onClose}:{venue:string;hotspot:Hotspot;state:GameState;godMode:boolean;onRun:(a:ActionDef)=>void;onClose:()=>void}) {
-  const shop=venue==="shop"&&(hotspot.id==="shelves"||hotspot.id==="checkout");
+  const shop=venue==="shop"&&hotspot.id==="checkout";
+  const furniture=venue==="furniture"&&hotspot.id==="catalogue";
   const bank=venue==="bank"&&["teller","atm","loans","vault"].includes(hotspot.id);
   const actions=hotspotActions(hotspot,state);
   return <section role="dialog" aria-label={hotspot.label} data-panel data-interior-commerce className="rounded-2xl border-2 border-foreground bg-card/95 p-3 shadow-2xl backdrop-blur-md">
     <div className="mb-2 flex items-start justify-between gap-2">
-      <div><h3 className="font-bold text-base">{shop?"🏪 ":bank?"🏦 ":""}{hotspot.label}</h3><p className="text-xs text-muted-foreground">{hotspot.hint}</p></div>
+      <div><h3 className="font-bold text-base">{shop?"🏪 ":furniture?"🛋️ ":bank?"🏦 ":""}{hotspot.label}</h3><p className="text-xs text-muted-foreground">{hotspot.hint}</p></div>
       <button type="button" aria-label="Close panel" onClick={onClose} className="min-h-10 min-w-10 rounded-lg border-2 border-foreground bg-secondary font-bold">✕</button>
     </div>
     {shop&&<ShopStock state={state} godMode={godMode} onRun={onRun}/>}
+    {furniture&&<FurnitureCatalog state={state} godMode={godMode} onRun={onRun}/>}
     {bank&&<BankDesk id={hotspot.id} state={state} godMode={godMode} onRun={onRun}/>}
     {shop&&hotspot.id==="checkout"&&actions.filter(a=>a.id.includes("shift")).map(a=><div className="mt-2" key={a.id}><QuickAction action={a} state={state} godMode={godMode} onRun={onRun}/></div>)}
   </section>;
