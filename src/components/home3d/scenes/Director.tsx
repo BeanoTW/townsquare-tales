@@ -21,12 +21,14 @@ const OUTRO = 0.5;
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const smooth = (x: number) => { const c = clamp01(x); return c * c * (3 - 2 * c); };
 
-export function Director({ cut, plan, walker, cine, overlay, onDone }: {
+export function Director({ cut, plan, walker, cine, overlay, cast, onDone }: {
   cut: Cutscene;
   plan: HomePlan;
   walker: MutableRefObject<WalkerHandle>;
   cine: MutableRefObject<Cine>;
   overlay: MutableRefObject<CineOverlay>;
+  /** NPC pivots by id, for supporting-cast reactions. */
+  cast?: MutableRefObject<Map<string, THREE.Group>>;
   onDone: () => void;
 }) {
   const { camera, size, invalidate } = useThree();
@@ -43,16 +45,21 @@ export function Director({ cut, plan, walker, cine, overlay, onDone }: {
     t.current = 0;
     finished.current = false;
     // Frame the actor slightly north of their feet so the whole body sits mid-frame.
-    cine.current = { active: true, tx: cut.x, tz: cut.z - 0.15, dist: cut.short ? cut.frame.dist * 1.15 : cut.frame.dist, el: cut.frame.el };
+    cine.current = { active: true, tx: cut.frame.tx, tz: cut.frame.tz - 0.15, dist: cut.short ? cut.frame.dist * 1.15 : cut.frame.dist, el: cut.frame.el };
     const skip = () => { t.current = Math.max(t.current, cut.duration - OUTRO); invalidate(); };
     window.addEventListener(SKIP_EVENT, skip);
     invalidate();
     return () => {
       window.removeEventListener(SKIP_EVENT, skip);
+      // Put every NPC back exactly as the room placed them.
+      for (const c of cut.cast) {
+        const g = cast?.current.get(c.id);
+        if (g) { g.visible = true; g.rotation.set(0, 0, 0); g.position.y = 0; }
+      }
       cine.current = { ...cine.current, active: false };
       walker.current.scene = null;
     };
-  }, [cut, cine, walker, invalidate]);
+  }, [cut, cine, walker, cast, invalidate]);
 
   useFrame((_, raw) => {
     if (finished.current) return;
@@ -69,6 +76,27 @@ export function Director({ cut, plan, walker, cine, overlay, onDone }: {
     };
     if (now >= dur - OUTRO) cine.current.active = false;
 
+    // Supporting cast: later cues for the same NPC take over once their time comes.
+    const npcs = plan.npcs ?? [];
+    const settle = smooth((dur - now) / OUTRO);
+    for (const c of cut.cast) {
+      const g = cast?.current.get(c.id);
+      const npc = npcs.find((n) => n.id === c.id);
+      if (!g || !npc) continue;
+      const later = cut.cast.some((o) => o.id === c.id && (o.at ?? 0) > (c.at ?? 0) && now >= (o.at ?? 0));
+      if (later) continue;
+      const k = smooth((now - (c.at ?? 0)) / 0.35);
+      if (c.cue === "hide") { g.visible = now < (c.at ?? 0) || now >= dur; continue; }
+      if (now < (c.at ?? 0)) continue;
+      // Turn toward the player (shortest way round), easing back as the scene ends.
+      const want = Math.atan2(cut.x - npc.x, cut.z - npc.z) - npc.rot;
+      const d = Math.atan2(Math.sin(want), Math.cos(want));
+      g.rotation.y = d * k * settle;
+      const since = now - (c.at ?? 0);
+      g.position.y = c.cue === "cheer" ? 0.12 * Math.abs(Math.sin(since * 8)) * settle : c.cue === "nod" ? 0.025 * Math.max(0, Math.sin(since * 6)) * settle : 0;
+      g.rotation.x = c.cue === "nod" ? 0.06 * Math.max(0, Math.sin(since * 6)) * settle : 0;
+    }
+
     // Letterbox, title and gains.
     const o = overlay.current;
     const inK = smooth(now / 0.45), outK = smooth((dur - now) / OUTRO);
@@ -81,7 +109,7 @@ export function Director({ cut, plan, walker, cine, overlay, onDone }: {
     if (o.gains) {
       const start = cut.short ? 0.35 : Math.min(1.1, dur * 0.32);
       const g = clamp01((now - start) / 0.5);
-      tmp.set(cut.x, cut.lift + 1.3, cut.z).project(camera);
+      tmp.set(cut.frame.tx, cut.lift + 1.3, cut.frame.tz).project(camera);
       const x = (tmp.x * 0.5 + 0.5) * size.width;
       const y = (-tmp.y * 0.5 + 0.5) * size.height - 26 * smooth(g) - 10 * clamp01((now - start) / dur);
       o.gains.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%) scale(${(0.85 + 0.15 * smooth(g)).toFixed(3)})`;

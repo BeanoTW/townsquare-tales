@@ -55,12 +55,13 @@ describe("in-world cutscenes", () => {
     }
   });
 
-  it("falls back when the fixture is missing, and leaves other venues to the card for now", () => {
+  it("falls back when the fixture is missing, and leaves unknown actions to the card", () => {
     expect(planCutscene(req("relax"), studio, ctx(new ScenePlays(), ["bed"]))).toBeNull();
     // No sofa: TV is watched standing at the set.
     expect(planCutscene(req("tv-science"), studio, ctx(new ScenePlays(), ["tv"]))!.slotId).toBe("tv");
     expect(planCutscene(req("lift"), studio, ctx())).toBeNull();
-    expect(planCutscene(req("shift"), venuePlan("diner")!, ctx(new ScenePlays(), ["counter", "kitchen"]))).toBeNull();
+    // A workplace with its fixture hidden can't stage the scene either.
+    expect(planCutscene(req("shift"), venuePlan("diner")!, ctx(new ScenePlays(), ["counter"]))).toBeNull();
     expect(planCutscene(req("mug"), studio, ctx())).toBeNull();
   });
 
@@ -88,7 +89,7 @@ describe("in-world cutscenes", () => {
   });
 
   it("shows only gains as floating chips", () => {
-    expect(gainsOf(["Strength: +2", "Energy: -20", "Cash: +$40", "Charm: +1", "Intelligence: +1"])).toEqual(["Strength +2", "Cash +$40", "Charm +1"]);
+    expect(gainsOf(["Strength: +2", "Energy: -20", "Cash: +40", "Charm: +1", "Intelligence: +1"])).toEqual(["Strength +2", "+$40", "Charm +1"]);
   });
 
   it("maps fixture-local marks the same way the renderer rotates slots", () => {
