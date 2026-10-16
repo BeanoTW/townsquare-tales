@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { N, ROADS, laneDashes, buildingPlot, door, type B } from "@/lib/town-world";
 import { TOWN_RAILS } from "@/lib/town-rails";
-import { Box, Cyl, Disc, Flat, Round, mat } from "@/components/town3d/kit";
+import { Box, Cone, Cyl, Disc, Flat, Round, mat } from "@/components/town3d/kit";
 import { asphaltTexture, grassTexture, gravelTexture, pavingTexture, soilTexture, timberTexture } from "@/components/town3d/textures";
 import { townColor, shade } from "@/components/town3d/palette";
 
