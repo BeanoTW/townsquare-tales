@@ -76,7 +76,8 @@ export type VantagePoint = {
 /** A viewpoint is always derived from the actual plan's room volumes and slots. */
 export function vantageFor(plan: HomePlan, zone: PlanZone): VantagePoint {
   const point = plan.vantagePoints?.[zone] ?? plan.spawn.zones[zone] ?? plan.spawn.entry;
-  const room = plan.rooms.find(r=>r.zone===zone);
+  const rooms = plan.rooms.filter(r=>r.zone===zone);
+  const room = rooms.find(r=>point[0]>=r.rect.x0 && point[0]<=r.rect.x1 && point[1]>=r.rect.z0 && point[1]<=r.rect.z1) ?? rooms[0];
   const x = Math.max((room?.rect.x0 ?? 0)+0.35,Math.min((room?.rect.x1 ?? plan.size.w)-0.35,point[0]));
   const z = Math.max((room?.rect.z0 ?? 0)+0.35,Math.min((room?.rect.z1 ?? plan.size.d)-0.35,point[1]));
   const y=Math.min(1.62,plan.size.h-0.45);
