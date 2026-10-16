@@ -19,11 +19,9 @@ export const weaponName = (s: GameState) =>
 
 export function weaponBlock(s: GameState, tier: 1 | 2): string | null {
   if ((s.weapon ?? 0) >= tier) return "Already owned.";
-  if (s.karma > -10 || s.gangStage < (tier === 2 ? 2 : 1) || s.gangRep < (tier === 2 ? 12 : 4))
-    return tier === 2
-      ? "Earn crew trust: gang stage 2, reputation 12 and karma −10 or lower."
-      : "Requires gang membership, reputation 4 and karma −10 or lower.";
-  if (s.day < (tier === 2 ? 7 : 4)) return `Supplier unavailable before day ${tier === 2 ? 7 : 4}.`;
+  if (tier === 2 && (s.gangStage < 2 || s.gangRep < 12 || (s.criminalTrust ?? 0) < 30))
+    return "Earn supplier trust: gang stage 2, reputation 12 and criminal trust 30.";
+  if (tier === 2 && s.day < 7) return "Supplier unavailable before day 7.";
   if (tier === 2 && s.str < 25) return "Requires Strength 25.";
   if (s.money < (tier === 2 ? 900 : 180)) return `Need $${tier === 2 ? 900 : 180}.`;
   return null;
@@ -39,7 +37,7 @@ export function buyWeapon(tier: 1 | 2): ActionDef {
     note:
       tier === 2
         ? "Robbery capable. Stage 2 · rep 12 · day 7 · Strength 25. Heat +3."
-        : "Too flimsy for robbery. Membership · rep 4 · day 4. Heat +1.",
+        : "Basic bat available to anyone. Not suitable for a till robbery.",
     resolve: (s) => {
       const blocked = weaponBlock(s, tier);
       if (blocked) return blocked;
@@ -47,7 +45,7 @@ export function buyWeapon(tier: 1 | 2): ActionDef {
         patch: {
           weapon: tier,
           money: s.money - cost,
-          heat: Math.min(100, s.heat + (tier === 2 ? 3 : 1)),
+          heat: Math.min(100, s.heat + (tier === 2 ? 3 : 0)),
         },
         message:
           tier === 2
