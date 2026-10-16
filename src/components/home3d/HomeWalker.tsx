@@ -5,6 +5,7 @@ import { townColor } from "@/components/town3d/palette";
 import type { HomePlan } from "@/lib/home3d/layout";
 import { buildNav, walkable } from "@/lib/home3d/nav";
 import { routeHome, type WalkPoint } from "@/lib/home3d/route";
+import { INTERIOR_STICK_EVENT, type StickVector } from "./InteriorJoystick";
 
 export type WalkerHandle = { position: WalkPoint; moving: boolean };
 const SPEED = 2.5;
@@ -21,6 +22,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
   const target=useRef<string|null>(null);
   const dragPointer=useRef<number|null>(null);
   const keys=useRef(new Set<string>());
+  const stick=useRef<StickVector>({x:0,z:0});
   const dir=useRef(0);
   const phase=useRef(0);
   const character = useRef<PersonState>({ x: start[0], z: start[1], angle: 180, walking: false, pose: "standing", visible: true, lift: 0.04, phase: 0 });
@@ -58,6 +60,15 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
     window.addEventListener("tst-home-walk-to",listener);
     return()=>window.removeEventListener("tst-home-walk-to",listener);
   },[nav,plan]);
+  useEffect(()=>{
+    const onStick=(e:Event)=>{
+      const v=(e as CustomEvent<StickVector>).detail;
+      stick.current={x:v?.x??0,z:v?.z??0};
+      if(Math.hypot(stick.current.x,stick.current.z)>.06){waypoints.current=[];target.current=null;invalidate();}
+    };
+    window.addEventListener(INTERIOR_STICK_EVENT,onStick);
+    return()=>{stick.current={x:0,z:0};window.removeEventListener(INTERIOR_STICK_EVENT,onStick);};
+  },[invalidate]);
   useFrame((_,raw)=>{
     const dt=Math.min(raw,0.05),p=pos.current;
     let dx=0,dz=0;
@@ -65,6 +76,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
     if(keys.current.has("s")||keys.current.has("arrowdown"))dz+=1;
     if(keys.current.has("a")||keys.current.has("arrowleft"))dx-=1;
     if(keys.current.has("d")||keys.current.has("arrowright"))dx+=1;
+    if(Math.hypot(stick.current.x,stick.current.z)>.06){dx=stick.current.x;dz=stick.current.z;waypoints.current=[];target.current=null;}
     if(!dx&&!dz&&waypoints.current.length){
       const next=waypoints.current[0]!;
       dx=next.x-p.x;dz=next.z-p.z;
@@ -73,7 +85,8 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
     let moved=false;
     const length=Math.hypot(dx,dz);
     if(length>0){
-      const step=Math.min(SPEED*dt,length), vx=dx/length*step,vz=dz/length*step;
+      const analogue=Math.hypot(stick.current.x,stick.current.z)>.06;
+      const step=Math.min(SPEED*dt*(analogue?Math.min(1,length):1),analogue?Infinity:length), vx=dx/length*step,vz=dz/length*step;
       if(walkable(nav,p.x+vx,p.z)){p.x+=vx;p.z+=vz;moved=true;}
       else if(walkable(nav,p.x+vx,p.z)){p.x+=vx;moved=true;}
       else if(walkable(nav,p.x,p.z+vz)){p.z+=vz;moved=true;}
@@ -88,7 +101,7 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head }: {
     Object.assign(character.current, { x: p.x, z: p.z, angle: 180 - dir.current * 180 / Math.PI, phase: phase.current, walking: moved });
     handle.current.position={...p};
     handle.current.moving=moved;
-    if(moved||waypoints.current.length)invalidate();
+    if(moved||waypoints.current.length||Math.hypot(stick.current.x,stick.current.z)>.06)invalidate();
   }, -1);
   return <>
     <Person get={() => character.current} skin={head} outfit={townColor("var(--town-player)")} scale={1.7} />
