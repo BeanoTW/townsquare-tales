@@ -435,6 +435,20 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         })}
         {/* Central park: not another paved rectangle. */}
         {tile(17,1.1,5.0,5.6,"var(--town-park)","park")}
+        {/* Shared skate-and-basketball recreation corner behind Stick U. */}
+        {tile(20.05,1.25,1.85,2.5,"#667d76","basketball-court")}
+        {tile(20.14,1.36,1.67,0.045,"#f6edcc","basketball-baseline")}
+        {tile(20.14,3.52,1.67,0.045,"#f6edcc","basketball-endline")}
+        {tile(20.14,1.36,0.045,2.20,"#f6edcc","basketball-side-left")}
+        {tile(21.77,1.36,0.045,2.20,"#f6edcc","basketball-side-right")}
+        <circle cx={P(21.25,2.2)[0]} cy={P(21.25,2.2)[1]} r={12} fill="none" stroke="#f4ddad" strokeWidth={2}/>
+        <g data-park-basketball pointerEvents="none">
+          <polygon points={pts([P(21.07,1.46),P(21.45,1.46),P(21.45,1.53),P(21.07,1.53)])} fill="#ede8da" stroke="#31353e" strokeWidth={1.5}/>
+          <ellipse cx={P(21.25,1.74)[0]} cy={P(21.25,1.74)[1]} rx={8} ry={4} fill="none" stroke="#d65e35" strokeWidth={2}/>
+        </g>
+        {tile(18.28,2.28,1.2,0.8,"#777c82","skate-ramp-base")}
+        {tile(18.35,2.32,1.06,0.56,"#9da4aa","skate-ramp-top")}
+
         <ellipse cx={P(20.3,4.4)[0]} cy={P(20.3,4.4)[1]} rx={38} ry={23} fill="var(--town-pond)" stroke="var(--town-pond-edge)" strokeWidth={3} />
         {tile(19.6,1.2,0.45,5.2,"var(--town-park-path)","park-path-ns")}
         {tile(17,5.5,5.0,0.4,"var(--town-park-path)","park-path-ew")}
