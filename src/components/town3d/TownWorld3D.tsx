@@ -135,18 +135,18 @@ function MansionGate({ open }: { open: boolean }) {
         <planeGeometry args={[1.58, 0.83]} />
         <meshStandardMaterial color="#8e8d85" roughness={0.95} />
       </mesh>
-      {[25.65, 26.65].map(x => (
-        <mesh key={x} position={[x, 0.23, 10.53]} material={gold}>
+      {[10.09, 10.97].map(z => (
+        <mesh key={z} position={[25.7, 0.23, z]} material={gold}>
           <boxGeometry args={[0.13, 0.46, 0.13]} />
         </mesh>
       ))}
-      <group ref={left} position={[25.72, 0, 10.53]}>
-        <mesh position={[0.22, 0.22, 0]} material={iron}>
-          <boxGeometry args={[0.42, 0.33, 0.04]} />
+      <group ref={left} position={[25.7, 0, 10.13]}>
+        <mesh position={[0, 0.22, 0.2]} material={iron}>
+          <boxGeometry args={[0.04, 0.33, 0.4]} />
         </mesh>
       </group>
-      <group ref={right} position={[26.58, 0, 10.53]}>
-        <mesh position={[-0.22, 0.22, 0]} material={iron}>
+      <group ref={right} position={[25.7, 0, 10.93]}>
+        <mesh position={[0, 0.22, -0.2]} material={iron}>
           <boxGeometry args={[0.42, 0.33, 0.04]} />
         </mesh>
       </group>
