@@ -68,6 +68,27 @@ export type Slot = {
   flat?: boolean;
 };
 
+export type VantagePoint = {
+  eye: [number,number,number];
+  lookAt: [number,number,number];
+  yawClamp?: [number,number];
+};
+/** A viewpoint is always derived from the actual plan's room volumes and slots. */
+export function vantageFor(plan: HomePlan, zone: PlanZone): VantagePoint {
+  const point = plan.vantagePoints?.[zone] ?? plan.spawn.zones[zone] ?? plan.spawn.entry;
+  const room = plan.rooms.find(r=>r.zone===zone);
+  const x = Math.max((room?.rect.x0 ?? 0)+0.35,Math.min((room?.rect.x1 ?? plan.size.w)-0.35,point[0]));
+  const z = Math.max((room?.rect.z0 ?? 0)+0.35,Math.min((room?.rect.z1 ?? plan.size.d)-0.35,point[1]));
+  const y=Math.min(1.62,plan.size.h-0.45);
+  // Aim toward the most prominent fixture in this zone, rather than a
+  // made-up coordinate from a differently-sized floor plan.
+  const fixtures=plan.slots.filter(s=>s.zone===zone);
+  const facing=fixtures.length?fixtures.reduce((a,b)=>Math.hypot(a.x-x,a.z-z)<Math.hypot(b.x-x,b.z-z)?a:b):null;
+  const dx=facing?facing.x-x:0;
+  const dz=facing?facing.z-z:-2;
+  const distance=Math.hypot(dx,dz);
+  return {eye:[x,y,z],lookAt:[x+(distance>0.2?dx/distance*3:0),y-0.28,z+(distance>0.2?dz/distance*3:-3)],yawClamp:[-1.2,1.2]};
+}
 export type HomePlan = {
   tier: number;
   kind: PlanKind;
@@ -78,6 +99,7 @@ export type HomePlan = {
   slots: Slot[];
   /** The region the camera frames for each room button (and "all" for the overview). */
   focus: Partial<Record<PlanZone | "all", Rect>>;
+  vantagePoints?: Partial<Record<PlanZone,[number,number]>>;
   /** Walkable room volumes: continuous floor with defined boundaries. */
   rooms: RoomDef[];
   /** Passages between rooms. The entry door is the first one. */
