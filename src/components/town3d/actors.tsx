@@ -356,7 +356,7 @@ export function SiteCrew({ active }: { active: boolean }) {
 
 /** Same timing as the classic map's cars, driving on the left in their lane. */
 export function carPositions(t: number) {
-  const c1 = (t * 2.2) % 8, c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % (N + 4)) - 2;
+  const c1 = (t * 2.2) % 8, c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % 34) - 2;
   return [
     { x: c1, z: 8.5 - 0.35, heading: 90 },
     { x: c2, z: 13.3 - 0.35, heading: 90 },
