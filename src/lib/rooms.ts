@@ -711,6 +711,34 @@ export const ROOMS: Record<PlaceId, Room> = {
       },
     ],
   },
+  post: {
+    id: "post",
+    title: "Town Post Office",
+    caption: "Your post is safe here. Probably.",
+    sign: "POST OFFICE",
+    palette: { wall: "#f2debe", floor: "#aa8f74", accent: "#a93d37" },
+    hotspots: [
+      {
+        id: "post-counter",
+        label: "Postal counter",
+        tag: "MAIL",
+        hint: "Register a mailbox for home deliveries",
+        box: { x: 15, y: 115, w: 230, h: 85 },
+        lines: s => s.mailbox
+          ? ["Your mailbox is registered. Future letters can be delivered to your home."]
+          : ["Letters are held here until you register an address.", "A permanent mailbox costs $25 and moves with your home."],
+        actions: s => s.mailbox ? [] : [buyMailboxAction(s)],
+      },
+      {
+        id: "sorting",
+        label: "Sorting shelves",
+        tag: "POST",
+        hint: "Letters waiting to be sorted",
+        box: { x: 265, y: 65, w: 135, h: 140 },
+        lines: () => ["Stacks of envelopes and parcels.", "The town's correspondence system is coming soon."],
+      },
+    ],
+  },
   police: {
     id: "police",
     title: "Town Police",
