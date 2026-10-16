@@ -42,3 +42,8 @@ export function exportSave(s:GameState):void{
  const a=document.createElement("a");a.href=url;a.download="town-square-tales-day-"+s.day+".json";document.body.append(a);a.click();a.remove();
  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+
+export function readEmergencyBackup(fallback:GameState):GameState|null {
+ if(typeof window==="undefined")return null;
+ try{return unpack(localStorage.getItem(backupKey),fallback);}catch{return null;}
+}
