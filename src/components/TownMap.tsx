@@ -517,10 +517,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
   // A long-neglected vehicle is a quiet clue for future transport storylines.
   // Not driveable yet: there is deliberately no ordinary purchase action.
-  items.push({ key: 9.25 * 100 + 8.4, el: <g key="abandoned-car" data-abandoned-car>
+  items.push({ key: 11.1 * 100 + 5.8, el: <g key="abandoned-car" data-abandoned-car>
     <title>Rusty abandoned car — its engine has not run in years.</title>
-    <Car x={8.4} y={9.25} dir="x" color="#74695e"/>
-    <g transform={`translate(${P(8.4,9.25)[0]} ${P(8.4,9.25)[1]-17})`}>
+    <Car x={5.8} y={11.1} dir="x" color="#74695e"/>
+    <g transform={`translate(${P(5.8,11.1)[0]} ${P(8.4,9.25)[1]-17})`}>
       <path d="M-17 1l9 -6m5 3l8 7m6 -10l5 5" stroke="#493e39" strokeWidth="2.5" strokeLinecap="round"/>
     </g>
   </g> });

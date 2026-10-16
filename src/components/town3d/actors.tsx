@@ -377,7 +377,7 @@ export function Traffic() {
           <Car colour={c} />
         </group>
       ))}
-      <group position={[8.4, 0, 9.25]} rotation={[0, Math.PI / 2 + 0.08, 0]}>
+      <group position={[5.8, 0, 11.1]} rotation={[0, Math.PI / 2 + 0.08, 0]}>
         <Car colour="#74695e" wreck />
       </group>
     </>
