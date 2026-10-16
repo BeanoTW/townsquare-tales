@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import * as THREE from "three";
@@ -34,6 +34,7 @@ export type TownWorld3DProps = {
   yardRelocated?: boolean;
   companyCar?: boolean;
   driving?: boolean;
+  carPosition?: MutableRefObject<{x:number;y:number;angle:number}>;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -198,9 +199,9 @@ function CompletedTownHall() {
   );
 }
 
-function CompanyCar({live, driving}: {live: TownLive; driving: boolean}) {
+function CompanyCar({live, driving, carPosition}: {live: TownLive; driving: boolean; carPosition: MutableRefObject<{x:number;y:number;angle:number}>}) {
  const ref = useRef<THREE.Group>(null);
- const parked = useRef({x:30.1,y:22.1,angle:180});
+
  // Dynamic actors must stay outside StaticBatch: it bakes mesh coordinates at mount.
  // Keep the last driven position when exiting instead of snapping to the yard.
  useFrame(() => {
@@ -208,9 +209,9 @@ function CompanyCar({live, driving}: {live: TownLive; driving: boolean}) {
   if (!group) return;
   if (driving) {
    const player = live.me.current;
-   parked.current = {x:player.x,y:player.y,angle:player.skateAngle};
+   carPosition.current = {x:player.x,y:player.y,angle:player.skateAngle};
   }
-  const car = parked.current;
+  const car = carPosition.current;
   group.position.set(car.x,0,car.y);
   group.rotation.y = Math.PI - car.angle * Math.PI / 180;
  });
@@ -239,7 +240,7 @@ function EasternYardEquipment() {
   </group>;
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving }: Omit<TownWorld3DProps, "tick">) {
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving, carPosition }: Omit<TownWorld3DProps, "tick">) {
   const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned), Boolean(yardRelocated)), [house, castleOwned, yardRelocated]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
@@ -256,7 +257,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         {yardRelocated && <group position={[19.1,0,12.3]} scale={[0.7,1,0.7]}><ConstructionStatic /></group>}
         {yardRelocated && <EasternYardEquipment />}
       </StaticBatch>
-      {yardRelocated && companyCar && <CompanyCar live={live} driving={Boolean(driving)} />}
+      {yardRelocated && companyCar && carPosition && <CompanyCar live={live} driving={Boolean(driving)} carPosition={carPosition} />}
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
