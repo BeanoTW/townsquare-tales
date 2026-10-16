@@ -1,4 +1,5 @@
 export type GameState = {
+  playerX?: number; playerY?: number;
   drivingLicence?: number; companyCar?: number; drivingTestDay?: number; driveDestination?: number; driveTrip?: number;
   contractType?: number; contractDueDay?: number; contractLastDay?: number; contractWins?: number; contractLosses?: number;
   restaurantManager?: number; retailManager?: number; restaurantBranches?: number; retailBranches?: number;
@@ -40,6 +41,7 @@ export type GameState = {
 
 const KEY = "sticktown";
 const ranges: Record<keyof GameState, [number, number]> = {
+  playerX: [0, 36], playerY: [0, 36],
   drivingLicence: [0, 1], companyCar: [0, 1], drivingTestDay: [0, 100000], driveDestination: [0, 2], driveTrip: [0, 100000],
   contractType: [0, 3], contractDueDay: [0, 100000], contractLastDay: [0, 100000], contractWins: [0, 100000], contractLosses: [0, 100000],
   restaurantManager: [0, 2], retailManager: [0, 2], restaurantBranches: [0, 3], retailBranches: [0, 3],
