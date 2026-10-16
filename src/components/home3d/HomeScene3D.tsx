@@ -3,7 +3,7 @@ import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { PlanZone } from "@/lib/home-zones";
-import { daylight, fitToView, partitionDrops, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
+import { daylight, fitToView, roomWallScale, vantageFor, vantageLook, visibleSlots, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
 import { Bed, Bookshelf, Console, Desk, EstateBoard, Kitchen, Mattress, Sofa, Television, Weights } from "./furniture";
 import { Floors, Plinth, Wall } from "./parts";
 import { StudioDecor } from "./StudioShell";
@@ -175,7 +175,19 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const tmp = useMemo(() => new THREE.Vector3(), []);
   const nearbyRef = useRef<string | null>(null);
   const fp = isFirstPerson(plan);
-  const fpRef = useRef({ yaw: 0, gyaw: 0 });
+  const vantage = useMemo(() => vantageFor(plan, zone), [plan, zone]);
+  const fpRef = useRef({ yaw: 0, gyaw: 0,
+    eye: new THREE.Vector3(...vantage.eye), look: new THREE.Vector3(...vantage.lookAt),
+    targetEye: new THREE.Vector3(...vantage.eye), targetLook: new THREE.Vector3(...vantage.lookAt),
+    yawClamp: vantage.yawClamp ?? [-FP_YAW, FP_YAW],
+  });
+  useEffect(() => {
+    const f = fpRef.current;
+    f.targetEye.set(...vantage.eye); f.targetLook.set(...vantage.lookAt);
+    f.yawClamp = vantage.yawClamp ?? [-FP_YAW, FP_YAW];
+    f.gyaw = 0;
+    invalidate();
+  }, [vantage, invalidate]);
   const slotsRef = useRef(slots);
   slotsRef.current = slots;
 
@@ -266,7 +278,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       const dx = e.clientX - last; last = e.clientX;
       shared.dragged.current += Math.abs(dx);
       const f = fpRef.current;
-      f.gyaw = clamp(f.gyaw + dx * 0.006, -FP_YAW, FP_YAW);
+      f.gyaw = clamp(f.gyaw + dx * 0.006, f.yawClamp[0]!, f.yawClamp[1]!);
       invalidate();
     };
     const up = () => { last = null; };
@@ -307,21 +319,22 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     c.az = DEFAULT_AZ;
     c.el += ((cine.active ? cine.el : DEFAULT_EL) - c.el) * k;
     if (Math.abs(c.el - DEFAULT_EL) < 0.001) c.el = DEFAULT_EL;
-    const slice = c.el < DEFAULT_EL - 0.08;
+    const firstPersonView = fp && !cine.active && !shared.walker.current.scene;
+    const slice = !firstPersonView && c.el < DEFAULT_EL - 0.08;
     if (slice !== (gl.clippingPlanes.length > 0)) gl.clippingPlanes = slice ? cutaway : [];
     c.dist += (c.gdist - c.dist) * k;
     c.tx += (c.gtx - c.tx) * k;
     c.tz += (c.gtz - c.tz) * k;
     const pc = camera as THREE.PerspectiveCamera;
-    if (fp && !cine.active) {
-      // First-person: stand just inside the front of the room at eye height; drag turns the head.
+    if (firstPersonView) {
       const f = fpRef.current;
+      const glide = reduce ? 1 : 1 - Math.exp(-dt * 6);
+      f.eye.lerp(f.targetEye, glide); f.look.lerp(f.targetLook, glide);
       f.yaw += (f.gyaw - f.yaw) * (reduce ? 1 : 1 - Math.exp(-dt * 12));
-      const ex = plan.size.w / 2, ez = plan.size.d - 0.35, eh = Math.min(1.6, plan.size.h - 0.5);
       if (pc.fov !== FP_FOV) { pc.fov = FP_FOV; pc.updateProjectionMatrix(); }
-      camera.position.set(ex, eh, ez);
-      camera.lookAt(ex - Math.sin(f.yaw) * 4, eh - 0.55, ez - Math.cos(f.yaw) * 4);
-      if (Math.abs(f.gyaw - f.yaw) > 0.001) invalidate();
+      camera.position.copy(f.eye);
+      camera.lookAt(...vantageLook(f.eye.toArray(), f.look.toArray(), f.yaw));
+      if (Math.abs(f.gyaw - f.yaw) > 0.001 || f.eye.distanceToSquared(f.targetEye) + f.look.distanceToSquared(f.targetLook) > 0.000001) invalidate();
     } else {
       if (pc.fov !== FOV) { pc.fov = FOV; pc.updateProjectionMatrix(); }
       const ce = Math.cos(c.el);
@@ -336,7 +349,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     for (const spec of plan.walls) {
       const g = shared.walls.current.get(spec.id);
       if (!g) continue;
-      const target = Math.min(wallScale(spec, off), partitionDrops(spec, camera.position) ? 0.06 : 1);
+      const target = roomWallScale(spec, off, camera.position, firstPersonView);
       const next = reduce ? target : g.scale.y + (target - g.scale.y) * k;
       if (Math.abs(next - g.scale.y) > 0.002) busy = true;
       g.scale.y = Math.abs(next - target) < 0.004 ? target : next;

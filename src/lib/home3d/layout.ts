@@ -68,7 +68,14 @@ export type Slot = {
   flat?: boolean;
 };
 
+export type VantagePoint = {
+  eye: [number, number, number];
+  lookAt: [number, number, number];
+  yawClamp?: [number, number];
+};
+
 export type HomePlan = {
+  vantagePoints?: Partial<Record<PlanZone, VantagePoint>>;
   tier: number;
   kind: PlanKind;
   name: string;
@@ -101,6 +108,10 @@ const PART_X = 4.2;
 export const STUDIO: HomePlan = {
   tier: 1,
   kind: "studio",
+  vantagePoints: {
+    living: { eye: [1.8, 1.55, 3.8], lookAt: [1.8, 1.2, 1.2] },
+    bedroom: { eye: [5.6, 1.55, 3.8], lookAt: [5.6, 1.2, 1] },
+  },
   name: "Studio flat",
   size: { w: W, d: D, h: H },
   floors: [
@@ -239,4 +250,25 @@ export function fitToView(w: number, d: number, h: number, az: number, el: numbe
     need = Math.max(need, Math.abs(cx) / th + cz, Math.abs(cy) / tv + cz);
   }
   return need * margin;
+}
+/** Safe fallback for older plans without authored room cameras. */
+export function vantageFor(plan: HomePlan, zone: PlanZone): VantagePoint {
+  const authored = plan.vantagePoints?.[zone];
+  if (authored) return authored;
+  const spawn = plan.spawn.zones[zone] ?? plan.spawn.entry;
+  const eh = Math.min(1.6, plan.size.h - 0.5);
+  const x = Math.max(0.2, Math.min(plan.size.w - 0.2, spawn[0]));
+  const z = Math.max(0.2, Math.min(plan.size.d - 0.2, spawn[1] + 1));
+  return { eye: [x, eh, z], lookAt: [x, eh - 0.35, z - 3], yawClamp: [-1.15, 1.15] };
+}
+
+/** Head turn is relative to the authored direction, including its downward pitch. */
+export function vantageLook(eye: readonly number[], look: readonly number[], yaw: number): [number, number, number] {
+  const dx = look[0]! - eye[0]!, dz = look[2]! - eye[2]!;
+  return [eye[0]! + dx * Math.cos(yaw) + dz * Math.sin(yaw), look[1]!, eye[2]! - dx * Math.sin(yaw) + dz * Math.cos(yaw)];
+}
+
+export function roomWallScale(wall: WallSpec, off: { x: number; z: number }, camera: { x: number; y: number }, firstPerson: boolean) {
+  if (firstPerson) return wall.outer ? wallScale(wall, off) : 1;
+  return Math.min(wallScale(wall, off), partitionDrops(wall, camera) ? 0.06 : 1);
 }
