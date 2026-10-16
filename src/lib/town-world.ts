@@ -53,7 +53,6 @@ export const buildings = (house: number): B[] => {
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
     { x: 25.7, y: 8.7, w: 3.8, d: 3.65 },
   ] as const;
-  const site = sites[Math.max(0, Math.min(3, house))]!;
   const residences = sites.map((plot, tier) => ({
     facing: "south" as const, id: tier === house ? "home" : `residence-${tier}`,
     label: tier === house ? `Home · ${hl.label}` : ["Cardboard Box", "Studio Flat", "Suburban House", "Mansion"][tier]!,
