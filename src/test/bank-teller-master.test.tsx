@@ -19,8 +19,8 @@ describe("bank teller master services",()=>{
     expect(within(dialog).getByRole("button",{name:/Deposit \$50/i})).toBeTruthy();
     expect(within(dialog).getByRole("button",{name:/Withdraw \$50/i})).toBeTruthy();
     fireEvent.click(within(dialog).getByRole("button",{name:/Apply for loan/i}));
-    expect(within(dialog).getByRole("button",{name:/Borrow \$250/i})).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("button",{name:/Borrow \$250/i}));
+    expect(within(dialog).getByRole("button",{name:/Borrow 250/i})).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button",{name:/Borrow 250/i}));
     expect(onRun).toHaveBeenCalledTimes(1);
     fireEvent.click(within(dialog).getByRole("button",{name:/My accounts/i}));
     expect(within(dialog).getByText(/0.1% interest each night/i)).toBeTruthy();
@@ -30,6 +30,6 @@ describe("bank teller master services",()=>{
   it("lets customers repay at the teller without visiting the private loan desk",()=>{
     renderTeller({...START,money:1000,bank:100,loanDebt:650,loanDueDay:12});
     fireEvent.click(screen.getByRole("button",{name:/Repay a loan/i}));
-    expect(screen.getByRole("button",{name:/Repay.*100/i})).toBeTruthy();
+    expect(screen.getByRole("button",{name:/Repay 100/i})).toBeTruthy();
   });
 });
