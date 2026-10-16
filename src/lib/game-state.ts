@@ -5,7 +5,7 @@ export type GameState = {
   civicStage?: number; civicSupport?: number;
   str: number; int: number; cha: number; karma: number;
   house: number; ownedHomes?: number; school: number; job: number; heat: number;
-  bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
+  bank: number; caffeinePills?: number; snacks: number; trainers: number; alarm: number; furniture: number;
   luxuryFurniture?: number;
   mailbox?: number;
   mailReadMask?: number; familyReplyMask?: number; pendingReplyMask?: number; familyFirstReplyDay?: number;
@@ -53,7 +53,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   relMara: [-10, 10], relNox: [-10, 10], relGus: [-10, 10], relIvy: [-10, 10],
   karma: [-1e6, 1e6], house: [0, 3], ownedHomes: [0, 15], school: [0, 4],
   employed: [0, 1], job: [0, 4], career: [0, 3], xp: [0, 1000000], studyXp: [0, 1000000], heat: [0, 100],
-  bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 255],
+  bank: [0, 1e12], smokes: [0, 99], skateboard: [0, 1], skateboardEquipped: [0, 1], parkSmokes: [0, 15], parkKidGone: [0, 1], caffeinePills: [0, 20], snacks: [0, 99], trainers: [0, 1], alarm: [0, 1], furniture: [0, 255],
   bjWon: [0, 1e12], bjLost: [0, 1e12], slotWon: [0, 1e12], slotLost: [0, 1e12],
   bbBest5: [0, 5], bbBestTimed: [0, 200], bbMade: [0, 1e9], bbShots: [0, 1e9],
   railGrinds: [0, 1e9], railFalls: [0, 1e9], railLongest: [0, 60000], railLevel: [0, 5],
