@@ -1,4 +1,5 @@
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
+import { buyLaptopAction, marketAction, marketUnlocked, sharePrice } from "@/lib/investing";
 import { HUSTLES, hustleAction } from "@/lib/side-hustles";
 import { CAREERS, currentRole, missingRequirements, nextRole } from "@/lib/careers";
 import {
@@ -199,7 +200,8 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Quiet study at home",
         box: { x: 166, y: 92, w: 96, h: 58 },
         when: (s) => ownsFurniture(s.furniture, "desk"),
-        actions: () => [STUDY_DESK],
+        lines: (s) => s.laptop ? [`Laptop · ${s.marketShares??0} shares · ${sharePrice(s.day)}/share`,marketUnlocked(s) ? "Stock market unlocked · 2% fee per trade" : "Investment training unlocks at MegaCorp Analyst"] : ["Buy a laptop at Cosy Corner to access online finances."],
+        actions: (s) => [STUDY_DESK, ...(s.laptop && marketUnlocked(s) ? [marketAction("buy",1),marketAction("buy",10),marketAction("sell",1),marketAction("sell",10)] : [])],
       },
       {
         id: "sofa",
@@ -657,6 +659,7 @@ export const ROOMS: Record<PlaceId, Room> = {
           furnitureAction("kitchen", s),
           furnitureAction("weights", s),
           furnitureAction("desk", s),
+          ...(!s.laptop ? [buyLaptopAction()] : []),
           furnitureAction("tv", s),
           furnitureAction("console", s),
           furnitureAction("bookshelf", s),
