@@ -32,6 +32,7 @@ import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
+import { gangCarLesson, pawnIntroductionAction, attemptHotwire } from "@/lib/underworld";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
 import { hasEquippedBoard, startSession } from "@/lib/minigames";
 import { DartsGame } from "@/components/minigames/DartsGame";
@@ -299,6 +300,7 @@ function Game() {
           return outcome.ok;
         }}
         onDrive={destination => perform(driveAction(destination))}
+        onHotwire={() => perform(attemptHotwire())}
         movementMode={movementMode}
         hour={s.hour}
         house={s.house}
@@ -411,6 +413,8 @@ function Game() {
                 <Btn onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>Take a package</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
+              {(s.gangStage >= 1) && !(s.abandonedCar) && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the wreck by the roadside</Btn>}
+              {(s.gangRep >= 7 || (s.streetSmarts??0) >= 16) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
               <p className="text-sm">Crew equipment: serious gear takes time, trust and cash. The cheap bat cannot be used for till robberies.</p>
               {([1,2] as const).map(tier => <Btn key={tier} disabled={!!weaponBlock(s,tier)} onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · ${buyWeapon(tier).cost} · {buyWeapon(tier).hours}h · {buyWeapon(tier).energy} energy · {weaponBlock(s,tier) ?? buyWeapon(tier).note}</Btn>)}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
