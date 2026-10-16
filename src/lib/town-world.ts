@@ -53,12 +53,12 @@ export const buildings = (house: number, castle = house >= 4, yardRelocated = fa
   const hl = HOUSE_LOOK[house] ?? HOUSE_LOOK[0]!;
   const sites = [
     { x: 1.1, y: 2, w: 3, d: 4 },
-    { x: 16.5, y: 15.15, w: 3.0, d: 2.9 },
+    { x: 26.2, y: 10.2, w: 3.0, d: 3.0 },
     { x: 22.15, y: 1.0, w: 3.15, d: 3.8 },
     { x: 32.0, y: 5.375, w: 3.8, d: 3.65 },
   ] as const;
   const residences: B[] = sites.map((plot, tier) => ({
-    facing: (tier === 3 ? "west" : "south") as "west" | "south", id: tier === house ? "home" : `residence-${tier}`,
+    facing: (tier === 1 || tier === 3 ? "west" : "south") as "west" | "south", id: tier === house ? "home" : `residence-${tier}`,
     label: tier === house ? `Home · ${hl.label}` : ["Cardboard Box", "Studio Flat", "Suburban House", "Mansion"][tier]!,
     ...plot, h: HOUSE_LOOK[tier]!.h, wall: HOUSE_LOOK[tier]!.wall,
     side: HOUSE_LOOK[tier]!.side, roof: HOUSE_LOOK[tier]!.roof,
