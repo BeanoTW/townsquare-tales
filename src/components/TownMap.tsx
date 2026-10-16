@@ -535,6 +535,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   }
   const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % 34) - 2;
   if (!use3d) {
+  if (yardRelocated && state?.companyCar) items.push({key: 22.3*100+30, el:<g key="company-car" data-company-car><title>Your company car — drive home or to work using the travel controls</title><Car x={30} y={22.3} dir="y" color="#788574" /></g>});
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
