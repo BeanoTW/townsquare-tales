@@ -498,10 +498,10 @@ export const ROOMS: Record<PlaceId, Room> = {
       {
         id: "shelves",
         label: "Shop shelves",
-        tag: "BUY",
-        hint: "Snacks and essentials",
+        tag: "LOOK",
+        hint: "Browse the shelves. Take your items to the checkout to buy.",
         box: { x: 12, y: 30, w: 150, h: 130 },
-        actions: () => [BUY_SNACK],
+        lines: () => ["Stocked shelves and everyday essentials.", "All purchases are handled at the checkout counter."],
       },
       {
         id: "back-office",
