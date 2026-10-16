@@ -3,7 +3,7 @@ import { settleBusinesses } from "@/lib/owned-businesses";
 import { requiresMainsPower } from "@/lib/home-zones";
 import { CAREERS, missingRequirements, nextRole, shiftReward } from "@/lib/careers";
 import { saveCareer, trackBest, trackXp } from "@/lib/career-history";
-import { sleepOutcome, timeLabel } from "@/lib/day-cycle";
+import { durationLabel, sleepOutcome, timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, LUXURY_FURNITURE, ownsFurniture, type FurnitureId } from "@/lib/furniture";
 import { HOUSES, SCHOOLS } from "@/lib/game-data";
 import type { GameState } from "@/lib/game-state";
@@ -69,7 +69,7 @@ export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random):
   if (s.hour + def.hours > 24) {
     return {
       ok: false,
-      message: `Not enough time: ${def.hours}h required, only ${24 - s.hour}h left today.`,
+      message: `Not enough time: ${durationLabel(def.hours)} required, only ${durationLabel(24 - s.hour)} left today.`,
     };
   }
   const resolved = def.resolve(s, rng);
@@ -125,12 +125,12 @@ export const COOK_AT_HOME: ActionDef = {
   hours: 1,
   energy: 0,
   cost: 5,
-  note: "+40 energy",
+  note: "Basic kitchen +20 energy · luxury kitchen +40",
   resolve: (s) =>
-    s.money >= 5
+    s.house < 1 ? "Cooking requires a proper home kitchen." : s.money >= 5
       ? {
-          patch: { money: s.money - 5, energy: Math.min(100, s.energy + 40) },
-          message: "Homemade dinner! +40 energy.",
+          patch: { money: s.money - 5, energy: Math.min(100, s.energy + ((s.luxuryFurniture ?? 0) & 2 ? 40 : 20)) },
+          message: `Homemade dinner! +${((s.luxuryFurniture ?? 0) & 2) ? 40 : 20} energy.`,
         }
       : "Need $5 for ingredients.",
 };

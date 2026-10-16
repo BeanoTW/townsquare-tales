@@ -1,3 +1,4 @@
+import { durationLabel } from "@/lib/day-cycle";
 import { useEffect, useState } from "react";
 import { timeLabel } from "@/lib/day-cycle";
 export function DayClock({day,hour,money,energy}:{day:number;hour:number;money:number;energy:number}) {
@@ -16,6 +17,6 @@ export function DayClock({day,hour,money,energy}:{day:number;hour:number;money:n
   <div className="mt-1 flex gap-[2px]" role="progressbar" aria-label="Hours elapsed today" aria-valuemin={0} aria-valuemax={24} aria-valuenow={shown}>
     {Array.from({length:24},(_,i)=><span key={i} className={`h-[6px] min-w-0 flex-1 rounded-[1px] transition-colors duration-150 ${i<shown?(i>=19||i<6?"bg-indigo-600":i>=16?"bg-orange-500":"bg-primary"):"bg-muted"}`}/>)}
   </div>
-  <div className="text-[10px] text-muted-foreground">{Math.max(0,24-hour)}h remaining · actions advance time</div>
+  <div className="text-[10px] text-muted-foreground">{durationLabel(24-hour)} remaining · actions advance time</div>
  </div>;
 }

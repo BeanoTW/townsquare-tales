@@ -1,3 +1,4 @@
+import { durationLabel } from "@/lib/day-cycle";
 import type { CSSProperties, ReactNode } from "react";
 import type { ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
@@ -20,7 +21,7 @@ export function actionBlockReason(
   if (godMode) return null;
   if (state.energy < action.energy) return `Need ${action.energy} energy (have ${state.energy})`;
   if (state.hour + action.hours > 24)
-    return `Not enough time left today (${24 - state.hour}h available)`;
+    return `Not enough time left today (${durationLabel(24 - state.hour)} available)`;
   return null;
 }
 
