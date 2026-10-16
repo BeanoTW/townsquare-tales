@@ -348,7 +348,7 @@ describe("walkable shop navigation", () => {
     step(160);
     expect(
       within(screen.getByRole("dialog", { name: "Sofa display" })).getByRole("button", {
-        name: /sofa/i,
+        name: /^Cosy sofa:/i,
       }),
     ).toBeInTheDocument();
   });
