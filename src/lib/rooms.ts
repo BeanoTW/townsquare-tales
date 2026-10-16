@@ -1,3 +1,4 @@
+import { CONTRACTS, constructionStatus, startContractAction } from "@/lib/construction-contracts";
 import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
 import { buyLaptopAction, marketAction, marketUnlocked, sharePrice } from "@/lib/investing";
@@ -316,8 +317,8 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "PROMOTE",
         hint: "Progress and promotions",
         box: { x: 312, y: 90, w: 96, h: 100 },
-        lines: (s) => promotionStatus(3, s),
-        actions: promoteSpot(3),
+        lines: (s) => [...promotionStatus(3, s),...constructionStatus(s)],
+        actions: s => [...promoteSpot(3)(s),...(!s.contractType ? CONTRACTS.map(job => startContractAction(job.id)) : [])],
       },
     ],
   },

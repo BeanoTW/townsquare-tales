@@ -1,3 +1,4 @@
+import { settleContract } from "@/lib/construction-contracts";
 import { settleBusinesses } from "@/lib/owned-businesses";
 import { requiresMainsPower } from "@/lib/home-zones";
 import { CAREERS, missingRequirements, nextRole, shiftReward } from "@/lib/careers";
@@ -154,6 +155,8 @@ export function sleepAction(s: GameState): ActionDef {
     note: (s.caffeinePills ?? 0)>0 ? "Use 1 caffeine pill for a two-hour wake-up boost" : "Ends the day",
     resolve: (st) => {
       const rested = sleepOutcome(st);
+      const afterContract = { ...st, ...settleContract(st, st.day + 1) };
+      const afterBusiness = { ...afterContract, ...settleBusinesses(afterContract, st.day + 1) };
       return {
         patch: {
           hour: rested.hour,
@@ -167,12 +170,13 @@ export function sleepAction(s: GameState): ActionDef {
             : st.loanDebt ?? 0,
           loanLastDay: st.day + 1,
           heat: Math.max(0, st.heat - 1),
-          ...settleBusinesses(st, st.day + 1),
+          ...settleContract(st, st.day + 1),
+          ...settleBusinesses(afterContract, st.day + 1),
           ...(() => {
             const weekly = housingWeeklyCost(st);
             if (!weekly || (st.day + 1 - (st.housingLastPaidDay ?? st.day)) < 7) return {};
             const due = st.housingMode === 2 ? Math.min(weekly, st.mortgageBalance ?? 0) + (st.housingArrears ?? 0) : weekly + (st.housingArrears ?? 0);
-            const available = settleBusinesses(st, st.day + 1).money ?? st.money;
+            const available = afterBusiness.money;
             const paid = Math.min(available, due);
             const remaining = Math.max(0, due - paid);
             const loan = st.housingMode === 2 ? Math.max(0, (st.mortgageBalance ?? 0) - Math.max(0, paid)) : 0;
