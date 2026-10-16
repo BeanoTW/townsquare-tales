@@ -129,11 +129,10 @@ export function CornerShopDecor(){
   <Block at={[4.95,2.63,.26]} scale={[2.3,.38,.14]} material={p.shelf}/>
   <Block at={[4.95,2.65,.35]} scale={[1.94,.17,.016]} material={p.paper}/>
   <Block at={[4.95,2.52,.352]} scale={[1.55,.027,.018]} material={p.yellow}/>
-  {/* Ceiling unit and security mirrors anchor the scene visually. */}
-  {[2.3,5.25,8.2].map(x=><group key={x}>
-    <Block at={[x,3.02,3.5]} scale={[1.65,.08,.24]} material={p.silver}/>
-    <Block at={[x,2.968,3.5]} scale={[1.5,.025,.13]} material={p.paper}/>
-  </group>)}
+  {/* Downward-facing lights stay out of the overhead camera's view. */}
+  {[2.3,5.25,8.2].map(x=><mesh key={x} position={[x,2.968,3.5]} rotation={[Math.PI/2,0,0]} material={p.paper}>
+    <planeGeometry args={[1.5,.13]}/>
+  </mesh>)}
   <mesh position={[9.5,2.65,7.35]} rotation={[0,-Math.PI/4,0]} material={p.silver}>
     <sphereGeometry args={[.24,16,8,0,Math.PI*2,0,Math.PI/2]}/>
   </mesh>

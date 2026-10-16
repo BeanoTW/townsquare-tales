@@ -24,7 +24,7 @@ const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
 /** Match three presses of the existing 0.8× zoom-in control on venue entry. */
 export const VENUE_ENTRY_ZOOM = 0.8 ** 3;
-const initialDistance = (plan: HomePlan, full: number) => plan.tier >= 10 ? Math.max(DIST_MIN, full * VENUE_ENTRY_ZOOM) : full;
+const initialDistance = (plan: HomePlan, full: number) => plan.tier >= 10 && plan.kind !== "bank" ? Math.max(DIST_MIN, full * VENUE_ENTRY_ZOOM) : full;
 const DEFAULT_AZ = 0;
 const DEFAULT_EL = Math.PI / 2 - 0.015;
 
