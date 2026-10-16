@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import * as THREE from "three";
@@ -34,6 +34,7 @@ export type TownWorld3DProps = {
   yardRelocated?: boolean;
   companyCar?: boolean;
   driving?: boolean;
+  carPosition?: MutableRefObject<{x:number;y:number;angle:number}>;
 };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
@@ -198,16 +199,16 @@ function CompletedTownHall() {
   );
 }
 
-function CompanyCar({live, driving}: {live: TownLive; driving: boolean}) {
+function CompanyCar({carPosition}: {carPosition: MutableRefObject<{x:number;y:number;angle:number}>}) {
  const ref=useRef<THREE.Group>(null);
  useFrame(() => {
   const g=ref.current;
   if(!g)return;
-  const m=live.me.current;
-  g.position.set(driving?m.x:30.1,0,driving?m.y:22.1);
-  g.rotation.y=driving?Math.PI-m.skateAngle*Math.PI/180:0;
+  const car=carPosition.current;
+  g.position.set(car.x,0,car.y);
+  g.rotation.y=Math.PI-car.angle*Math.PI/180;
  });
- return <group ref={ref} position={[30.1,0,22.1]}><Car colour="#788574" /></group>;
+ return <group ref={ref}><Car colour="#788574" /></group>;
 }
 
 /** Equipment and contractor storage travel with the foreman's office to the east site. */
@@ -232,7 +233,7 @@ function EasternYardEquipment() {
   </group>;
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving }: Omit<TownWorld3DProps, "tick">) {
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving, carPosition }: Omit<TownWorld3DProps, "tick">) {
   const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned), Boolean(yardRelocated)), [house, castleOwned, yardRelocated]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
@@ -248,8 +249,9 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         {townHallBuilt ? <CompletedTownHall /> : <ConstructionStatic />}
         {yardRelocated && <group position={[19.1,0,12.3]} scale={[0.7,1,0.7]}><ConstructionStatic /></group>}
         {yardRelocated && <EasternYardEquipment />}
-        {yardRelocated && companyCar && <CompanyCar live={live} driving={Boolean(driving)} /> }
+
       </StaticBatch>
+      {yardRelocated && companyCar && carPosition && <CompanyCar carPosition={carPosition} />}
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
