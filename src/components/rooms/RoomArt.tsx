@@ -963,7 +963,7 @@ function decorFor(id: PlaceId, state: GameState, B: (id: string) => Box, room: R
     case "post": {
       const counter=B("post-counter"), sorting=B("sorting");
       return <g>
-        <Counter b={counter} top="#a36445" />
+        <Counter b={counter} top="#a36445" body="#b58c6d" />
         <Monitor x={counter.x+counter.w-65} y={counter.y+3} w={52} h={38}/>
         <Figure x={counter.x+50} y={counter.y+counter.h-7} shirt="#b64145"/>
         <Fill b={sorting} fill="#e0b881" rx={3}/>
