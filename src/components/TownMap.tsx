@@ -126,7 +126,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
   </>;
 }
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
   const townHallReady = isTownHallBuilt({ day: state?.day ?? 1 });
@@ -707,7 +707,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
             <button type="button" aria-label="Close car inspection" className="min-h-10 min-w-10 rounded-md bg-secondary" onClick={() => setInspectAbandonedCar(false)}>✕</button>
           </div>
           <p className="mt-2 text-sm">Years of rust. Flat tyres. The engine hasn't turned over in ages. This isn't the company car the foreman offers at Site Lead.</p>
-          <p className="mt-2 text-xs text-muted-foreground">Nothing to drive here yet. Earn the company car at the Workers Yard after getting your licence to unlock travel between home and work.</p>
+          {state?.abandonedCar ? <p className="mt-2 text-sm">The engine coughs to life. The wreck is yours, although it still needs major repairs before driving.</p> : (state?.criminalTrust ?? 0) >= 10 ? <><p className="mt-2 text-xs text-muted-foreground">You remember the crew's advice. The ignition challenge is a fictional luck-and-skill test.</p><button type="button" className="mt-3 min-h-11 rounded-md bg-secondary px-3 font-bold" onClick={() => { onHotwire?.(); setInspectAbandonedCar(false); }}>Try the ignition challenge</button></> : <p className="mt-2 text-xs text-muted-foreground">The car has been dead for years. Maybe someone around town knows more about it.</p>}
         </div>
       )}
       {state && canDrive(state) && !active && !paused && (driving || Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<2.2) && (
