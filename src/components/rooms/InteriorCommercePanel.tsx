@@ -142,7 +142,7 @@ function BankDesk({id,state,godMode,onRun}:{id:string;state:GameState;godMode:bo
   </div>;
 }
 export function InteriorCommercePanel({venue,hotspot,state,godMode,onRun,onClose}:{venue:string;hotspot:Hotspot;state:GameState;godMode:boolean;onRun:(a:ActionDef)=>void;onClose:()=>void}) {
-  const shop=venue==="shop"&&(hotspot.id==="shelves"||hotspot.id==="checkout");
+  const shop=venue==="shop"&&hotspot.id==="checkout";
   const bank=venue==="bank"&&["teller","atm","loans","vault"].includes(hotspot.id);
   const actions=hotspotActions(hotspot,state);
   return <section role="dialog" aria-label={hotspot.label} data-panel data-interior-commerce className="rounded-2xl border-2 border-foreground bg-card/95 p-3 shadow-2xl backdrop-blur-md">
