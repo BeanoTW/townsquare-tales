@@ -43,6 +43,7 @@ function Building({ b, house }: { b: B; house: number }) {
     case "furniture": return <Furniture b={b} c={c} />;
     case "casino": return <Casino b={b} c={c} />;
     case "depot": return <Depot b={b} c={c} />;
+    case "post": return <PostOffice b={b} c={c} />;
     case "police": return <Police b={b} c={c} />;
     case "clinic": return <Clinic b={b} c={c} />;
     default: return <Generic b={b} c={c} />;
