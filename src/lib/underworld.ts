@@ -44,3 +44,26 @@ export function pawnIntroductionAction():ActionDef {
         message:'"Ask at the pawn shop. Quietly. Mention that we sent you. They decide if you get through the back door."' };
     }};
 }
+
+/** The pawn shop remains an ordinary shop unless the street crew introduces you. */
+export function meetPawnContact(): ActionDef {
+ return {id:"pawn-backroom-meet",label:"Mention the name the crew gave you",hours:0.5,energy:2,
+ resolve:s=>{
+  if(!s.pawnIntroduction)return '"Sorry. Don\'t know what you mean."';
+  if(s.pawnMet)return '"We\'ve met. Get to the point."';
+  return {patch:{pawnMet:1,criminalTrust:Math.min(100,(s.criminalTrust??0)+5)},
+    message:'The shopkeeper studies you, then opens a door behind the counter. Inside, Vince sits with two strangers. "The lads say you have potential. We shall see."'};
+ }};
+}
+export function pawnErrand(): ActionDef {
+ return {id:"pawn-quiet-errand",label:"Take Vince's discreet errand",hours:2,energy:13,
+ resolve:s=>{
+  if(!s.pawnMet)return '"We haven\'t been introduced."';
+  if(s.pawnJobDay===s.day)return '"That\'s enough for today. Don\'t get greedy."';
+  return {patch:{pawnJobDay:s.day,money:Math.min(1e12,s.money+90),
+    streetSmarts:Math.min(100,(s.streetSmarts??0)+3),
+    criminalTrust:Math.min(100,(s.criminalTrust??0)+3),
+    heat:Math.min(100,s.heat+4),karma:s.karma-2},
+    message:'You deliver an unmarked parcel and return without questions. Vince counts your share. "You learn quickly."'};
+ }};
+}
