@@ -2,6 +2,7 @@ export type GameState = {
   sideHustleDay?: number; sideHustlesToday?: number;
   loanDebt?: number; loanLastDay?: number; loanDueDay?: number; loanPrincipal?: number;
   day: number; hour: number; energy: number; money: number;
+  civicStage?: number; civicSupport?: number;
   str: number; int: number; cha: number; karma: number;
   house: number; ownedHomes?: number; school: number; job: number; heat: number;
   bank: number; snacks: number; trainers: number; alarm: number; furniture: number;
@@ -45,6 +46,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   streetEncounterDay: [0, 100000],
   streetMaraIncidents: [0, 1000003], streetNoxIncidents: [0, 1000003], streetGusIncidents: [0, 1000003], streetIvyIncidents: [0, 1000003],
   gangRep: [0, 100], gangStage: [0, 2],
+  civicStage: [0, 4], civicSupport: [0, 100],
   day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
   lastMara: [0, 100000], lastNox: [0, 100000], lastGus: [0, 100000], lastIvy: [0, 100000],
