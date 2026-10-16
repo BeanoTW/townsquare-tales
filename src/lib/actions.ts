@@ -145,13 +145,14 @@ export function sleepAction(s: GameState): ActionDef {
     label: `Sleep · wake around ${timeLabel(wake)}`,
     hours: 0,
     energy: 0,
-    note: "Ends the day",
+    note: s.alarm && (s.caffeinePills ?? 0)>0 ? "Use 1 caffeine pill with your alarm to wake by 07:00" : "Ends the day",
     resolve: (st) => {
       const rested = sleepOutcome(st);
       return {
         patch: {
           hour: rested.hour,
           energy: rested.energy,
+          caffeinePills: st.alarm && (st.caffeinePills ?? 0)>0 ? (st.caffeinePills ?? 0)-1 : (st.caffeinePills ?? 0),
           day: st.day + 1,
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
           // Loans have a fixed 40% borrowing charge; only overdue debt incurs additional penalties.
@@ -497,14 +498,29 @@ export function buyAlarmAction(s: GameState): ActionDef {
     hours: 0,
     energy: 0,
     cost: 100,
-    note: s.alarm ? "Owned" : "Wake an hour earlier",
+    note: s.alarm ? "Owned" : "Wake two hours earlier; pair with caffeine for 07:00",
     resolve: (st) =>
       !st.alarm && st.money >= 100
         ? {
             patch: { money: st.money - 100, alarm: 1 },
-            message: "You now wake at 7:00, gaining an extra hour.",
+            message: "Alarm clock purchased. Wake two hours earlier; combine with a caffeine pill for 07:00.",
           }
         : "Already owned or not enough cash.",
+  };
+}
+
+/** Single-use morning boost: requires an alarm for the 07:00 wake-up. */
+export function buyCaffeineAction(): ActionDef {
+  return {
+    id: "buy-caffeine-pill",
+    label: "Caffeine pill · $75",
+    hours: 0,
+    energy: 0,
+    cost: 75,
+    note: "Single use · combine with alarm clock for a 07:00 wake-up",
+    resolve: s => (s.caffeinePills ?? 0) >= 20 ? "Your bag is already full of caffeine pills."
+      : s.money < 75 ? "Not enough cash for caffeine pills."
+      : { patch: { money: s.money-75, caffeinePills: (s.caffeinePills ?? 0)+1 }, message: "Bought one caffeine pill. Use it with an alarm clock when sleeping to wake by 07:00." },
   };
 }
 
