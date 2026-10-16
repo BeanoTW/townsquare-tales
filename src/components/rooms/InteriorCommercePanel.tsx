@@ -45,24 +45,24 @@ const tellerServices: {id:TellerService;name:string;icon:string}[] = [
 
 function BankBalances({state}:{state:GameState}) {
   return <div className="grid grid-cols-2 gap-2 rounded-lg bg-secondary p-2 text-xs">
-    <span>Wallet <strong className="block text-base">${"$"}{state.money.toLocaleString()}</strong></span>
-    <span>Savings <strong className="block text-base">${"$"}{state.bank.toLocaleString()}</strong></span>
+    <span>Wallet <strong className="block text-base">${state.money.toLocaleString()}</strong></span>
+    <span>Savings <strong className="block text-base">${state.bank.toLocaleString()}</strong></span>
   </div>;
 }
 function BankLoanInfo({state}:{state:GameState}) {
   const debt=state.loanDebt??0;
   return <div className="rounded-lg bg-secondary p-2 text-xs space-y-1">
-    <p>Outstanding loan: <strong>${"$"}{debt.toLocaleString()}</strong></p>
+    <p>Outstanding loan: <strong>${debt.toLocaleString()}</strong></p>
     <p>{debt>0?`Due on day ${state.loanDueDay || "—"}`:"No outstanding loan"} · 40% finance charge · 30-day term</p>
-    <p>2% daily penalty after the deadline. Loans above ${"$"}250 require employment.</p>
+    <p>2% daily penalty after the deadline. Loans above $250 require employment.</p>
   </div>;
 }
 function ExactTransfer({kind,state,onRun}:{kind:"deposit"|"withdraw";state:GameState;onRun:(a:ActionDef)=>void}) {
   const [amount,setAmount]=useState("");
   const maximum=kind==="deposit"?state.money:state.bank;
   const parsed=Number(amount);
-  const valid=amount.trim()!=="" && /^\\d+$/.test(amount.trim()) && Number.isSafeInteger(parsed) && parsed>0 && parsed<=maximum;
-  const error=amount.trim()===""?"":!Number.isSafeInteger(parsed)||!/^\\d+$/.test(amount.trim())||parsed<=0?"Enter a positive whole-dollar amount.":parsed>maximum?"Not enough available funds.":"";
+  const valid=amount.trim()!=="" && /^\d+$/.test(amount.trim()) && Number.isSafeInteger(parsed) && parsed>0 && parsed<=maximum;
+  const error=amount.trim()===""?"":!Number.isSafeInteger(parsed)||!/^\d+$/.test(amount.trim())||parsed<=0?"Enter a positive whole-dollar amount.":parsed>maximum?"Not enough available funds.":"";
   const label=kind==="deposit"?"Deposit":"Withdraw";
   return <form className="space-y-2" onSubmit={e=>{
     e.preventDefault();
@@ -78,7 +78,7 @@ function ExactTransfer({kind,state,onRun}:{kind:"deposit"|"withdraw";state:GameS
       <button type="button" onClick={()=>setAmount(String(maximum))} disabled={maximum<=0}
         className={button}>All</button>
     </div>
-    <p className="text-xs text-muted-foreground">Available: ${"$"}{maximum.toLocaleString()}</p>
+    <p className="text-xs text-muted-foreground">Available: ${maximum.toLocaleString()}</p>
     {error&&<p role="alert" className="text-xs font-bold text-destructive">{error}</p>}
     <button type="submit" disabled={!valid}
       className="min-h-11 w-full rounded-xl border-2 border-foreground bg-foreground px-3 font-bold text-background disabled:opacity-50">
