@@ -18,7 +18,7 @@ export function hustleAction(id:HustleId):ActionDef {
     const skill=Math.max(0,Math.min(100,id==="market-stall"?s.cha:s.str));
     const lucky=rng();
     let revenue=h.base+Math.floor(skill*(id==="market-stall"?0.22:0.18));
-    if(id==="market-stall")revenue=lucky<0.25?Math.floor(revenue*0.5):lucky>0.87?Math.floor(revenue*1.35):revenue;
+    if(id==="market-stall")revenue=lucky<0.25?Math.floor(revenue*0.35):lucky>0.87?Math.floor(revenue*1.35):revenue;
     else revenue+=Math.floor(lucky*9);
     return {patch:{
       money:Math.min(1e12,s.money+revenue-cost),
