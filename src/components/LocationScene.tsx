@@ -30,20 +30,15 @@ const panel3d = (cw: number, ch: number): CSSProperties =>
     ? { left: 8, bottom: 8, width: cw - 16, maxHeight: Math.max(80, ch - 16) }
     : { right: 8, bottom: 8, width: Math.min(290, cw - 16), maxHeight: Math.max(140, ch - 16) };
 
-/** Whether the real 3D renderer can be used, and the player's saved choice between it and the classic view. */
+/** Prefer 3D everywhere; only fall back when WebGL is genuinely unavailable or fails. */
 export function useRenderer3d() {
-  // Both are resolved after mount so server and client markup match.
-  const [classic, setClassicState] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [gl, setGl] = useState(false);
   useEffect(() => {
     setGl(webglAvailable());
-    try { setClassicState(localStorage.getItem("tst.home3d") === "classic"); } catch { /* storage unavailable */ }
+    try { localStorage.removeItem("tst.home3d"); } catch { /* Storage unavailable. */ }
   }, []);
-  const setClassic = (c: boolean) => {
-    setClassicState(c);
-    try { localStorage.setItem("tst.home3d", c ? "classic" : "3d"); } catch { /* storage unavailable */ }
-  };
-  return { gl, classic, setClassic, failed: () => setClassicState(true) };
+  return { gl, classic: failed, failed: () => setFailed(true) };
 }
 export type Renderer3d = ReturnType<typeof useRenderer3d>;
 
@@ -89,12 +84,8 @@ function ObjectLocationScene({
   const [size, setSize] = useState<Size>({ w: 0, h: 0 });
   // Homes, the casino, the bar and the gym render as real 3D scenes when WebGL works; the classic renderer remains the fallback.
   const own = useRenderer3d();
-  const { gl, classic, setClassic } = renderer ?? own;
+  const { gl, classic } = renderer ?? own;
   const use3d = (room.id === "home" || venue !== null) && gl && !classic;
-  const setRenderer = (c: boolean) => {
-    setSelectedId(null);
-    setClassic(c);
-  };
   const stageRef = useRef<HTMLDivElement>(null);
   const [cutscene, setCutscene] = useState<Cutscene | null>(null);
   const resumeId = useRef<string | null>(null);
@@ -206,15 +197,9 @@ function ObjectLocationScene({
             ✉ {room.id==="post"?"Collect post":"Mail"} {state.mailbox||room.id==="post"?unreadCount(state)>0?`(${unreadCount(state)})`:"":""}
           </button>}
 
-          {(room.id === "home" || venue) && gl && use3d && (
-            <button type="button" onClick={() => setRenderer(true)}
-              className="min-h-10 shrink-0 rounded-lg border-2 border-foreground bg-secondary px-3 text-xs font-bold"
-              data-renderer-toggle aria-label="Switch to classic view">Classic view</button>
-          )}
         </div>
         <p className={`room-caption text-sm text-muted-foreground ${use3d ? "hidden sm:block" : ""}`}>{room.caption}</p>
         {(room.id === "home" || (venue && use3d)) && <nav className="mt-1 flex gap-2 overflow-x-auto pb-1 sm:mt-2 sm:pb-2" aria-label={venue ? "Areas" : "Home rooms"}>{(venue ? venueZones(venue) : homeZones(state.house)).map(z => <button type="button" key={z.id} disabled={Boolean(cutscene)} aria-current={homeZone === z.id ? "page" : undefined} onClick={() => {setSelectedId(null); setHomeZone(z.id);}} className={`min-h-11 shrink-0 rounded-lg border-2 border-foreground px-3 font-bold ${homeZone === z.id ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{z.label}</button>)}</nav>}
-        {(room.id === "home" || venue) && gl && !use3d && <button type="button" onClick={() => setRenderer(false)} className="mb-1 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>Switch to 3D view</button>}
         {room.id === "home" && state.house >= 3 && !use3d && homeZone === "entertainment" && <section className="my-2 rounded-xl border-2 border-foreground bg-secondary p-2" aria-label="Games room">
           <p className="text-sm font-bold">🎲 Your friends are here for cards and slots.</p>
           <div className="mt-2 flex gap-2">
@@ -383,13 +368,10 @@ function ObjectLocationScene({
 function Walkable3DVenueScene(props: Parameters<typeof ObjectLocationScene>[0]) {
   const renderer = useRenderer3d();
   if (renderer.gl && !renderer.classic) return <ObjectLocationScene {...props} renderer={renderer} />;
-  if (props.room.id !== "bar" && !isWalkableShop(props.room.id)) return <><ArcadeInterior {...props} />{renderer.gl && <button type="button" data-renderer-toggle onClick={() => renderer.setClassic(false)} className="absolute right-3 top-[100px] z-30 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold">Switch to 3D view</button>}</>;
+  if (props.room.id !== "bar" && !isWalkableShop(props.room.id)) return <ArcadeInterior {...props} />;
   return (
     <>
       <WalkableShop {...props} />
-      {renderer.gl && (
-        <button type="button" onClick={() => renderer.setClassic(false)} className="absolute right-3 top-[100px] z-30 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold" data-renderer-toggle>Switch to 3D view</button>
-      )}
     </>
   );
 }

@@ -25,7 +25,6 @@ import { TW, TH, N } from "@/lib/town-world";
 const Exterior = memo(BuildingExterior);
 // Three.js is only loaded when a WebGL-capable browser actually shows the 3D town.
 const TownWorld3D = lazy(() => import("@/components/town3d/TownWorld3D"));
-const TOWN_RENDERER_KEY = "tst.home3d";
 
 function townWebgl(): boolean {
   try {
@@ -37,19 +36,11 @@ function townWebgl(): boolean {
   }
 }
 
-/** Shares the home renderer preference: "classic" keeps the SVG town everywhere. */
+/** 3D is primary. Classic map remains a fallback for unsupported WebGL devices only. */
 function useTown3d() {
   const [gl, setGl] = useState(false);
-  const [classic, setClassicState] = useState(false);
-  useEffect(() => {
-    setGl(townWebgl());
-    try { setClassicState(localStorage.getItem(TOWN_RENDERER_KEY) === "classic"); } catch { /* storage unavailable */ }
-  }, []);
-  const setClassic = (c: boolean) => {
-    setClassicState(c);
-    try { localStorage.setItem(TOWN_RENDERER_KEY, c ? "classic" : "3d"); } catch { /* storage unavailable */ }
-  };
-  return { gl, classic, use3d: gl && !classic, setClassic };
+  useEffect(() => { setGl(townWebgl()); }, []);
+  return { use3d: gl };
 }
 const Site = memo(ConstructionSite);
 
@@ -136,8 +127,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
 export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const bs = useMemo(() => buildings(house), [house]);
-  const town3d = useTown3d();
-  const use3d = town3d.use3d;
+  const { use3d } = useTown3d();
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
   const seatedUntil = useRef(0);
@@ -666,7 +656,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </svg>
       </div>
 
-      {town3d.gl && !paused && <button type="button" data-town-renderer-toggle onClick={() => town3d.setClassic(!town3d.classic)} className="absolute right-3 top-3 z-30 min-h-9 rounded-lg border-2 border-foreground bg-secondary px-3 text-sm font-bold">{town3d.classic ? "Switch to 3D view" : "Switch to classic view"}</button>}
       {skating && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("a");}} onPointerUp={()=>keys.current.delete("a")} onPointerCancel={()=>keys.current.delete("a")}>◀ Hold</button><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("d");}} onPointerUp={()=>keys.current.delete("d")} onPointerCancel={()=>keys.current.delete("d")}>Hold ▶</button></div></div>}
       {skating && !paused && (
         <div data-skate-trick-controls className="absolute bottom-36 right-3 z-20 flex flex-col gap-2 sm:bottom-20" aria-label="Skateboard tricks">
