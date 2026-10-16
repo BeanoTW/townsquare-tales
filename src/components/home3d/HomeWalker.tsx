@@ -83,8 +83,20 @@ export function HomeWalker({ plan, visibleIds, handle, onArrive, head, held = nu
     const go=(e:Event)=>{
       const next=(e as CustomEvent<{x:number;z:number}>).detail;
       if(!next || handle.current.scene)return;
-      if(walkable(nav,next.x,next.z)){
-        pos.current={x:next.x,z:next.z};
+      // A decorated room may place a collider over a nominal spawn point.
+      // Pick the closest safe standing cell rather than leave the camera
+      // behind a partition when switching room tabs.
+      let safe={x:next.x,z:next.z};
+      if(!walkable(nav,safe.x,safe.z)){
+        let best=Infinity;
+        for(let dx=-10;dx<=10;dx++)for(let dz=-10;dz<=10;dz++){
+          const x=next.x+dx*nav.cell,z=next.z+dz*nav.cell;
+          const distance=Math.hypot(dx,dz);
+          if(distance<best && walkable(nav,x,z)){best=distance;safe={x,z};}
+        }
+      }
+      if(walkable(nav,safe.x,safe.z)){
+        pos.current=safe;
         waypoints.current=[];target.current=null;
         handle.current.position={...pos.current};
         invalidate();
