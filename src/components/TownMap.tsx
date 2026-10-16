@@ -169,10 +169,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const [driving,setDriving]=useState(false);
   const drivingRef=useRef(false);
   const carSpeed=useRef(0);
+  // Shared with the 3D car, so interaction tests the actual parking position.
+  const carPosition=useRef({x:30.1,y:22.1,angle:180});
   const toggleDriving = () => {
     if(!state?.companyCar || !state.drivingLicence || paused || active)return;
     const m=me.current;
-    if(!drivingRef.current && Math.hypot(m.x-30.1,m.y-22.1)>2.2)return;
+    if(!drivingRef.current && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)>2.2)return;
+    if (!drivingRef.current) {
+      m.x=carPosition.current.x; m.y=carPosition.current.y;
+      m.skateAngle=carPosition.current.angle;
+    } else {
+      carPosition.current={x:m.x,y:m.y,angle:m.skateAngle};
+    }
     drivingRef.current=!drivingRef.current;
     setDriving(drivingRef.current);
     carSpeed.current=0;
@@ -564,7 +572,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   }
   const c1 = ((t * 2.2) % 8), c2 = 11 + ((t * 1.7) % 12), c3 = ((t * 1.9 + 7) % 34) - 2;
   if (!use3d) {
-  if (yardRelocated && state?.companyCar) items.push({key: (driving?m.y:22.1)*100+(driving?m.x:30.1), el:<g key="company-car" data-company-car><title>Your company car</title><Car x={driving?m.x:30.1} y={driving?m.y:22.1} dir={Math.abs(Math.sin(m.skateAngle*Math.PI/180))>0.7?"x":"y"} color="#788574" /></g>});
+  if (yardRelocated && state?.companyCar) items.push({key: carPosition.current.y*100+carPosition.current.x, el:<g key="company-car" data-company-car><title>Your company car</title><Car x={carPosition.current.x} y={carPosition.current.y} dir={Math.abs(Math.sin(m.skateAngle*Math.PI/180))>0.7?"x":"y"} color="#788574" /></g>});
   items.push({ key: 8.5 * 100 + c1, el: <Car key="c1" x={c1} y={8.5} dir="x" color="var(--town-car-red)" /> });
   items.push({ key: 13.3 * 100 + c2, el: <Car key="c2" x={c2} y={13.3} dir="x" color="var(--town-car-blue)" /> });
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
@@ -653,7 +661,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} driving={driving} /></Suspense>}
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean(state?.companyCar)} driving={driving} carPosition={carPosition} /></Suspense>}
       <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
@@ -702,7 +710,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           <p className="mt-2 text-xs text-muted-foreground">Nothing to drive here yet. Earn the company car at the Workers Yard after getting your licence to unlock travel between home and work.</p>
         </div>
       )}
-      {state && canDrive(state) && !active && !paused && (driving || Math.hypot(m.x-30.1,m.y-22.1)<2.2) && (
+      {state && canDrive(state) && !active && !paused && (driving || Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<2.2) && (
         <button type="button" data-company-car-interact className="absolute bottom-[21rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleDriving}>{driving?"Park and exit":"🚗 Enter company car"}</button>
       )}
       {state && canDrive(state) && !active && !paused && onDrive && (
