@@ -168,7 +168,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const live3d = useMemo<TownLive>(() => ({ me, jump: skateJump, seatedUntil, residents: positions, street: streetLive }), []);
   const target = useRef<{ waypoints: Point[]; enter?: string | undefined } | null>(null);
   const routeTo = useCallback((destination: Point, enter?: string) => {
-    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, solids));
+    if (!isWalkable(me.current, solids)) Object.assign(me.current, nearestWalkable(me.current, solids));
     const route = findRoute(me.current, destination, solids);
     if (enter === "kid" && Math.hypot(me.current.x-destination.x,me.current.y-destination.y) < PARK_KID_SPOT.approach) { kidRef.current?.(); return; }
     target.current = route.length ? { waypoints: route, enter } : null;
@@ -251,7 +251,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
-    if (!isWalkable(me.current, bs)) Object.assign(me.current, nearestWalkable(me.current, solids));
+    if (!isWalkable(me.current, solids)) Object.assign(me.current, nearestWalkable(me.current, solids));
     // Keep map animation at 30 FPS on mobile for smoother movement without full 60 FPS scene reconciliation.
     // The browser still schedules RAF normally, but most frames do no React work.
     let last = performance.now(), raf = 0;
@@ -619,12 +619,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           }
         }}
         onClick={(e) => {
-          if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, bs)); }}>
+          if (e.nativeEvent.detail !== 0 && (e.nativeEvent as PointerEvent).pointerType === "touch") return; const p = toTile(e); if (!p) return; const wanted = { x: Math.max(0.5, Math.min(N - 1, p.x)), y: Math.max(0.5, Math.min(N - 1, p.y)) }; routeTo(nearestWalkable(wanted, solids)); }}>
         <g ref={worldRef} transform={`translate(${playerOffset[0]} ${playerOffset[1]})`}>
         {ground}
         {target.current && !target.current.enter && (() => { const end = target.current.waypoints.at(-1); if (!end) return null; const [x, y] = P(end.x, end.y); return <ellipse cx={x} cy={y} rx={12} ry={6} fill="none" stroke="var(--town-paper)" strokeWidth={2} />; })()}
         {items.map((i) => i.el)}
-        <StreetLife player={me} positions={positions} lots={bs} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={feedbackNow} ghost={use3d} live={streetLive} steamAt={use3d ? screenOf(DINER_CHIMNEY.x, DINER_CHIMNEY.y, DINER_CHIMNEY.z) : undefined} />
+        <StreetLife player={me} positions={positions} lots={solids} state={townState} skating={skating} paused={paused} onResident={selectResident} onObject={selectObject} onIncident={onStreetIncident} feedback={feedbackNow} ghost={use3d} live={streetLive} steamAt={use3d ? screenOf(DINER_CHIMNEY.x, DINER_CHIMNEY.y, DINER_CHIMNEY.z) : undefined} />
         {!use3d && (night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
         </g>
       </svg>
