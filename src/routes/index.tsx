@@ -61,6 +61,8 @@ function Game() {
   const [godMode, setGodMode] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [movementMode, setMovementMode] = useState<"joystick" | "tap">("joystick");
+  const [lookHorizontal, setLookHorizontal] = useState<"normal" | "inverted">("normal");
+  const [lookVertical, setLookVertical] = useState<"normal" | "inverted">("normal");
   const [log, setLog] = useState<string[]>([
     "Welcome to Stick Town. You live in a box. Good luck.",
   ]);
@@ -97,6 +99,8 @@ function Game() {
       window.localStorage.removeItem(GOD_ENABLED_KEY);
       setMovementMode(window.localStorage.getItem("sticktown-movement") === "tap" ? "tap" : "joystick");
       setSoundOn(window.localStorage.getItem("sticktown-sounds") !== "false");
+      setLookHorizontal(window.localStorage.getItem("sticktown-look-horizontal") === "inverted" ? "inverted" : "normal");
+      setLookVertical(window.localStorage.getItem("sticktown-look-vertical") === "inverted" ? "inverted" : "normal");
     } catch { /* Run with in-memory preferences when storage is unavailable. */ }
     setSaveReady(true);
   }, []);
@@ -133,6 +137,12 @@ function Game() {
   const selectMovement = (mode: "joystick" | "tap") => {
     setMovementMode(mode);
     try { window.localStorage.setItem("sticktown-movement", mode); } catch { /* Preferences stay in memory. */ }
+  };
+  const setLookAxis = (axis: "horizontal" | "vertical", value: "normal" | "inverted") => {
+    if (axis === "horizontal") setLookHorizontal(value);
+    else setLookVertical(value);
+    try { window.localStorage.setItem(`sticktown-look-${axis}`, value); } catch { /* Session preference only. */ }
+    window.dispatchEvent(new Event("tst:look-controls-changed"));
   };
   const selectSound = () => {
     const next = !soundOn;
@@ -564,6 +574,25 @@ function Game() {
               ? "Touch open ground anywhere and drag your thumb. Release to stop. Tapping buildings still works."
               : "Tap open ground to walk there. Drag controls are disabled."}
           </p>
+          <p className="text-base font-bold">Interior camera swipe controls</p>
+          <p className="text-sm text-muted-foreground">Choose the direction the camera responds when you swipe inside a 3D room. Horizontal and vertical are independent.</p>
+          {([
+            ["horizontal", lookHorizontal, "Horizontal look"],
+            ["vertical", lookVertical, "Vertical look"],
+          ] as const).map(([axis, value, label]) => (
+            <div key={axis} className="rounded-lg border border-foreground/50 p-2">
+              <p className="mb-2 text-sm font-bold">{label}</p>
+              <div className="grid grid-cols-2 gap-2" role="group" aria-label={label}>
+                {(["normal", "inverted"] as const).map(direction => (
+                  <button key={direction} type="button" aria-pressed={value === direction}
+                    onClick={() => setLookAxis(axis, direction)}
+                    className={`min-h-11 rounded border-2 border-foreground p-2 text-sm font-bold ${value === direction ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                    {direction === "normal" ? "Normal" : "Inverted"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
           <Btn onClick={selectSound}>
             🔊 Action sounds: {soundOn ? "On" : "Off"}
           </Btn>
