@@ -349,7 +349,17 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         const desired=drivingNow ? 5.5 : 1.9 * speed;
         carSpeed.current = drivingNow ? Math.min(desired,carSpeed.current+dt*6.5) : 0;
         const sp = (drivingNow?carSpeed.current:desired)*dt;
-        const nx = m.x + (dx / len) * sp, ny = m.y + (dy / len) * sp;
+        let vx=dx/len,vy=dy/len;
+        if(drivingNow){
+          const requested=Math.atan2(dx,-dy)*180/Math.PI;
+          const delta=((requested-m.skateAngle+540)%360)-180;
+          const steer=delta*Math.min(1,dt*5);
+          m.skateAngle=(m.skateAngle+steer+360)%360;
+          m.turnVelocity=Math.max(-1,Math.min(1,steer/Math.max(dt,.001)/180));
+          vx=Math.sin(m.skateAngle*Math.PI/180);
+          vy=-Math.cos(m.skateAngle*Math.PI/180);
+        }
+        const nx = m.x + vx*sp, ny = m.y + vy*sp;
         const collision = (x:number,y:number) => drivingNow
           ? [[-0.24,-0.3],[0.24,-0.3],[-0.24,0.3],[0.24,0.3]].some(([a,b])=>blocked(x+a,y+b))
           : blocked(x,y);
@@ -360,12 +370,12 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         if (Math.abs(dx) > Math.abs(dy) * 1.15) m.facing = dx > 0 ? "right" : "left";
         else if (Math.abs(dy) > Math.abs(dx) * 1.15) m.facing = dy > 0 ? "down" : "up";
         const targetAngle = Math.atan2(dx, -dy) * 180 / Math.PI;
-        if (skating || drivingNow) {
+        if (skating && !drivingNow) {
           const diff = ((targetAngle - m.skateAngle + 540) % 360) - 180;
           const step = diff * Math.min(1, dt * (drivingNow?5:14));
           m.skateAngle = (m.skateAngle + step + 360) % 360;
           m.turnVelocity = Math.max(-1, Math.min(1, step / Math.max(dt, 0.001) / 180));
-        } else {
+        } else if(!drivingNow) {
           m.skateAngle = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) * 45;
           m.turnVelocity = 0;
         }
