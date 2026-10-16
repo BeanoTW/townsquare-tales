@@ -5,6 +5,7 @@ import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
+import { driveAction } from "@/lib/transport";
 import { TownMap } from "@/components/TownMap";
 import { GlobalRenderingDiagnostics } from "@/components/GlobalRenderingDiagnostics";
 import { PlayerDashboard, InventoryDashboard } from "@/components/CharacterDashboards";
@@ -297,6 +298,7 @@ function Game() {
           playActionCue(outcome.ok ? "success" : "failure",soundOn);
           return outcome.ok;
         }}
+        onDrive={destination => perform(driveAction(destination))}
         movementMode={movementMode}
         hour={s.hour}
         house={s.house}
