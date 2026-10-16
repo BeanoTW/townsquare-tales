@@ -74,6 +74,10 @@ export type VantagePoint = {
   yawClamp?: [number,number];
 };
 /** A viewpoint is always derived from the actual plan's room volumes and slots. */
+/** Return the room containing a fixture, if present. */
+export function zoneForSlot(plan: HomePlan, slotId: string): PlanZone | null {
+  return plan.slots.find(slot => slot.id === slotId)?.zone ?? null;
+}
 export function vantageFor(plan: HomePlan, zone: PlanZone): VantagePoint {
   const point = plan.vantagePoints?.[zone] ?? plan.spawn.zones[zone] ?? plan.spawn.entry;
   const rooms = plan.rooms.filter(r=>r.zone===zone);

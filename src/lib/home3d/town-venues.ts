@@ -227,7 +227,7 @@ export const BANK: HomePlan = {
   ],
   slots: [
     vslot("teller", 4.6, 3.85, 0, "floor", [3.6, 0.9], "Bank teller", "BANK", 2.6),
-    vslot("loans", 8.4, 6.2, 0, "floor", [1.8, 1.3], "Loan desk", "LOANS", 1.9),
+    vslot("loans", 8.4, 6.2, 0, "floor", [1.8, 1.3], "Property management", "HOMES", 1.9),
     vslot("atm", 0.5, 8.4, Math.PI / 2, "floor", [0.9, 0.7], "Cash machine", "ATM", 2.1),
     vslot("vault", 12.1, 0.75, 0, "back", [2.4, 1.0], "Bank vault", "VAULT", 2.7),
   ],

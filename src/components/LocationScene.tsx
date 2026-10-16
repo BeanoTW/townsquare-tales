@@ -13,6 +13,7 @@ import { isArcadeRoom } from "@/lib/arcade-rooms";
 import { Home3DStage, luxuryMap, toSlotId, webglAvailable } from "@/components/home3d/Home3DStage";
 import { planCutscene, ScenePlays, type Cutscene, type CutsceneClaim } from "@/lib/cutscenes";
 import { planFor } from "@/lib/home3d/plans";
+import { zoneForSlot } from "@/lib/home3d/layout";
 import { ownsFurniture } from "@/lib/furniture";
 import { SKIP_EVENT } from "@/components/home3d/scenes/Director";
 import { homeZones, furnitureZone, isVenue, venueZones, type HomeZone, type PlanZone } from "@/lib/home-zones";
@@ -140,6 +141,15 @@ function ObjectLocationScene({
   const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
   const commerce = Boolean(use3d && selected && ((room.id === "shop" && ["shelves","checkout"].includes(selected.id)) || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
   const plan3d = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
+  // Interactions can be selected from UI even when their fixture belongs
+  // to another room. Match the hotspot to the actual plan slot, then move
+  // the fixed first-person camera to that area before presenting actions.
+  useEffect(() => {
+    if (!use3d || !selectedId || !plan3d || cutscene) return;
+    const targetZone = zoneForSlot(plan3d, toSlotId(selectedId));
+    if (targetZone && targetZone !== homeZone) setHomeZone(targetZone);
+  }, [selectedId, use3d, plan3d, homeZone, cutscene]);
+
 
   // Claim actions this room can act out; refreshed every render so it always sees the pre-action room.
   const claim: CutsceneClaim = (req) => {
