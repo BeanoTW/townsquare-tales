@@ -6,6 +6,13 @@ export const TOWN_HALL_OPEN_DAY = 30;
 export const townHallBuilt = (s: Pick<GameState, "day">) => s.day >= TOWN_HALL_OPEN_DAY;
 export const CIVIC_TITLES = ["Resident", "Community Volunteer", "Town Councillor", "Mayor", "President"] as const;
 const SUPPORT_NEEDED = [0, 10, 30, 60, 90] as const;
+/** Karma affects political credibility without permanently disqualifying anybody. */
+export function civicSupportNeeded(s: GameState, nextStage: number): number {
+ const base = SUPPORT_NEEDED[Math.max(0, Math.min(4, nextStage))] ?? 90;
+ const penalty = Math.min(30, Math.floor(Math.max(0, -s.karma) / 5));
+ const bonus = Math.min(10, Math.floor(Math.max(0, s.karma) / 10));
+ return Math.max(0, Math.min(100, base + penalty - bonus));
+}
 
 export const civicStatus = (s: GameState): string[] => {
   if (!townHallBuilt(s)) return [
@@ -17,7 +24,7 @@ export const civicStatus = (s: GameState): string[] => {
   return [
     `Current role: ${CIVIC_TITLES[stage]}`,
     `Community support: ${s.civicSupport ?? 0}/100`,
-    stage < 4 ? `Next: ${CIVIC_TITLES[stage + 1]} · ${SUPPORT_NEEDED[stage + 1]} support` : "You've reached the presidency.",
+    stage < 4 ? `Next: ${CIVIC_TITLES[stage + 1]} · ${civicSupportNeeded(s,stage+1)} support (reputation adjusted)` : "You've reached the presidency.",
   ];
 };
 
@@ -41,7 +48,7 @@ export function civicRunAction(): ActionDef {
       if (!townHallBuilt(s)) return "Wait for the Town Hall to open.";
       const stage = Math.max(0, Math.min(4, s.civicStage ?? 0));
       if (stage >= 4) return "You're already President.";
-      if ((s.civicSupport ?? 0) < SUPPORT_NEEDED[stage + 1]!) return "Build more community support first.";
+      if ((s.civicSupport ?? 0) < civicSupportNeeded(s,stage+1)) return "Build more community support first.";
       if (s.energy < 5) return "You need 5 energy.";
       return {
         patch: { civicStage: stage + 1, energy: s.energy - 5, hour: s.hour + 1 },
