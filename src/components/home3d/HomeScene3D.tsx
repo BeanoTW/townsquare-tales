@@ -3,7 +3,7 @@ import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { PlanZone } from "@/lib/home-zones";
-import { daylight, fitToView, partitionDrops, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
+import { daylight, fitToView, partitionDrops, vantageFor, visibleSlots, wallScale, type HomePlan, type Rect, type Slot } from "@/lib/home3d/layout";
 import { Bed, Bookshelf, Console, Desk, EstateBoard, Kitchen, Mattress, Sofa, Television, Weights } from "./furniture";
 import { Floors, Plinth, Wall } from "./parts";
 import { StudioDecor } from "./StudioShell";
@@ -23,7 +23,7 @@ const FOV = 45;
 const FP_FOV = 72;
 const FP_YAW = 1.15;
 /** Player homes (tiers 0–3) are viewed in first person; venues keep the overhead camera. */
-export const isFirstPerson = (plan: HomePlan) => plan.tier < 10;
+export const isFirstPerson = (_plan: HomePlan) => true;
 const EL_MIN = 0.3;
 const EL_MAX = 1.38;
 const DIST_MIN = 3.4;
@@ -176,6 +176,11 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
   const nearbyRef = useRef<string | null>(null);
   const fp = isFirstPerson(plan);
   const fpRef = useRef({ yaw: 0, gyaw: 0 });
+  const firstView = vantageFor(plan, zone);
+  const fpEye = useRef(new THREE.Vector3(...firstView.eye));
+  const firstYaw = Math.atan2(firstView.eye[0] - firstView.lookAt[0], firstView.eye[2] - firstView.lookAt[2]);
+  const fpHeading = useRef(firstYaw);
+  const fpTargetHeading = useRef(firstYaw);
   const slotsRef = useRef(slots);
   slotsRef.current = slots;
 
@@ -208,6 +213,13 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     const c = cam.current!;
     const focus = (z: PlanZone | "all") => {
       const g = goalFor(z);
+      if (fp && z !== "all") {
+        const v = vantageFor(plan, z);
+        fpTargetHeading.current = Math.atan2(v.eye[0] - v.lookAt[0], v.eye[2] - v.lookAt[2]);
+        fpRef.current.yaw = 0;
+        fpRef.current.gyaw = 0;
+        window.dispatchEvent(new CustomEvent("tst:room-vantage", {detail:{x:v.eye[0],z:v.eye[2]}}));
+      }
       c.gtx = z === "all" ? shared.walker.current.position.x : g.tx;
       c.gtz = z === "all" ? shared.walker.current.position.z : g.tz;
       c.gdist = g.dist;
@@ -233,7 +245,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
       focus,
       read: () => ({ az: c.gaz, el: c.gel, dist: c.gdist, tx: c.gtx, tz: c.gtz }),
     };
-  }, [goalFor, invalidate, limit, shared.controls]);
+  }, [goalFor, invalidate, limit, shared.controls, fp, plan]);
 
   // Room button => fly to that room.
   const firstZone = useRef(true);
@@ -277,6 +289,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
 
   // Camera remains bird's-eye. One-finger gestures walk the player; pinch/wheel only zoom.
   useEffect(() => {
+    if (fp) return;
     const el=gl.domElement;
     const pts=new Map<number,{x:number;y:number}>();
     let spread=0;
@@ -287,7 +300,7 @@ function Rig({ plan, slots, zone, shared }: { plan: HomePlan; slots: Slot[]; zon
     const wheel=(e:WheelEvent)=>{e.preventDefault();cam.current!.gdist*=Math.exp(e.deltaY*0.0012);limit();invalidate();};
     el.addEventListener("pointerdown",down);el.addEventListener("pointermove",move);el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);el.addEventListener("wheel",wheel,{passive:false});
     return()=>{el.removeEventListener("pointerdown",down);el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",up);el.removeEventListener("pointercancel",up);el.removeEventListener("wheel",wheel);};
-  },[gl,limit,invalidate]);
+  },[gl,limit,invalidate,fp]);
 
   // Where the camera was before a cutscene took it, so it can glide back afterwards.
   const saved = useRef<{ tx: number; tz: number; dist: number } | null>(null);
