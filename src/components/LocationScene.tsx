@@ -139,7 +139,7 @@ function ObjectLocationScene({
 
   const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone);
   const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
-  const commerce = Boolean(use3d && selected && ((room.id === "shop" && selected.id === "checkout") || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
+  const commerce = Boolean(use3d && selected && ((room.id === "shop" && selected.id === "checkout") || (room.id === "furniture" && selected.id === "catalogue") || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
   const plan3d = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
   // Interactions can be selected from UI even when their fixture belongs
   // to another room. Match the hotspot to the actual plan slot, then move
@@ -285,8 +285,8 @@ function ObjectLocationScene({
         </div>
         )}
         {selected && use3d && (
-          <div className="absolute inset-x-2 bottom-2 z-30 max-h-[min(48dvh,75%)] overflow-y-auto overscroll-contain rounded-2xl sm:inset-x-auto sm:right-2 sm:w-[min(360px,48%)]"
-            data-mobile-action-sheet onClick={e=>e.stopPropagation()}>
+          <div className="pointer-events-auto absolute inset-x-2 bottom-2 z-30 min-h-0 max-h-[min(65dvh,85%)] overflow-x-hidden overflow-y-auto overscroll-y-contain rounded-2xl shadow-2xl [touch-action:pan-y] [-webkit-overflow-scrolling:touch] sm:inset-x-auto sm:right-2 sm:w-[min(360px,48%)]"
+            data-mobile-action-sheet onClick={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()}>
             {commerce ? (
               <InteriorCommercePanel venue={room.id} hotspot={selected} state={state} godMode={godMode}
                 onRun={onRun} onClose={()=>setSelectedId(null)}/>
