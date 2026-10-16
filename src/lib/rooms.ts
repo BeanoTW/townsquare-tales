@@ -1,4 +1,5 @@
 import { licenceTestAction, claimCompanyCarAction, companyCarEligible } from "@/lib/transport";
+import { meetPawnContact, pawnErrand } from "@/lib/underworld";
 import { CONTRACTS, constructionStatus, startContractAction } from "@/lib/construction-contracts";
 import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
@@ -615,6 +616,15 @@ export const ROOMS: Record<PlaceId, Room> = {
         lines: (s) =>
           s.trainers || s.alarm ? [] : ["Nothing to sell yet. Buy something from the shop first."],
         actions: (s) => [...(s.trainers ? [SELL_SHOES] : []), ...(s.alarm ? [SELL_ALARM] : [])],
+      },
+      {
+        id: "backroom",
+        label: "Back office door",
+        tag: "PRIVATE",
+        hint: "A door behind the counter",
+        box: { x: 340, y: 122, w: 65, h: 65 },
+        lines: s => [s.pawnMet ? '"Vince is expecting you."':s.pawnIntroduction ? '"You were sent by someone? Keep your voice down."':'The shopkeeper glances over. "Staff only."'],
+        actions: s => !s.pawnIntroduction ? [] : s.pawnMet ? [pawnErrand()] : [meetPawnContact()],
       },
       {
         id: "curiosities",
