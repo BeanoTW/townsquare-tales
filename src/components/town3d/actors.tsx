@@ -45,51 +45,92 @@ const cyl = new THREE.CylinderGeometry(1, 1, 1, 16);
 export function Player3D({ live, skating, head }: { live: TownLive; skating: boolean; head: string }) {
   const outfit = townColor("var(--town-player)");
   const state = useRef<PersonState>({ x: 0, z: 0, angle: 0, walking: false, pose: "standing", visible: true });
+  const rider = useRef<THREE.Group>(null);
+  const torso = useRef<THREE.Group>(null);
+  const armL = useRef<THREE.Group>(null);
+  const armR = useRef<THREE.Group>(null);
   const deck = useRef<THREE.Group>(null);
   const deckMat = useMemo(() => mat("#89949c", { rough: 0.5 }), []);
+  const grip = useMemo(() => mat("#373c44", { rough: 0.95 }), []);
+  const shirt = useMemo(() => mat(outfit, { rough: 0.7 }), [outfit]);
+  const skin = useMemo(() => mat(head, { rough: 0.6 }), [head]);
+  const metal = useMemo(() => mat("#879098", { metal: 0.65, rough: 0.35 }), []);
+  const wheel = useMemo(() => mat("#e9e3d0", { rough: 0.4 }), []);
+  const marker = useMemo(() => mat("#facc15"), []);
   useFrame(() => {
     const m = live.me.current;
     const jump = live.jump.current;
+    const lift = elevation(jump) / LIFT;
     const seated = performance.now() / 1000 < live.seatedUntil.current;
-    const lift = skating ? 0.05 + elevation(jump) / LIFT : 0;
     Object.assign(state.current, {
-      x: m.x, z: m.y, angle: m.skateAngle, walking: !skating && m.walking, pose: seated ? "sitting" : "standing",
-      visible: true, lift, phase: m.phase,
+      x: m.x, z: m.y, angle: m.skateAngle, walking: m.walking,
+      pose: seated ? "sitting" : "standing", visible: !skating,
+      lift: 0, phase: m.phase,
     });
-    const d = deck.current;
-    if (d) {
-      d.visible = skating;
-      d.position.set(m.x, 0.035 + elevation(jump) / LIFT, m.y);
-      d.rotation.set(0, Math.PI - m.skateAngle * DEG + deckRotation(jump) * DEG, 0);
-      if (jump?.trick === "kickflip") d.rotateZ((Math.min(1, jump.elapsed / OLLIE_SECONDS)) * Math.PI * 2);
+    const root = rider.current;
+    if (!root) return;
+    root.visible = skating;
+    root.position.set(m.x, lift, m.y);
+    root.rotation.set(0, Math.PI - m.skateAngle * DEG, 0);
+    // Turn velocity is normalized by the same movement loop driving the classic skater.
+    const carve = Math.max(-1, Math.min(1, (m as typeof m & { turnVelocity?: number }).turnVelocity ?? 0));
+    const lean = carve * 0.19;
+    if (torso.current) {
+      torso.current.rotation.set(0, -0.28, lean);
+      torso.current.position.set(lean * 0.10, m.walking ? Math.sin(m.phase * 0.45) * 0.009 : 0, 0);
+    }
+    if (armL.current) armL.current.rotation.set(-0.42 + carve * 0.25, 0, -0.85 + carve * 0.3);
+    if (armR.current) armR.current.rotation.set(0.46 - carve * 0.25, 0, 0.95 + carve * 0.3);
+    if (deck.current) {
+      deck.current.rotation.set(0, deckRotation(jump) * DEG, lean * 0.45);
+      if (jump?.trick === "kickflip") deck.current.rotateZ(Math.min(1, jump.elapsed / OLLIE_SECONDS) * Math.PI * 2);
     }
   });
   return (
     <>
-      <Person get={() => state.current} outfit={outfit} skin={head} />
-      <group ref={deck}>
-        <mesh geometry={box} scale={[0.13, 0.018, 0.38]} material={deckMat} castShadow />
-        {/* Raised ends distinguish the long nose from the shorter kicktail. */}
-        <mesh geometry={box} position={[0, 0.013, -0.202]} rotation={[-0.2, 0, 0]}
-          scale={[0.123, 0.015, 0.085]} material={deckMat} castShadow />
-        <mesh geometry={box} position={[0, 0.012, 0.198]} rotation={[0.22, 0, 0]}
-          scale={[0.113, 0.015, 0.065]} material={deckMat} castShadow />
-        {[-0.14, 0.14].map(z => (
-          <group key={z}>
-            <mesh geometry={cyl} position={[0, -0.022, z]} rotation={[0, 0, Math.PI / 2]}
-              scale={[0.01, 0.155, 0.01]} material={mat("#879098", { metal: 0.65, rough: 0.35 })} />
-            {[-0.072, 0.072].map(x => (
-              <mesh key={x} geometry={cyl} position={[x, -0.032, z]}
-                rotation={[0, 0, Math.PI / 2]} scale={[0.027, 0.024, 0.027]}
-                material={mat("#e9e3d0", { rough: 0.4 })} castShadow />
-            ))}
+      {!skating && <Person get={() => state.current} outfit={outfit} skin={head} />}
+      {/* The rider and board share a world transform, preventing detached tricks. */}
+      <group ref={rider} visible={skating}>
+        <mesh geometry={plane} rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -0.002, 0]} scale={[0.37, 0.7, 1]} material={blob()} />
+        <group ref={deck} position={[0, 0.06, 0]}>
+          <mesh geometry={box} scale={[0.16, 0.022, 0.37]} material={deckMat} castShadow />
+          <mesh geometry={box} position={[0, 0.014, 0]} scale={[0.151, 0.002, 0.34]} material={grip} />
+          <mesh geometry={box} position={[0, 0.016, -0.205]} rotation={[-0.2, 0, 0]}
+            scale={[0.143, 0.018, 0.085]} material={deckMat} castShadow />
+          <mesh geometry={box} position={[0, 0.014, 0.196]} rotation={[0.22, 0, 0]}
+            scale={[0.135, 0.018, 0.072]} material={deckMat} castShadow />
+          {[-0.14, 0.14].map(z => (
+            <group key={z}>
+              <mesh geometry={cyl} position={[0, -0.028, z]} rotation={[0, 0, Math.PI / 2]}
+                scale={[0.012, 0.18, 0.012]} material={metal} />
+              {[-0.094, 0.094].map(x => (
+                <mesh key={x} geometry={cyl} position={[x, -0.037, z]}
+                  rotation={[0, 0, Math.PI / 2]} scale={[0.031, 0.028, 0.031]}
+                  material={wheel} castShadow />
+              ))}
+            </group>
+          ))}
+          {[-0.035, 0.035].map(x => <mesh key={x} geometry={box}
+            position={[x, 0.024, -0.138]} scale={[0.012, 0.005, 0.012]} material={marker} />)}
+        </group>
+        {/* Stick Town silhouette: oversized circular head, torso and exposed balancing arms.
+            No dangling walking legs while riding. */}
+        <group ref={torso} position={[0, 0, 0]}>
+          <mesh geometry={capsule} position={[0, 0.39, 0]} rotation={[0, Math.PI / 2.7, -0.14]}
+            scale={[0.087, 0.09, 0.069]} material={shirt} castShadow />
+          <group ref={armL} position={[-0.09, 0.43, 0]}>
+            <mesh geometry={capsule} position={[0, -0.105, 0]}
+              scale={[0.031, 0.115, 0.031]} material={shirt} castShadow />
+            <mesh geometry={ball} position={[0, -0.26, 0]} scale={0.036} material={skin} />
           </group>
-        ))}
-        {/* Front truck marker makes travel direction readable. */}
-        {[-0.034, 0.034].map(x => (
-          <mesh key={x} geometry={box} position={[x, 0.011, -0.135]}
-            scale={[0.012, 0.004, 0.012]} material={mat("#facc15")} />
-        ))}
+          <group ref={armR} position={[0.09, 0.43, 0]}>
+            <mesh geometry={capsule} position={[0, -0.105, 0]}
+              scale={[0.031, 0.115, 0.031]} material={shirt} castShadow />
+            <mesh geometry={ball} position={[0, -0.26, 0]} scale={0.036} material={skin} />
+          </group>
+          <mesh geometry={ball} position={[0, 0.59, 0]} scale={0.16} material={skin} castShadow />
+        </group>
       </group>
     </>
   );
