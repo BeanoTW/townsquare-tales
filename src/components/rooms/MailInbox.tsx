@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GameState } from "@/lib/game-state";
+import {hometownUnlocked,notifyFamilyOfVisit} from "@/lib/hometown";
 import { hasDraftReply, hasRead, hasReplied, mailFor, markRead, replyFamily, sendPendingReplies } from "@/lib/town-mail";
 
 export function MailInbox({state,atPostOffice,onChange,onClose}:{state:GameState;atPostOffice:boolean;onChange:(next:GameState)=>void;onClose:()=>void}) {
@@ -20,6 +21,7 @@ export function MailInbox({state,atPostOffice,onChange,onClose}:{state:GameState
       </div>
       <button type="button" className="min-h-11 min-w-11 rounded-lg border-2 border-foreground bg-secondary font-bold" onClick={onClose} aria-label="Close mail">✕</button>
     </div>
+    {atPostOffice&&hometownUnlocked(state)&&!state.hometownJobDone&&<div className="border-b p-3"><button type="button" className="min-h-12 w-full rounded-xl border-2 border-foreground bg-secondary px-3 font-bold" onClick={()=>onChange(notifyFamilyOfVisit(state))}>{state.hometownNoticeDay?"Send updated notice: I'm coming home":"Send Mum and Sarah a letter: I'm coming home"}</button><p className="text-xs text-muted-foreground">The letter needs time to arrive before your trip. Staying in touch matters too.</p></div>}
     {atPostOffice && pending !== 0 && <div className="border-b p-3"><button type="button" className="min-h-12 w-full rounded-xl border-2 border-foreground bg-primary px-3 font-bold text-primary-foreground" onClick={()=>onChange(sendPendingReplies(state))}>Post {pending.toString(2).replace(/0/g,"").length} written letter(s)</button></div>}
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]" onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()}>
     {!registered&&!atPostOffice?<div className="space-y-3">
