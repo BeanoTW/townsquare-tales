@@ -14,6 +14,11 @@ export function grantGodPowers(s: GameState): GameState {
     bank: MAX_MONEY,
     energy: 100,
     xp: 1_000_000,
+    skateboard: 1,
+    skateboardEquipped: 1,
+    abandonedCar: 1,
+    wreckRepairs: 3,
+    drivingLicence: 1,
   };
 }
 
@@ -21,12 +26,22 @@ export function grantGodPowers(s: GameState): GameState {
 export function runGodAction(state: GameState, def: ActionDef, rng: Rng = Math.random): ActionResult {
   const powered = grantGodPowers(state);
   // Preserve the real clock for contextual dialogue and quest deadlines.
-  const attempt = runAction(powered, { ...def, hours: 0, energy: 0 }, rng);
+  // Satisfy ordinary skill/resource gates for this action without permanently
+  // altering the sandbox character's visible attributes.
+  const testInput:GameState={...powered,str:1e6,int:1e6,cha:1e6,streetSmarts:100,criminalTrust:100,gangRep:100};
+  const attempt = runAction(testInput, { ...def, hours: 0, energy: 0, cost: 0 }, rng);
   if (!attempt.ok) return attempt;
   return {
     ...attempt,
     next: grantGodPowers({
       ...attempt.next,
+      // Temporary skill bypass must not silently award max stats.
+      str: attempt.next.str===testInput.str ? state.str : attempt.next.str,
+      int: attempt.next.int===testInput.int ? state.int : attempt.next.int,
+      cha: attempt.next.cha===testInput.cha ? state.cha : attempt.next.cha,
+      streetSmarts: attempt.next.streetSmarts===testInput.streetSmarts ? state.streetSmarts : attempt.next.streetSmarts,
+      criminalTrust: attempt.next.criminalTrust===testInput.criminalTrust ? state.criminalTrust : attempt.next.criminalTrust,
+      gangRep: attempt.next.gangRep===testInput.gangRep ? state.gangRep : attempt.next.gangRep,
       hour: state.hour,
     }),
     hoursUsed: 0,
@@ -41,4 +56,24 @@ export function parseGodSave(raw: string | null, fallback: GameState): GameState
   } catch {
     return grantGodPowers(fallback);
   }
+}
+
+/** Explicit developer controls, never applied to the normal save. */
+export type DeveloperBoost = "all-xp"|"max-stats"|"good-karma"|"bad-karma"|"equipment"|"homes"|"jobs"|"reset-heat";
+export function developerBoost(s:GameState,kind:DeveloperBoost):GameState {
+ switch(kind){
+  case "all-xp":return {...s,xp:1e6,studyXp:1e6,careerXp0:1e6,careerXp1:1e6,careerXp2:1e6,careerXp3:1e6};
+  case "max-stats":return {...s,str:1e6,int:1e6,cha:1e6,streetSmarts:100,criminalTrust:100,gangRep:100,energy:100};
+  case "good-karma":return {...s,karma:1e6};
+  case "bad-karma":return {...s,karma:-1e6};
+  case "equipment":return {...s,skateboard:1,skateboardEquipped:1,abandonedCar:1,wreckRepairs:3,drivingLicence:1,weapon:2,trainers:1};
+  case "homes":return {...s,ownedHomes:31,house:4};
+  case "jobs":return {...s,school:4,career:3,job:4,employed:1};
+  case "reset-heat":return {...s,heat:0};
+ }
+}
+/** Jump to an authored scene without unlocking unrelated normal progression. */
+export function developerStory(s:GameState,id:number):GameState {
+ if(!Number.isInteger(id)||id<0||id>5)return s;
+ return {...s,underworldStoryActive:id,gangTask:0,gangParcel:0};
 }

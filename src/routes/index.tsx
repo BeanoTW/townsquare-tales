@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { backupSave, readEmergencyBackup, saveExportText, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";
-import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
+import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction, grantGodPowers, developerBoost, developerStory, type DeveloperBoost } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
 import { canDrive, driveAction } from "@/lib/transport";
@@ -33,7 +33,7 @@ import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
-import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory} from "@/lib/underworld-stories";
+import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory, UNDERWORLD_STORIES} from "@/lib/underworld-stories";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -695,6 +695,30 @@ function Game() {
               This is a separate test save; normal progress is safe.
             </p>
             <Btn onClick={toggleGodMode}>{godMode ? "Disable Developer Mode · Restore normal save" : "Enable Developer Mode"}</Btn>
+            {godMode && <section className="mt-3 rounded-lg border border-foreground/40 p-3" aria-label="Developer sandbox shortcuts">
+              <p className="font-bold">Developer sandbox</p>
+              <p className="text-sm text-muted-foreground">Only affects the separate test save. Choose what you want; the rest of the story remains yours to explore.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["all-xp","Max all XP"],
+                  ["max-stats","Max attributes"],
+                  ["good-karma","Max good karma"],
+                  ["bad-karma","Max bad karma"],
+                  ["equipment","Unlock equipment"],
+                  ["homes","Unlock all homes"],
+                  ["jobs","Max education & careers"],
+                  ["reset-heat","Clear police heat"]
+                ] as [DeveloperBoost,string][]).map(([kind,label])=><Btn key={kind} onClick={()=>setS(current=>grantGodPowers(developerBoost(current,kind)))}>{label}</Btn>)}
+              </div>
+              <p className="mt-3 font-bold">Underworld story testing</p>
+              <p className="text-sm text-muted-foreground">Start any authored incident immediately. Speak to its named crew member on the green to play the choices.</p>
+              {UNDERWORLD_STORIES.map(story=><Btn key={story.id} onClick={()=>{
+                setS(current=>developerStory(current,story.id));
+                setTab(null);setPlace(null);setGangMeeting(null);
+                notify("Scene ready: speak to "+story.contact+" at the green.",true);
+              }}>{story.contact.toUpperCase()} · {story.title}</Btn>)}
+              <Btn onClick={()=>setS(current=>developerStory(current,0))}>Clear active story</Btn>
+            </section>}
           </div>
           <p className="text-base font-bold">Skateboard controls</p>
           <button type="button" role="switch" aria-checked={showBoardTricks} onClick={toggleBoardTricks} className="flex w-full min-h-11 items-center justify-between rounded-lg border-2 border-foreground px-3 py-2 font-bold">
