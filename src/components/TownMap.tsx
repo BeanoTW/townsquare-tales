@@ -185,6 +185,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const toggleDriving = () => {
     if(!state?.companyCar || !state.drivingLicence || paused || active || (drivingRef.current && vehicleRef.current!=="company"))return;
     const m=me.current;
+    if (!drivingRef.current && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)>2.2)return;
     if (!drivingRef.current) {
       m.x=carPosition.current.x; m.y=carPosition.current.y;
       m.skateAngle=carPosition.current.angle;
@@ -749,11 +750,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           {state?.abandonedCar ? <><p className="mt-2 text-sm">{(state.wreckRepairs??0)>=3?"The old wreck is roadworthy. It belongs to you.":"The engine runs, but the old wreck still needs repairs before it can be driven."}</p>{(state.wreckRepairs??0)<3 && <button type="button" className="mt-3 min-h-11 rounded-md bg-secondary px-3 font-bold" onClick={() => { if(onWreckRepair?.())setInspectAbandonedCar(false); }}>Repair the wreck — stage {(state.wreckRepairs??0)+1} of 3</button>}</> : (state?.criminalTrust ?? 0) >= 10 ? <><p className="mt-2 text-xs text-muted-foreground">You remember the crew's advice. The ignition challenge is a fictional luck-and-skill test.</p><button type="button" className="mt-3 min-h-11 rounded-md bg-secondary px-3 font-bold" onClick={() => { onHotwire?.(); setInspectAbandonedCar(false); }}>Try the ignition challenge</button></> : <p className="mt-2 text-xs text-muted-foreground">The car has been dead for years. Maybe someone around town knows more about it.</p>}
         </div>
       )}
-      {!active && !paused && state?.drivingLicence && ((state?.abandonedCar && (state.wreckRepairs??0)>=3) || state?.companyCar) && (
-        <div data-car-hud className="absolute bottom-[calc(4rem+min(39vw,170px)+3rem)] left-3 z-20 flex max-w-[90vw] flex-wrap gap-1 sm:bottom-[calc(1rem+min(44vw,190px)+3rem)]">
-          {vehicle ? <button type="button" aria-label="Exit car" data-personal-car-interact={vehicle==="wreck"?"true":undefined} className="min-h-11 rounded-xl border-2 border-foreground bg-card/95 px-3 font-bold shadow-lg" onClick={vehicle==="wreck"?toggleWreck:toggleDriving}>🚗↗ Exit car</button> : <>
-            {state.abandonedCar && (state.wreckRepairs??0)>=3 && <button type="button" aria-label="Enter personal car" data-personal-car-interact className="min-h-11 rounded-xl border-2 border-foreground bg-card/95 px-3 font-bold shadow-lg" onClick={toggleWreck}>🚙 Enter car</button>}
-            {!!state.companyCar && <button type="button" aria-label="Enter company car" data-company-car-interact className="min-h-11 rounded-xl border-2 border-foreground bg-card/95 px-3 font-bold shadow-lg" onClick={toggleDriving}>🚗 Work car</button>}
+      {!active && !paused && state?.drivingLicence && ((state.abandonedCar && (state.wreckRepairs??0)>=3) || state.companyCar) && (vehicle || (state.abandonedCar && (state.wreckRepairs??0)>=3) || (state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2)) && (
+        <div data-car-hud className="absolute bottom-[calc(4rem+min(39vw,170px)+3rem)] left-3 z-20 flex gap-1 sm:bottom-[calc(1rem+min(44vw,190px)+3rem)]">
+          {vehicle ? <button type="button" title="Exit car" aria-label="Exit car" data-personal-car-interact={vehicle==="wreck"?"true":undefined} className="grid h-11 w-11 place-items-center rounded-lg border-2 border-foreground bg-card/95 text-xl font-black text-red-600 shadow-lg" onClick={vehicle==="wreck"?toggleWreck:toggleDriving}>↗</button> : <>
+            {state.abandonedCar && (state.wreckRepairs??0)>=3 && <button type="button" title="Enter your car" aria-label="Enter personal car" data-personal-car-interact className="grid h-11 w-11 place-items-center rounded-lg border-2 border-foreground bg-card/95 text-xl font-black text-blue-600 shadow-lg" onClick={toggleWreck}>↘</button>}
+            {!!state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2 && <button type="button" title="Enter nearby work car" aria-label="Enter nearby company car" data-company-car-interact className="grid h-11 w-11 place-items-center rounded-lg border-2 border-foreground bg-card/95 text-xl font-black text-blue-600 shadow-lg" onClick={toggleDriving}>↘</button>}
           </>}
         </div>
       )}
