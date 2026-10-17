@@ -1,0 +1,17 @@
+name: Developer sandbox control panel
+on:
+  pull_request:
+    paths:
+      - 'src/lib/god-mode.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/developer-controls.test.ts'
+      - '.github/workflows/developer-controls.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/developer-controls.test.ts
+      - run: bun run build
