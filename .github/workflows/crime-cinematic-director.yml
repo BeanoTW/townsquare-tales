@@ -1,0 +1,17 @@
+name: Crime Cinematic Contract Verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/crime-cinematic-director.ts'
+      - 'src/test/crime-cinematic-director.test.ts'
+      - 'docs/CLAUDE_CRIME_VISUAL_HANDOFF.md'
+      - '.github/workflows/crime-cinematic-director.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/crime-cinematic-director.test.ts src/test/crime-visual-cues.test.ts
+      - run: bun run build
