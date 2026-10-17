@@ -1,0 +1,15 @@
+name: Crew contact UI verification
+on:
+  pull_request:
+    paths:
+      - 'src/routes/index.tsx'
+      - '.github/workflows/crew-contact.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/gang-encounters.test.ts src/test/gang-physical-tasks.test.ts
+      - run: bun run build
