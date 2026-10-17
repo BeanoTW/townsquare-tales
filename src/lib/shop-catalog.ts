@@ -1,4 +1,4 @@
-import { BUY_SNACK, buyAlarmAction, buyShoesAction, buyCaffeineAction, type ActionDef } from "@/lib/actions";
+import { BUY_SNACK, BUY_SANDWICH, BUY_STIMULANT, buyAlarmAction, buyShoesAction, buyCaffeineAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import {buyLaptopAction,buyDesktopPcAction} from "@/lib/investing";
 
@@ -16,25 +16,8 @@ export type ShopGood = {
   available: (state: GameState) => boolean;
 };
 
-function refreshment(id: string, name: string, price: number, energy: number): ActionDef {
-  return {
-    id,
-    label: name,
-    hours: 0,
-    energy: 0,
-    cost: price,
-    note: `+${energy} energy · ready to use`,
-    resolve: (state) =>
-      state.money >= price
-        ? {
-            patch: { money: state.money - price, energy: Math.min(100, state.energy + energy) },
-            message: `${name} enjoyed. +${energy} energy.`,
-          }
-        : `Need $${price} for ${name.toLowerCase()}.`,
-  };
-}
-
 export const SHOP_GOODS: readonly ShopGood[] = [
+  {id:"mystery-powder",name:"Suspicious white powder",icon:"📦",price:1000,description:"Black-market item. Stay awake two nights; a third ends at hospital.",category:"Consumable",repeatable:true,action:()=>BUY_STIMULANT,owned:s=>s.stimulantPacks??0,available:s=>(s.stimulantPacks??0)<20&&s.money>=1000},
   {id:"caffeine-pill",name:"Caffeine tablet",icon:"💊",price:75,
     description:"Single use. Wake earlier after sleeping; combines with an alarm.",
     category:"Consumable",repeatable:true,action:buyCaffeineAction,
@@ -59,42 +42,7 @@ export const SHOP_GOODS: readonly ShopGood[] = [
     owned: (s) => s.snacks,
     available: (s) => s.snacks < 99 && s.money >= 10,
   },
-  {
-    id: "pop",
-    name: "Fizzy pop",
-    icon: "🥤",
-    price: 8,
-    description: "A sugary lift. Drink now for +18 energy.",
-    category: "Consumable",
-    repeatable: true,
-    action: () => refreshment("fizzy-pop", "Fizzy pop", 8, 18),
-    owned: () => 0,
-    available: (s) => s.money >= 8,
-  },
-  {
-    id: "sandwich",
-    name: "Sandwich",
-    icon: "🥪",
-    price: 18,
-    description: "Eat now for +35 energy.",
-    category: "Consumable",
-    repeatable: true,
-    action: () => refreshment("shop-sandwich", "Sandwich", 18, 35),
-    owned: () => 0,
-    available: (s) => s.money >= 18,
-  },
-  {
-    id: "coffee",
-    name: "Coffee",
-    icon: "☕",
-    price: 12,
-    description: "Drink now for +22 energy.",
-    category: "Consumable",
-    repeatable: true,
-    action: () => refreshment("shop-coffee", "Coffee", 12, 22),
-    owned: () => 0,
-    available: (s) => s.money >= 12,
-  },
+  {id:"sandwich",name:"Packed sandwich",icon:"🥪",price:18,description:"Carry in your bag; eating takes 30 minutes and gives +35 energy.",category:"Consumable",repeatable:true,action:()=>BUY_SANDWICH,owned:s=>s.sandwiches??0,available:s=>(s.sandwiches??0)<99&&s.money>=18},
   {
     id: "trainers",
     name: "Running shoes",
