@@ -1,5 +1,7 @@
 import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
+import {installR3FPreviewMetadataGuard} from "@/lib/r3f-preview-guard";
+installR3FPreviewMetadataGuard();
 import { useEffect, useRef, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
 import { backupSave, readEmergencyBackup, saveExportText, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";

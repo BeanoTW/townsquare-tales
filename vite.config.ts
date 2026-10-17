@@ -17,7 +17,9 @@ function stripPreviewSourceMetadata(): Plugin {
     name: "strip-r3f-preview-source-metadata",
     enforce: "post",
     apply: "serve",
-    transform(source, id) {
+    transform: {
+      order: "post",
+      handler(source, id) {
       if (!id.includes("/src/") || !/\.(tsx|jsx)(\?|$)/.test(id) || !source.includes("data-tsd-source")) return null;
       const cleaned = source
         // JSX attribute, including its typical quoted source location.
@@ -25,6 +27,7 @@ function stripPreviewSourceMetadata(): Plugin {
         // Compiled JSX props produced by preview transforms.
         .replace(/(?:["']data-tsd-source["']|data-tsd-source)\s*:\s*(?:"[^"]*"|'[^']*'|`[^`]*`),?/g, "");
       return cleaned === source ? null : { code: cleaned, map: null };
+      },
     },
   };
 }
