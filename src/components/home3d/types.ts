@@ -1,6 +1,7 @@
 import type { PlanZone } from "@/lib/home-zones";
 import type { HomePlan } from "@/lib/home3d/layout";
 import type { Cutscene } from "@/lib/cutscenes";
+import type { VenueStoryScene } from "@/lib/crime-cast";
 
 export type OpeningLike = { w: number; h: number; cx: number; T: number };
 
@@ -24,6 +25,8 @@ export type Scene3DProps = {
   /** An in-world cutscene to play (the player acts the action out at the fixture). */
   cutscene?: Cutscene | null;
   onCutsceneDone?: () => void;
+  /** An underworld contact (and their props) standing in this venue while a story objective is open. */
+  storyScene?: VenueStoryScene | null;
 };
 
 /** Imperative camera handle shared with the on-screen camera buttons. */
