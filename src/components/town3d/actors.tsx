@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { N } from "@/lib/town-world";
 import { residentsAt, type ResidentId } from "@/lib/living-town";
 import { AMBIENT_ROUTES, type StreetActor, type StreetBird } from "@/lib/street-life";
-import { GANG_SPOT } from "@/lib/street-gang";
+import { GANG_SPOT, CREW_SPOTS } from "@/lib/street-gang";
 import { PARK_KID_SPOT } from "@/lib/park-kid";
 import type { EncounterSpot } from "@/lib/world-encounters";
 import { OLLIE_SECONDS, elevation, deckRotation, type SkateJump } from "@/lib/skate-tricks";
@@ -250,16 +250,14 @@ function Pigeon({ id, live }: { id: string; live: TownLive }) {
 const fixed = (x: number, z: number, angle: number, pose: Pose, extra: Partial<PersonState> = {}): PersonState => ({ x, z, angle, walking: false, pose, visible: true, ...extra });
 
 export function Gang() {
-  const sit = fixed(GANG_SPOT.x - 0.42, GANG_SPOT.y + 0.12, 180, "sitting", { lift: 0.0 });
-  const stand = fixed(GANG_SPOT.x + 0.17, GANG_SPOT.y - 0.28, 200, "standing");
-  const lie = fixed(GANG_SPOT.x + 0.5, GANG_SPOT.y + 0.05, 90, "lying");
-  return (
-    <>
-      <Person get={() => sit} outfit="#292735" skin="#ae856c" hat="#3b2f3a" hatKind="beanie" />
-      <Person get={() => { stand.walking = false; stand.angle = 200 + Math.sin(performance.now() / 900) * 25; return stand; }} outfit="#292735" skin="#aa7f6b" hat="#5a2b2b" hatKind="cap" />
-      <Person get={() => lie} outfit="#332c35" skin="#bd977b" />
-    </>
-  );
+  const mick=fixed(CREW_SPOTS.mick.x,CREW_SPOTS.mick.y,180,"standing");
+  const lez=fixed(CREW_SPOTS.lez.x,CREW_SPOTS.lez.y,175,"standing");
+  const nia=fixed(CREW_SPOTS.nia.x,CREW_SPOTS.nia.y,170,"sitting");
+  return <>
+    <Person get={()=>{mick.angle=180+Math.sin(performance.now()/2300)*7;return mick;}} outfit="#292735" skin="#aa7f6b" hat="#322d33" hatKind="beanie"/>
+    <Person get={()=>{lez.angle=175+Math.sin(performance.now()/870)*30;return lez;}} outfit="#40505a" skin="#ae856c" hat="#9b483f" hatKind="cap"/>
+    <Person get={()=>nia} outfit="#305044" skin="#bd977b"/>
+  </>;
 }
 
 /** After moving out, a new rough sleeper claims the original cardboard box. */
