@@ -6,7 +6,7 @@ export type GameState = {
   restaurantOwned?: number; retailOwned?: number; businessLastDay?: number; businessDebt?: number;
   sideHustleDay?: number; sideHustlesToday?: number;
   loanDebt?: number; loanLastDay?: number; loanDueDay?: number; loanPrincipal?: number;
-  day: number; hour: number; energy: number; money: number;
+  day: number; hour: number; energy: number; health?: number; money: number;
   lastSleepDay?: number; lastActiveDay?: number; stimulantPacks?: number; wakeStreak?: number; medicalDebt?: number; sandwiches?: number;
   civicStage?: number; civicSupport?: number;
   str: number; int: number; cha: number; karma: number;
@@ -67,7 +67,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   careerXp0: [0, 1000000], careerXp1: [0, 1000000], careerXp2: [0, 1000000], careerXp3: [0, 1000000],
   careerBest0: [0, 4], careerBest1: [0, 4], careerBest2: [0, 4], careerBest3: [0, 4],
   civicStage: [0, 4], civicSupport: [0, 100],
-  day: [1, 100000], hour: [0, 24], energy: [0, 100], money: [0, 1e12], lastSleepDay: [0, 100000], lastActiveDay: [0, 100000], stimulantPacks: [0, 20], wakeStreak: [0, 2], medicalDebt: [0, 1000000], sandwiches: [0, 99],
+  day: [1, 100000], hour: [0, 24], energy: [0, 100], health: [0, 100], money: [0, 1e12], lastSleepDay: [0, 100000], lastActiveDay: [0, 100000], stimulantPacks: [0, 20], wakeStreak: [0, 2], medicalDebt: [0, 1000000], sandwiches: [0, 99],
   str: [0, 1e6], int: [0, 1e6], cha: [0, 1e6],
   lastMara: [0, 100000], lastNox: [0, 100000], lastGus: [0, 100000], lastIvy: [0, 100000],
   relMara: [-10, 10], relNox: [-10, 10], relGus: [-10, 10], relIvy: [-10, 10],
