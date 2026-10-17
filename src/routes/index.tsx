@@ -87,6 +87,7 @@ function Game() {
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
+  const [crewContactOpen, setCrewContactOpen] = useState(false);
   const [game, setGame] = useState<CasinoGame | null>(null);
   const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
   const [wreckGame, setWreckGame] = useState(false);
@@ -457,7 +458,28 @@ function Game() {
         </div>
       )}
 
-      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg"><p className="font-bold">Crew assignment</p><p className="mb-2 text-sm">{gangTaskObjective(s)?.description}</p><div className="flex flex-col gap-2">{crewChoices(s).map(choice=><div key={choice.id}><Btn onClick={()=>perform(resolveCrewEncounter(s.gangTask!,choice.id))}>{choice.label}</Btn><p className="text-xs text-muted-foreground">{choice.hint}</p></div>)}</div></div>}
+      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && !tab && (
+        <div className="absolute bottom-28 right-3 z-40 flex max-w-[min(88vw,340px)] flex-col items-end gap-2" data-gang-contact-scene>
+          <button type="button" onClick={()=>setCrewContactOpen(open=>!open)}
+            className="flex min-h-16 items-center gap-3 rounded-xl border-2 border-amber-300 bg-card/95 px-3 py-2 text-left shadow-xl"
+            aria-label="Approach crew mission contact" aria-expanded={crewContactOpen}>
+            <span aria-hidden="true" className="relative flex h-12 w-10 items-center justify-center">
+              <span className="absolute top-0 h-6 w-6 rounded-full border-2 border-foreground bg-amber-700" />
+              <span className="absolute bottom-0 h-7 w-8 rounded-t-lg border-2 border-foreground bg-slate-600" />
+            </span>
+            <span className="text-sm font-bold">{s.gangTask===5?"Buyer at the pub":s.gangTask===3?"Suspicious passer-by":"Crew contact"}<span className="block text-xs font-normal">Tap to interact</span></span>
+          </button>
+          {crewContactOpen && <div className="w-full rounded-xl border-2 border-foreground bg-card p-3 shadow-xl" data-crew-encounter-panel>
+            <p className="font-bold">{gangTaskObjective(s)?.label}</p>
+            <p className="mb-2 text-sm">{gangTaskObjective(s)?.description}</p>
+            <div className="flex max-h-[35dvh] flex-col gap-2 overflow-y-auto">{crewChoices(s).map(choice=><div key={choice.id}>
+              <Btn onClick={()=>{perform(resolveCrewEncounter(s.gangTask!,choice.id));setCrewContactOpen(false);}}>{choice.label}</Btn>
+              <p className="text-xs text-muted-foreground">{choice.hint}</p>
+            </div>)}</div>
+            <button type="button" className="mt-2 min-h-11 w-full rounded-lg border border-foreground" onClick={()=>setCrewContactOpen(false)}>Leave contact</button>
+          </div>}
+        </div>
+      )}
       {!enc && !gangMeeting && !resident && !parkKidOpen && place === "pawn" && !!s.gangParcel && !tab && (
         <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg">
           <p className="font-bold">📦 Package delivery</p>
