@@ -73,6 +73,8 @@ function Game() {
   const refreshSlots = () => setSlots(localSlots());
   const [godMode, setGodMode] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+  const [showBoardTricks,setShowBoardTricks]=useState(()=>{try{return localStorage.getItem("tst:show-skate-tricks")!=="false";}catch{return true;}});
+  const toggleBoardTricks=()=>setShowBoardTricks(value=>{const next=!value;try{localStorage.setItem("tst:show-skate-tricks",String(next));window.dispatchEvent(new Event("tst:trick-visibility"));}catch{}return next;});
   const [movementMode, setMovementMode] = useState<"joystick" | "tap">("joystick");
   const [lookHorizontal, setLookHorizontal] = useState<"normal" | "inverted">("normal");
   const [lookVertical, setLookVertical] = useState<"normal" | "inverted">("normal");
@@ -681,6 +683,11 @@ function Game() {
             </p>
             <Btn onClick={toggleGodMode}>{godMode ? "Disable Developer Mode · Restore normal save" : "Enable Developer Mode"}</Btn>
           </div>
+          <p className="text-base font-bold">Skateboard controls</p>
+          <button type="button" role="switch" aria-checked={showBoardTricks} onClick={toggleBoardTricks} className="flex w-full min-h-11 items-center justify-between rounded-lg border-2 border-foreground px-3 py-2 font-bold">
+            <span>Show board trick buttons</span><span>{showBoardTricks?"On":"Off"}</span>
+          </button>
+          <p className="text-sm text-muted-foreground">Hide Kickflip and Shuvit controls from the town screen.</p>
           <p className="text-base font-bold">Movement controls</p>
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Movement controls">
             <button type="button" aria-pressed={movementMode === "joystick"} onClick={() => selectMovement("joystick")}
