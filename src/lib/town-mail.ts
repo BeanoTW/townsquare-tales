@@ -59,5 +59,7 @@ export function mailFor(s:GameState):Letter[] {
     body:"You\u2019ve demonstrated the analytical skills needed to understand financial markets. Buy a laptop at Cosy Corner and use your home study desk to trade shares. Prices change daily, so your investments can lose money as well as gain it."});
   if(s.day>=30)letters.push({id:12,day:30,from:"Site Foreman · Workers Yard",subject:"We've moved — new yard east of Town Police",category:"career",
     body:"Town Hall is finished, so we've cleared out the old site. The whole Workers Yard — my office, the vacancies board and all construction contracts — is now east of the police station. Your construction job hasn't changed. It's a long walk, so check Town Transit about a licence and ask me about the old company car when you're a Site Lead. See you at the new yard. — Foreman."});
+  if(s.companyCar && s.abandonedCar && (s.wreckRepairs??0)>=3)letters.push({id:13,day:s.day,from:"Site Foreman",subject:"Guess you won't need those keys anymore",category:"career",body:"Heard you've got your own wheels now. Guess you won't need those company car keys anymore. Drop them off whenever. Actually, don't bother. I've changed the locks. — Foreman."});
+  if((s.medicalDebt??0)>0)letters.push({id:14,day:s.day,from:"Stick Town Hospital",subject:"Your very expensive nap",category:"finance",body:`Your hospital bill is ${s.medicalDebt}. We accept instalments. Please stop attempting to outsmart sleep.`});
   return letters.filter(l=>l.day<=s.day).sort((a,b)=>b.day-a.day || b.id-a.id);
 }
