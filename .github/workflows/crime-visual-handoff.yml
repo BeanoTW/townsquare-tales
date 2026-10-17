@@ -1,0 +1,17 @@
+name: Crime Visual Handoff Verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/crime-visual-cues.ts'
+      - 'src/test/crime-visual-cues.test.ts'
+      - 'docs/CLAUDE_CRIME_VISUAL_HANDOFF.md'
+      - '.github/workflows/crime-visual-handoff.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/crime-visual-cues.test.ts
+      - run: bun run build
