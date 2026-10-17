@@ -32,6 +32,7 @@ import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
+import {buyMoonDust,hometownUnlocked,hometownSupplyRun} from "@/lib/hometown";
 import { EAT_SNACK, EAT_SANDWICH, STAY_AWAKE, repayMedicalDebt, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
@@ -454,6 +455,8 @@ function Game() {
                 <Btn disabled={!!s.gangParcel} onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>{s.gangParcel ? "Package already collected" : "Take a package"}</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
+              {crewSpeaker==="nia" && s.gangStage>=1 && <Btn onClick={()=>perform(buyMoonDust)}>Buy Moon Dust · $1,000</Btn>}
+              {crewSpeaker==="nia" && hometownUnlocked(s) && !s.hometownJobDone && <section className="my-2 rounded-xl border p-3"><p className="font-bold">Bomb and Minnie</p><p className="text-sm">Nia needs someone to collect a Moon Dust shipment from another city. Lez says the streets might look familiar. Tell your family you're coming if you want to see them.</p><Btn onClick={()=>{if(perform(hometownSupplyRun))setGangMeeting(null);}}>Take the out-of-town delivery</Btn></section>}
               {crewSpeaker==="lez" && (s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
               {crewSpeaker==="nia" && (s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
               
