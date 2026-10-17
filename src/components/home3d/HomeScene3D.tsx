@@ -89,13 +89,24 @@ function Lights({ plan, day }: { plan: HomePlan; day: number }) {
 }
 
 function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan; luxury: boolean; hasBed: boolean }) {
-  if(slot.id==="crew-contact") return <group>
-    <mesh position={[0,1.51,0]}><sphereGeometry args={[0.24,16,12]}/><meshStandardMaterial color="#a87959"/></mesh>
-    <mesh position={[0,0.86,0]}><cylinderGeometry args={[0.29,0.33,0.88,10]}/><meshStandardMaterial color="#37475a"/></mesh>
-    <mesh position={[-0.12,0.26,0]}><cylinderGeometry args={[0.085,0.09,0.49,8]}/><meshStandardMaterial color="#283044"/></mesh>
-    <mesh position={[0.12,0.26,0]}><cylinderGeometry args={[0.085,0.09,0.49,8]}/><meshStandardMaterial color="#283044"/></mesh>
-    <mesh position={[0,1.79,0]}><boxGeometry args={[0.6,0.16,0.1]}/><meshStandardMaterial color="#facc15" emissive="#775800"/></mesh>
-  </group>;
+  if(slot.id==="crew-contact") {
+    const buyer=plan.kind==="bar";
+    const coat=buyer?"#68493e":"#485568";
+    const cap=buyer?"#302d31":"#4a453b";
+    return <group>
+      {buyer && <mesh position={[0,0.42,-0.07]}><boxGeometry args={[0.62,0.48,0.45]}/><meshStandardMaterial color="#594537"/></mesh>}
+      <mesh position={[0,buyer?1.11:1.53,0]}><sphereGeometry args={[0.225,16,12]}/><meshStandardMaterial color={buyer?"#bc906c":"#99775c"}/></mesh>
+      <mesh position={[0,buyer?0.72:1.12,0]}><cylinderGeometry args={[0.30,0.34,0.69,10]}/><meshStandardMaterial color={coat}/></mesh>
+      <mesh position={[0,buyer?1.32:1.75,0]}><cylinderGeometry args={[0.235,0.26,0.11,12]}/><meshStandardMaterial color={cap}/></mesh>
+      <mesh position={[0,buyer?1.28:1.72,0.15]}><boxGeometry args={[0.34,0.055,0.16]}/><meshStandardMaterial color={cap}/></mesh>
+      {buyer ? <>
+        <mesh position={[0,0.42,0.48]}><boxGeometry args={[0.9,0.08,0.6]}/><meshStandardMaterial color="#795b42"/></mesh>
+        <mesh position={[0.24,0.54,0.46]}><cylinderGeometry args={[0.07,0.07,0.16,8]}/><meshStandardMaterial color="#e3c58d" transparent opacity={0.7}/></mesh>
+      </> : <>
+        {[-0.14,0.14].map(x=><mesh key={x} position={[x,0.34,0]}><cylinderGeometry args={[0.085,0.09,0.67,8]}/><meshStandardMaterial color="#303743"/></mesh>)}
+      </>}
+    </group>;
+  }
   if (hasTownVenue(plan.kind)) return <TownVenueFixture kind={plan.kind} id={slot.id} />;
   const scrap = plan.kind === "squat" && !luxury;
   switch (slot.id) {
