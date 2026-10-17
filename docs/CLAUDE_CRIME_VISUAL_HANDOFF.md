@@ -1,5 +1,8 @@
 # Claude visual production handoff — Town Square Tales crime phase
 
+## Final architecture: conversation cameras and choreography
+The repository now includes `src/lib/crime-cinematic-director.ts` as the typed **visual-only** director contract. Integrate it with the town camera and the existing scene-stage renderer. `crewConversationCue(member, storyId?)` supplies a three-person framing/reaction sequence. `storyLocationConversationCue(id)` supplies the matching scene/venue framing. `directedCrimeCue(actionId, cutsceneMode, reducedMotion)` gives action choreographies and guarantees no cinematic when cutscenes are off. The `beats` objects control focus, shot, gesture and pauses; adapt renderer to interpret them without changing game rules. Keep the same in-world character models in overhead and dialogue views. Conversation camera must return to the original overhead camera on close, preserving position and control state. Prefer a nonblocking bottom dialogue panel with player responses always visible. Treat this as one complete implementation pass covering all crew designs, mission contacts and reusable robbery/delivery/lookout cutscenes, not separate visual PRs. The current contract describes choreography but does not yet implement camera motion or animated actors—implement those in your pass.
+
 ## Goal
 Create the visual pass for the first five completed underworld missions and reusable crime interactions. Game logic, stats, mission rules, payouts, saves, branching choices and dialogue are already implemented; **do not redesign them**.
 
