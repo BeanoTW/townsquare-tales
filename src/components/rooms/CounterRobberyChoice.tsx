@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { GameState } from "@/lib/game-state";
 import type { ActionDef } from "@/lib/actions";
 import type { ShopId } from "@/lib/walkable-shops";
-import { robTill, robberyBlock, robberyChance } from "@/lib/counter-robbery";
+import { robTill, robberyBlock } from "@/lib/counter-robbery";
 import { actionBlockReason } from "@/components/rooms/ActionPanel";
 
 export function CounterRobberyChoice({
@@ -34,14 +34,13 @@ export function CounterRobberyChoice({
       >
         <span>Rob the till</span>
         <span className="room-action-note">
-          {blocked ?? "Requires your heavy bat · review risks first"}
+          {blocked ?? "Could go badly. Your approach matters."}
         </span>
       </button>
       {armed && (
         <div className="flex flex-col gap-2" role="group" aria-label="Confirm till robbery">
           <p className="room-panel-line">
-            {action.note} 30 minutes · 15 energy · {Math.round(robberyChance(state) * 100)}%
-            estimated success. One attempt per day across town.
+            You can try, but no outcome is guaranteed. A frightened cashier might cooperate, resist or sound the alarm. Back off while you still can.
           </p>
           <button
             type="button"
