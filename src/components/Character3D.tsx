@@ -41,10 +41,12 @@ export function blob() {
 export const PERSON_SCALE = 1.45;
 
 /** Rounded, chunky stick-person matching the interior style; heading 0 = north. */
-export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true, scale = PERSON_SCALE, children, heldL, heldR }: {
+export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true, scale = PERSON_SCALE, children, heldL, heldR, stretch = 1, headExtra, bodyExtra, legs, eyes = true }: {
   get: () => PersonState | null; outfit: string; skin: string; hat?: string; hatKind?: "cap" | "hard" | "beanie" | "flat" | "mortar"; shadow?: boolean; scale?: number; children?: ReactNode;
   /** Props gripped in each hand (hand-local space); they follow the arm through any act. */
   heldL?: ReactNode; heldR?: ReactNode;
+  /** Character styling: a height multiplier, and pieces that ride on the head (hair, glasses) and torso (chains, aprons). */
+  stretch?: number; headExtra?: ReactNode; bodyExtra?: ReactNode; legs?: string; eyes?: boolean;
 }) {
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
@@ -56,11 +58,11 @@ export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true,
   const rig = useRef<PersonRig | null>(null);
   const m = useMemo(() => ({
     outfit: mat(outfit, { rough: 0.7 }),
-    legs: mat(shade(outfit, -0.35), { rough: 0.75 }),
+    legs: mat(legs ?? shade(outfit, -0.35), { rough: 0.75 }),
     skin: mat(skin, { rough: 0.6 }),
     hat: hat ? mat(hat, { rough: 0.5 }) : null,
     eye: mat("#1d1b20", { rough: 0.3 }),
-  }), [outfit, skin, hat]);
+  }), [outfit, skin, hat, legs]);
   useFrame((state) => {
     const s = get();
     const r = root.current;
@@ -69,7 +71,7 @@ export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true,
     r.visible = true;
     r.position.set(s.x, s.lift ?? 0, s.z);
     r.rotation.y = Math.PI - s.angle * DEG;
-    r.scale.setScalar(scale);
+    r.scale.set(scale, scale * stretch, scale);
     const t = s.phase ?? state.clock.elapsedTime * 9;
     const swing = s.walking ? Math.sin(t) * 0.6 : 0;
     const b = body.current!;
@@ -116,6 +118,7 @@ export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true,
           <mesh geometry={capsule} position={[0, -0.095, 0]} scale={[0.04, 0.13, 0.04]} material={m.legs} castShadow />
         </group>
         <mesh geometry={capsule} position={[0, 0.315, 0]} scale={[0.095, 0.085, 0.075]} material={m.outfit} castShadow />
+        {bodyExtra}
         {/* Arms pivot at the shoulders */}
         <group ref={armL} position={[-0.11, 0.39, 0]}>
           <mesh ref={upperL} geometry={capsule} position={[0, -0.08, 0]} scale={[0.03, 0.1, 0.03]} material={m.outfit} />
@@ -135,8 +138,9 @@ export function Person({ get, outfit, skin, hat, hatKind = "cap", shadow = true,
         {/* Head pivots at the neck so acts can nod, tilt and laugh. */}
         <group ref={head} position={[0, 0.45, 0]}>
         <mesh geometry={ball} position={[0, 0.085, 0]} scale={0.11} material={m.skin} castShadow />
-        <mesh geometry={ball} position={[-0.038, 0.1, 0.098]} scale={0.014} material={m.eye} />
-        <mesh geometry={ball} position={[0.038, 0.1, 0.098]} scale={0.014} material={m.eye} />
+        {eyes && <mesh geometry={ball} position={[-0.038, 0.1, 0.098]} scale={0.014} material={m.eye} />}
+        {eyes && <mesh geometry={ball} position={[0.038, 0.1, 0.098]} scale={0.014} material={m.eye} />}
+        {headExtra}
         {m.hat && hatKind === "hard" && (
           <>
             <mesh geometry={ball} position={[0, 0.125, 0]} scale={[0.118, 0.085, 0.118]} material={m.hat} castShadow />

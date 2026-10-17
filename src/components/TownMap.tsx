@@ -20,6 +20,8 @@ export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 import type { EncounterSpot } from "@/lib/world-encounters";
 import { GANG_SPOT, CREW_SPOTS, nearestCrew } from "@/lib/street-gang";
+import { ALLEY_SPOT, alleyObjectiveOpen, conePresentAtGreen, crewHeldProps, trolleyLocation } from "@/lib/crime-cast";
+import type { LiveConversation } from "@/lib/conversation-camera";
 
 import { PARK_KID_SPOT } from "@/lib/park-kid";
 
@@ -126,7 +128,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
   </>;
 }
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire, onWreckRepair, onPositionChange }: { movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean; onWreckRepair?: () => boolean; onPositionChange?: (x:number,y:number)=>void }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire, onWreckRepair, onPositionChange, conversation = null }: { conversation?: LiveConversation | null; movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean; onWreckRepair?: () => boolean; onPositionChange?: (x:number,y:number)=>void }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
   const townHallReady = isTownHallBuilt({ day: state?.day ?? 1 });
@@ -134,6 +136,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const bs = useMemo(() => buildings(house, castleOwned, yardRelocated), [house, castleOwned, yardRelocated]);
   const solids = useMemo(() => townSolids(bs), [bs]);
   const { use3d } = useTown3d();
+  // What the crew are holding and where Lez's trolley is: read-only story visuals for the 3D town.
+  const crewVisuals = useMemo(() => state ? { held: crewHeldProps(state), cone: conePresentAtGreen(state), trolley: trolleyLocation(state), alleyEnvelope: state.gangTask === 1 } : undefined,
+    [state?.underworldStoryActive, state?.underworldStoryStage, state?.underworldStoryMask, state?.gangTask]); // eslint-disable-line react-hooks/exhaustive-deps
+  const alleyOpen = Boolean(state && alleyObjectiveOpen(state));
   const townState = useMemo(() => state ?? {...START, hour, house, karma}, [state,hour,house,karma]);
   const positions = useRef<ResidentPositions>({});
   const seatedUntil = useRef(0);
@@ -664,6 +670,24 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       })}
     </g>
   )});
+  // The alley between the pub and the casino opens only while an errand sends you there.
+  if (alleyOpen) {
+    const [ax, ay] = P(ALLEY_SPOT.x, ALLEY_SPOT.y);
+    const icon = state?.gangTask === 1 ? "✉" : "🛒";
+    items.push({ key: ALLEY_SPOT.y * 100 + ALLEY_SPOT.x, el: <g key="alley-entry" data-alley-entry role="button" tabIndex={0} aria-label="Go into the alley"
+      className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80"
+      onClick={ev=>{ev.stopPropagation();routeTo(ALLEY_SPOT,"alley");}}
+      onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();routeTo(ALLEY_SPOT,"alley");}}}>
+      <g transform={`translate(${ax} ${ay})`}>
+        <g transform={`translate(0 ${-34+(reducedMotion?0:Math.sin(t*3)*2)})`}>
+          <rect x="-19" y="-24" width="38" height="29" rx="12" fill="#fff2d4" stroke="#24202b" strokeWidth="3"/>
+          <text textAnchor="middle" y="-4" fontSize="17" fontWeight="bold" fill="#25202b">{icon}</text>
+          <path d="M-3 4L0 12L6 4" fill="#fff2d4" stroke="#24202b" strokeWidth="2"/>
+        </g>
+        <rect x="-24" y="-60" width="48" height="76" fill="transparent" />
+      </g>
+    </g> });
+  }
   if (kidPresent) {
     const [kx, ky] = P(PARK_KID_SPOT.x, PARK_KID_SPOT.y);
     items.push({ key: PARK_KID_SPOT.y * 100 + PARK_KID_SPOT.x,
@@ -710,8 +734,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
-      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean((state?.companyCar && !(state?.abandonedCar && (state?.wreckRepairs??0)>=3)))} driving={vehicle==="company"} carPosition={carPosition} wreckOwned={Boolean(state?.abandonedCar)} wreckPosition={wreckPosition} wreckDriving={vehicle==="wreck"} /></Suspense>}
-      <svg ref={svgRef} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
+      {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean((state?.companyCar && !(state?.abandonedCar && (state?.wreckRepairs??0)>=3)))} driving={vehicle==="company"} carPosition={carPosition} wreckOwned={Boolean(state?.abandonedCar)} wreckPosition={wreckPosition} wreckDriving={vehicle==="wreck"} conversation={conversation} {...(crewVisuals ? { crew: crewVisuals } : {})} /></Suspense>}
+      <svg ref={svgRef} style={use3d && conversation ? { opacity: 0, transition: "opacity .35s" } : { transition: "opacity .35s" }} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
         onClickCapture={(e) => {
           if (performance.now() < suppressGroundClickUntil.current) {
@@ -827,7 +851,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               <title>Deliver sealed package to Oddities Pawn</title>
             </g>
           ))}
-          {!!state?.gangTask && (()=>{const id=({1:"alley",3:"bank",5:"bar"} as Record<number,string>)[state.gangTask??0];const target= id ? bs.find(b=>b.id===id):null;const at=(state.gangTask===2||state.gangTask===4)?GANG_SPOT:target?{x:target.x+target.w/2,y:target.y+target.d/2}:null;return at?<g data-gang-job-waypoint pointerEvents="none"><circle cx={at.x} cy={at.y} r={1.6} fill="none" stroke="#facc15" strokeWidth={0.6}><animate attributeName="opacity" values="1;.35;1" dur="1.4s" repeatCount="indefinite"/></circle><circle cx={at.x} cy={at.y} r={.72} fill="#facc15"/><text x={at.x} y={at.y+.35} fontSize={1} textAnchor="middle">★</text><title>Crew assignment destination</title></g>:null})()}
+          {state?.underworldStoryActive===5 && (state.underworldStoryStage??0)===0 && <g data-story-alley-waypoint pointerEvents="none"><circle cx={ALLEY_SPOT.x} cy={ALLEY_SPOT.y} r={1.6} fill="none" stroke="#facc15" strokeWidth={0.6}/><circle cx={ALLEY_SPOT.x} cy={ALLEY_SPOT.y} r={.72} fill="#facc15"/><text x={ALLEY_SPOT.x} y={ALLEY_SPOT.y+.35} fontSize={1} textAnchor="middle">★</text><title>Lez's favour: the alley</title></g>}
+          {!!state?.gangTask && (()=>{const id=({1:"alley",3:"bank",5:"bar"} as Record<number,string>)[state.gangTask??0];const target= id ? bs.find(b=>b.id===id):null;const at=(state.gangTask===2||state.gangTask===4)?GANG_SPOT:state.gangTask===1?ALLEY_SPOT:target?{x:target.x+target.w/2,y:target.y+target.d/2}:null;return at?<g data-gang-job-waypoint pointerEvents="none"><circle cx={at.x} cy={at.y} r={1.6} fill="none" stroke="#facc15" strokeWidth={0.6}><animate attributeName="opacity" values="1;.35;1" dur="1.4s" repeatCount="indefinite"/></circle><circle cx={at.x} cy={at.y} r={.72} fill="#facc15"/><text x={at.x} y={at.y+.35} fontSize={1} textAnchor="middle">★</text><title>Crew assignment destination</title></g>:null})()}
           <circle cx={m.x} cy={m.y} r={1.03} fill="#ffffff" stroke="#19212a" strokeWidth={0.35} />
           <path d={`M ${m.x} ${m.y-0.67} l-.45 .86 h.9 Z`} transform={`rotate(${m.skateAngle}, ${m.x}, ${m.y})`} fill="#2376b4" />
         </svg>

@@ -10,6 +10,7 @@ import { FirstPersonHands } from "./FirstPersonHands";
 import type { Cutscene } from "@/lib/cutscenes";
 
 import { karmaHeadColor } from "@/lib/player-appearance";
+import { venueStoryScene } from "@/lib/crime-cast";
 
 const HomeScene3D = lazy(() => import("./HomeScene3D"));
 
@@ -84,6 +85,7 @@ export function Home3DStage({
   }, [visible, state.house, isHome]);
   const luxury = useMemo(() => luxuryMap(state), [state]);
   const hasBed = ownsFurniture(state.furniture, "bed");
+  const storyScene = useMemo(() => (planProp ? venueStoryScene(state, plan.kind) : null), [planProp, plan.kind, state]);
   const c = () => controls.current;
   return (
     <div className="absolute inset-0" data-home3d data-hotspot="home3d" data-plan={plan.kind}>
@@ -102,6 +104,7 @@ export function Home3DStage({
             playerHead={karmaHeadColor(state.karma)}
             cutscene={cutscene}
             {...(onCutsceneDone ? { onCutsceneDone } : {})}
+            storyScene={storyScene}
             onDeselect={onDeselect}
             onSelect={(slotId) => {
               const game = isHome ? GAME_SLOTS[slotId] : undefined;

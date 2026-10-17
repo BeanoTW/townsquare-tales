@@ -1,3 +1,4 @@
+import { StoryContact } from "@/components/crime/StoryContact";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
@@ -485,7 +486,8 @@ function World({ p, shared }: { p: Scene3DProps; shared: Shared }) {
         <Wall key={w.id} spec={w} register={register} />
       ))}
       <Decor plan={plan} owned={owned} />
-      {plan.npcs?.map((n) => (
+      {p.storyScene && <StoryContact scene={p.storyScene} />}
+      {plan.npcs?.filter((n) => !p.storyScene?.replaces.includes(n.id)).map((n) => (
         // Each NPC stands in its own pivot so a cutscene can turn, bob, hop or hide them.
         <group key={n.id} position={[n.x, 0, n.z]} ref={(g) => { if (g) shared.cast.current.set(n.id, g); else shared.cast.current.delete(n.id); }}>
           <Figure npc={{ ...n, x: 0, z: 0 }} />

@@ -46,6 +46,13 @@ import { DartsGame } from "@/components/minigames/DartsGame";
 import { RailGrindGame } from "@/components/minigames/RailGrindGame";
 import { BasketballGame } from "@/components/minigames/BasketballGame";
 import { isPlace, roomFor, type PlaceId } from "@/lib/rooms";
+import { crewScene, storyEpilogueScene, type LiveConversation } from "@/lib/conversation-camera";
+import { crimeStage } from "@/lib/crime-stage";
+import { alleyObjectiveOpen } from "@/lib/crime-cast";
+import { SceneCaption } from "@/components/crime/SceneCaption";
+
+let sceneKey = 0;
+const prefersReducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -104,6 +111,8 @@ function Game() {
   const [stage, setStage] = useState<StageSpec | null>(null);
   const [cutsceneMode, setCutsceneMode] = useState<CutsceneMode>("full");
   const [gl, setGl] = useState(false);
+  /** A conversation or story ending playing in the town: the camera frames the crew, then returns overhead. */
+  const [crewScene3d, setCrewScene3d] = useState<LiveConversation | null>(null);
   /** Set by a 3D room that can act an action out in-world instead of showing the vignette card. */
   const cutsceneClaim = useRef<CutsceneClaim | null>(null);
   // Result cards are transient, unlike dialogue that requires a player decision.
@@ -210,7 +219,15 @@ function Game() {
       setStage(milestoneStage(milestone, { day: s.day, house: outcome.next.house, changes: outcome.changes, message: outcome.message, mode: cutsceneMode }));
       return true;
     }
+    // A finished story plays its ending at the green with the crew, in the town itself.
+    if (def.id.startsWith("underworld-story-finish-") && gl) {
+      const ending = storyEpilogueScene(Number(def.id.split("-")[3]), cutsceneMode, prefersReducedMotion());
+      if (ending) { setCrewScene3d({ key: ++sceneKey, cue: ending, startedAt: performance.now(), mode: cutsceneMode, reduced: prefersReducedMotion() }); return true; }
+    }
     const inWorld = cutsceneClaim.current?.({ actionId: def.id, changes: outcome.changes, before: s, after: outcome.next, short: cutsceneMode === "short" }) ?? false;
+    // Crime actions get a short directed scene; it is built from the outcome and never changes it.
+    const crime = !inWorld && gl ? crimeStage({ actionId: def.id, before: s, after: outcome.next, changes: outcome.changes, message: outcome.message, mode: cutsceneMode, reducedMotion: prefersReducedMotion() }, ++sceneKey) : null;
+    if (crime) { setStage(crime); return true; }
     const kind = inWorld ? null : vignetteForAction(def.id);
     if (kind && gl) setStage(cardStage(kind, { actionId: def.id, changes: outcome.changes, message: outcome.message, before: s, after: outcome.next, title: VIGNETTE_TITLES[kind], mode: cutsceneMode }));
     else if (kind) setVignette({ kind, changes: outcome.changes, message: outcome.message });
@@ -258,6 +275,19 @@ function Game() {
     notify(meeting.message, true);
     playActionCue("encounter", soundOn);
   };
+  // Talking to the crew frames them in the town; the story contact gets the story's reaction beats.
+  const storyWithSpeaker = activeStory(s)?.contact === crewSpeaker ? s.underworldStoryActive : undefined;
+  useEffect(() => {
+    setCrewScene3d((current) => {
+      if (current?.cue.kind === "epilogue") return current;
+      if (!gangMeeting || !gl) return null;
+      const reduced = prefersReducedMotion();
+      const cue = crewScene(crewSpeaker, cutsceneMode, storyWithSpeaker, reduced);
+      if (!cue) return null;
+      if (current && current.cue.id === cue.id) return current;
+      return { key: ++sceneKey, cue, startedAt: performance.now(), mode: cutsceneMode, reduced };
+    });
+  }, [gangMeeting, crewSpeaker, storyWithSpeaker, gl, cutsceneMode]);
   const encounterSpot = strangerLeft === s.day ? null : availableStreetEvent(s);
   const approachEncounter = () => {
     if (!encounterSpot) return;
@@ -291,7 +321,8 @@ function Game() {
       {saveReady && <TownMap
         state={s}
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
-        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade || wreckGame)}
+        paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade || wreckGame || crewScene3d)}
+        conversation={crewScene3d}
         onStreet={(id: StreetObjectId) => {
           if(id==="ramp"){
             // Without an equipped board the game opens on its requirement card instead of charging anything.
@@ -334,12 +365,15 @@ function Game() {
           }
           else if (id === "gang") approachGang();
           else if (id.startsWith("gang:") && ["mick","lez","nia"].includes(id.slice(5))) approachGang(id.slice(5) as CrewMember);
+          // The alley is not a building: it opens only while an errand or Lez's favour sends you there.
+          else if (id === "alley" && alleyObjectiveOpen(s)) walk("alley");
           else if (isPlace(id) && id !== "alley") walk(id);
         }}
       />}
 
       {vignette && <ActionVignette kind={vignette.kind} changes={vignette.changes} message={vignette.message} onDone={() => setVignette(null)} />}
       {stage && <SceneStage key={stage.key} spec={stage} head={karmaHeadColor(s.karma)} onDone={() => setStage(null)} />}
+      {crewScene3d?.cue.kind === "epilogue" && <SceneCaption key={crewScene3d.key} scene={crewScene3d} onDone={() => setCrewScene3d(null)} />}
 
       <GlobalRenderingDiagnostics screen={game ? `Casino: ${game}` : arcade ? `Minigame: ${arcade}` : place ? `Interior: ${place}` : "Town map"} />
       {/* top HUD: always visible, including inside buildings */}
@@ -411,7 +445,7 @@ function Game() {
         </div>
       )}
       {gangMeeting && (
-        <Sheet title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
+        <Sheet compact={Boolean(crewScene3d)} title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
           <p className="text-lg font-bold">{gangMeeting.message}</p>
           {!gangMeeting.hostile && <section aria-label="Talk to crew members" className="my-3 rounded-xl border border-foreground/40 p-3">
             <p className="mb-2 text-sm font-bold">Talk to the crew</p>
@@ -829,9 +863,10 @@ function Icon(p: { disabled?: boolean; label: string; onClick: () => void; child
     </button>
   );
 }
-function Sheet(p: { title: string; onClose?: () => void; children: React.ReactNode }) {
+function Sheet(p: { title: string; onClose?: () => void; children: React.ReactNode; compact?: boolean }) {
+  // During a framed conversation the sheet keeps to the lower half so the scene above stays visible.
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex max-h-[75vh] max-w-md flex-col gap-2 overflow-auto rounded-t-xl border-2 border-b-0 border-foreground bg-card p-4">
+    <div data-dialogue-sheet={p.compact ? "cinematic" : "plain"} className={`absolute inset-x-0 bottom-0 z-10 mx-auto flex ${p.compact ? "max-h-[48dvh] bg-card/95" : "max-h-[75vh] bg-card"} max-w-md flex-col gap-2 overflow-auto rounded-t-xl border-2 border-b-0 border-foreground p-4`}>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">{p.title}</h2>
         {p.onClose && (
