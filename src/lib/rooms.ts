@@ -426,7 +426,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         actions: () => [CHAT_UP],
       },
       {
-        id: "pub-brawl", label: "Drunken brawl", tag: "FIGHT", hint: "Bet on a pub scrap", box: { x: 180, y: 24, w: 100, h: 80 }, launch: "fight",
+        id: "pub-brawl", label: "Drunken brawl", tag: "FIGHT", hint: "Bet on a pub scrap", box: { x: 180, y: 24, w: 100, h: 80 }, lines: () => ["Place a $20, $50 or $100 bet. Winner takes the pot."], launch: "fight",
       },
       {
         id: "dartboard",
