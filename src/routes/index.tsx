@@ -1,3 +1,4 @@
+import { PubBrawl } from "@/components/PubBrawl";
 import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
 import {installR3FPreviewMetadataGuard} from "@/lib/r3f-preview-guard";
@@ -103,6 +104,7 @@ function Game() {
   const [crewSpeaker, setCrewSpeaker] = useState<CrewMember>("mick");
   const [crewContactOpen, setCrewContactOpen] = useState(false);
   const [game, setGame] = useState<CasinoGame | null>(null);
+  const [pubFight, setPubFight] = useState(false);
   const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
   const [wreckGame, setWreckGame] = useState(false);
   const [result, setResult] = useState<Feedback | null>(null);
@@ -571,8 +573,8 @@ function Game() {
           onMailChange={setS}
           cutsceneClaim={cutsceneClaim}
           onLeave={close}
-          onLaunch={(g) => (g === "darts" ? launchDarts() : launchGame(g))}
-          paused={game !== null || arcade === "darts"}
+          onLaunch={(g) => (g === "fight" ? setPubFight(true) : g === "darts" ? launchDarts() : launchGame(g))}
+          paused={game !== null || arcade === "darts" || pubFight}
         />
       )}
 
@@ -613,6 +615,7 @@ function Game() {
         />
       )}
 
+      {pubFight && <PubBrawl state={s} onChange={setS} onExit={()=>setPubFight(false)} />}
       {arcade==="darts" && (
         <DartsGame
           sound={soundOn}
