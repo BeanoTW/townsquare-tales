@@ -241,7 +241,8 @@ function Game() {
     }
     setPlace(id);
   };
-  const approachGang = () => {
+  const approachGang = (member: CrewMember = "mick") => {
+    setCrewSpeaker(member);
     if (gangDone === s.day || gangMeeting) {
       notify("The crew have had enough of you for today. Clear off.", false);
       return;
@@ -330,6 +331,7 @@ function Game() {
             if (RELATION_FIELDS[who]) { setResident(who); setTab(null); setPlace(null); setResult(null); }
           }
           else if (id === "gang") approachGang();
+          else if (id.startsWith("gang:") && ["mick","lez","nia"].includes(id.slice(5))) approachGang(id.slice(5) as CrewMember);
           else if (isPlace(id) && id !== "alley") walk(id);
         }}
       />}
@@ -431,14 +433,14 @@ function Game() {
             <>
               <p className="text-base">{gangDialogue(s)}</p>
               {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
-              {gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
-              {["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
+              {crewSpeaker==="mick" && gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
+              {crewSpeaker==="mick" && ["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
                 <Btn disabled={!!s.gangParcel} onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>{s.gangParcel ? "Package already collected" : "Take a package"}</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
-              {(s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
-              {(s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
+              {crewSpeaker==="lez" && (s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
+              {crewSpeaker==="nia" && (s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
               
               {([1,2] as const).map(tier => <div key={tier} className="my-2 min-w-0">
                 <Btn onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · $ {buyWeapon(tier).cost}</Btn>
