@@ -1,0 +1,19 @@
+name: Underworld Five Story Scripts
+on:
+  pull_request:
+    paths:
+      - 'src/lib/underworld-story-script.ts'
+      - 'src/lib/underworld-stories.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/underworld-five-scripts.test.ts'
+      - '.github/workflows/underworld-five-scripts.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/underworld-five-scripts.test.ts src/test/underworld-story-investigation.test.ts src/test/underworld-stories.test.ts
+      - run: bun run build
