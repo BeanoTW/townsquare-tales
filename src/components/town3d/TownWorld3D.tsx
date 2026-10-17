@@ -2,17 +2,18 @@ import { memo, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RenderDiagnosticsProbe } from "@/components/RenderDiagnosticsProbe";
 import * as THREE from "three";
-import { buildings, playerCameraOffset, type B } from "@/lib/town-world";
+import { buildings, type B } from "@/lib/town-world";
 import { daylight } from "@/lib/home3d/layout";
 import type { EncounterSpot } from "@/lib/world-encounters";
-import { applyTownCamera } from "@/components/town3d/projection";
 import { StaticBatch } from "@/components/town3d/StaticBatch";
 import { TownGround } from "@/components/town3d/ground";
 import { TownBuildings } from "@/components/town3d/buildings";
 import { EstateGrounds } from "@/components/town3d/estate";
 import { CommunityHall } from "@/components/town3d/civic";
+import { CrewGang, TownCameraRig, useConversationFacing, type CrewVisuals } from "@/components/town3d/crew";
+import type { LiveConversation } from "@/lib/conversation-camera";
 import { ConstructionStatic, Lamps, StreetFurniture, Trees, lampPositions } from "@/components/town3d/props";
-import { BoxSquatter, Car, EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
+import { BoxSquatter, Car, EncounterPerson, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
 import { prepareNightMaterials, setNightLevel } from "@/components/town3d/kit";
 import { glowTexture } from "@/components/town3d/textures";
 import { mixColor } from "@/components/town3d/palette";
@@ -39,7 +40,11 @@ export type TownWorld3DProps = {
   wreckOwned?: boolean;
   wreckDriving?: boolean;
   wreckPosition?: MutableRefObject<{x:number;y:number;angle:number}>;
+  /** A conversation or story scene playing at the green: the camera leaves the overhead view to frame it. */
+  conversation?: LiveConversation | null;
+  crew?: CrewVisuals;
 };
+const NO_CREW: CrewVisuals = { held: {}, cone: true, trolley: null, alleyEnvelope: false };
 
 /** Direction towards the sun: high in the west-south-west, so the south and west walls catch the light. */
 const SUN = new THREE.Vector3(-0.7, 1.3, 0.25).normalize();
@@ -47,16 +52,6 @@ const SUN = new THREE.Vector3(-0.7, 1.3, 0.25).normalize();
 function Ticker({ tick }: { tick: number }) {
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => { invalidate(); }, [tick, invalidate]);
-  return null;
-}
-
-/** Keeps the oblique camera on the player, using the exact offset the SVG layer uses. */
-function Rig({ live, skating }: { live: TownLive; skating: boolean }) {
-  useFrame((state) => {
-    const m = live.me.current;
-    const [ox, oy] = playerCameraOffset(m.x, m.y, skating);
-    applyTownCamera(state.camera, state.size.width, state.size.height, ox, oy);
-  }, -1);
   return null;
 }
 
@@ -214,12 +209,13 @@ function EasternYardEquipment() {
   </group>;
 }
 
-const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving, carPosition, wreckOwned, wreckDriving, wreckPosition }: Omit<TownWorld3DProps, "tick">) {
+const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent, encounter, constructionActive, mansionOwned, townHallBuilt, castleOwned, yardRelocated, companyCar, driving, carPosition, wreckOwned, wreckDriving, wreckPosition, conversation, crew }: Omit<TownWorld3DProps, "tick">) {
+  const face = useConversationFacing(live, conversation);
   const bs: B[] = useMemo(() => buildings(house, house >= 4 || Boolean(castleOwned), Boolean(yardRelocated)), [house, castleOwned, yardRelocated]);
   const lamps = useMemo(() => lampPositions(bs), [bs]);
   return (
     <>
-      <Rig live={live} skating={skating} />
+      <TownCameraRig live={live} skating={skating} conversation={conversation} />
       <Lights live={live} hour={hour} lamps={lamps} />
       <StaticBatch version={`town-${house}-${Boolean(townHallBuilt)}-${Boolean(yardRelocated)}`}>
         <TownGround bs={bs} />
@@ -236,11 +232,11 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
-      {!driving && !wreckDriving && <Player3D live={live} skating={skating} head={head} />}
+      {!driving && !wreckDriving && <Player3D live={live} skating={skating} head={head} face={face} />}
       <Residents live={live} hour={hour} />
       <Pedestrians live={live} />
       <Pigeons live={live} />
-      <Gang />
+      <CrewGang live={live} conversation={conversation} visuals={crew ?? NO_CREW} />
       <BoxSquatter visible={house > 0 && !castleOwned && house < 4} />
       <ParkKid present={kidPresent} />
       <EncounterPerson encounter={encounter} />
