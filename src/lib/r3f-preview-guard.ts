@@ -1,23 +1,25 @@
 import * as THREE from "three";
 
 /**
- * Lovable's dev-only JSX source mapper can annotate R3F host primitives with
- * data-tsd-source. R3F interprets the dashed prop as a nested write through
- * object.data, and throws if no such object exists. Three.js already supplies
- * an object safe for editor annotations: userData.
+ * Lovable may add the dashed prop data-tsd-source to R3F host elements.
+ * R3F treats it as the nested path object.data.tsd.source, not as a DOM
+ * data attribute. Supplying only object.data (the old fix) still throws at
+ * the missing 'tsd' object. Give renderer-owned Three objects the full path.
  *
- * This compatibility alias is deliberately limited to Three.js prototypes,
- * never Object.prototype, and therefore cannot affect HTML or app state.
+ * Confine this compatibility layer to Three classes, never Object.prototype.
  */
 export function installR3FPreviewMetadataGuard(): void {
   const classes = [THREE.Object3D, THREE.Material, THREE.BufferGeometry, THREE.Texture] as const;
   for (const cls of classes) {
-    if (Object.getOwnPropertyDescriptor(cls.prototype, "data")) continue;
-    Object.defineProperty(cls.prototype, "data", {
+    const proto = cls.prototype;
+    if (Object.getOwnPropertyDescriptor(proto, "data")) continue;
+    Object.defineProperty(proto, "data", {
       configurable: true,
-      get(this: {userData?:Record<string,unknown>}) {
+      get(this: { userData?: Record<string, unknown> }) {
         if (!this.userData) this.userData = {};
-        return this.userData;
+        const userData = this.userData;
+        if (!userData.tsd || typeof userData.tsd !== "object") userData.tsd = {};
+        return userData;
       },
     });
   }
