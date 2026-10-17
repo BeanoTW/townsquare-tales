@@ -3,6 +3,15 @@ import type { GameState } from "@/lib/game-state";
 
 /** Gang hangout on the rough grass near the starter home. */
 export const GANG_SPOT = { id: "gang", x: 6.1, y: 4.5, approach: 1.45 } as const;
+export const CREW_SPOTS = {
+  mick:{x:6.15,y:4.25,radius:1.3,role:"Organiser",pose:"standing"},
+  lez:{x:5.65,y:4.60,radius:1.3,role:"Lookout",pose:"standing"},
+  nia:{x:6.55,y:4.45,radius:1.3,role:"Money handler",pose:"sitting"},
+} as const;
+export type CrewSpotId = keyof typeof CREW_SPOTS;
+export function nearestCrew(x:number,y:number):CrewSpotId{
+ return (Object.keys(CREW_SPOTS) as CrewSpotId[]).reduce((best,id)=>Math.hypot(x-CREW_SPOTS[id].x,y-CREW_SPOTS[id].y)<Math.hypot(x-CREW_SPOTS[best].x,y-CREW_SPOTS[best].y)?id:best,"mick");
+}
 
 export type GangMeeting =
   | { hostile: true; message: string; patch: Partial<GameState>; cashLost: number }
