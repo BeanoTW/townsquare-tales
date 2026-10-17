@@ -1,0 +1,18 @@
+name: Underworld authored narrative verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/underworld-stories.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/underworld-stories.test.ts'
+      - '.github/workflows/underworld-stories.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/underworld-stories.test.ts src/test/gang-physical-tasks.test.ts src/test/crew-characters.test.ts
+      - run: bun run build
