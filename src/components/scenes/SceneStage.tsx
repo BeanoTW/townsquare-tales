@@ -8,6 +8,7 @@ import { Ball, Box, Cone, Cyl, Group, Round } from "@/components/home3d/primitiv
 import { Sign } from "@/components/home3d/venues/kit";
 import { townColor } from "@/components/town3d/palette";
 import type { StageSet, StageSpec } from "@/lib/scene-stage";
+import { CRIME_LOOKS, CrimeScene } from "@/components/scenes/CrimeScene";
 import "@/components/action-vignette.css";
 
 /**
@@ -256,7 +257,7 @@ function Director({ spec, head, onDone }: { spec: StageSpec; head: string; onDon
 }
 
 export function SceneStage({ spec, head, onDone }: { spec: StageSpec; head: string; onDone: () => void }) {
-  const L = LOOKS[spec.set];
+  const L = spec.crime ? CRIME_LOOKS[spec.crime.set] : LOOKS[spec.set];
   const big = spec.mode === "milestone";
   useEffect(() => {
     const key = (e: KeyboardEvent) => { if (e.key === "Escape" || e.key === " " || e.key === "Enter") window.dispatchEvent(new Event(SKIP)); };
@@ -274,8 +275,10 @@ export function SceneStage({ spec, head, onDone }: { spec: StageSpec; head: stri
       <hemisphereLight args={["#ffffff", "#2a2630", big ? 0.9 : 1.1]} />
       <directionalLight castShadow position={[2.2, 5, 3.2]} intensity={1.6} color={L.light} shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
       {big && <spotLight position={[0, 4.5, 1.6]} angle={0.5} penumbra={0.6} intensity={30} color={L.light} />}
-      <SetPieces spec={spec} />
-      <Director spec={spec} head={head} onDone={onDone} />
+      {spec.crime ? <CrimeScene crime={spec.crime} duration={spec.duration} head={head} onDone={onDone} /> : <>
+        <SetPieces spec={spec} />
+        <Director spec={spec} head={head} onDone={onDone} />
+      </>}
     </Canvas>
   );
   const skip = () => window.dispatchEvent(new Event(SKIP));
@@ -300,10 +303,11 @@ export function SceneStage({ spec, head, onDone }: { spec: StageSpec; head: stri
     );
   }
   return (
-    <div data-action-vignette={spec.act} data-scene-stage="card" data-stage-set={spec.set} className={`action-vignette ${spec.set === "counter" ? "action-vignette-shop" : ""}`} role="status" aria-label={spec.title} onPointerDown={skip}>
+    <div data-action-vignette={spec.act} data-scene-stage="card" data-crime-scene={spec.crime?.cue.id} data-stage-set={spec.set} className={`action-vignette ${spec.set === "counter" ? "action-vignette-shop" : ""}`} role="status" aria-label={spec.title} onPointerDown={skip}>
       <div className="action-vignette-card">
         <div className="action-vignette-title">{spec.title}</div>
-        <div className="action-vignette-svg relative" style={{ height: "min(38dvh, 260px)" }}>{canvas}
+        <div className="action-vignette-svg relative" style={{ height: spec.crime ? "min(46dvh, 340px)" : "min(38dvh, 260px)" }}>{canvas}
+          {spec.crime && <button type="button" aria-label="Skip scene" className="absolute right-1.5 top-1.5 min-h-11 min-w-11 rounded-full border-2 border-[#f6efe0]/70 bg-black/40 px-2.5 text-[11px] font-extrabold tracking-wider text-[#f6efe0]" onPointerDown={(e) => { e.stopPropagation(); skip(); }}>SKIP ▸▸</button>}
           {spec.caption && <span className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 whitespace-nowrap rounded-full border-2 border-[#111014] bg-[#ffd24a] px-3 py-0.5 text-[11px] font-black tracking-wider text-[#111014]">{spec.caption}</span>}
         </div>
         <div className="action-vignette-gain" aria-live="polite">
