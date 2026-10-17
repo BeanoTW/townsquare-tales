@@ -46,7 +46,7 @@ export const UNDERWORLD_SCRIPTS:Readonly<Record<number,StoryScript>>={
  {label:"Examine the contents",response:"The birthday card is addressed to someone Lez has not seen in years. The plant is barely alive."},
  {label:"Read the note carefully",response:"The message is an apology. Lez could not bring himself to deliver it.",required:"intelligence"},
  {label:"Carry the trolley back yourself",response:"You bring the ridiculous little collection back without losing the plant or the cone.",required:"strength"}],
- returnLine:'Lez: "Did you get it? Nah, don't tell me yet. I need a second."',
+ returnLine:"Lez: \"Did you get it? Nah, don't tell me yet. I need a second.\"",
  epilogue:"Nobody cracks a joke for a moment. Then Mick asks who stole his traffic cone. It turns out nobody had."}
 };
 export function investigationLine(id:number,choice:InvestigationApproach,s:GameState){
