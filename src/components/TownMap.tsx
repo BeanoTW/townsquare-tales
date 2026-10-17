@@ -760,6 +760,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
       <div className="absolute bottom-16 left-3 z-10 w-36 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 sm:w-44" aria-label="Town minimap">
         {!!state?.gangParcel && <p className="text-[11px] font-bold text-center">📦 Deliver to Oddities Pawn</p>}
+        {!!state?.gangTask && <p className="text-[11px] font-bold text-center">★ Crew job destination</p>}
         <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
           <span>🗺️ Stick Town</span><span className="font-normal text-muted-foreground">Tap to move</span>
         </div>
@@ -808,6 +809,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               <title>Deliver sealed package to Oddities Pawn</title>
             </g>
           ))}
+          {!!state?.gangTask && (()=>{const id=({1:"alley",3:"bank",5:"bar"} as Record<number,string>)[state.gangTask??0];const target= id ? bs.find(b=>b.id===id):null;const at=(state.gangTask===2||state.gangTask===4)?GANG_SPOT:target?{x:target.x+target.w/2,y:target.y+target.d/2}:null;return at?<g data-gang-job-waypoint pointerEvents="none"><circle cx={at.x} cy={at.y} r={1.6} fill="none" stroke="#facc15" strokeWidth={0.6}><animate attributeName="opacity" values="1;.35;1" dur="1.4s" repeatCount="indefinite"/></circle><circle cx={at.x} cy={at.y} r={.72} fill="#facc15"/><text x={at.x} y={at.y+.35} fontSize={1} textAnchor="middle">★</text><title>Crew assignment destination</title></g>:null})()}
           <circle cx={m.x} cy={m.y} r={1.03} fill="#ffffff" stroke="#19212a" strokeWidth={0.35} />
           <path d={`M ${m.x} ${m.y-0.67} l-.45 .86 h.9 Z`} transform={`rotate(${m.skateAngle}, ${m.x}, ${m.y})`} fill="#2376b4" />
         </svg>
