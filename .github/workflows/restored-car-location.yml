@@ -1,0 +1,16 @@
+name: Restored car location verification
+on:
+  pull_request:
+    paths:
+      - 'src/components/TownMap.tsx'
+      - 'src/components/town3d/actors.tsx'
+      - 'src/components/town3d/TownWorld3D.tsx'
+      - '.github/workflows/restored-car-location.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
