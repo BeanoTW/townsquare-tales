@@ -727,7 +727,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           </div>
         </div>
       )}
-      {!active && !paused && Math.hypot(m.x-wreckPosition.current.x,m.y-wreckPosition.current.y) < 2.2 && (
+      {!active && !paused && (state?.wreckRepairs??0)<3 && Math.hypot(m.x-wreckPosition.current.x,m.y-wreckPosition.current.y) < 2.2 && (
         <button type="button" data-inspect-abandoned-car onClick={() => setInspectAbandonedCar(true)}
           className="absolute bottom-[13.4rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card/95 px-3 text-xs font-bold shadow-lg">
           🔍 Inspect rusty car
@@ -746,12 +746,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       {state?.abandonedCar && (state.wreckRepairs??0)>=3 && state.drivingLicence && !active && !paused && (vehicle==="wreck" || (!driving && Math.hypot(m.x-wreckPosition.current.x,m.y-wreckPosition.current.y)<2.2)) && <button type="button" data-personal-car-interact className="absolute bottom-[17rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleWreck}>{vehicle==="wreck"?"Park personal car":"🚙 Enter personal car"}</button>}
       {state && canDrive(state) && !active && !paused && (vehicle==="company" || (!driving && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<2.2)) && (
         <button type="button" data-company-car-interact className="absolute bottom-[21rem] right-3 z-20 min-h-11 rounded-lg border-2 border-foreground bg-card px-3 font-bold shadow-lg" onClick={toggleDriving}>{vehicle==="company"?"Park and exit":"🚗 Enter company car"}</button>
-      )}
-      {state && canDrive(state) && driving && !active && !paused && onDrive && (
-        <nav aria-label="Car travel shortcuts" className="absolute bottom-[13.4rem] left-3 z-20 flex flex-col gap-1 rounded-lg border-2 border-foreground bg-card/95 p-1.5 text-xs font-bold shadow-lg sm:bottom-44">
-          <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("home")}>🚗 Jump home</button>
-          {Boolean(state.employed) && <button type="button" className="min-h-10 rounded-md bg-secondary px-2" onClick={() => onDrive("work")}>🚗 Jump to work</button>}
-        </nav>
       )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
       <div className="absolute bottom-16 left-3 z-10 w-36 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 sm:w-44" aria-label="Town minimap">
@@ -811,14 +805,14 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </svg>
       </div>
 
-      {skating && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("a");}} onPointerUp={()=>keys.current.delete("a")} onPointerCancel={()=>keys.current.delete("a")}>◀ Hold</button><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("d");}} onPointerUp={()=>keys.current.delete("d")} onPointerCancel={()=>keys.current.delete("d")}>Hold ▶</button></div></div>}
-      {skating && !paused && (
+      {skating && !driving && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("a");}} onPointerUp={()=>keys.current.delete("a")} onPointerCancel={()=>keys.current.delete("a")}>◀ Hold</button><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("d");}} onPointerUp={()=>keys.current.delete("d")} onPointerCancel={()=>keys.current.delete("d")}>Hold ▶</button></div></div>}
+      {skating && !driving && !paused && (
         <div data-skate-trick-controls className="absolute bottom-36 right-3 z-20 flex flex-col gap-2 sm:bottom-20" aria-label="Skateboard tricks">
-          {(["ollie", "kickflip", "shuvit"] as const).map(trick => (
+          {(["kickflip", "shuvit"] as const).map(trick => (
             <button key={trick} type="button" aria-label={trick} className="min-h-11 rounded-lg border-2 border-foreground bg-card/90 px-3 text-xs font-bold shadow-lg"
               onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); startTrick(trick); }}>
-              {trick === "ollie" ? "Jump" : trick === "kickflip" ? "Kickflip" : "Shuvit"}
+              {trick === "kickflip" ? "Kickflip" : "Shuvit"}
             </button>
           ))}
         </div>
