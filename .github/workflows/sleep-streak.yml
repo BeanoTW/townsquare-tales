@@ -1,0 +1,17 @@
+name: Sleep Streak Safeguard
+on:
+  pull_request:
+    paths:
+      - 'src/lib/actions.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/test/sleep-streak.test.ts'
+      - '.github/workflows/sleep-streak.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/sleep-streak.test.ts
+      - run: bun run build
