@@ -1,0 +1,16 @@
+name: R3F Nested Source Guard
+on:
+  pull_request:
+    paths:
+      - 'src/lib/r3f-preview-guard.ts'
+      - 'src/test/r3f-nested-source-guard.test.ts'
+      - '.github/workflows/r3f-nested-source-guard.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/r3f-nested-source-guard.test.ts src/test/r3f-preview-guard.test.ts
+      - run: bun run build
