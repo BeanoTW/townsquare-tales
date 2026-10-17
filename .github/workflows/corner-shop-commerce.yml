@@ -1,0 +1,21 @@
+name: Corner Shop Commerce Verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/shop-catalog.ts'
+      - 'src/lib/rooms.ts'
+      - 'src/lib/walkable-shops.ts'
+      - 'src/lib/investing.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/components/rooms/WalkableShop.tsx'
+      - 'src/test/corner-shop-commerce.test.ts'
+      - '.github/workflows/corner-shop-commerce.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/corner-shop-commerce.test.ts
+      - run: bun run build

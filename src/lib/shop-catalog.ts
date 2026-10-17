@@ -1,5 +1,6 @@
-import { BUY_SNACK, buyAlarmAction, buyShoesAction, type ActionDef } from "@/lib/actions";
+import { BUY_SNACK, buyAlarmAction, buyShoesAction, buyCaffeineAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
+import {buyLaptopAction,buyDesktopPcAction} from "@/lib/investing";
 
 /** The shop uses the same action engine and save fields as the rest of town. */
 export type ShopGood = {
@@ -34,6 +35,18 @@ function refreshment(id: string, name: string, price: number, energy: number): A
 }
 
 export const SHOP_GOODS: readonly ShopGood[] = [
+  {id:"caffeine-pill",name:"Caffeine tablet",icon:"💊",price:75,
+    description:"Single use. Wake earlier after sleeping; combines with an alarm.",
+    category:"Consumable",repeatable:true,action:buyCaffeineAction,
+    owned:s=>s.caffeinePills??0,available:s=>(s.caffeinePills??0)<20&&s.money>=75},
+  {id:"laptop",name:"Laptop",icon:"💻",price:2500,
+    description:"Portable computer for online finances and investments at your home study desk.",
+    category:"Equipment",repeatable:false,action:buyLaptopAction,
+    owned:s=>s.laptop??0,available:s=>!s.laptop&&s.house>=1&&s.money>=2500},
+  {id:"desktop-pc",name:"Desktop PC",icon:"🖥️",price:3200,
+    description:"Desktop computer for online tools and investing at your study desk.",
+    category:"Equipment",repeatable:false,action:buyDesktopPcAction,
+    owned:s=>s.desktopPc??0,available:s=>!s.desktopPc&&s.house>=1&&s.money>=3200},
   {
     id: "snack",
     name: "Snack pack",
@@ -119,6 +132,8 @@ export const SHOP_GOODS: readonly ShopGood[] = [
 export function shopAvailability(good: ShopGood, state: GameState): string {
   if (!good.repeatable && good.owned(state)) return "Already owned";
   if (good.id === "snack" && state.snacks >= 99) return "Bag full";
+  if (good.id === "caffeine-pill" && (state.caffeinePills??0)>=20) return "Bag full";
+  if ((good.id === "laptop" || good.id === "desktop-pc") && state.house<1) return "Requires a studio flat or better";
   if (good.id === "smokes" && state.smokes > 94) return "Bag full";
   if (state.money < good.price) return `Need $${good.price - state.money} more`;
   return good.repeatable ? "Buy" : "Purchase";

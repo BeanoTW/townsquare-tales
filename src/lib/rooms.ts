@@ -3,7 +3,7 @@ import { meetPawnContact, pawnErrand, repairWreck } from "@/lib/underworld";
 import { CONTRACTS, constructionStatus, startContractAction } from "@/lib/construction-contracts";
 import { businessStatus, buyBusinessAction, repayBusinessDebtAction, hireBusinessManagerAction, expandBusinessAction } from "@/lib/owned-businesses";
 import { civicRunAction, civicStatus, civicVolunteerAction, townHallBuilt } from "@/lib/civic-career";
-import { buyLaptopAction, marketAction, marketUnlocked, sharePrice } from "@/lib/investing";
+import { buyLaptopAction, hasHomeComputer, marketAction, marketUnlocked, sharePrice } from "@/lib/investing";
 import { HUSTLES, hustleAction } from "@/lib/side-hustles";
 import { CAREERS, currentRole, missingRequirements, nextRole } from "@/lib/careers";
 import {
@@ -206,8 +206,8 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Quiet study at home",
         box: { x: 166, y: 92, w: 96, h: 58 },
         when: (s) => ownsFurniture(s.furniture, "desk"),
-        lines: (s) => s.laptop ? [`Laptop · ${s.marketShares??0} shares · ${sharePrice(s.day)}/share`,marketUnlocked(s) ? "Stock market unlocked · 2% fee per trade" : "Investment training unlocks at MegaCorp Analyst"] : ["Buy a laptop at Cosy Corner to access online finances."],
-        actions: (s) => [STUDY_DESK, ...(s.laptop && marketUnlocked(s) ? [marketAction("buy",1),marketAction("buy",10),marketAction("sell",1),marketAction("sell",10)] : [])],
+        lines: (s) => hasHomeComputer(s) ? [`${s.desktopPc ? "Desktop PC" : "Laptop"} · ${s.marketShares??0} shares · ${sharePrice(s.day)}/share`,marketUnlocked(s) ? "Stock market unlocked · 2% fee per trade" : "Investment training unlocks at MegaCorp Analyst"] : ["Buy a laptop or desktop PC from the Corner Shop to access online finances."],
+        actions: (s) => [STUDY_DESK, ...(hasHomeComputer(s) && marketUnlocked(s) ? [marketAction("buy",1),marketAction("buy",10),marketAction("sell",1),marketAction("sell",10)] : [])],
       },
       {
         id: "sofa",
@@ -522,14 +522,6 @@ export const ROOMS: Record<PlaceId, Room> = {
     palette: { wall: "#e3c689", floor: "#a98a6a", accent: "#ce6b45" },
     hotspots: [
       {
-        id: "shelves",
-        label: "Shop shelves",
-        tag: "LOOK",
-        hint: "Browse the shelves. Take your items to the checkout to buy.",
-        box: { x: 12, y: 30, w: 150, h: 130 },
-        lines: () => ["Stocked shelves and everyday essentials.", "All purchases are handled at the checkout counter."],
-      },
-      {
         id: "back-office",
         label: "Back office",
         tag: "PROMOTE",
@@ -549,7 +541,7 @@ export const ROOMS: Record<PlaceId, Room> = {
       },
       {
         id: "checkout",
-        label: "Checkout",
+        label: "Buy",
         tag: "BUY",
         hint: "Equipment and your shift",
         box: { x: 268, y: 120, w: 140, h: 70 },
@@ -694,7 +686,7 @@ export const ROOMS: Record<PlaceId, Room> = {
           furnitureAction("kitchen", s),
           furnitureAction("weights", s),
           furnitureAction("desk", s),
-          ...(!s.laptop ? [buyLaptopAction()] : []),
+          
           furnitureAction("tv", s),
           furnitureAction("console", s),
           furnitureAction("bookshelf", s),
