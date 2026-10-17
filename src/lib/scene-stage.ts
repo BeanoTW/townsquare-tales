@@ -2,6 +2,7 @@ import type { VignetteKind } from "@/components/ActionVignette";
 import { gainsOf, lossesOf, type ActName, type HeldProp, type WorldProp } from "@/lib/cutscenes";
 import type { GameState } from "@/lib/game-state";
 import type { CutsceneMode, Milestone } from "@/lib/milestones";
+import type { CrimeStage } from "@/lib/crime-stage";
 
 /**
  * The scene stage: a small 3D set with the player on it, used for (a) life milestones, which get
@@ -36,6 +37,8 @@ export type StageSpec = {
   duration: number;
   /** Sign text painted on the set (workplace name, banner). */
   banner: string | null;
+  /** A directed crime scene (cast, blocking and camera beats) replaces the single-actor performance. */
+  crime?: CrimeStage;
 };
 
 let keyN = 0;
