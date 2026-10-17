@@ -11,7 +11,7 @@ export const SHOP_LAYOUTS: Record<ShopId, ShopFixture[]> = {
     { id: "shelves", x: 2, y: 3, w: 3, d: 4, approach: { x: 6, y: 5 } },
     { id: "shop-board", x: 7, y: 2, w: 2, d: 1, approach: { x: 8, y: 4 } },
     { id: "back-office", x: 11, y: 2, w: 4, d: 2, approach: { x: 13, y: 5 } },
-    { id: "checkout", x: 11, y: 7, w: 4, d: 2, approach: { x: 10, y: 8 } },
+    { id: "checkout", x: 4, y: 8, w: 3, d: 2, approach: { x: 8, y: 10 } },
   ],
   pawn: [
     { id: "pawn-counter", x: 2, y: 3, w: 5, d: 2, approach: { x: 5, y: 6 } },
