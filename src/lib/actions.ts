@@ -85,6 +85,8 @@ export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random):
     ...patch,
     hour: patch.hour ?? s.hour + def.hours,
     energy: clampEnergy(patch.energy ?? s.energy - def.energy),
+    // A real completed activity (not a menu click or instant purchase) breaks the sleep-only streak.
+    ...(def.id !== "sleep" && (def.hours > 0 || def.energy > 0) ? { lastActiveDay: s.day } : {}),
   };
 
   const changes = LABELS.flatMap(([key, label]) => {
@@ -154,6 +156,9 @@ export function sleepAction(s: GameState): ActionDef {
     energy: 0,
     note: (s.caffeinePills ?? 0)>0 ? "Use 1 caffeine pill for a two-hour wake-up boost" : "Ends the day",
     resolve: (st) => {
+      if (st.lastSleepDay === st.day && st.lastActiveDay !== st.day) {
+        return "You cannot sleep through another entire day, mate. Even your mattress is asking you to get a hobby. Go do something first.";
+      }
       const rested = sleepOutcome(st);
       const afterContract = { ...st, ...settleContract(st, st.day + 1) };
       const afterBusiness = { ...afterContract, ...settleBusinesses(afterContract, st.day + 1) };
@@ -163,6 +168,7 @@ export function sleepAction(s: GameState): ActionDef {
           energy: rested.energy,
           caffeinePills: (st.caffeinePills ?? 0)>0 ? (st.caffeinePills ?? 0)-1 : (st.caffeinePills ?? 0),
           day: st.day + 1,
+          lastSleepDay: st.day + 1,
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
           // Loans have a fixed 40% borrowing charge; only overdue debt incurs additional penalties.
           loanDebt: (st.loanDueDay ?? 0) > 0 && st.day + 1 > (st.loanDueDay ?? 0)
