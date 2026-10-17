@@ -779,11 +779,11 @@ export const CLINIC_RECOVERY: ActionDef = {
   hours: 1,
   energy: 0,
   cost: 40,
-  note: "Restores all energy",
+  note: "Restores energy and treats minor injuries",
   resolve: (s) =>
-    s.money >= 40
-      ? { patch: { money: s.money - 40, energy: 100 }, message: "Back on your feet!" }
-      : "Treatment costs $40.",
+    s.money >= 100
+      ? { patch: { money: s.money - 100, energy: 100, health: Math.min(100,(s.health??100)+25) }, message: "Treated minor injuries and restored energy." }
+      : "Treatment costs $100.",
 };
 
 /* ---------- Careers ---------- */
