@@ -3,8 +3,8 @@ export type HomeZone = "shelter" | "living" | "bedroom" | "kitchen" | "study" | 
 export type VenueZone = "floor" | "back" | "vip" | "bar" | "dance" | "weights" | "cardio";
 /** Every zone a 3D plan can use: the home rooms plus the venue regions. */
 export type PlanZone = HomeZone | VenueZone;
-export type VenueId = "casino" | "bar" | "gym" | "pawn" | "police" | "shop" | "diner" | "furniture" | "bank" | "school" | "work" | "yard" | "clinic" | "depot" | "post";
-export const VENUE_IDS: readonly string[] = ["casino", "bar", "gym", "pawn", "police", "shop", "diner", "furniture", "bank", "school", "work", "yard", "clinic", "depot", "post"];
+export type VenueId = "casino" | "bar" | "gym" | "pawn" | "police" | "shop" | "diner" | "furniture" | "bank" | "school" | "work" | "yard" | "clinic" | "depot" | "post" | "hall" | "garage";
+export const VENUE_IDS: readonly string[] = ["casino", "bar", "gym", "pawn", "police", "shop", "diner", "furniture", "bank", "school", "work", "yard", "clinic", "depot", "post", "hall", "garage"];
 export const isVenue = (id: string): id is VenueId => VENUE_IDS.includes(id);
 /** Area buttons for the everyday venues: the public floor and the back-of-house space. */
 const AREAS: Partial<Record<VenueId, [string, string]>> = {
@@ -20,6 +20,8 @@ const AREAS: Partial<Record<VenueId, [string, string]>> = {
   pawn: ["Shop floor", "Back room"],
   police: ["Reception", "Squad room"],
   post: ["Public hall", "Sorting office"],
+  hall: ["Main hall", "Meeting room"],
+  garage: ["Reception", "Workshop"],
 };
 export const venueZones = (id: VenueId): { id: PlanZone; label: string }[] => {
   const areas = AREAS[id];

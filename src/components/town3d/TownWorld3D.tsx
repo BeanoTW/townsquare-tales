@@ -10,6 +10,7 @@ import { StaticBatch } from "@/components/town3d/StaticBatch";
 import { TownGround } from "@/components/town3d/ground";
 import { TownBuildings } from "@/components/town3d/buildings";
 import { EstateGrounds } from "@/components/town3d/estate";
+import { CommunityHall } from "@/components/town3d/civic";
 import { ConstructionStatic, Lamps, StreetFurniture, Trees, lampPositions } from "@/components/town3d/props";
 import { BoxSquatter, Car, EncounterPerson, Gang, ParkKid, Pedestrians, Pigeons, Player3D, Residents, SiteCrew, Traffic, type TownLive } from "@/components/town3d/actors";
 import { prepareNightMaterials, setNightLevel } from "@/components/town3d/kit";
@@ -165,56 +166,6 @@ function MansionGate({ open }: { open: boolean }) {
 }
 
 /** Completed civic landmark on the original construction plot. The yard office remains open. */
-function CompletedTownHall() {
-  return (
-    <group>
-      <mesh position={[19.1, 0.04, 19.4]} receiveShadow>
-        <boxGeometry args={[5.9, 0.08, 8.6]} />
-        <meshStandardMaterial color="#d2cbb9" roughness={0.95} />
-      </mesh>
-      <mesh position={[18.75, 0.78, 19.0]} castShadow receiveShadow>
-        <boxGeometry args={[4.3, 1.48, 4.7]} />
-        <meshStandardMaterial color="#d8c9ab" />
-      </mesh>
-      <mesh position={[18.75, 1.58, 19.0]} castShadow>
-        <boxGeometry args={[4.65, 0.2, 5.0]} />
-        <meshStandardMaterial color="#535b63" />
-      </mesh>
-      {/* Community hall: continuous street facade with glazed entrance, windows and name board. */}
-      {[17.45, 19.85].map(x => <mesh key={"window-"+x} position={[x, 1.01, 21.385]} castShadow>
-        <boxGeometry args={[0.72, 0.63, 0.07]} />
-        <meshStandardMaterial color="#7eafb7" metalness={0.1} roughness={0.24} />
-      </mesh>)}
-      <mesh position={[18.75, 1.28, 21.44]}>
-        <boxGeometry args={[2.5, 0.32, 0.1]} />
-        <meshStandardMaterial color="#304f56" />
-      </mesh>
-      {[17.5, 18.35, 19.2, 20.05].map(x => (
-        <mesh key={x} position={[x, 0.71, 21.5]} castShadow>
-          <cylinderGeometry args={[0.115, 0.13, 1.25, 8]} />
-          <meshStandardMaterial color="#efe9d9" />
-        </mesh>
-      ))}
-      <mesh position={[18.75, 0.035, 22.15]} receiveShadow>
-        <boxGeometry args={[2.0, 0.07, 2.25]} />
-        <meshStandardMaterial color="#b7b2a6" />
-      </mesh>
-      <mesh position={[18.75, 0.82, 21.39]}>
-        <boxGeometry args={[0.7, 0.95, 0.05]} />
-        <meshStandardMaterial color="#485c63" roughness={0.35} />
-      </mesh>
-      <mesh position={[18.75, 1.63, 19.0]} castShadow>
-        <boxGeometry args={[4.82, 0.08, 5.12]}/>
-        <meshStandardMaterial color="#d9dbd3"/>
-      </mesh>
-      <mesh position={[18.75, 2.03, 19.0]} castShadow>
-        <cylinderGeometry args={[0.55, 0.75, 0.65, 4]} />
-        <meshStandardMaterial color="#bdab84" />
-      </mesh>
-    </group>
-  );
-}
-
 function PersonalCar({position}:{position:MutableRefObject<{x:number;y:number;angle:number}>}) {
  const group=useRef<THREE.Group>(null);
  useFrame(()=>{if(!group.current)return;const p=position.current;group.current.position.set(p.x,0,p.y);group.current.rotation.y=Math.PI-p.angle*Math.PI/180;});
@@ -275,7 +226,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         <Trees bs={bs} />
         <Lamps bs={bs} />
         <StreetFurniture />
-        {townHallBuilt ? <CompletedTownHall /> : <ConstructionStatic />}
+        {townHallBuilt ? <CommunityHall /> : <ConstructionStatic />}
         {yardRelocated && <group position={[19.1,0,12.3]} scale={[0.7,1,0.7]}><ConstructionStatic /></group>}
         {yardRelocated && <EasternYardEquipment />}
       </StaticBatch>

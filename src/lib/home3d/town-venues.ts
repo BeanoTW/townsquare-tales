@@ -18,6 +18,8 @@
  *   pawn       12.0 ×  9.0  Oddities Pawn shop floor and back-room workshop
  *   police     13.0 ×  9.5  reception with the front desk, squad room and holding cell
  *   post       12.0 ×  9.0  Town Post Office: public hall and counter, sorting office behind a staff door
+ *   hall       15.0 × 11.0  Community Hall: sprung-floor main hall with a stage, and the council meeting room
+ *   garage     14.0 ×  9.0  Bayside Garage: customer reception, and a three-bay workshop behind a glazed partition
  */
 import type { HomePlan, Slot, WallSpec, Opening } from "./layout";
 import type { PlanZone } from "@/lib/home-zones";
@@ -745,7 +747,133 @@ export const POST: HomePlan = {
   ],
 };
 
-export const TOWN_VENUES = { shop: SHOP, diner: DINER, furniture: FURNITURE, bank: BANK, school: SCHOOL, work: WORK, yard: YARD, clinic: CLINIC, depot: DEPOT, pawn: PAWN, police: POLICE, post: POST } as const;
+/* ------------------------------------------------------------------ Community Hall */
+/**
+ * A tall village-hall space: sprung timber floor marked for badminton, a raised stage with curtains at the back
+ * left, chair rows and stacks, a tea hatch, and the noticeboard and volunteer table by the entrance. Behind a
+ * partition at the back right, the council meeting room with its long table.
+ */
+export const HALL: HomePlan = {
+  tier: 31, kind: "hall", name: "Stick Town Community Hall",
+  size: { w: 15, d: 11, h: 4.2 },
+  floors: [
+    { zone: "floor", rect: R(0, 3.8, 15, 11), kind: "boards", colour: "#c79a64" },
+    { zone: "floor", rect: R(0, 0, 7, 3.8), kind: "boards", colour: "#a8764a" },
+    { zone: "back", rect: R(7, 0, 15, 3.8), kind: "carpet", colour: "#4f6a8a" },
+  ],
+  walls: [
+    ...shell(15, 11, 4.2, "#ece2cc", "plain", "#304f56", {
+      back: [win(9.0, 10.6, 1.4, 3.0), win(12.4, 14.0, 1.4, 3.0)],
+      front: [win(1.0, 3.0, 1.0, 3.2), door(6.5, 8.5, 2.6), win(10.4, 12.4, 1.0, 3.2)],
+      left: [win(4.4, 6.2, 1.5, 3.4), win(7.6, 9.6, 2.8, 3.6)],
+      right: [win(8.2, 9.4, 1.4, 3.4)],
+    }, "#304f56", { right: "#e6dcc4" }),
+    part("meeting", [7, 3.8], [15, 3.8], 4.2, [0, 1], "#ded4bc", [door(1.0, 2.0, 2.3)], "panel", "#304f56", "#6b4a32"),
+    part("meeting-side", [7, 0], [7, 3.8], 4.2, [-1, 0], "#ded4bc", [], "panel", "#304f56"),
+  ],
+  slots: [
+    vslot("noticeboard", 0.3, 8.6, Math.PI / 2, "floor", [1.8, 0.4], "Community noticeboard", "INFO", 2.4),
+    vslot("volunteer-desk", 11.2, 8.3, 0, "floor", [2.2, 0.8], "Volunteer desk", "HELP", 1.6),
+    vslot("meeting-room", 11.6, 1.7, 0, "back", [3.2, 1.4], "Meeting room", "MEET", 1.6),
+  ],
+  focus: { all: R(0, 0, 15, 11), floor: R(0, 3.8, 15, 11), back: R(7, 0, 15, 3.8) },
+  rooms: [
+    { zone: "floor", name: "Main hall", rect: R(0, 3.8, 15, 11) },
+    { zone: "back", name: "Meeting room", rect: R(7, 0, 15, 3.8) },
+  ],
+  doors: [{ a: [6.5, 11], b: [8.5, 11] }, { a: [8.0, 3.8], b: [9.0, 3.8] }],
+  spawn: { entry: [7.5, 10.4], zones: { floor: [6.0, 8.6], back: [9.0, 2.9] } },
+  vantagePoints: { floor: [7.5, 9.6], back: [8.0, 3.2] },
+  colliders: [
+    R(0.1, 0.1, 6.9, 3.6), // the raised stage
+    R(0.15, 3.6, 0.95, 4.2), // its steps
+    R(2.0, 4.6, 6.0, 5.2), // front row of chairs
+    R(2.0, 5.6, 6.0, 6.2), // second row
+    R(14.4, 4.6, 14.9, 7.4), // tea hatch and counter
+    R(13.6, 9.7, 14.6, 10.7), // stacked chairs
+    R(0.15, 4.4, 0.75, 5.6), // upright piano
+    R(7.4, 0.15, 8.4, 0.75), // flipchart corner
+  ],
+  lights: {
+    hemi: ["#fff4e0", "#5a4a3a"], hemiBase: 0.9, hemiDay: 0.5, sunBase: 0.4, sunDay: 1.6, sunTint: ["#fff6e6", "#ffd2a0"],
+    points: [
+      { p: [3.5, 3.8, 7.5], colour: "#fff1d8", day: 4, night: 12, distance: 8, decay: 1.5 },
+      { p: [10.5, 3.8, 7.5], colour: "#fff1d8", day: 4, night: 12, distance: 8, decay: 1.5 },
+      { p: [3.5, 3.6, 1.8], colour: "#ffd9a0", day: 5, night: 12, distance: 6, decay: 1.5 },
+      { p: [11.0, 3.4, 1.9], colour: "#fff4e0", day: 3, night: 9, distance: 6, decay: 1.5 },
+    ],
+  },
+  sky: { day: ["#cfe2ee", "#f6efe0"], night: ["#18202e", "#2e3a4a"] },
+  base: { side: "#7a5a46", top: "#d8cdb6", margin: 0.45 },
+  npcs: [
+    { id: "volunteer", name: "Volunteer coordinator", x: 11.2, z: 7.25, rot: 0, pose: "sit", seat: 0.46, shirt: "#e0b84a", skin: "#e8c3a0", hair: "#8a5a2a" },
+    { id: "chair-stacker", name: "Caretaker", x: 12.6, z: 9.6, rot: -Math.PI / 2, pose: "stand", shirt: "#304f56", skin: "#c99572", hair: "#c9c9c9" },
+    { id: "councillor", name: "Councillor", x: 11.6, z: 0.65, rot: 0, pose: "sit", seat: 0.46, shirt: "#5c6e98", skin: "#efd0b0", hair: "#3a2a22" },
+    { id: "pianist", name: "Pianist", x: 1.25, z: 5.0, rot: -Math.PI / 2, pose: "sit", seat: 0.48, shirt: "#8a2a34", skin: "#8d5a3b", hair: "#1e1a1a" },
+  ],
+};
+
+/* ------------------------------------------------------------------ Bayside Garage */
+/**
+ * A working three-bay garage: customer reception with a service counter, key board and coffee corner, and through
+ * a glazed partition the workshop: bay 1 a car on axle stands with its bonnet up, bay 2 a two-post lift with a
+ * car raised, bay 3 an inspection pit. Workbenches, tool chests and tyre racks line the back wall.
+ */
+export const GARAGE: HomePlan = {
+  tier: 32, kind: "garage", name: "Bayside Garage",
+  size: { w: 14, d: 9, h: 4.0 },
+  floors: [
+    { zone: "floor", rect: R(0, 0, 4.2, 9), kind: "tile", colour: "#d9d4c8" },
+    { zone: "back", rect: R(4.2, 0, 14, 9), kind: "concrete", colour: "#9aa0a0" },
+  ],
+  walls: [
+    ...shell(14, 9, 4.0, "#d8d0c0", "block", "#344b52", {
+      back: [win(1.6, 3.4, 1.5, 2.6), win(8.0, 10.0, 2.7, 3.5)],
+      front: [win(0.3, 1.1, 1.0, 2.4), door(1.4, 2.6, 2.3), win(2.9, 3.9, 1.0, 2.4)],
+      left: [win(3.0, 5.0, 1.2, 2.4)],
+    }, "#6f7a7c", { left: "#e6dfd2", leftStyle: "plain" }),
+    part("workshop", [4.2, 0], [4.2, 9], 4.0, [-1, 0], "#e6dfd2", [door(5.6, 6.6, 2.2), win(1.6, 4.4, 1.0, 2.2)], "plain", "#344b52", "#344b52"),
+  ],
+  slots: [
+    vslot("service-desk", 2.1, 2.7, 0, "floor", [2.8, 0.8], "Mechanic reception", "SERVICE", 1.7),
+    vslot("service-bays", 9.2, 3.9, 0, "back", [2.6, 4.6], "Three repair bays", "BAYS", 2.6),
+  ],
+  focus: { all: R(0, 0, 14, 9), floor: R(0, 0, 4.2, 9), back: R(4.2, 0, 14, 9) },
+  rooms: [
+    { zone: "floor", name: "Reception", rect: R(0, 0, 4.2, 9) },
+    { zone: "back", name: "Workshop", rect: R(4.2, 0, 14, 9) },
+  ],
+  doors: [{ a: [1.4, 9], b: [2.6, 9] }, { a: [4.2, 5.6], b: [4.2, 6.6] }],
+  spawn: { entry: [2.0, 8.4], zones: { floor: [2.1, 5.6], back: [9.2, 7.6] } },
+  vantagePoints: { floor: [2.4, 7.6], back: [9.2, 8.3] },
+  colliders: [
+    R(0.1, 6.5, 0.7, 8.6), // waiting chairs
+    R(3.3, 7.5, 4.05, 8.7), // tyre display stack
+    R(0.15, 0.15, 1.0, 1.0), // coffee machine corner
+    R(4.9, 2.0, 7.3, 6.4), // bay 1: car on axle stands
+    R(11.1, 2.4, 13.5, 6.6), // bay 3: inspection pit and its barrier
+    R(4.4, 0.15, 13.8, 0.85), // workbenches, tool chests and tyre racks along the back wall
+    R(13.2, 6.9, 13.85, 8.7), // oil drums and compressor
+  ],
+  lights: {
+    hemi: ["#f2f6ff", "#3a3a3a"], hemiBase: 0.85, hemiDay: 0.45, sunBase: 0.35, sunDay: 1.5, sunTint: ["#f4f8ff", "#ffd2a0"],
+    points: [
+      { p: [2.1, 3.4, 4.5], colour: "#fff4e0", day: 3, night: 9, distance: 6, decay: 1.5 },
+      { p: [6.1, 3.6, 4.2], colour: "#f4f8ff", day: 4, night: 11, distance: 7, decay: 1.5 },
+      { p: [9.2, 3.6, 4.2], colour: "#f4f8ff", day: 4, night: 11, distance: 7, decay: 1.5 },
+      { p: [12.3, 3.6, 4.2], colour: "#f4f8ff", day: 4, night: 11, distance: 7, decay: 1.5 },
+    ],
+  },
+  sky: { day: ["#cfdde6", "#eef3f6"], night: ["#151b22", "#2b3640"] },
+  base: { side: "#344b52", top: "#c9c6bc", margin: 0.45 },
+  npcs: [
+    { id: "receptionist", name: "Service advisor", x: 2.1, z: 1.75, rot: 0, pose: "stand", shirt: "#344b52", skin: "#efd0b0", hair: "#3a2a22" },
+    { id: "mechanic-a", name: "Mechanic", x: 6.1, z: 6.95, rot: Math.PI, pose: "stand", shirt: "#2f4a8a", skin: "#c99572", hair: "#1e1a1a" },
+    { id: "mechanic-b", name: "Apprentice", x: 12.3, z: 1.6, rot: 0, pose: "stand", shirt: "#2f4a8a", skin: "#e8c3a0", hair: "#c98a3a" },
+  ],
+};
+
+export const TOWN_VENUES = { shop: SHOP, diner: DINER, furniture: FURNITURE, bank: BANK, school: SCHOOL, work: WORK, yard: YARD, clinic: CLINIC, depot: DEPOT, pawn: PAWN, police: POLICE, post: POST, hall: HALL, garage: GARAGE } as const;
 export type TownVenueId = keyof typeof TOWN_VENUES;
 export const TOWN_VENUE_IDS = Object.keys(TOWN_VENUES) as TownVenueId[];
 export const isTownVenue = (id: string): id is TownVenueId => Object.prototype.hasOwnProperty.call(TOWN_VENUES, id);

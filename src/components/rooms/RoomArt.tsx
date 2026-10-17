@@ -1102,4 +1102,6 @@ const PATTERNS: Record<PlaceId, "planks" | "tiles" | "carpet" | "concrete" | "gr
     post: "tiles",
     police: "tiles",
     clinic: "tiles",
+    hall: "planks",
+    garage: "concrete",
   };
