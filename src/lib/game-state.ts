@@ -15,7 +15,7 @@ export type GameState = {
   luxuryFurniture?: number;
   laptop?: number; desktopPc?: number; marketShares?: number;
   mailbox?: number;
-  mailReadMask?: number; familyReplyMask?: number; pendingReplyMask?: number; familyFirstReplyDay?: number;
+  mailReadMask?: number; familyReplyMask?: number; pendingReplyMask?: number; familyFirstReplyDay?: number; hometownNoticeDay?: number; hometownTripDay?: number; hometownTripResult?: number; hometownJobDone?: number;
   career: number; xp: number; careerXp0?: number; careerXp1?: number; careerXp2?: number; careerXp3?: number; careerBest0?: number; careerBest1?: number; careerBest2?: number; careerBest3?: number; studyXp?: number; employed?: number;
   gangRep: number; gangStage: number; gangParcel?: number; gangTask?: number;
   underworldStoryMask?: number; underworldStoryActive?: number; underworldStoryChoiceMask?: number; underworldStoryStage?: number; underworldStoryClue?: number;
@@ -55,7 +55,7 @@ const ranges: Record<keyof GameState, [number, number]> = {
   weapon: [0, 2], tillRobberyDay: [0, 100000],
   streetSearchDay: [0, 100000],
   laptop: [0, 1], desktopPc: [0, 1], marketShares: [0, 100000000],
-  luxuryFurniture: [0, 255], mailbox: [0, 1], mailReadMask: [0, 8191], familyReplyMask: [0, 2047], pendingReplyMask: [0, 2047], familyFirstReplyDay: [0, 100000],
+  luxuryFurniture: [0, 255], mailbox: [0, 1], mailReadMask: [0, 8191], familyReplyMask: [0, 2047], pendingReplyMask: [0, 2047], familyFirstReplyDay: [0, 100000], hometownNoticeDay: [0, 100000], hometownTripDay: [0, 100000], hometownTripResult: [0, 2], hometownJobDone: [0, 1],
   residentFavour:[0,4],residentFavourStage:[0,1],residentFavourDeadline:[0,2400030],residentFavourLastDay:[0,100000],
   streetNewsDay: [0, 100000],
   streetEncounterDay: [0, 100000],
