@@ -1,0 +1,21 @@
+name: Hometown Supply and Family Verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/hometown.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/lib/shop-catalog.ts'
+      - 'src/lib/town-mail.ts'
+      - 'src/components/rooms/MailInbox.tsx'
+      - 'src/routes/index.tsx'
+      - 'src/test/hometown-supply.test.ts'
+      - '.github/workflows/hometown-supply.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/hometown-supply.test.ts src/test/vehicle-food-sleep.test.ts src/test/underworld-stories.test.ts
+      - run: bun run build

@@ -1,4 +1,4 @@
-import { BUY_SNACK, BUY_SANDWICH, BUY_STIMULANT, buyAlarmAction, buyShoesAction, buyCaffeineAction, type ActionDef } from "@/lib/actions";
+import { BUY_SNACK, BUY_SANDWICH, buyAlarmAction, buyShoesAction, buyCaffeineAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import {buyLaptopAction,buyDesktopPcAction} from "@/lib/investing";
 
@@ -17,7 +17,6 @@ export type ShopGood = {
 };
 
 export const SHOP_GOODS: readonly ShopGood[] = [
-  {id:"mystery-powder",name:"Suspicious white powder",icon:"📦",price:1000,description:"Black-market item. Stay awake two nights; a third ends at hospital.",category:"Consumable",repeatable:true,action:()=>BUY_STIMULANT,owned:s=>s.stimulantPacks??0,available:s=>(s.stimulantPacks??0)<20&&s.money>=1000},
   {id:"caffeine-pill",name:"Caffeine tablet",icon:"💊",price:75,
     description:"Single use. Wake earlier after sleeping; combines with an alarm.",
     category:"Consumable",repeatable:true,action:buyCaffeineAction,
