@@ -759,6 +759,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
       <div className="absolute bottom-16 left-3 z-10 w-36 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 sm:w-44" aria-label="Town minimap">
+        {!!state?.gangParcel && <p className="text-[11px] font-bold text-center">📦 Deliver to Oddities Pawn</p>}
         <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
           <span>🗺️ Stick Town</span><span className="font-normal text-muted-foreground">Tap to move</span>
         </div>
@@ -797,6 +798,16 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
               <title>Town Hall — completed on day 30</title>
             </g>
           )}
+          {!!state?.gangParcel && bs.filter(b=>b.id==="pawn").map(b=>(
+            <g key="courier-pawn-waypoint" data-courier-waypoint aria-label="Package destination: Oddities Pawn" pointerEvents="none">
+              <rect x={b.x-.28} y={b.y-.28} width={b.w+.56} height={b.d+.56} rx={.35} fill="none" stroke="#facc15" strokeWidth={.55}>
+                <animate attributeName="opacity" values="1;.38;1" dur="1.5s" repeatCount="indefinite"/>
+              </rect>
+              <circle cx={b.x+b.w/2} cy={b.y+b.d/2} r={1.1} fill="#facc15" stroke="#222" strokeWidth={.25}/>
+              <text x={b.x+b.w/2} y={b.y+b.d/2+.42} textAnchor="middle" fontSize={1.25}>📦</text>
+              <title>Deliver sealed package to Oddities Pawn</title>
+            </g>
+          ))}
           <circle cx={m.x} cy={m.y} r={1.03} fill="#ffffff" stroke="#19212a" strokeWidth={0.35} />
           <path d={`M ${m.x} ${m.y-0.67} l-.45 .86 h.9 Z`} transform={`rotate(${m.skateAngle}, ${m.x}, ${m.y})`} fill="#2376b4" />
         </svg>
