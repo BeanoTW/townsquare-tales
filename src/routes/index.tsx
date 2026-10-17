@@ -430,8 +430,11 @@ function Game() {
               </>}
               {(s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
               {(s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
-              <p className="text-sm">An ordinary bat is available to anyone. Specialist gear requires earned trust; the basic bat cannot be used for till robberies.</p>
-              {([1,2] as const).map(tier => <Btn key={tier} disabled={!!weaponBlock(s,tier)} onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · ${buyWeapon(tier).cost} · {buyWeapon(tier).hours}h · {buyWeapon(tier).energy} energy · {weaponBlock(s,tier) ?? buyWeapon(tier).note}</Btn>)}
+              
+              {([1,2] as const).map(tier => <div key={tier} className="my-2 min-w-0">
+                <Btn onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · $ {buyWeapon(tier).cost}</Btn>
+                <p className="px-1 py-1 text-sm text-muted-foreground">{tier===1?"Looks like it has seen better days.": "Ask the crew whether they can source something heavier."}</p>
+              </div>)}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>
             </>
