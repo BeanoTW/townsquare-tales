@@ -1,0 +1,14 @@
+name: Town vehicle HUD verification
+on:
+  pull_request:
+    paths:
+      - 'src/components/TownMap.tsx'
+      - '.github/workflows/town-vehicle-hud.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
