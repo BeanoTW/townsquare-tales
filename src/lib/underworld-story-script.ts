@@ -32,7 +32,7 @@ export const UNDERWORLD_SCRIPTS:Readonly<Record<number,StoryScript>>={
  epilogue:"Mick refuses to apologise. Then he does, quietly, when nobody is listening."},
  4:{intro:"Nia has been offered an absurd sum for a perfectly ordinary parcel. Mick calls it capitalism. Lez calls it a sign from the universe.",
  scene:"The buyer is sitting alone in the pub wearing sunglasses indoors. He claims he is being discreet.",
- philosophy:'Lez: "Everyone's got a price." Nia: "You sold a bicycle for half a sandwich." Lez: "It was a good sandwich."',
+ philosophy:"Lez: \"Everyone's got a price.\" Nia: \"You sold a bicycle for half a sandwich.\" Lez: \"It was a good sandwich.\"",
  locationName:"The Tipsy Stick",clues:[
  {label:"Study the buyer's behaviour",response:"He keeps checking the wrong door. He has never been inside this pub before."},
  {label:"Ask where the money came from",response:"He says he inherited it from an uncle who is, by his own account, still alive.",required:"intelligence"},
