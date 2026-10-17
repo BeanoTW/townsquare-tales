@@ -760,10 +760,10 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </div>
       )}
       {!active && !paused && state?.drivingLicence && ((state.abandonedCar && (state.wreckRepairs??0)>=3) || state.companyCar) && (vehicle || (state.abandonedCar && (state.wreckRepairs??0)>=3) || (state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2)) && (
-        <div data-car-hud className={`absolute left-3 z-20 flex gap-1 ${mapMode==="large"?"bottom-[14rem]":"bottom-[10rem]"}`}>
-          {vehicle ? <button type="button" title="Exit car" aria-label="Exit car" data-personal-car-interact={vehicle==="wreck"?"true":undefined} className="grid h-9 w-9 place-items-center rounded-full border border-foreground/40 bg-card/70 text-base font-semibold text-red-600 shadow-lg" onClick={vehicle==="wreck"?toggleWreck:toggleDriving}>↗</button> : <>
-            {state.abandonedCar && (state.wreckRepairs??0)>=3 && <button type="button" title="Enter your car" aria-label="Enter personal car" data-personal-car-interact className="grid h-9 w-9 place-items-center rounded-full border border-foreground/40 bg-card/70 text-base font-semibold text-blue-600 shadow-lg" onClick={toggleWreck}>↘</button>}
-            {!!state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2 && <button type="button" title="Enter nearby work car" aria-label="Enter nearby company car" data-company-car-interact className="grid h-9 w-9 place-items-center rounded-full border border-foreground/40 bg-card/70 text-base font-semibold text-blue-600 shadow-lg" onClick={toggleDriving}>↘</button>}
+        <div data-car-hud className={`pointer-events-none absolute left-3 z-20 flex gap-1 ${mapMode==="large"?"bottom-[14rem]":"bottom-[10rem]"}`}>
+          {vehicle ? <button type="button" title="Exit car" aria-label="Exit car" data-personal-car-interact={vehicle==="wreck"?"true":undefined} className="pointer-events-auto grid h-11 w-11 place-items-center border-0 bg-transparent text-2xl text-red-600 drop-shadow-md" onClick={vehicle==="wreck"?toggleWreck:toggleDriving}>🔑</button> : <>
+            {state.abandonedCar && (state.wreckRepairs??0)>=3 && <button type="button" title="Enter personal car" aria-label="Enter personal car" data-personal-car-interact className="pointer-events-auto grid h-11 w-11 place-items-center border-0 bg-transparent text-2xl text-blue-600 drop-shadow-md" onClick={toggleWreck}>🔑</button>}
+            {!!state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2 && <button type="button" title="Enter nearby work car" aria-label="Enter nearby company car" data-company-car-interact className="pointer-events-auto grid h-11 w-11 place-items-center border-0 bg-transparent text-2xl text-blue-600 drop-shadow-md" onClick={toggleDriving}>🔑</button>}
           </>}
         </div>
       )}
