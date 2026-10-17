@@ -1,0 +1,17 @@
+name: Underworld encounter pipeline validation
+on:
+  pull_request:
+    paths:
+      - 'src/lib/gang-career.ts'
+      - 'src/components/LocationScene.tsx'
+      - 'src/test/underworld-beats.test.ts'
+      - '.github/workflows/underworld-beats.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/underworld-beats.test.ts src/test/underworld-venue-npcs.test.ts src/test/gang-physical-tasks.test.ts
+      - run: bun run build
