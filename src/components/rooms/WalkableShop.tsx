@@ -73,7 +73,7 @@ export function WalkableShop({
   const id = room.id as ShopId,
     fixtures = SHOP_LAYOUTS[id];
   const interactionFixtures = [...fixtures, ...SHOP_AISLES[id]];
-  const hotspotId = (target: string) => (target === "aisle" ? "shelves" : target === "premium" ? "catalogue" : target);
+  const hotspotId = (target: string) => (target === "aisle" ? "checkout" : target === "premium" ? "catalogue" : target);
   const pos = useRef<Point>({ ...SHOP_ENTRY }),
     path = useRef<Point[]>([]),
     pending = useRef<string | null>(null),
@@ -320,7 +320,7 @@ export function WalkableShop({
                 key={f.id}
                 role="button"
                 tabIndex={0}
-                aria-label="Browse the grocery aisle"
+                aria-label="Buy groceries from the front shelf"
                 onClick={(e) => {
                   e.stopPropagation();
                   open(f.id);
@@ -484,19 +484,19 @@ export function WalkableShop({
             <div className="mb-2 flex items-center justify-between gap-2"><strong>{furnitureRange === "luxury" ? "✨ Premium Furniture" : "Basic Furniture"}</strong><button type="button" className="min-h-11 min-w-11 rounded-lg border-2 border-foreground" aria-label="Close furniture collection" onClick={() => setSelected(null)}>✕</button></div>
             <FurnitureShowroom key={furnitureRange} state={state} onRun={onRun} initialRange={furnitureRange} hideTabs />
           </div>
-        ) : panel && id === "shop" && (panel.id === "shelves" || panel.id === "checkout") ? (
+        ) : panel && id === "shop" && panel.id === "checkout" ? (
           <ShopCatalogPanel
             key={panel.id}
             state={state}
             godMode={godMode}
-            browsing={panel.id === "shelves"}
+            browsing={false}
             counterOption={
               <CounterRobberyChoice state={state} venue={id} godMode={godMode} onRun={onRun} />
             }
             picked={pickedGood}
             onPick={(good) => {
               setPickedGood(good);
-              if (panel.id === "shelves") open("checkout");
+
             }}
             onRun={onRun}
             onClose={() => setSelected(null)}
