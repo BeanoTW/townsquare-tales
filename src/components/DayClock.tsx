@@ -14,8 +14,8 @@ export function DayClock({day,hour,money,energy}:{day:number;hour:number;money:n
   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-bold">
     <span>Day {day}</span><span aria-label="Game time">🕒 {timeLabel(shown)}</span><span>${money}</span><span>⚡ {energy}%</span>
   </div>
-  <div className="mt-1 flex gap-[2px]" role="progressbar" aria-label="Hours elapsed today" aria-valuemin={0} aria-valuemax={24} aria-valuenow={shown}>
-    {Array.from({length:24},(_,i)=><span key={i} className={`h-[6px] min-w-0 flex-1 rounded-[1px] transition-colors duration-150 ${i<shown?(i>=19||i<6?"bg-indigo-600":i>=16?"bg-orange-500":"bg-primary"):"bg-muted"}`}/>)}
+  <div className="mt-1 flex gap-[2px]" role="progressbar" aria-label="Hours remaining today" aria-valuemin={0} aria-valuemax={24} aria-valuenow={Math.max(0,24-shown)}>
+    {Array.from({length:24},(_,i)=><span key={i} className={`h-[6px] min-w-0 flex-1 rounded-[1px] transition-colors duration-150 ${i>=shown?(i>=19||i<6?"bg-indigo-600":i>=16?"bg-orange-500":"bg-primary"):"bg-muted"}`}/>)}
   </div>
   <div className="text-[10px] text-muted-foreground">{durationLabel(24-hour)} remaining · actions advance time</div>
  </div>;
