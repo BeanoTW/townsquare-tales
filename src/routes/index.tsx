@@ -83,7 +83,6 @@ function Game() {
   const [tab, setTab] = useState<"player" | "inventory" | "log" | "settings" | null>(null);
   const [enc, setEnc] = useState<StreetEncounter | null>(null);
   const [resident, setResident] = useState<ResidentId | null>(null);
-  const [gangDone, setGangDone] = useState<number | null>(null);
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
@@ -243,15 +242,11 @@ function Game() {
   };
   const approachGang = (member: CrewMember = "mick") => {
     setCrewSpeaker(member);
-    if (gangDone === s.day || gangMeeting) {
-      notify("The crew have had enough of you for today. Clear off.", false);
-      return;
-    }
+    if (gangMeeting) return;
     setPlace(null);
     setTab(null);
     setResult(null);
     const meeting = gangReception(s);
-    setGangDone(s.day);
     setGangMeeting(meeting);
     notify(meeting.message, true);
     playActionCue("encounter", soundOn);
