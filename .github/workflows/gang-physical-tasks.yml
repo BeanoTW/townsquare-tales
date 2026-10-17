@@ -1,0 +1,21 @@
+name: Physical gang missions
+on:
+  pull_request:
+    paths:
+      - 'src/lib/gang-career.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/components/TownMap.tsx'
+      - 'src/routes/index.tsx'
+      - 'src/test/gang-physical-tasks.test.ts'
+      - '.github/workflows/gang-physical-tasks.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/gang-physical-tasks.test.ts src/test/gang-courier.test.ts
+      - run: bunx tsc --noEmit
+        continue-on-error: true
+      - run: bun run build

@@ -32,7 +32,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
-import { gangAccess, gangDialogue, gangJob, deliverGangParcel } from "@/lib/gang-career";
+import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask } from "@/lib/gang-career";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -412,15 +412,17 @@ function Game() {
               <p className="text-base">Strength 15 holds your ground; Charm 15 talks them down. Each response takes 15m. Leaving costs nothing.</p>
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
-              {s.gangStage === 0 && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
+              {s.gangStage === 0 && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
+              {([2,4].includes(s.gangTask??0)) && <Btn onClick={()=>{if(perform(advanceGangTask(s.gangTask!)))setGangMeeting(null);}}>Hand over / report back</Btn>}
               <Btn disabled={!!weaponBlock(s,1)} onClick={() => { if(perform(buyWeapon(1))) setGangMeeting(null); }}>Buy an ordinary bat · $180</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Fine. I'm leaving.</Btn>
             </>
           ) : (
             <>
               <p className="text-base">{gangDialogue(s)}</p>
-              {gangAccess(s)==="initiation" && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
-              {["probation","trusted"].includes(gangAccess(s)) && <>
+              {([2,4].includes(s.gangTask??0)) && <Btn onClick={()=>{if(perform(advanceGangTask(s.gangTask!)))setGangMeeting(null);}}>Hand over / report back</Btn>}
+              {gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
+              {["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
                 <Btn disabled={!!s.gangParcel} onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>{s.gangParcel ? "Package already collected" : "Take a package"}</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
@@ -455,6 +457,7 @@ function Game() {
         </div>
       )}
 
+      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg"><p className="font-bold">Crew assignment</p><p className="mb-2 text-sm">{gangTaskObjective(s)?.description}</p><Btn onClick={()=>perform(advanceGangTask(s.gangTask!))}>{gangTaskObjective(s)?.label}</Btn></div>}
       {!enc && !gangMeeting && !resident && !parkKidOpen && place === "pawn" && !!s.gangParcel && !tab && (
         <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg">
           <p className="font-bold">📦 Package delivery</p>
@@ -574,6 +577,7 @@ function Game() {
 
       {tab === "inventory" && (
         <Sheet title="Inventory" onClose={() => setTab(null)}>
+          {!!gangTaskObjective(s) && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">Crew assignment</p><p className="text-sm">{gangTaskObjective(s)?.description}</p></section>}
           {!!s.gangParcel && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">📦 Sealed package</p><p className="text-sm">Delivery: Oddities Pawn. Walk into the pawn shop and hand the parcel to the clerk at the counter. Payment comes after delivery.</p></section>}
           <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} />
           {canDrive(s) && <section aria-label="Travel shortcuts" className="mt-3 rounded-lg border border-foreground/30 p-3"><p className="mb-2 font-bold">🚗 Travel shortcuts</p><p className="mb-2 text-sm text-muted-foreground">Travel uses no in-game time, just like walking across town.</p><div className="flex flex-wrap gap-2"><Btn onClick={() => { if(perform(driveAction("home")))setTab(null); }}>Jump home</Btn>{Boolean(s.employed) && <Btn onClick={() => { if(perform(driveAction("work")))setTab(null); }}>Jump to work</Btn>}</div></section> }
