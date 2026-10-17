@@ -177,3 +177,33 @@ export function missionContactDialogue(s:GameState):{name:string;line:string;hin
  }
  return null;
 }
+
+/**
+ * Reusable underworld encounter skeleton. Content/art can be swapped without
+ * altering save values, progression gates or mission rewards.
+ */
+export type UnderworldEncounterId = "crew-intro" | "envelope" | "lookout" | "parcel" | "buyer" | "pawn-contact";
+export type UnderworldBeat = {
+  id: UnderworldEncounterId;
+  venue: string;
+  speaker: string;
+  opener: string;
+  atmosphere: string;
+  choices: readonly string[];
+};
+export const UNDERWORLD_BEATS: Readonly<Record<UnderworldEncounterId,UnderworldBeat>> = {
+ "crew-intro":{id:"crew-intro",venue:"gang",speaker:"Mick",opener:"You looking for work, or just lost?",atmosphere:"Three locals pause their conversation as you approach.",choices:["Ask about work","Leave"]},
+ envelope:{id:"envelope",venue:"alley",speaker:"Unknown passer-by",opener:"You looking for something?",atmosphere:"Someone lingers at the far end of the alley.",choices:["Search carefully","Grab the envelope"]},
+ lookout:{id:"lookout",venue:"bank",speaker:"Bank watcher",opener:"Keep your head down. Watch the entrance.",atmosphere:"People come and go. Nobody seems to notice the contact.",choices:["Blend into the queue","Watch from the street"]},
+ parcel:{id:"parcel",venue:"pawn",speaker:"Pawn clerk",opener:"You got something for me?",atmosphere:"The clerk glances at the parcel without reaching for it.",choices:["Hand over parcel","Walk away"]},
+ buyer:{id:"buyer",venue:"bar",speaker:"Pub buyer",opener:"Let's see what you have.",atmosphere:"A buyer waits at a quiet table, studying the room.",choices:["Agree on price","Negotiate","Push harder"]},
+ "pawn-contact":{id:"pawn-contact",venue:"pawn",speaker:"Backroom contact",opener:"Who sent you?",atmosphere:"The shop carries on around you as if nothing is happening.",choices:["Mention your introduction","Leave"]},
+};
+export function activeUnderworldBeat(s:GameState):UnderworldBeat|null {
+ if(s.gangTask===1)return UNDERWORLD_BEATS.envelope;
+ if(s.gangTask===3)return UNDERWORLD_BEATS.lookout;
+ if(s.gangTask===5)return UNDERWORLD_BEATS.buyer;
+ if(s.gangParcel)return UNDERWORLD_BEATS.parcel;
+ if(s.pawnIntroduction&&!s.pawnMet)return UNDERWORLD_BEATS["pawn-contact"];
+ return null;
+}
