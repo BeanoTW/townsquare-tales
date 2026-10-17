@@ -2,7 +2,7 @@ import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { loadGame, saveGame, type GameState } from "@/lib/game-state";
-import { backupSave, readEmergencyBackup, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";
+import { backupSave, readEmergencyBackup, saveExportText, localSlots, saveSlot, readSlot, exportSave, importSave, type SlotSummary } from "@/lib/save-vault";
 import { GOD_ENABLED_KEY, GOD_SAVE_KEY, parseGodSave, runGodAction } from "@/lib/god-mode";
 import { Button } from "@/components/ui/button";
 import { recordStreetIncident, streetAction, type StreetObjectId } from "@/lib/street-life";
@@ -68,6 +68,8 @@ function Game() {
   const [s, setS] = useState<S>(START);
   const [saveReady, setSaveReady] = useState(false);
   const [slots, setSlots] = useState<SlotSummary[]>([]);
+  const [showBackupText, setShowBackupText] = useState(false);
+  const [backupCopied, setBackupCopied] = useState(false);
   const refreshSlots = () => setSlots(localSlots());
   const [godMode, setGodMode] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
@@ -603,6 +605,12 @@ function Game() {
               </div>;
             })}
             <Btn onClick={()=>exportSave(s)}>Download save file</Btn>
+            <Btn onClick={()=>{setShowBackupText(v=>!v);setBackupCopied(false);}}> {showBackupText ? "Hide backup text" : "Copy / show backup text"} </Btn>
+            {showBackupText && <div className="mt-2 rounded-md border border-foreground/40 p-2">
+              <p className="text-sm">If downloads are blocked in the preview, copy this backup and save it in a secure note. It contains your game progress.</p>
+              <textarea aria-label="Portable save backup text" readOnly rows={4} className="w-full border border-foreground/50 p-2 text-xs" value={saveExportText(s)} onFocus={e=>e.currentTarget.select()}/>
+              <Btn onClick={async()=>{try{await navigator.clipboard.writeText(saveExportText(s));setBackupCopied(true);}catch{alert("Clipboard unavailable here. Long-press the text to select and copy it.");}}}>{backupCopied?"Copied!":"Copy backup"}</Btn>
+            </div>}
             <Btn onClick={()=>{if(godMode){alert("Exit Developer Mode first.");return;}const data=readEmergencyBackup(START);if(!data){alert("No recovery backup found in this browser.");return;}if(!confirm("Restore recovery backup from Day "+data.day+"?"))return;if(!saveSlot(3,s)){alert("Could not preserve the current game in Slot 3. Recovery cancelled.");return;}setS(data);saveGame(data);setTab(null);refreshSlots();}}>Restore previous backup</Btn>
             <label className="block mt-2 text-sm">Import save JSON
               <input type="file" accept=".json,application/json" className="mt-1 block w-full" onChange={async e=>{
