@@ -834,7 +834,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "INFO",
         hint: "What's in stock",
         box: { x: 264, y: 40, w: 140, h: 120 },
-        lines: () => ["Treatment costs $40 and restores all energy."],
+        lines: () => ["Minor treatment costs $100, heals 25 HP and restores energy."],
       },
     ],
   },
