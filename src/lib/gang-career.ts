@@ -18,14 +18,27 @@ export function gangDialogue(s:GameState):string {
 export const GANG_JOBS = [
   {id:"gang-initiation",label:"Take the initiation",hours:2,energy:12,minimum:0,money:15,rep:1,heat:2,karma:-2},
   {id:"gang-lookout",label:"Keep watch for the crew",hours:2,energy:10,minimum:1,money:35,rep:1,heat:3,karma:-1},
-  {id:"gang-courier",label:"Run a discreet package",hours:3,energy:16,minimum:1,money:75,rep:2,heat:5,karma:-2},
+  {id:"gang-courier",label:"Collect a discreet package",hours:0,energy:0,minimum:1,money:75,rep:2,heat:5,karma:-2},
   {id:"gang-fence",label:"Shift questionable goods",hours:3,energy:18,minimum:2,money:120,rep:2,heat:7,karma:-3},
 ] as const;
+/** Payment and reputation only arrive after visiting the recipient in person. */
+export function deliverGangParcel():ActionDef {
+  return {id:"gang-parcel-handoff",label:"Hand over sealed package",hours:0.25,energy:2,
+    resolve:s=>{
+      if(!s.gangParcel)return "You do not have a delivery to hand over.";
+      return {patch:{gangParcel:0,money:Math.min(1e12,s.money+75),gangRep:Math.min(100,s.gangRep+2),streetSmarts:Math.min(100,(s.streetSmarts??0)+2),criminalTrust:Math.min(100,(s.criminalTrust??0)+8),gangStage:Math.max(s.gangStage,s.gangRep+2>=3?2:s.gangStage),heat:Math.min(100,s.heat+5),karma:s.karma-2},message:'"Received." The clerk takes the parcel without inspecting it. Your $75 payment is handed over.'};
+    }};
+}
 export function gangJob(id:(typeof GANG_JOBS)[number]["id"]):ActionDef {
   const job=GANG_JOBS.find(x=>x.id===id);
   if(!job)throw Error("Unknown job");
   return {id:job.id,label:job.label,hours:job.hours,energy:job.energy,
     resolve:(s)=>{
+      if(job.id==="gang-courier") {
+        if(s.gangStage<1)return '"Prove yourself first."\u0027;
+        if(s.gangParcel)return "You already have a package to deliver. Check your backpack for its destination.";
+        return {patch:{gangParcel:1},message:'"Take this sealed parcel to the counter at Oddities Pawn. Don\u0027t open it. Come back after the handoff if you want more work." Package added to your backpack.\u0027};
+      }
       if(job.minimum>0 && s.gangStage<1)return '"Prove yourself first."';
       if(job.minimum===2 && s.gangRep<3)return '"You have not earned that kind of trust."';
       if(job.minimum===0 && s.gangStage>0)return '"You already did your bit."';
