@@ -32,7 +32,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
-import { gangAccess, gangDialogue, gangJob } from "@/lib/gang-career";
+import { gangAccess, gangDialogue, gangJob, deliverGangParcel } from "@/lib/gang-career";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -422,7 +422,7 @@ function Game() {
               {gangAccess(s)==="initiation" && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
               {["probation","trusted"].includes(gangAccess(s)) && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
-                <Btn onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>Take a package</Btn>
+                <Btn disabled={!!s.gangParcel} onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>{s.gangParcel ? "Package already collected" : "Take a package"}</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
               {(s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
@@ -455,6 +455,13 @@ function Game() {
         </div>
       )}
 
+      {!enc && !gangMeeting && !resident && !parkKidOpen && place === "pawn" && !!s.gangParcel && !tab && (
+        <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg">
+          <p className="font-bold">📦 Package delivery</p>
+          <p className="text-sm mb-2">The clerk is expecting a sealed parcel. Hand it over to finish the job.</p>
+          <Btn onClick={()=>perform(deliverGangParcel())}>Hand package to clerk</Btn>
+        </div>
+      )}
       {!enc && !gangMeeting && !resident && !parkKidOpen && place && !tab && (
         <LocationScene
           key={place}
@@ -567,6 +574,7 @@ function Game() {
 
       {tab === "inventory" && (
         <Sheet title="Inventory" onClose={() => setTab(null)}>
+          {!!s.gangParcel && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">📦 Sealed package</p><p className="text-sm">Delivery: Oddities Pawn. Walk into the pawn shop and hand the parcel to the clerk at the counter. Payment comes after delivery.</p></section>}
           <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} />
           {canDrive(s) && <section aria-label="Travel shortcuts" className="mt-3 rounded-lg border border-foreground/30 p-3"><p className="mb-2 font-bold">🚗 Travel shortcuts</p><p className="mb-2 text-sm text-muted-foreground">Travel uses no in-game time, just like walking across town.</p><div className="flex flex-wrap gap-2"><Btn onClick={() => { if(perform(driveAction("home")))setTab(null); }}>Jump home</Btn>{Boolean(s.employed) && <Btn onClick={() => { if(perform(driveAction("work")))setTab(null); }}>Jump to work</Btn>}</div></section> }
         </Sheet>
