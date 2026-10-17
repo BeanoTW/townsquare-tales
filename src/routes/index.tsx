@@ -32,7 +32,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
-import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask } from "@/lib/gang-career";
+import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter } from "@/lib/gang-career";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -413,14 +413,14 @@ function Game() {
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
               {s.gangStage === 0 && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
-              {([2,4].includes(s.gangTask??0)) && <Btn onClick={()=>{if(perform(advanceGangTask(s.gangTask!)))setGangMeeting(null);}}>Hand over / report back</Btn>}
+              {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
               <Btn disabled={!!weaponBlock(s,1)} onClick={() => { if(perform(buyWeapon(1))) setGangMeeting(null); }}>Buy an ordinary bat · $180</Btn>
               <Btn onClick={() => setGangMeeting(null)}>Fine. I'm leaving.</Btn>
             </>
           ) : (
             <>
               <p className="text-base">{gangDialogue(s)}</p>
-              {([2,4].includes(s.gangTask??0)) && <Btn onClick={()=>{if(perform(advanceGangTask(s.gangTask!)))setGangMeeting(null);}}>Hand over / report back</Btn>}
+              {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
               {gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
               {["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
@@ -457,7 +457,7 @@ function Game() {
         </div>
       )}
 
-      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg"><p className="font-bold">Crew assignment</p><p className="mb-2 text-sm">{gangTaskObjective(s)?.description}</p><Btn onClick={()=>perform(advanceGangTask(s.gangTask!))}>{gangTaskObjective(s)?.label}</Btn></div>}
+      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg"><p className="font-bold">Crew assignment</p><p className="mb-2 text-sm">{gangTaskObjective(s)?.description}</p><div className="flex flex-col gap-2">{crewChoices(s).map(choice=><div key={choice.id}><Btn onClick={()=>perform(resolveCrewEncounter(s.gangTask!,choice.id))}>{choice.label}</Btn><p className="text-xs text-muted-foreground">{choice.hint}</p></div>)}</div></div>}
       {!enc && !gangMeeting && !resident && !parkKidOpen && place === "pawn" && !!s.gangParcel && !tab && (
         <div className="absolute left-1/2 top-24 z-40 w-[min(92vw,340px)] -translate-x-1/2 rounded-lg border-2 border-foreground bg-card p-3 shadow-lg">
           <p className="font-bold">📦 Package delivery</p>

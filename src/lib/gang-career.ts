@@ -87,3 +87,42 @@ export function advanceGangTask(expected:number):ActionDef {
    message:expected===2?"The crew take the envelope. You are in. They pay you $15.":expected===4?"Your lookout report checks out. The crew hand you $35.":"The buyer checks the goods and pays you $120."};
  }};
 }
+
+/** Small, repeatable encounters: decisions change safety, payment and reputation. */
+export type CrewChoice = "quiet" | "bold" | "persuade";
+export function crewChoices(s:GameState): {id:CrewChoice;label:string;hint:string}[] {
+ switch(s.gangTask??0){
+ case 1:return [{id:"quiet",label:"Check the hiding place",hint:"Careful search · low risk"},{id:"bold",label:"Grab it quickly",hint:"Quick collection · more attention"}];
+ case 2:return [{id:"quiet",label:"Hand it over without a word",hint:"Professional and discreet"},{id:"persuade",label:"Ask for a better cut",hint:"Charm helps negotiate"}];
+ case 3:return [{id:"quiet",label:"Blend in with the queue",hint:"Low profile · longer watch"},{id:"bold",label:"Watch from the street",hint:"Faster but conspicuous"}];
+ case 4:return [{id:"quiet",label:"Give a factual report",hint:"Reliable, no fuss"},{id:"persuade",label:"Talk up the threat",hint:"Could earn respect or suspicion"}];
+ case 5:return [{id:"quiet",label:"Trade at the agreed price",hint:"Straightforward exchange"},{id:"persuade",label:"Negotiate with the buyer",hint:"Charm can win a bigger cut"},{id:"bold",label:"Pressure them to pay more",hint:"Risk of a confrontation"}];
+ default:return [];
+ }
+}
+export function resolveCrewEncounter(expected:number,choice:CrewChoice):ActionDef {
+ const choices=crewChoices({gangTask:expected} as GameState);
+ const selected=choices.find(c=>c.id===choice);
+ if(!selected)throw Error("Unavailable crew approach");
+ const base=advanceGangTask(expected);
+ return {id:"gang-encounter-"+expected+"-"+choice,label:selected.label,
+ hours:base.hours+(choice==="quiet"&&expected===3?0.5:0),
+ energy:base.energy+(choice==="bold"?2:0),
+ resolve:(s,rng)=>{
+  if(s.gangTask!==expected)return "This assignment has already moved on.";
+  const risk=choice==="bold"?(expected===5?0.42:0.27):choice==="persuade"?(s.cha>=15?0.12:0.45):0;
+  if(rng()<risk) {
+   // An unlucky decision never silently awards the job reward.
+   if(expected===1)return {patch:{heat:Math.min(100,s.heat+3),energy:Math.max(0,s.energy-3)},message:"A passer-by notices you searching. You retreat and can try again."};
+   if(expected===3)return {patch:{heat:Math.min(100,s.heat+4)},message:"Security notices you lingering. You move away and will need to try again."};
+   return {patch:{heat:Math.min(100,s.heat+5),criminalTrust:Math.max(0,(s.criminalTrust??0)-1)},message:"Your approach goes badly. The other party backs off. The job remains open."};
+  }
+  const result=base.resolve(s,rng);
+  if(typeof result==="string")return result;
+  const completion=[2,4,5].includes(expected);
+  return {patch:{...result.patch,
+   ...(choice==="bold"?{heat:Math.min(100,(result.patch.heat??s.heat)+2)}:{}),
+   ...(choice==="persuade"&&completion?{money:Math.min(1e12,(result.patch.money??s.money)+(expected===5?35:10)),criminalTrust:Math.min(100,(result.patch.criminalTrust??s.criminalTrust??0)+1)}:{})},
+   message:choice==="persuade"&&completion?result.message+" Your negotiation earns a little extra.":result.message};
+ }};
+}
