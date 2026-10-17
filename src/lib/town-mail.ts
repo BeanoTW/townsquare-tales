@@ -2,6 +2,7 @@ import type { GameState } from "@/lib/game-state";
 import { HOUSES } from "@/lib/game-data";
 import { currentRole } from "@/lib/careers";
 import { marketUnlocked } from "@/lib/investing";
+import {hometownUnlocked} from "@/lib/hometown";
 
 export type Letter = { id: number; day: number; from: string; subject: string; body: string; category: "family"|"career"|"town"|"finance"; response?: boolean };
 export const hasRead = (s:GameState,id:number) => Boolean(((s.mailReadMask??0) & (1<<id)) !== 0);
@@ -61,5 +62,11 @@ export function mailFor(s:GameState):Letter[] {
     body:"Town Hall is finished, so we've cleared out the old site. The whole Workers Yard — my office, the vacancies board and all construction contracts — is now east of the police station. Your construction job hasn't changed. It's a long walk, so check Town Transit about a licence and ask me about the old company car when you're a Site Lead. See you at the new yard. — Foreman."});
   if(s.companyCar && s.abandonedCar && (s.wreckRepairs??0)>=3)letters.push({id:13,day:s.day,from:"Site Foreman",subject:"Guess you won't need those keys anymore",category:"career",body:"Heard you've got your own wheels now. Guess you won't need those company car keys anymore. Drop them off whenever. Actually, don't bother. I've changed the locks. — Foreman."});
   if((s.medicalDebt??0)>0)letters.push({id:14,day:s.day,from:"Stick Town Hospital",subject:"Your very expensive nap",category:"finance",body:`Your hospital bill is ${s.medicalDebt}. We accept instalments. Please stop attempting to outsmart sleep.`});
+  if(s.hometownTripResult===2)letters.push({id:15,day:Math.min(100000,(s.hometownTripDay??s.day)+1),from:"Sarah",subject:"You were back in town?",category:"family",response:true,
+    body:"Someone told Mum they saw you back home. Seriously? You came all that way and didn't visit? She would have loved to see you. I hope you're alright, but next time please tell us you're coming. — Sarah"});
+  if(s.hometownTripResult===1)letters.push({id:16,day:Math.min(100000,(s.hometownTripDay??s.day)+1),from:"Mum",subject:"Lovely seeing you",category:"family",response:true,
+    body:"I'm so glad you told us you were coming. It was wonderful having you home, even if only for a little while. Sarah says you seemed happier. Come again soon. Love, Mum."});
+  if(hometownUnlocked(s) && !s.hometownJobDone)letters.push({id:17,day:s.day,from:"Minnie · Out-of-town deliveries",subject:"Supply run",category:"town",
+    body:"Bomb and I handle the Moon Dust deliveries from your old city. The crew says you're ready to help. Funny coincidence, isn't it? Come talk to Nia when you're ready."});
   return letters.filter(l=>l.day<=s.day).sort((a,b)=>b.day-a.day || b.id-a.id);
 }
