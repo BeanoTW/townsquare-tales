@@ -176,6 +176,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   });
   const changeMapMode=(mode:"small"|"large")=>{setMapMode(mode);try{localStorage.setItem("tst:town-map-mode",mode);}catch{}};
   const lastMapTap=useRef(0);
+  const mapTapTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  useEffect(()=>()=>{if(mapTapTimer.current)clearTimeout(mapTapTimer.current);},[]);
   useEffect(()=>{const sync=()=>{try{setShowTricks(localStorage.getItem("tst:show-skate-tricks")!=="false");}catch{}};window.addEventListener("tst:trick-visibility",sync);return()=>window.removeEventListener("tst:trick-visibility",sync);},[]);
   const vehicleRef=useRef<"company"|"wreck"|null>(null);
   const wreckPosition=useRef({x:state?.abandonedCar && (state.wreckRepairs??0)>=3 ? 3.8 : 5.8,y:state?.abandonedCar && (state.wreckRepairs??0)>=3 ? 7.6 : 11.1,angle:90});
@@ -773,13 +775,21 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           onPointerDown={(e) => {
             e.stopPropagation();
             const now=Date.now();
-            if(now-lastMapTap.current<360){lastMapTap.current=0;changeMapMode(mapMode==="large"?"small":"large");return;}
+            if(now-lastMapTap.current<360){
+              lastMapTap.current=0;
+              if(mapTapTimer.current)clearTimeout(mapTapTimer.current);
+              mapTapTimer.current=null;
+              changeMapMode(mapMode==="large"?"small":"large");
+              return;
+            }
             lastMapTap.current=now;
-            const bounds = e.currentTarget.getBoundingClientRect();
-            routeTo({
+            const bounds=e.currentTarget.getBoundingClientRect();
+            const destination={
               x: Math.max(0.3, Math.min(N - 0.3, (e.clientX - bounds.left) / bounds.width * N)),
               y: Math.max(0.3, Math.min(N - 0.3, (e.clientY - bounds.top) / bounds.height * N)),
-            });
+            };
+            if(mapTapTimer.current)clearTimeout(mapTapTimer.current);
+            mapTapTimer.current=setTimeout(()=>{mapTapTimer.current=null;routeTo(destination);},360);
           }}>
           <rect x="0" y="29.6" width={N} height="0.65" fill="#b8b6a9" />
           <rect x="0" y="30.25" width={N} height="2.6" fill="#ecd49f" />
