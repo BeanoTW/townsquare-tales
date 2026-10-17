@@ -36,6 +36,7 @@ export function backupSave(s:GameState):boolean{
  try{localStorage.setItem(backupKey,JSON.stringify(pack(s)));return true;}catch{return false;}
 }
 export const importSave=(raw:string,fallback:GameState):GameState|null=>unpack(raw,fallback);
+export function saveExportText(s:GameState):string{return JSON.stringify(pack(s));}
 export function exportSave(s:GameState):void{
  if(typeof document==="undefined")return;
  const url=URL.createObjectURL(new Blob([JSON.stringify(pack(s),null,2)],{type:"application/json"}));
