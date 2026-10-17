@@ -102,7 +102,7 @@ export type Hotspot = {
   lines?: (s: GameState) => string[];
   actions?: (s: GameState) => ActionDef[];
   /** Tapping opens this full-screen minigame instead of a panel. */
-  launch?: "blackjack" | "slots" | "darts";
+  launch?: "blackjack" | "slots" | "darts" | "fight";
 };
 export type Palette = { wall: string; floor: string; accent: string };
 export type Room = {
@@ -424,6 +424,9 @@ export const ROOMS: Record<PlaceId, Room> = {
         hint: "Make a move",
         box: { x: 262, y: 126, w: 140, h: 62 },
         actions: () => [CHAT_UP],
+      },
+      {
+        id: "pub-brawl", label: "Drunken brawl", tag: "FIGHT", hint: "Bet on a pub scrap", box: { x: 180, y: 24, w: 100, h: 80 }, lines: () => ["Place a $20, $50 or $100 bet. Winner takes the pot."], launch: "fight",
       },
       {
         id: "dartboard",
@@ -831,7 +834,7 @@ export const ROOMS: Record<PlaceId, Room> = {
         tag: "INFO",
         hint: "What's in stock",
         box: { x: 264, y: 40, w: 140, h: 120 },
-        lines: () => ["Treatment costs $40 and restores all energy."],
+        lines: () => ["Minor treatment costs $100, heals 25 HP and restores energy."],
       },
     ],
   },
