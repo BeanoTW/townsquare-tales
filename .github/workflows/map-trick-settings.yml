@@ -1,0 +1,15 @@
+name: Minimap and trick settings verification
+on:
+  pull_request:
+    paths:
+      - 'src/components/TownMap.tsx'
+      - 'src/routes/index.tsx'
+      - '.github/workflows/map-trick-settings.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
