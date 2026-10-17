@@ -126,3 +126,33 @@ export function resolveCrewEncounter(expected:number,choice:CrewChoice):ActionDe
    message:choice==="persuade"&&completion?result.message+" Your negotiation earns a little extra.":result.message};
  }};
 }
+
+/** Three recognisable people at the green, without exposing the crew's hidden progression. */
+export type CrewMember = "mick" | "lez" | "nia";
+export const CREW_MEMBERS = [
+ {id:"mick",name:"Mick",role:"The one who gives orders"},
+ {id:"lez",name:"Lez",role:"Always watching the road"},
+ {id:"nia",name:"Nia",role:"Keeps the money straight"},
+] as const;
+export function crewConversation(s:GameState,member:CrewMember):string {
+ const task=s.gangTask??0;
+ if(member==="mick"){
+  if(task===2)return '"You got it? Put it here. And keep your voice down."';
+  if(task===4)return '"Well? Anything worth knowing, or did you just stand there all afternoon?"';
+  if(task)return '"Finish the errand first. Then we will talk."';
+  if(s.gangStage===0)return '"Everyone wants in until there is something to do. Still interested?"';
+  if(s.gangRep>=3)return '"You have been useful. Do not mistake that for being untouchable."';
+  return '"There is work when you are ready. No promises."';
+ }
+ if(member==="lez"){
+  if(task===3||task===4)return '"Do not stare at everyone. You will draw more eyes than the bank."';
+  if(s.heat>=20)return '"Someone has been asking questions round here. Keep your head down."';
+  if(s.gangParcel)return '"That parcel will not walk itself across town."';
+  return s.gangStage===0?'"You lost, mate? Mick talks. I watch."':'"Keep moving when you have got a job. Standing around gets noticed."';
+ }
+ if(task===5)return '"The buyer hates surprises. Remember that."';
+ if(s.gangParcel)return '"No money until we know it has arrived."';
+ if(task===2||task===4)return '"Bring back something useful and we will settle up."';
+ if(s.gangRep>=3)return '"You have done alright. Do not start asking what everything is worth."';
+ return '"I count what comes in and what goes out. Mostly what goes missing."';
+}
