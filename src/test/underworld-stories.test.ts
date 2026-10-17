@@ -1,6 +1,6 @@
 import {describe,it,expect} from "vitest";
 import {START} from "@/lib/game-data";
-import {UNDERWORLD_STORIES,storyAvailable,storyDialogue,activeStory,beginStory,finishStory} from "@/lib/underworld-stories";
+import {UNDERWORLD_STORIES,storyAvailable,storyDialogue,activeStory,beginStory,finishStory,investigateStory} from "@/lib/underworld-stories";
 describe("authored underworld story skeleton",()=>{
  const eligible={...START,day:40,gangStage:2,gangRep:25,criminalTrust:50,energy:100,money:0};
  it("contains five authored incidents without progression UI",()=>{expect(UNDERWORLD_STORIES).toHaveLength(5);expect(new Set(UNDERWORLD_STORIES.map(x=>x.id)).size).toBe(5);});
@@ -22,7 +22,11 @@ describe("authored underworld story skeleton",()=>{
   if(typeof started==="string")return;
   const active={...eligible,...started.patch};
   expect(activeStory(active)?.id).toBe(1);
-  const done=finishStory(1,"clever").resolve(active,()=>0.5);
+  const investigated=investigateStory(1).resolve(active,()=>0.5);
+  expect(typeof investigated).not.toBe("string");
+  if(typeof investigated==="string")return;
+  const afterVisit={...active,...investigated.patch};
+  const done=finishStory(1,"clever").resolve(afterVisit,()=>0.5);
   expect(typeof done).not.toBe("string");
   if(typeof done==="string")return;
   const next={...active,...done.patch};
