@@ -33,6 +33,7 @@ import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
+import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory} from "@/lib/underworld-stories";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -428,10 +429,22 @@ function Game() {
             </>
           ) : (
             <>
+              {activeStory(s) ? <section className="rounded-xl border border-foreground/50 p-3">
+                <p className="font-bold">{activeStory(s)?.title}</p>
+                <p className="text-sm">{activeStory(s)?.setup}</p>
+                {crewSpeaker===activeStory(s)?.contact ? <>
+                  <p className="my-2">{storyDialogue(activeStory(s)!,s)}</p>
+                  {activeStory(s)?.options.map(option=><Btn key={option.id} onClick={()=>{if(perform(finishStory(activeStory(s)!.id,option.id)))setGangMeeting(null);}}>{option.label}</Btn>)}
+                </> : <p className="text-sm">Speak to the person who approached you about this.</p>}
+              </section> : storyAvailable(s,crewSpeaker) && <section className="rounded-xl border border-foreground/50 p-3">
+                <p className="font-bold">Something different</p>
+                <p className="my-2">{storyDialogue(storyAvailable(s,crewSpeaker)!,s)}</p>
+                <Btn onClick={()=>perform(beginStory(storyAvailable(s,crewSpeaker)!.id))}>Hear them out</Btn>
+              </section>}
               <p className="text-base">{gangDialogue(s)}</p>
               {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
               {crewSpeaker==="mick" && gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
-              {crewSpeaker==="mick" && ["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
+              {crewSpeaker==="mick" && !s.underworldStoryActive && ["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
                 <Btn disabled={!!s.gangParcel} onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>{s.gangParcel ? "Package already collected" : "Take a package"}</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
