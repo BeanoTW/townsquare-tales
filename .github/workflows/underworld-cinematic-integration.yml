@@ -1,0 +1,22 @@
+name: Underworld Cinematic Integration
+on:
+  pull_request:
+    paths:
+      - 'src/components/**'
+      - 'src/lib/conversation-camera.ts'
+      - 'src/lib/crime-cast.ts'
+      - 'src/lib/crime-stage.ts'
+      - 'src/lib/crime-visual-cues.ts'
+      - 'src/lib/scene-stage.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/underworld-cinematics.test.ts'
+      - '.github/workflows/underworld-cinematic-integration.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/underworld-cinematics.test.ts src/test/hometown-supply.test.ts src/test/vehicle-food-sleep.test.ts src/test/crime-cinematic-director.test.ts
+      - run: bun run build
