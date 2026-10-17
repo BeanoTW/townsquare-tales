@@ -53,18 +53,38 @@ export function activeStory(s:GameState):UnderworldStory|null{return UNDERWORLD_
 export function beginStory(id:number):ActionDef{return {id:"underworld-story-begin-"+id,label:"Hear them out",hours:0,energy:0,resolve:s=>{
  const v=UNDERWORLD_STORIES.find(x=>x.id===id);
  if(!v||storyAvailable(s,v.contact)?.id!==id)return "They have nothing unusual for you right now.";
- return {patch:{underworldStoryActive:id},message:v.setup};
+ return {patch:{underworldStoryActive:id,underworldStoryStage:0},message:v.setup};
 }};}
 export function finishStory(id:number,approach:StoryResponse["id"]):ActionDef{return {id:"underworld-story-finish-"+id+"-"+approach,label:"Handle the situation",hours:1,energy:6,resolve:s=>{
  const v=activeStory(s),option=v?.options.find(o=>o.id===approach);
  if(!v||v.id!==id||!option)return "That opportunity is no longer available.";
+ if((s.underworldStoryStage??0)<1)return "There is still something you need to look into around town.";
  const mask=(s.underworldStoryMask??0)|(1<<(id-1));
  const index=(id-1)*2;
  const codes={steady:1,clever:2,bold:3};
  const choices=((s.underworldStoryChoiceMask??0)&~(3<<index))|(codes[approach]<<index);
- return {patch:{underworldStoryActive:0,underworldStoryMask:mask,underworldStoryChoiceMask:choices,
+ return {patch:{underworldStoryActive:0,underworldStoryStage:0,underworldStoryMask:mask,underworldStoryChoiceMask:choices,
  money:Math.min(1e12,s.money+option.pay),heat:Math.min(100,s.heat+option.heat),
  criminalTrust:Math.max(0,Math.min(100,(s.criminalTrust??0)+option.trust)),
  streetSmarts:Math.min(100,(s.streetSmarts??0)+3),gangRep:Math.min(100,s.gangRep+1)},
  message:option.reply+" You receive $"+option.pay+"."};
 }};}
+
+/** Actual destinations for authored scenes, using only existing town venues. */
+export const STORY_DESTINATIONS:Record<number,{venue:string;prompt:string;contact:string}>={
+ 1:{venue:"pawn",prompt:"Check the questionable account books at Oddities Pawn.",contact:"A nervous clerk keeps checking the back door."},
+ 2:{venue:"diner",prompt:"Find out who has been waiting outside the diner.",contact:"Someone at the counter recognises Lez's description."},
+ 3:{venue:"shop",prompt:"Find the person Mick mentioned near the Corner Shop.",contact:"The person you are looking for is reluctant to talk."},
+ 4:{venue:"bar",prompt:"Meet the suspicious buyer at The Tipsy Stick.",contact:"The buyer is sitting alone, looking uneasy."},
+ 5:{venue:"alley",prompt:"Check the alley before returning to Lez.",contact:"The alley is quieter than you expected."},
+};
+export function storyObjective(s:GameState){
+ const v=activeStory(s);if(!v)return null;
+ return (s.underworldStoryStage??0)===0?STORY_DESTINATIONS[v.id]:null;
+}
+export function investigateStory(id:number):ActionDef{
+ return {id:"underworld-investigate-"+id,label:"Investigate",hours:0.5,energy:3,resolve:s=>{
+  if(s.underworldStoryActive!==id||(s.underworldStoryStage??0)!==0)return "There is nothing more to investigate here.";
+  return {patch:{underworldStoryStage:1},message:"You learn enough to report back. Return to the crew and decide what to do."};
+ }};
+}
