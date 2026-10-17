@@ -19,7 +19,7 @@ import { ConstructionSite } from "@/components/ConstructionSite";
 export { P } from "@/lib/town-projection";
 import { findRoute, nearestWalkable, isWalkable, type Point } from "@/lib/pathfinding";
 import type { EncounterSpot } from "@/lib/world-encounters";
-import { GANG_SPOT } from "@/lib/street-gang";
+import { GANG_SPOT, CREW_SPOTS, nearestCrew } from "@/lib/street-gang";
 
 import { PARK_KID_SPOT } from "@/lib/park-kid";
 
@@ -316,7 +316,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
       if ((k === "e" || k === " " || k === "enter") && nearStreetRef.current) useStreet(nearStreetRef.current);
       else if ((k === "e" || k === " " || k === "enter") && nearRef.current) enterRef.current(nearRef.current.id);
-      else if ((k === "e" || k === " " || k === "enter") && Math.hypot(me.current.x - GANG_SPOT.x, me.current.y - GANG_SPOT.y) < GANG_SPOT.approach) enterRef.current("gang");
+      else if ((k === "e" || k === " " || k === "enter") && Math.hypot(me.current.x - GANG_SPOT.x, me.current.y - GANG_SPOT.y) < GANG_SPOT.approach) enterRef.current("gang:"+nearestCrew(me.current.x,me.current.y));
       keys.current.add(k);
       target.current = null;
     };
@@ -622,36 +622,32 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     </g>
   </g> });
   }
-  // Ordinary people hanging around the north-east green; only tapping them starts an encounter.
+  // One shared physical crew: individually approachable in both 2D and 3D.
   const [gx, gy] = P(GANG_SPOT.x, GANG_SPOT.y);
-  items.push({
-    key: GANG_SPOT.y * 100 + GANG_SPOT.x,
-    el: (
-      <g key="street-gang" role="button" tabIndex={0} aria-label="Approach the street gang"
-        className="cursor-pointer outline-none [-webkit-tap-highlight-color:transparent] focus-visible:opacity-80" data-street-gang
-        onClick={(event) => { event.stopPropagation(); routeTo(GANG_SPOT, "gang"); }}
-        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); routeTo(GANG_SPOT, "gang"); } }}>
-        <g transform={`translate(${gx} ${gy})`}>
-          {!use3d && <>
-          <ellipse cx="0" cy="8" rx="45" ry="7" fill="#27372f" opacity=".14"/>
-          <g data-gang-backlot pointerEvents="none" stroke="var(--town-ink)">
-            <rect x="-62" y="-9" width="16" height="23" rx="3" fill="var(--town-bin)"/>
-            <path d="M-61 -9h14m-12-3q-6-10 0-17m8 16q7-12 0-20" fill="none" stroke="var(--town-grime)"/>
-            <rect x="40" y="-4" width="30" height="17" rx="2" fill="var(--town-vending)"/>
-            <circle cx="47" cy="5" r="4" fill="var(--town-ink)"/><circle cx="63" cy="5" r="4" fill="var(--town-ink)"/>
-            <path d="M47 -5v-6h16v6" fill="none"/>
-          </g>
-          <path d="M-30 -8h22" stroke="#846b53" strokeWidth="5" strokeLinecap="round"/>
-          <g data-gang-sitting transform="translate(-20 0)"><OverheadPerson head="#ae856c" outline="#292735" phase={t} pose="sitting" /></g>
-          <g data-gang-standing transform="translate(8 -10)"><OverheadPerson head="#aa7f6b" outline="#292735" phase={t+2} moving/></g>
-          <g data-gang-leaning transform="translate(30 0)"><OverheadPerson head="#bd977b" outline="#332c35" phase={t+4} pose="lying"/></g>
-          </>}
-          {Math.sin(t*1.3)>.48 && <g transform="translate(4 -42)"><rect x="-21" y="-17" width="42" height="20" rx="8" fill="#eee1c4" stroke="#302b35" strokeWidth="2"/><text y="-3" textAnchor="middle" fontSize="11" fill="#302b35">Oi...</text></g>}
-          <rect x="-45" y="-55" width="94" height="73" fill="transparent"/>
-        </g>
-      </g>
-    ),
-  });
+  items.push({key:GANG_SPOT.y*100+GANG_SPOT.x,el:(
+    <g key="street-gang" data-street-gang>
+      {!use3d && <g transform={`translate(${gx} ${gy})`} pointerEvents="none">
+        <ellipse cx="0" cy="8" rx="45" ry="7" fill="#27372f" opacity=".14"/>
+        <path d="M-30 -8h22" stroke="#846b53" strokeWidth="5" strokeLinecap="round"/>
+        <rect x="-62" y="-9" width="16" height="23" rx="3" fill="var(--town-bin)"/>
+        <rect x="40" y="-4" width="30" height="17" rx="2" fill="var(--town-vending)"/>
+      </g>}
+      {(Object.entries(CREW_SPOTS) as [keyof typeof CREW_SPOTS,(typeof CREW_SPOTS)[keyof typeof CREW_SPOTS]][]).map(([id,spot])=>{
+        const [x,y]=P(spot.x,spot.y);
+        return <g key={id} role="button" tabIndex={0} data-crew-member={id} aria-label={`Talk to ${id}`}
+          className="cursor-pointer focus-visible:opacity-80"
+          onClick={ev=>{ev.stopPropagation();routeTo(spot,"gang:"+id);}}
+          onKeyDown={ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.stopPropagation();routeTo(spot,"gang:"+id);}}}>
+          {!use3d && <g transform={`translate(${x} ${y})`}>
+            <OverheadPerson head={id==="mick"?"#aa7f6b":id==="lez"?"#ae856c":"#bd977b"} outline={id==="nia"?"#305044":"#292735"} phase={t+(id==="mick"?1:id==="lez"?2:3)} pose={id==="nia"?"sitting":"standing"} moving={id==="lez"}/>
+            {id==="lez"&&<path d="M-9 -13h18" stroke="#9b483f" strokeWidth="4"/>}
+            {id==="nia"&&<rect x="10" y="5" width="12" height="9" fill="#617a55"/>}
+          </g>}
+          <circle cx={x} cy={y-14} r={24} fill="transparent"/>
+        </g>;
+      })}
+    </g>
+  )});
   if (kidPresent) {
     const [kx, ky] = P(PARK_KID_SPOT.x, PARK_KID_SPOT.y);
     items.push({ key: PARK_KID_SPOT.y * 100 + PARK_KID_SPOT.x,
