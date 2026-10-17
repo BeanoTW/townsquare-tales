@@ -33,7 +33,7 @@ import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
-import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory, UNDERWORLD_STORIES} from "@/lib/underworld-stories";
+import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory, UNDERWORLD_STORIES, storyObjective, investigateStory, STORY_DESTINATIONS} from "@/lib/underworld-stories";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -434,7 +434,8 @@ function Game() {
                 <p className="text-sm">{activeStory(s)?.setup}</p>
                 {crewSpeaker===activeStory(s)?.contact ? <>
                   <p className="my-2">{storyDialogue(activeStory(s)!,s)}</p>
-                  {activeStory(s)?.options.map(option=><Btn key={option.id} onClick={()=>{if(perform(finishStory(activeStory(s)!.id,option.id)))setGangMeeting(null);}}>{option.label}</Btn>)}
+                  {(s.underworldStoryStage??0)===0 && <p className="my-2 text-sm">{storyObjective(s)?.prompt}</p>}
+                  {(s.underworldStoryStage??0)>0 && activeStory(s)?.options.map(option=><Btn key={option.id} onClick={()=>{if(perform(finishStory(activeStory(s)!.id,option.id)))setGangMeeting(null);}}>{option.label}</Btn>)}
                 </> : <p className="text-sm">Speak to the person who approached you about this.</p>}
               </section> : storyAvailable(s,crewSpeaker) && <section className="rounded-xl border border-foreground/50 p-3">
                 <p className="font-bold">Something different</p>
@@ -502,6 +503,13 @@ function Game() {
             </div>)}</div>
             <button type="button" className="mt-2 min-h-11 w-full rounded-lg border border-foreground" onClick={()=>setCrewContactOpen(false)}>Leave contact</button>
           </div>}
+        </div>
+      )}
+      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && storyObjective(s)?.venue===place && !tab && (
+        <div data-story-objective className="absolute bottom-28 right-3 z-30 max-w-xs rounded-xl border-2 border-foreground bg-card p-3 shadow-xl">
+          <p className="font-bold">{activeStory(s)?.title}</p>
+          <p className="my-2 text-sm">{storyObjective(s)?.contact}</p>
+          <Btn onClick={()=>{if(perform(investigateStory(s.underworldStoryActive!)))setPlace(null);}}>Investigate</Btn>
         </div>
       )}
       {!enc && !gangMeeting && !resident && !parkKidOpen && place === "pawn" && !!s.gangParcel && !tab && (
@@ -623,6 +631,7 @@ function Game() {
 
       {tab === "inventory" && (
         <Sheet title="Inventory" onClose={() => setTab(null)}>
+          {!!storyObjective(s) && <section className="mb-3 rounded-lg border border-foreground p-3"><p className="font-bold">Something to look into</p><p className="text-sm">{storyObjective(s)?.prompt}</p></section>}
           {!!gangTaskObjective(s) && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">Crew assignment</p><p className="text-sm">{gangTaskObjective(s)?.description}</p></section>}
           {!!s.gangParcel && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">📦 Sealed package</p><p className="text-sm">Delivery: Oddities Pawn. Walk into the pawn shop and hand the parcel to the clerk at the counter. Payment comes after delivery.</p></section>}
           <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} />
