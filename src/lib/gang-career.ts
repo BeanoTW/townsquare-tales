@@ -35,9 +35,9 @@ export function gangJob(id:(typeof GANG_JOBS)[number]["id"]):ActionDef {
   return {id:job.id,label:job.label,hours:job.hours,energy:job.energy,
     resolve:(s)=>{
       if(job.id==="gang-courier") {
-        if(s.gangStage<1)return '"Prove yourself first."\u0027;
+        if(s.gangStage<1)return '"Prove yourself first."';
         if(s.gangParcel)return "You already have a package to deliver. Check your backpack for its destination.";
-        return {patch:{gangParcel:1},message:'"Take this sealed parcel to the counter at Oddities Pawn. Don\u0027t open it. Come back after the handoff if you want more work." Package added to your backpack.\u0027};
+        return {patch:{gangParcel:1},message:"Take this sealed parcel to the counter at Oddities Pawn. Do not open it. Package added to your backpack."};
       }
       if(job.minimum>0 && s.gangStage<1)return '"Prove yourself first."';
       if(job.minimum===2 && s.gangRep<3)return '"You have not earned that kind of trust."';
