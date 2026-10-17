@@ -27,7 +27,7 @@ export function PlayerDashboard({ state: s, align, won }: { state: GameState; al
     <PanelSection title="Lifestyle"><div className="grid grid-cols-2 gap-2"><Metric label="Furniture" value={`${FURNITURE.filter(item=>ownsFurniture(s.furniture,item.id)).length}/${FURNITURE.length}`}/><Metric label="Skateboard" value={s.skateboard ? "Owned" : "None"}/><Metric label="Alarm clock" value={s.alarm ? "Owned" : "None"}/><Metric label="Shoes" value={s.trainers ? "Owned" : "None"}/></div></PanelSection>
   </div>;
 }
-export function InventoryDashboard({ state: s, onEquip, onSnack }: { state: GameState; onEquip: () => void; onSnack: () => void }) {
+export function InventoryDashboard({ state: s, onEquip, onSnack, onSandwich, onStimulant, onMedicalPayment }: { state: GameState; onEquip: () => void; onSnack: () => void; onSandwich: () => void; onStimulant: () => void; onMedicalPayment: (amount:number) => void }) {
  return <div data-inventory-dashboard className="space-y-5 pb-2">
   <p className="text-sm text-muted-foreground">Your gear, supplies and belongings. Equip items straight from their cards.</p>
   <PanelSection title="Equipment">
@@ -37,6 +37,11 @@ export function InventoryDashboard({ state: s, onEquip, onSnack }: { state: Game
     <ItemRow icon="⏰" title="Alarm clock" detail={s.alarm ? "Owned" : "Not owned"}/>
   </PanelSection>
   <PanelSection title="Consumables"><div className="grid grid-cols-2 gap-2"><Metric label="🚬 Smokes" value={s.smokes}/><div className="rounded-xl border-2 border-foreground/80 bg-background/70 p-3"><p className="text-xs text-muted-foreground">🍫 Snacks</p><p className="text-xl font-bold">{s.snacks}</p>{s.snacks > 0 && <button className={actionClass+" mt-2 w-full"} onClick={onSnack}>Eat · +25 energy</button>}</div></div></PanelSection>
+  <PanelSection title="Food & questionable decisions">
+    <ItemRow icon="🥪" title="Packed sandwiches" detail={String(s.sandwiches??0)+" in your bag · +35 energy · 30 minutes"}>{(s.sandwiches??0)>0&&<button className={actionClass} onClick={onSandwich}>Take a break</button>}</ItemRow>
+    <ItemRow icon="📦" title="Suspicious powder" detail={String(s.stimulantPacks??0)+" packs · "+String(s.wakeStreak??0)+" sleepless nights"}>{(s.stimulantPacks??0)>0&&<button className={actionClass} onClick={onStimulant}>Stay awake</button>}</ItemRow>
+    {(s.medicalDebt??0)>0&&<div className="rounded-xl border-2 border-foreground p-3"><strong>🏥 Hospital debt · $ {(s.medicalDebt??0).toLocaleString()}</strong><p className="text-sm">Pay it back a bit at a time.</p><div className="mt-2 flex flex-wrap gap-2">{[100,500,1000].map(n=><button className={actionClass} key={n} onClick={()=>onMedicalPayment(n)}>Pay $ {n}</button>)}</div></div>}
+  </PanelSection>
   <PanelSection title="Home & valuables"><ItemRow icon="🛋️" title="Furniture" detail={`${FURNITURE.filter(item=>ownsFurniture(s.furniture,item.id)).length} of ${FURNITURE.length} items collected`}/></PanelSection>
  </div>;
 }

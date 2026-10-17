@@ -32,7 +32,7 @@ import { timeLabel } from "@/lib/day-cycle";
 import { FURNITURE, ownsFurniture } from "@/lib/furniture";
 import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
-import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
+import { EAT_SNACK, EAT_SANDWICH, STAY_AWAKE, repayMedicalDebt, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
 import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
 import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory, UNDERWORLD_STORIES, storyObjective, investigateStory} from "@/lib/underworld-stories";
@@ -638,7 +638,7 @@ function Game() {
           {!!storyObjective(s) && <section className="mb-3 rounded-lg border border-foreground p-3"><p className="font-bold">Something to look into</p><p className="text-sm">{storyObjective(s)?.prompt}</p></section>}
           {!!gangTaskObjective(s) && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">Crew assignment</p><p className="text-sm">{gangTaskObjective(s)?.description}</p></section>}
           {!!s.gangParcel && <section className="mb-3 rounded-lg border-2 border-foreground p-3"><p className="font-bold">📦 Sealed package</p><p className="text-sm">Delivery: Oddities Pawn. Walk into the pawn shop and hand the parcel to the clerk at the counter. Payment comes after delivery.</p></section>}
-          <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} />
+          <InventoryDashboard state={s} onEquip={() => setS(current => ({ ...current, skateboardEquipped: current.skateboardEquipped ? 0 : 1 }))} onSnack={() => perform(EAT_SNACK)} onSandwich={() => perform(EAT_SANDWICH)} onStimulant={() => perform(STAY_AWAKE)} onMedicalPayment={amount=>perform(repayMedicalDebt(amount))} />
           {canDrive(s) && <section aria-label="Travel shortcuts" className="mt-3 rounded-lg border border-foreground/30 p-3"><p className="mb-2 font-bold">🚗 Travel shortcuts</p><p className="mb-2 text-sm text-muted-foreground">Travel uses no in-game time, just like walking across town.</p><div className="flex flex-wrap gap-2"><Btn onClick={() => { if(perform(driveAction("home")))setTab(null); }}>Jump home</Btn>{Boolean(s.employed) && <Btn onClick={() => { if(perform(driveAction("work")))setTab(null); }}>Jump to work</Btn>}</div></section> }
         </Sheet>
       )}

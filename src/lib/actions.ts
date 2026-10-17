@@ -86,7 +86,7 @@ export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random):
     hour: patch.hour ?? s.hour + def.hours,
     energy: clampEnergy(patch.energy ?? s.energy - def.energy),
     // A real completed activity (not a menu click or instant purchase) breaks the sleep-only streak.
-    ...(def.id !== "sleep" && (def.hours > 0 || def.energy > 0) ? { lastActiveDay: s.day } : {}),
+    ...(def.id !== "sleep" && def.id !== "stay-awake" && (def.hours > 0 || def.energy > 0) ? { lastActiveDay: s.day } : {}),
   };
 
   const changes = LABELS.flatMap(([key, label]) => {
@@ -169,6 +169,7 @@ export function sleepAction(s: GameState): ActionDef {
           caffeinePills: (st.caffeinePills ?? 0)>0 ? (st.caffeinePills ?? 0)-1 : (st.caffeinePills ?? 0),
           day: st.day + 1,
           lastSleepDay: st.day + 1,
+          wakeStreak: 0,
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
           // Loans have a fixed 40% borrowing charge; only overdue debt incurs additional penalties.
           loanDebt: (st.loanDueDay ?? 0) > 0 && st.day + 1 > (st.loanDueDay ?? 0)
@@ -536,9 +537,9 @@ export const BUY_SNACK: ActionDef = {
 export const EAT_SNACK: ActionDef = {
   id: "eat-snack",
   label: "Eat snack",
-  hours: 0,
+  hours: 0.5,
   energy: 0,
-  note: "+25 energy",
+  note: "+25 energy · 30 minute break",
   resolve: (s) =>
     s.snacks > 0
       ? {
@@ -848,3 +849,21 @@ export function applyAction(index: number): ActionDef {
     },
   };
 }
+
+/** Portable food must be eaten during an actual half-hour break. */
+export const BUY_SANDWICH:ActionDef={id:"buy-packed-sandwich",label:"Buy sandwich",hours:0,energy:0,cost:18,
+ resolve:s=>s.money<18?"Need $18 for a sandwich.":(s.sandwiches??0)>=99?"Your bag is already full.":{patch:{money:s.money-18,sandwiches:(s.sandwiches??0)+1},message:"Sandwich packed. Find somewhere to sit and eat it."}};
+export const EAT_SANDWICH:ActionDef={id:"eat-packed-sandwich",label:"Eat sandwich",hours:0.5,energy:0,
+ resolve:s=>(s.sandwiches??0)<1?"No sandwiches left.":{patch:{sandwiches:(s.sandwiches??0)-1,energy:Math.min(100,s.energy+35)},message:"You sit down for half an hour and demolish a sandwich. +35 energy."}};
+/** Fictional black-market stimulant: a deliberately exaggerated game mechanic, not medical advice. */
+export const BUY_STIMULANT:ActionDef={id:"buy-stimulant",label:"Mysterious white powder",hours:0,energy:0,cost:1000,
+ resolve:s=>s.money<1000?"The dodgy packet costs $1,000.":(s.stimulantPacks??0)>=20?"You have enough questionable chemistry in your pockets.":{patch:{money:s.money-1000,stimulantPacks:(s.stimulantPacks??0)+1},message:"One suspicious unmarked packet acquired. The seller refuses to explain anything."}};
+export const STAY_AWAKE:ActionDef={id:"stay-awake",label:"Stay awake another night",hours:0,energy:0,
+ resolve:s=>{
+  if((s.stimulantPacks??0)<1)return "No mysterious powder left. Perhaps try the revolutionary concept of sleeping.";
+  const streak=s.wakeStreak??0;
+  if(streak>=2)return {patch:{day:s.day+1,hour:10,energy:50,stimulantPacks:s.stimulantPacks!-1,wakeStreak:0,medicalDebt:Math.min(1e6,(s.medicalDebt??0)+10000),lastSleepDay:s.day+1,lastActiveDay:s.day+1},message:"DAY THREE. You wake up in hospital arguing with a coat rack. The doctor hands you a $10,000 bill. Apparently your body has filed a formal complaint."};
+  return {patch:{day:s.day+1,hour:8,energy:80,stimulantPacks:s.stimulantPacks!-1,wakeStreak:streak+1,lastActiveDay:s.day+1},message:streak===0?"You have defeated bedtime. The moon looks disappointed.": "Night two. You can hear your eyebrows thinking. Perhaps sleep before your organs resign."};
+ }};
+export function repayMedicalDebt(amount:number):ActionDef{return {id:"repay-medical-"+amount,label:"Pay hospital $"+amount,hours:0,energy:0,
+ resolve:s=>{const payment=Math.min(amount,s.medicalDebt??0);return payment<=0?"No hospital balance outstanding.":s.money<payment?"You need $"+payment+" to make this payment.":{patch:{money:s.money-payment,medicalDebt:(s.medicalDebt??0)-payment},message:"Hospital payment of $"+payment+" accepted. The coat rack sends its regards."};}};}
