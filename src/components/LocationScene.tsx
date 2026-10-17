@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
 import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
-import { crewChoices, resolveCrewEncounter, gangTaskObjective } from "@/lib/gang-career";
+import { crewChoices, resolveCrewEncounter, gangTaskObjective, missionContactDialogue } from "@/lib/gang-career";
 import { bankLoanAction, repayLoanAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
@@ -135,7 +135,8 @@ function ObjectLocationScene({
   }, [chatter]);
 
   const crewHere = (room.id==="bank"||room.id==="bar") && gangTaskObjective(state)?.place===room.id;
-  const missionHotspot = crewHere ? [{id:"crew-contact",label:room.id==="bar"?"Buyer":"Lookout contact",tag:"★ TALK",hint:"Approach the contact to complete the assignment.",box:{x:48,y:43,w:14,h:20},actions:()=>crewChoices(state).map(c=>resolveCrewEncounter(state.gangTask!,c.id))}] : [];
+  const contact = crewHere ? missionContactDialogue(state) : null;
+  const missionHotspot = contact ? [{id:"crew-contact",label:contact.name,tag:"TALK",hint:contact.hint,box:{x:48,y:43,w:14,h:20},lines:()=>[contact.line],actions:()=>crewChoices(state).map(c=>resolveCrewEncounter(state.gangTask!,c.id))}] : [];
   const visible = [...visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone),...missionHotspot];
   const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
   const commerce = Boolean(use3d && selected && ((room.id === "shop" && selected.id === "checkout") || (room.id === "furniture" && selected.id === "catalogue") || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));

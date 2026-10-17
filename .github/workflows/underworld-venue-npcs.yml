@@ -1,0 +1,18 @@
+name: Underworld NPC venue verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/gang-career.ts'
+      - 'src/components/LocationScene.tsx'
+      - 'src/components/home3d/HomeScene3D.tsx'
+      - 'src/test/underworld-venue-npcs.test.ts'
+      - '.github/workflows/underworld-venue-npcs.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/underworld-venue-npcs.test.ts src/test/gang-encounters.test.ts src/test/gang-physical-tasks.test.ts
+      - run: bun run build

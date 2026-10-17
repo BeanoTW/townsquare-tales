@@ -156,3 +156,24 @@ export function crewConversation(s:GameState,member:CrewMember):string {
  if(s.gangRep>=3)return '"You have done alright. Do not start asking what everything is worth."';
  return '"I count what comes in and what goes out. Mostly what goes missing."';
 }
+
+/** Diegetic mission introductions vary by character and day. No hidden success odds are exposed. */
+export function missionContactDialogue(s:GameState):{name:string;line:string;hint:string}|null {
+ if(s.gangTask===3){
+  const lines=[
+   '"Keep your eyes on the doors, not on me. See anything unusual?"',
+   '"People queue here all day. The trick is noticing who does not belong."',
+   '"Do not make a scene. If someone notices us talking, walk away."',
+  ];
+  return {name:"Bank watcher",line:lines[s.day%lines.length]!,hint:"A stranger by the bank entrance keeps glancing towards the street."};
+ }
+ if(s.gangTask===5){
+  const lines=[
+   '"You are the one Mick sent? Have a seat, then. Let me see what you brought."',
+   '"I have other people waiting. Tell me why this is worth my time."',
+   '"Funny, nobody mentioned you would be the courier. Let us talk numbers."',
+  ];
+  return {name:"Pub buyer",line:lines[s.day%lines.length]!,hint:"A buyer waits at a quiet table, watching you approach."};
+ }
+ return null;
+}
