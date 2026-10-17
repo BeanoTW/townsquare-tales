@@ -26,12 +26,22 @@ export function grantGodPowers(s: GameState): GameState {
 export function runGodAction(state: GameState, def: ActionDef, rng: Rng = Math.random): ActionResult {
   const powered = grantGodPowers(state);
   // Preserve the real clock for contextual dialogue and quest deadlines.
-  const attempt = runAction(powered, { ...def, hours: 0, energy: 0 }, rng);
+  // Satisfy ordinary skill/resource gates for this action without permanently
+  // altering the sandbox character's visible attributes.
+  const testInput:GameState={...powered,str:1e6,int:1e6,cha:1e6,streetSmarts:100,criminalTrust:100,gangRep:100};
+  const attempt = runAction(testInput, { ...def, hours: 0, energy: 0, cost: 0 }, rng);
   if (!attempt.ok) return attempt;
   return {
     ...attempt,
     next: grantGodPowers({
       ...attempt.next,
+      // Temporary skill bypass must not silently award max stats.
+      str: attempt.next.str===testInput.str ? state.str : attempt.next.str,
+      int: attempt.next.int===testInput.int ? state.int : attempt.next.int,
+      cha: attempt.next.cha===testInput.cha ? state.cha : attempt.next.cha,
+      streetSmarts: attempt.next.streetSmarts===testInput.streetSmarts ? state.streetSmarts : attempt.next.streetSmarts,
+      criminalTrust: attempt.next.criminalTrust===testInput.criminalTrust ? state.criminalTrust : attempt.next.criminalTrust,
+      gangRep: attempt.next.gangRep===testInput.gangRep ? state.gangRep : attempt.next.gangRep,
       hour: state.hour,
     }),
     hoursUsed: 0,
