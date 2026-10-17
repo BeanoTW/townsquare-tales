@@ -89,6 +89,13 @@ function Lights({ plan, day }: { plan: HomePlan; day: number }) {
 }
 
 function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan; luxury: boolean; hasBed: boolean }) {
+  if(slot.id==="crew-contact") return <group>
+    <mesh position={[0,1.51,0]}><sphereGeometry args={[0.24,16,12]}/><meshStandardMaterial color="#a87959"/></mesh>
+    <mesh position={[0,0.86,0]}><cylinderGeometry args={[0.29,0.33,0.88,10]}/><meshStandardMaterial color="#37475a"/></mesh>
+    <mesh position={[-0.12,0.26,0]}><cylinderGeometry args={[0.085,0.09,0.49,8]}/><meshStandardMaterial color="#283044"/></mesh>
+    <mesh position={[0.12,0.26,0]}><cylinderGeometry args={[0.085,0.09,0.49,8]}/><meshStandardMaterial color="#283044"/></mesh>
+    <mesh position={[0,1.79,0]}><boxGeometry args={[0.6,0.16,0.1]}/><meshStandardMaterial color="#facc15" emissive="#775800"/></mesh>
+  </group>;
   if (hasTownVenue(plan.kind)) return <TownVenueFixture kind={plan.kind} id={slot.id} />;
   const scrap = plan.kind === "squat" && !luxury;
   switch (slot.id) {
