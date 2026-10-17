@@ -169,12 +169,13 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const [driving,setDriving]=useState(false);
   const [vehicle,setVehicle]=useState<"company"|"wreck"|null>(null);
   const [mapMode,setMapMode]=useState<"small"|"large"|"hidden">(()=>{
-    try {const v=localStorage.getItem("tst:town-map-mode");return v==="large"||v==="hidden"?v:"large";}catch{return "small";}
+    try {const v=localStorage.getItem("tst:town-map-mode");return v==="small"?"small":"large";}catch{return "small";}
   });
   const [showTricks,setShowTricks]=useState(()=>{
     try{return localStorage.getItem("tst:show-skate-tricks")!=="false";}catch{return true;}
   });
-  const changeMapMode=(mode:"small"|"large"|"hidden")=>{setMapMode(mode);try{localStorage.setItem("tst:town-map-mode",mode);}catch{}};
+  const changeMapMode=(mode:"small"|"large")=>{setMapMode(mode);try{localStorage.setItem("tst:town-map-mode",mode);}catch{}};
+  const lastMapTap=useRef(0);
   useEffect(()=>{const sync=()=>{try{setShowTricks(localStorage.getItem("tst:show-skate-tricks")!=="false");}catch{}};window.addEventListener("tst:trick-visibility",sync);return()=>window.removeEventListener("tst:trick-visibility",sync);},[]);
   const vehicleRef=useRef<"company"|"wreck"|null>(null);
   const wreckPosition=useRef({x:state?.abandonedCar && (state.wreckRepairs??0)>=3 ? 3.8 : 5.8,y:state?.abandonedCar && (state.wreckRepairs??0)>=3 ? 7.6 : 11.1,angle:90});
@@ -757,7 +758,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </div>
       )}
       {!active && !paused && state?.drivingLicence && ((state.abandonedCar && (state.wreckRepairs??0)>=3) || state.companyCar) && (vehicle || (state.abandonedCar && (state.wreckRepairs??0)>=3) || (state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2)) && (
-        <div data-car-hud className={`absolute left-3 z-20 flex gap-1 ${mapMode==="large"?"bottom-[17.5rem]":mapMode==="hidden"?"bottom-28":"bottom-[12.5rem]"}`}>
+        <div data-car-hud className={`absolute left-3 z-20 flex gap-1 ${mapMode==="large"?"bottom-[17.5rem]":"bottom-[12.5rem]"}`}>
           {vehicle ? <button type="button" title="Exit car" aria-label="Exit car" data-personal-car-interact={vehicle==="wreck"?"true":undefined} className="grid h-9 w-9 place-items-center rounded-full border border-foreground/40 bg-card/70 text-base font-semibold text-red-600 shadow-lg" onClick={vehicle==="wreck"?toggleWreck:toggleDriving}>↗</button> : <>
             {state.abandonedCar && (state.wreckRepairs??0)>=3 && <button type="button" title="Enter your car" aria-label="Enter personal car" data-personal-car-interact className="grid h-9 w-9 place-items-center rounded-full border border-foreground/40 bg-card/70 text-base font-semibold text-blue-600 shadow-lg" onClick={toggleWreck}>↘</button>}
             {!!state.companyCar && Math.hypot(m.x-carPosition.current.x,m.y-carPosition.current.y)<=2.2 && <button type="button" title="Enter nearby work car" aria-label="Enter nearby company car" data-company-car-interact className="grid h-9 w-9 place-items-center rounded-full border border-foreground/40 bg-card/70 text-base font-semibold text-blue-600 shadow-lg" onClick={toggleDriving}>↘</button>}
@@ -765,23 +766,15 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         </div>
       )}
       {/* Compact overhead minimap: same world coordinates as navigation, not screen pixels. */}
-      <div className={`absolute bottom-16 left-3 z-10 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 ${mapMode==="hidden"?"w-auto":mapMode==="large"?"w-64 sm:w-64":"w-[154px] sm:w-[154px]"}`} aria-label="Town minimap">
-        <div className="mb-1 flex items-center justify-between gap-1 text-xs">
-          {mapMode!=="hidden" && <span className="pl-1 font-bold">🗺️ Stick Town</span>}
-          <div className="flex items-center gap-1">
-            <button type="button" className="min-h-9 min-w-9 rounded-md bg-secondary px-1" aria-label={mapMode==="hidden"?"Show minimap":"Hide minimap"} onClick={()=>changeMapMode(mapMode==="hidden"?"small":"hidden")}>{mapMode==="hidden"?"🗺️":"−"}</button>
-            {mapMode!=="hidden" && <button type="button" className="min-h-9 min-w-9 rounded-md bg-secondary px-1" aria-label={mapMode==="large"?"Small minimap":"Large minimap"} onClick={()=>changeMapMode(mapMode==="large"?"small":"large")}>{mapMode==="large"?"↙":"⛶"}</button>}
-          </div>
-        </div>
-        {mapMode!=="hidden" && <>
-        {!!state?.gangParcel && <p className="text-[11px] font-bold text-center">📦 Deliver to Oddities Pawn</p>}
-        {!!state?.gangTask && <p className="text-[11px] font-bold text-center">★ Crew job destination</p>}
-        <div className="mb-1 flex items-center justify-between px-1 text-xs font-bold">
-          <span className="font-normal text-muted-foreground">Tap map to move</span>
-        </div>
+      <div className={`absolute bottom-16 left-3 z-10 rounded-xl border-2 border-foreground bg-card/95 p-1.5 shadow-lg sm:bottom-3 ${mapMode==="large"?"w-[268px]":"w-[161px]"}`} aria-label="Town minimap">
+        {!!state?.gangParcel && <p className="text-[10px] font-bold text-center">📦 Oddities Pawn</p>}
+        {!!state?.gangTask && <p className="text-[10px] font-bold text-center">★ Crew destination</p>}
         <svg viewBox={`0 0 ${N} ${N}`} className="aspect-square w-full rounded-md bg-town-grass" role="img" aria-label="Town map showing roads, residences, beach, sea and player"
           onPointerDown={(e) => {
             e.stopPropagation();
+            const now=Date.now();
+            if(now-lastMapTap.current<360){lastMapTap.current=0;changeMapMode(mapMode==="large"?"small":"large");return;}
+            lastMapTap.current=now;
             const bounds = e.currentTarget.getBoundingClientRect();
             routeTo({
               x: Math.max(0.3, Math.min(N - 0.3, (e.clientX - bounds.left) / bounds.width * N)),
@@ -828,7 +821,6 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           <circle cx={m.x} cy={m.y} r={1.03} fill="#ffffff" stroke="#19212a" strokeWidth={0.35} />
           <path d={`M ${m.x} ${m.y-0.67} l-.45 .86 h.9 Z`} transform={`rotate(${m.skateAngle}, ${m.x}, ${m.y})`} fill="#2376b4" />
         </svg>
-        </>}
       </div>
 
       {skating && !driving && !paused && grindHud && <div data-grind-hud className="absolute top-12 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-card/90 px-3 py-2 text-center text-xs font-bold shadow-lg">{grindHud.name} · Balance {Math.round(grindHud.balance*100)}<div className="mt-1 flex gap-2"><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("a");}} onPointerUp={()=>keys.current.delete("a")} onPointerCancel={()=>keys.current.delete("a")}>◀ Hold</button><button type="button" className="min-h-11 rounded border border-foreground px-3" onPointerDown={e=>{e.stopPropagation();keys.current.add("d");}} onPointerUp={()=>keys.current.delete("d")} onPointerCancel={()=>keys.current.delete("d")}>Hold ▶</button></div></div>}
