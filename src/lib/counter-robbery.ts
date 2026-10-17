@@ -12,17 +12,17 @@ export const COUNTERS: Record<ShopId, string> = {
 const HAUL: Record<ShopId, number> = { shop: 45, pawn: 40, furniture: 65, diner: 30, bar: 55 };
 export const weaponName = (s: GameState) =>
   s.weapon === 2
-    ? "Heavy bat · robbery capable"
+    ? "Heavy bat"
     : s.weapon === 1
-      ? "Battered bat · too flimsy for robbery"
+      ? "Battered bat"
       : "None";
 
 export function weaponBlock(s: GameState, tier: 1 | 2): string | null {
   if ((s.weapon ?? 0) >= tier) return "Already owned.";
   if (tier === 2 && (s.gangStage < 2 || s.gangRep < 12 || (s.criminalTrust ?? 0) < 30))
-    return "Earn supplier trust: gang stage 2, reputation 12 and criminal trust 30.";
-  if (tier === 2 && s.day < 7) return "Supplier unavailable before day 7.";
-  if (tier === 2 && s.str < 25) return "Requires Strength 25.";
+    return "The crew are not ready to introduce you to their supplier.";
+  if (tier === 2 && s.day < 7) return "The supplier is not around yet.";
+  if (tier === 2 && s.str < 25) return "The crew are not convinced you could handle it.";
   if (s.money < (tier === 2 ? 900 : 180)) return `Need $${tier === 2 ? 900 : 180}.`;
   return null;
 }
@@ -36,8 +36,8 @@ export function buyWeapon(tier: 1 | 2): ActionDef {
     cost,
     note:
       tier === 2
-        ? "Robbery capable. Stage 2 · rep 12 · day 7 · Strength 25. Heat +3."
-        : "Basic bat available to anyone. Not suitable for a till robbery.",
+        ? "Heavy and intimidating. Whether that helps is another question."
+        : "Old, battered and unreliable.",
     resolve: (s) => {
       const blocked = weaponBlock(s, tier);
       if (blocked) return blocked;
@@ -56,10 +56,7 @@ export function buyWeapon(tier: 1 | 2): ActionDef {
   };
 }
 export function robberyBlock(s: GameState): string | null {
-  if ((s.weapon ?? 0) < 2)
-    return s.weapon === 1
-      ? "Your battered bat is too flimsy. A robbery-capable weapon is required."
-      : "Requires a robbery-capable weapon. Earn the crew's trust to find a supplier.";
+  if ((s.weapon ?? 0) < 1) return "You do not have anything to threaten the cashier with.";
   if (s.tillRobberyDay === s.day)
     return "The town is on alert. Only one till robbery attempt per day.";
   return null;
@@ -69,7 +66,7 @@ export function robberyChance(s: GameState): number {
     0.1,
     Math.min(
       0.8,
-      0.25 + Math.min(40, s.str) * 0.009 + Math.min(40, s.cha) * 0.003 - s.heat * 0.008,
+      0.12 + Math.min(40, s.str) * 0.004 + Math.min(40, s.cha) * 0.005 + Math.min(100, s.streetSmarts ?? 0) * 0.004 + (s.weapon === 2 ? 0.12 : -0.15) - s.heat * 0.008,
     ),
   );
 }
