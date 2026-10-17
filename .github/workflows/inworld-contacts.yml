@@ -1,0 +1,20 @@
+name: In-world gang contacts
+on:
+  pull_request:
+    paths:
+      - 'src/components/LocationScene.tsx'
+      - 'src/components/home3d/HomeScene3D.tsx'
+      - 'src/lib/home3d/layout.ts'
+      - 'src/routes/index.tsx'
+      - '.github/workflows/inworld-contacts.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/gang-encounters.test.ts src/test/gang-physical-tasks.test.ts src/test/gang-courier.test.ts
+      - run: bunx tsc --noEmit
+        continue-on-error: true
+      - run: bun run build

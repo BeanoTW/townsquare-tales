@@ -458,7 +458,7 @@ function Game() {
         </div>
       )}
 
-      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && !tab && (
+      {!enc && !gangMeeting && !resident && !parkKidOpen && !!place && gangTaskObjective(s)?.place===place && !["bank","bar"].includes(place) && !tab && (
         <div className="absolute bottom-28 right-3 z-40 flex max-w-[min(88vw,340px)] flex-col items-end gap-2" data-gang-contact-scene>
           <button type="button" onClick={()=>setCrewContactOpen(open=>!open)}
             className="flex min-h-16 items-center gap-3 rounded-xl border-2 border-amber-300 bg-card/95 px-3 py-2 text-left shadow-xl"

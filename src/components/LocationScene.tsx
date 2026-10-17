@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
 import { fitRect, panelStyle, type Size } from "@/lib/room-layout";
+import { crewChoices, resolveCrewEncounter, gangTaskObjective } from "@/lib/gang-career";
 import { bankLoanAction, repayLoanAction, type ActionDef } from "@/lib/actions";
 import type { GameState } from "@/lib/game-state";
 import { RoomArt } from "@/components/rooms/RoomArt";
@@ -133,10 +134,13 @@ function ObjectLocationScene({
     return () => window.clearInterval(id);
   }, [chatter]);
 
-  const visible = visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone);
+  const crewHere = (room.id==="bank"||room.id==="bar") && gangTaskObjective(state)?.place===room.id;
+  const missionHotspot = crewHere ? [{id:"crew-contact",label:room.id==="bar"?"Buyer":"Lookout contact",tag:"★ TALK",hint:"Approach the contact to complete the assignment.",box:{x:48,y:43,w:14,h:20},actions:()=>crewChoices(state).map(c=>resolveCrewEncounter(state.gangTask!,c.id))}] : [];
+  const visible = [...visibleHotspots(room, state).filter(h => room.id !== "home" || use3d || furnitureZone(h.id, state.house) === homeZone),...missionHotspot];
   const selected = cutscene ? null : visible.find((h) => h.id === selectedId) ?? null;
   const commerce = Boolean(use3d && selected && ((room.id === "shop" && selected.id === "checkout") || (room.id === "furniture" && selected.id === "catalogue") || (room.id === "bank" && ["teller","atm","loans","vault"].includes(selected.id))));
-  const plan3d = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
+  const basicPlan = use3d ? (venue ? venuePlan(venue) ?? null : planFor(state.house) ?? planFor(1) ?? null) : null;
+  const plan3d = basicPlan && crewHere ? {...basicPlan, slots:[...basicPlan.slots,{id:"crew-contact" as const,x:room.id==="bank"?3.2:3.8,z:room.id==="bank"?7:5.2,rot:0,w:0.65,d:0.65,zone:basicPlan.rooms[0]!.zone,label:room.id==="bank"?"Lookout contact":"The buyer",tag:"TALK",labelY:2.15}]} : basicPlan;
   // Interactions can be selected from UI even when their fixture belongs
   // to another room. Match the hotspot to the actual plan slot, then move
   // the fixed first-person camera to that area before presenting actions.
@@ -236,7 +240,7 @@ function ObjectLocationScene({
             visible={visible}
             selectedId={selectedId}
             zone={homeZone}
-            plan={venue ? venuePlan(venue) ?? undefined : undefined}
+            plan={plan3d ?? undefined}
             onSelect={(id) => {
               const spot = visible.find((h) => h.id === id);
               if (spot?.launch && onLaunch) {
