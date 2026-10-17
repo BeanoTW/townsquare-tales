@@ -1,0 +1,23 @@
+name: Gang courier validation
+on:
+  pull_request:
+    paths:
+      - 'src/lib/gang-career.ts'
+      - 'src/lib/game-state.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/gang-courier.test.ts'
+      - '.github/workflows/gang-courier.yml'
+jobs:
+  courier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Courier tests
+        run: bunx vitest run src/test/gang-courier.test.ts
+      - name: TypeScript diagnostics
+        run: bunx tsc --noEmit
+        continue-on-error: true
+      - name: Build
+        run: bun run build
