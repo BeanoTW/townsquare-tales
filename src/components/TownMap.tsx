@@ -177,7 +177,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   const changeMapMode=(mode:"small"|"large"|"hidden")=>{setMapMode(mode);try{localStorage.setItem("tst:town-map-mode",mode);}catch{}};
   const toggleTricks=()=>setShowTricks(v=>{try{localStorage.setItem("tst:show-skate-tricks",String(!v));}catch{}return !v;});
   const vehicleRef=useRef<"company"|"wreck"|null>(null);
-  const wreckPosition=useRef({x:5.8,y:11.1,angle:90});
+  const wreckPosition=useRef({x:state?.abandonedCar && (state.wreckRepairs??0)>=3 ? 3.8 : 5.8,y:state?.abandonedCar && (state.wreckRepairs??0)>=3 ? 7.6 : 11.1,angle:90});
   const drivingRef=useRef(false);
   const carSpeed=useRef(0);
   // Shared with the 3D car, so interaction tests the actual parking position.
@@ -203,12 +203,18 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
     if(!state?.abandonedCar || (state.wreckRepairs??0)<3 || !state.drivingLicence || paused || active)return;
     const m=me.current;
     if(drivingRef.current && vehicleRef.current!=="wreck")return;
-    if(!drivingRef.current){Object.assign(m,{x:wreckPosition.current.x,y:wreckPosition.current.y,skateAngle:wreckPosition.current.angle});}
+    if(!drivingRef.current){wreckPosition.current={x:m.x,y:m.y,angle:m.skateAngle};}
     else wreckPosition.current={x:m.x,y:m.y,angle:m.skateAngle};
     drivingRef.current=!drivingRef.current;
     vehicleRef.current=drivingRef.current?"wreck":null;
     setVehicle(vehicleRef.current);setDriving(drivingRef.current);carSpeed.current=0;target.current=null;
   };
+  const restoredCarRef=useRef(Boolean(state?.abandonedCar && (state.wreckRepairs??0)>=3));
+  useEffect(()=>{
+    const complete=Boolean(state?.abandonedCar && (state.wreckRepairs??0)>=3);
+    if(complete && !restoredCarRef.current && !drivingRef.current)wreckPosition.current={x:3.8,y:7.6,angle:90};
+    restoredCarRef.current=complete;
+  },[state?.abandonedCar,state?.wreckRepairs]);
   // Initialise only after save hydration, outside the actual owned home rather than
   // a fixed downtown coordinate that can land in later construction footprints.
   const initialHome = bs.find(b => b.id === "home");
@@ -622,11 +628,11 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
   items.push({ key: c3 * 100 + 10, el: <Car key="c3" x={10} y={c3} dir="y" color="var(--town-car-yellow)" /> });
   // This is an abandoned vehicle, distinct from the Site Lead company car.
   items.push({ key: wreckPosition.current.y * 100 + wreckPosition.current.x, el: <g key="abandoned-car" data-abandoned-car>
-    <title>Rusty abandoned car — its engine has not run in years.</title>
+    <title>{(state?.wreckRepairs??0)>=3?"Your restored car":"Rusty abandoned car — its engine has not run in years."}</title>
     <Car x={wreckPosition.current.x} y={wreckPosition.current.y} dir="x" color={(state?.wreckRepairs??0)>=3?"#677b89":"#74695e"}/>
-    <g transform={`translate(${P(5.8,11.1)[0]} ${P(8.4,9.25)[1]-17})`}>
+    {(state?.wreckRepairs??0)<3 && <g transform={`translate(${P(5.8,11.1)[0]} ${P(8.4,9.25)[1]-17})`}>
       <path d="M-17 1l9 -6m5 3l8 7m6 -10l5 5" stroke="#493e39" strokeWidth="2.5" strokeLinecap="round"/>
-    </g>
+    </g>}
   </g> });
   }
   // One shared physical crew: individually approachable in both 2D and 3D.

@@ -166,10 +166,11 @@ function MansionGate({ open }: { open: boolean }) {
 }
 
 /** Completed civic landmark on the original construction plot. The yard office remains open. */
+function DerelictCar(){return <group position={[5.8,0,11.1]} rotation={[0,Math.PI/2+0.08,0]}><Car colour="#74695e" wreck /></group>;}
 function PersonalCar({position}:{position:MutableRefObject<{x:number;y:number;angle:number}>}) {
  const group=useRef<THREE.Group>(null);
  useFrame(()=>{if(!group.current)return;const p=position.current;group.current.position.set(p.x,0,p.y);group.current.rotation.y=Math.PI-p.angle*Math.PI/180;});
- return <group ref={group} position={[5.8,0,11.1]}><Car colour="#677b89"/></group>;
+ return <group ref={group} position={[position.current.x,0,position.current.y]}><Car colour="#677b89"/></group>;
 }
 
 function CompanyCar({live, driving, carPosition}: {live: TownLive; driving: boolean; carPosition: MutableRefObject<{x:number;y:number;angle:number}>}) {
@@ -231,7 +232,7 @@ const Scene = memo(function Scene({ live, house, hour, skating, head, kidPresent
         {yardRelocated && <EasternYardEquipment />}
       </StaticBatch>
       {yardRelocated && companyCar && carPosition && <CompanyCar live={live} driving={Boolean(driving)} carPosition={carPosition} />}
-      {wreckOwned && wreckPosition && <PersonalCar position={wreckPosition} /> }
+      {wreckPosition && (wreckOwned ? <PersonalCar position={wreckPosition} /> : <DerelictCar />)}
       <LampPools lamps={lamps} night={nightLevel(hour)} />
       <MansionGate open={Boolean(mansionOwned)} />
       <EstateGrounds />
