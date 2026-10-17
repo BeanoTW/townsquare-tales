@@ -1,0 +1,17 @@
+name: Crew character dialogue verification
+on:
+  pull_request:
+    paths:
+      - 'src/lib/gang-career.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/crew-characters.test.ts'
+      - '.github/workflows/crew-characters.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/crew-characters.test.ts src/test/gang-encounters.test.ts src/test/gang-physical-tasks.test.ts
+      - run: bun run build

@@ -32,7 +32,7 @@ import { CAREERS, currentRole, nextRole } from "@/lib/careers";
 import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import { EAT_SNACK, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
-import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter } from "@/lib/gang-career";
+import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
 import { WreckIgnitionGame } from "@/components/minigames/WreckIgnitionGame";
 import { giveParkSmoke, parkKidDialogue } from "@/lib/park-kid";
@@ -87,6 +87,7 @@ function Game() {
   const [parkKidOpen, setParkKidOpen] = useState(false);
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
+  const [crewSpeaker, setCrewSpeaker] = useState<CrewMember>("mick");
   const [crewContactOpen, setCrewContactOpen] = useState(false);
   const [game, setGame] = useState<CasinoGame | null>(null);
   const [arcade, setArcade] = useState<"basketball" | "rail" | "darts" | null>(null);
@@ -408,9 +409,17 @@ function Game() {
       {gangMeeting && (
         <Sheet title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
           <p className="text-lg font-bold">{gangMeeting.message}</p>
+          {!gangMeeting.hostile && <section aria-label="Talk to crew members" className="my-3 rounded-xl border border-foreground/40 p-3">
+            <p className="mb-2 text-sm font-bold">Talk to the crew</p>
+            <div className="grid grid-cols-3 gap-2">
+              {CREW_MEMBERS.map(member=><button key={member.id} type="button" aria-pressed={crewSpeaker===member.id} className={`min-h-11 rounded-lg border px-2 py-2 text-sm ${crewSpeaker===member.id?"bg-secondary font-bold":"bg-card"}`} onClick={()=>setCrewSpeaker(member.id)}>{member.name}</button>)}
+            </div>
+            <p className="mt-2 text-sm">{CREW_MEMBERS.find(m=>m.id===crewSpeaker)?.role}</p>
+            <p role="status" className="mt-2 text-base">{crewConversation(s,crewSpeaker)}</p>
+          </section>}
           {gangMeeting.hostile ? (
             <>
-              <p className="text-base">Strength 15 holds your ground; Charm 15 talks them down. Each response takes 15m. Leaving costs nothing.</p>
+              <p className="text-base">They are sizing you up. You can stand your ground, try talking, or walk away.</p>
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
               {s.gangStage === 0 && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
