@@ -13,7 +13,7 @@ const seq = (...xs: number[]) => { let i = 0; return () => xs[i++ % xs.length]!;
 
 describe("turn events are read from the engine, never decided by the presentation", () => {
   it("names hits, misses, blocks, guards, recoveries and knockouts from before/after state", () => {
-    let f = beginFight(state, 20);
+    let f = beginFight(state, 50);
     const hit = takeTurn(f, "jab", () => 0);
     expect(eventFor(f, hit, "jab")).toMatchObject({ actor: "player", outcome: "hit", ko: false });
     const miss = takeTurn(f, "heavy", () => 0.99);
@@ -23,7 +23,7 @@ describe("turn events are read from the engine, never decided by the presentatio
     f = takeTurn(f, "block");
     const blocked = takeTurn(f, "hook", () => 0);
     expect(eventFor(f, blocked, "hook")).toMatchObject({ actor: "opponent", outcome: "blocked" });
-    const finale: Fight = { ...beginFight(state, 20), opponent: { ...beginFight(state, 20).opponent, hp: 3 } };
+    const finale: Fight = { ...beginFight(state, 50), opponent: { ...beginFight(state, 50).opponent, hp: 3 } };
     const ko = eventFor(finale, takeTurn(finale, "jab", () => 0), "jab");
     expect(ko.ko).toBe(true);
     expect(ko.big).toBe(true);
@@ -41,7 +41,7 @@ describe("turn events are read from the engine, never decided by the presentatio
   });
 
   it("keeps ordinary turns short, makes knockouts linger, and respects off and reduced motion", () => {
-    const f = beginFight(state, 20);
+    const f = beginFight(state, 50);
     const { events } = playTurn(f, "jab", () => 0);
     expect(queueSeconds(events, "full")).toBeLessThan(2.5);
     expect(eventSeconds({ ...events[0]!, ko: true }, "full")).toBeGreaterThan(eventSeconds(events[0]!, "full"));
@@ -52,7 +52,7 @@ describe("turn events are read from the engine, never decided by the presentatio
   });
 
   it("leads commentary with the engine's words and gives every pub opponent a personality", () => {
-    const f = beginFight(state, 20);
+    const f = beginFight(state, 50);
     const { events } = playTurn(f, "jab", () => 0);
     expect(commentary(events[0]!, FIGHTERS.barry)[0]).toBe(voice(events[0]!.message));
     expect(voice("You lands a jab for 7 HP!")).toBe("You land a jab for 7 HP!");
@@ -129,11 +129,11 @@ describe("the brawl screen", () => {
   });
 
   it("refuses stakes the player can't cover, and fights when they're out of health", () => {
-    render(<PubBrawl state={{ ...state, money: 30 }} onChange={() => {}} onExit={() => {}} />);
-    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "$20" }) as HTMLButtonElement).disabled).toBe(false);
+    render(<PubBrawl state={{ ...state, money: 80 }} onChange={() => {}} onExit={() => {}} />);
+    expect((screen.getByRole("button", { name: "$150" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(false);
     cleanup();
     render(<PubBrawl state={{ ...state, health: 0 }} onChange={() => {}} onExit={() => {}} />);
-    expect((screen.getByRole("button", { name: "$20" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

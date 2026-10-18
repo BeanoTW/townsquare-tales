@@ -42,6 +42,7 @@ const LABELS: [keyof GameState, string][] = [
   ["int", "Intelligence"],
   ["cha", "Charm"],
   ["str", "Strength"],
+  ["vitality", "Vitality"],
   ["energy", "Energy"],
   ["karma", "Karma"],
   ["heat", "Heat"],
@@ -107,7 +108,7 @@ export const HOME_WORKOUT: ActionDef = {
   label: "Home workout",
   hours: 2,
   energy: 18,
-  resolve: (s) => ({ patch: { str: s.str + 2 }, message: "Home gym session. +2 strength." }),
+  resolve: (s) => ({ patch: { str: s.str + 2, vitality: Math.min(1000, (s.vitality ?? 0) + 1) }, message: "Home gym session. +2 strength, +1 vitality." }),
 };
 /** Each qualification adds one intelligence point to every study session. */
 export const studyGain = (base: number, school: number) => Math.min(2, base + Math.max(0, Math.min(4, Math.trunc(school))));
