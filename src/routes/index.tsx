@@ -328,6 +328,7 @@ function Game() {
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
         paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade || wreckGame || crewScene3d)}
         conversation={gangMeeting ? null : crewScene3d}
+        crewZoom={Boolean(gangMeeting)}
         onStreet={(id: StreetObjectId) => {
           if(id==="ramp"){
             // Without an equipped board the game opens on its requirement card instead of charging anything.
