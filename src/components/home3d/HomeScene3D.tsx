@@ -13,6 +13,7 @@ import { SuburbanDecor } from "./suburban";
 import { Bedsides, BlackjackTable, Figure, MansionDecor, SlotBank } from "./mansion";
 import { CastleDecor } from "./castle-interior";
 import { BarCounter, BarDecor, DanceFloor, Dartboard } from "./bar";
+import { BookmakerFixture } from "@/components/fight/Bookmaker";
 import { CasinoDecor, DiceTable } from "./casino";
 import { GymDecor, PowerRack, Treadmills } from "./gym";
 import { TownVenueDecor, TownVenueFixture, hasTownVenue } from "./venues";
@@ -48,7 +49,7 @@ const mixHex = (a: string, b: string, t: number) => {
 
 const regionOf = (plan: HomePlan, zone: PlanZone | "all"): Rect => plan.focus[zone] ?? plan.focus.all!;
 
-function Lights({ plan, day }: { plan: HomePlan; day: number }) {
+export function Lights({ plan, day }: { plan: HomePlan; day: number }) {
   const L = plan.lights;
   const sun = useRef<THREE.DirectionalLight>(null);
   const cx = plan.size.w / 2;
@@ -89,7 +90,7 @@ function Lights({ plan, day }: { plan: HomePlan; day: number }) {
   );
 }
 
-function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan; luxury: boolean; hasBed: boolean }) {
+export function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan; luxury: boolean; hasBed: boolean }) {
   if(slot.id==="crew-contact") {
     const buyer=plan.kind==="bar";
     const coat=buyer?"#68493e":"#485568";
@@ -147,6 +148,8 @@ function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan;
       return <DanceFloor />;
     case "dartboard":
       return <Dartboard />;
+    case "pub-brawl":
+      return <BookmakerFixture />;
     case "rack":
       return <PowerRack />;
     case "track":
@@ -156,7 +159,7 @@ function Furniture({ slot, plan, luxury, hasBed }: { slot: Slot; plan: HomePlan;
   }
 }
 
-function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) {
+export function Decor({ plan, owned }: { plan: HomePlan; owned: ReadonlySet<string> }) {
   if (hasTownVenue(plan.kind)) return <TownVenueDecor kind={plan.kind} />;
   switch (plan.kind) {
     case "squat":
