@@ -1,4 +1,4 @@
-import { CrewDialogueCard, type CrewTopic } from "@/components/crime/CrewDialogueCard";
+import { CrewDialogueCard, speakerForTopic, type CrewTopic } from "@/components/crime/CrewDialogueCard";
 import { PubBrawl } from "@/components/PubBrawl";
 import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
@@ -451,7 +451,7 @@ function Game() {
         </div>
       )}
       {gangMeeting && (
-        <CrewDialogueCard speaker={gangMeeting.hostile?"mick":crewSpeaker} onSpeaker={setCrewSpeaker} topic={crewTopic} onTopic={setCrewTopic} hostile={gangMeeting.hostile} onLeave={()=>setGangMeeting(null)} line={gangMeeting.hostile?gangMeeting.message:crewConversation(s,crewSpeaker)} bubble={!gangMeeting.hostile && storyAvailable(s,crewSpeaker) && !activeStory(s) ? storyDialogue(storyAvailable(s,crewSpeaker)!,s) : undefined}>
+        <CrewDialogueCard speaker={gangMeeting.hostile?"mick":crewSpeaker} topic={crewTopic} onTopic={(topic)=>{setCrewTopic(topic);setCrewSpeaker(speakerForTopic(topic));}} hostile={gangMeeting.hostile} onLeave={()=>setGangMeeting(null)} line={gangMeeting.hostile?gangMeeting.message:crewConversation(s,crewSpeaker)} bubble={!gangMeeting.hostile && storyAvailable(s,crewSpeaker) && !activeStory(s) ? storyDialogue(storyAvailable(s,crewSpeaker)!,s) : undefined}>
 
           {gangMeeting.hostile ? (
             <>
