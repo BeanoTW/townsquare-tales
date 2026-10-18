@@ -127,12 +127,12 @@ export const COOK_AT_HOME: ActionDef = {
   hours: 1,
   energy: 0,
   cost: 5,
-  note: "Basic kitchen +20 energy · luxury kitchen +40",
+  note: "Basic kitchen +20 energy · luxury kitchen +40 · +15 HP",
   resolve: (s) =>
     s.house < 1 ? "Cooking requires a proper home kitchen." : s.money >= 5
       ? {
-          patch: { money: s.money - 5, energy: Math.min(100, s.energy + ((s.luxuryFurniture ?? 0) & 2 ? 40 : 20)) },
-          message: `Homemade dinner! +${((s.luxuryFurniture ?? 0) & 2) ? 40 : 20} energy.`,
+          patch: { money: s.money - 5, energy: Math.min(100, s.energy + ((s.luxuryFurniture ?? 0) & 2 ? 40 : 20)), health: Math.min(100, (s.health ?? 100) + 15) },
+          message: `Homemade dinner! +${((s.luxuryFurniture ?? 0) & 2) ? 40 : 20} energy, +15 HP.`,
         }
       : "Need $5 for ingredients.",
 };
@@ -170,7 +170,7 @@ export function sleepAction(s: GameState): ActionDef {
           day: st.day + 1,
           lastSleepDay: st.day + 1,
           wakeStreak: 0,
-          health: Math.min(100, (st.health ?? 100) + 15),
+          health: Math.min(100, (st.health ?? 100) + Math.max(0, rested.energy - st.energy)),
           bank: Math.min(1e12, st.bank + Math.floor(st.bank * 0.001)),
           // Loans have a fixed 40% borrowing charge; only overdue debt incurs additional penalties.
           loanDebt: (st.loanDueDay ?? 0) > 0 && st.day + 1 > (st.loanDueDay ?? 0)
@@ -540,12 +540,12 @@ export const EAT_SNACK: ActionDef = {
   label: "Eat snack",
   hours: 0.25,
   energy: 0,
-  note: "+10 energy · 15 minute break",
+  note: "+10 energy · +5 HP · 15 minute break",
   resolve: (s) =>
     s.snacks > 0
       ? {
-          patch: { snacks: s.snacks - 1, energy: Math.min(100, s.energy + 10) },
-          message: "Ate a snack. +10 energy.",
+          patch: { snacks: s.snacks - 1, energy: Math.min(100, s.energy + 10), health: Math.min(100, (s.health ?? 100) + 5) },
+          message: "Ate a snack. +10 energy, +5 HP.",
         }
       : "No snacks left.",
 };
@@ -608,12 +608,12 @@ export function dinerMealAction(id: "soup" | "breakfast"): ActionDef {
     hours: 1,
     energy: 0,
     cost: meal.cost,
-    note: `+${meal.recovery} energy`,
+    note: `+${meal.recovery} energy · +15 HP`,
     resolve: (s) => s.money < meal.cost
       ? `Need ${meal.cost} for ${meal.label.toLowerCase()}.`
       : {
-          patch: { money: s.money - meal.cost, energy: Math.min(100, s.energy + meal.recovery) },
-          message: `${meal.label} enjoyed! You feel much better.`,
+          patch: { money: s.money - meal.cost, energy: Math.min(100, s.energy + meal.recovery), health: Math.min(100, (s.health ?? 100) + 15) },
+          message: `${meal.label} enjoyed! +${meal.recovery} energy, +15 HP.`,
         },
   };
 }
@@ -635,12 +635,12 @@ export const HOT_MEAL: ActionDef = {
   hours: 1,
   energy: 0,
   cost: 18,
-  note: "+45 energy",
+  note: "+45 energy · +15 HP",
   resolve: (s) =>
     s.money >= 18
       ? {
-          patch: { money: s.money - 18, energy: Math.min(100, s.energy + 45) },
-          message: "Proper meal! +45 energy.",
+          patch: { money: s.money - 18, energy: Math.min(100, s.energy + 45), health: Math.min(100, (s.health ?? 100) + 15) },
+          message: "Proper meal! +45 energy, +15 HP.",
         }
       : "Not enough cash.",
 };
@@ -855,7 +855,7 @@ export function applyAction(index: number): ActionDef {
 export const BUY_SANDWICH:ActionDef={id:"buy-packed-sandwich",label:"Buy sandwich",hours:0,energy:0,cost:18,
  resolve:s=>s.money<18?"Need $18 for a sandwich.":(s.sandwiches??0)>=99?"Your bag is already full.":{patch:{money:s.money-18,sandwiches:(s.sandwiches??0)+1},message:"Sandwich packed. Find somewhere to sit and eat it."}};
 export const EAT_SANDWICH:ActionDef={id:"eat-packed-sandwich",label:"Eat sandwich",hours:0.5,energy:0,
- resolve:s=>(s.sandwiches??0)<1?"No sandwiches left.":{patch:{sandwiches:(s.sandwiches??0)-1,energy:Math.min(100,s.energy+20)},message:"You sit down for half an hour and demolish a sandwich. +20 energy."}};
+ resolve:s=>(s.sandwiches??0)<1?"No sandwiches left.":{patch:{sandwiches:(s.sandwiches??0)-1,energy:Math.min(100,s.energy+20),health:Math.min(100,(s.health??100)+5)},message:"You sit down for half an hour and demolish a sandwich. +20 energy, +5 HP."}};
 /** Fictional black-market stimulant: a deliberately exaggerated game mechanic, not medical advice. */
 export const BUY_STIMULANT:ActionDef={id:"buy-stimulant",label:"Mysterious white powder",hours:0,energy:0,cost:1000,
  resolve:s=>s.money<1000?"The dodgy packet costs $1,000.":(s.stimulantPacks??0)>=20?"You have enough questionable chemistry in your pockets.":{patch:{money:s.money-1000,stimulantPacks:(s.stimulantPacks??0)+1},message:"One suspicious unmarked packet acquired. The seller refuses to explain anything."}};
