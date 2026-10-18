@@ -151,11 +151,21 @@ export function TownCameraRig({ live, skating, conversation }: { live: TownLive;
     if (!active) return;
     const { beat } = beatAt(active.cue, now() - active.startedAt);
     const lead = active.cue.kind === "conversation" ? active.cue.beats[0]?.speaker ?? null : null;
-    const pose = shotForBeat(beat, crewMarks(live), undefined, lead);
+    const marks = crewMarks(live);
+    const pose = shotForBeat(beat, marks, undefined, lead);
+    // Keep dialogue wide; glide the target towards each speaker, not the lens.
+    if (pose && active.cue.kind === "conversation") {
+      const centerX = (marks.mick.x + marks.lez.x + marks.nia.x) / 3;
+      const centerZ = (marks.mick.z + marks.lez.z + marks.nia.z) / 3;
+      const focus = marks[beat.speaker ?? lead ?? "mick"] ?? marks.mick;
+      pose.eye = [centerX - 2.6, 3.6, centerZ + 6.8];
+      pose.target = [centerX * 0.55 + focus.x * 0.45, 0.9, centerZ * 0.55 + focus.z * 0.45];
+      pose.fov = 49;
+    }
     if (pose) {
       tmp.eye.set(...pose.eye); tmp.target.set(...pose.target);
       // The dialogue sheet covers the lower half: aim low so the people sit in the upper half of the frame.
-      if (active.cue.kind === "conversation") tmp.target.y -= beat.shot === "speaker-close" ? 0.08 : 0.26;
+      if (active.cue.kind === "conversation") tmp.target.y -= 0.08;
       const s = shot.current;
       if (!s.ready || reduced) { s.eye.copy(tmp.eye); s.target.copy(tmp.target); s.fov = pose.fov; s.ready = true; }
       else {
