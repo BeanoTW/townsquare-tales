@@ -615,7 +615,7 @@ function Game() {
         />
       )}
 
-      {pubFight && <PubBrawl state={s} onChange={setS} onExit={()=>setPubFight(false)} />}
+      {pubFight && <PubBrawl state={s} onChange={setS} cutsceneMode={cutsceneMode} onExit={()=>setPubFight(false)} />}
       {arcade==="darts" && (
         <DartsGame
           sound={soundOn}
