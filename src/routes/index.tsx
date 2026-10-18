@@ -447,19 +447,19 @@ function Game() {
         </div>
       )}
       {gangMeeting && (
-        <Sheet compact={Boolean(crewScene3d)} title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
-          <p className="text-lg font-bold">{gangMeeting.message}</p>
-          {!gangMeeting.hostile && <section aria-label="Talk to crew members" className="my-3 rounded-xl border border-foreground/40 p-3">
+        <Sheet compact title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
+          <p className="text-sm leading-snug font-semibold">{gangMeeting.message}</p>
+          {!gangMeeting.hostile && <section aria-label="Talk to crew members" className="rounded-lg border border-foreground/30 p-2">
             <p className="mb-2 text-sm font-bold">Talk to the crew</p>
             <div className="grid grid-cols-3 gap-2">
               {CREW_MEMBERS.map(member=><button key={member.id} type="button" aria-pressed={crewSpeaker===member.id} className={`min-h-11 rounded-lg border px-2 py-2 text-sm ${crewSpeaker===member.id?"bg-secondary font-bold":"bg-card"}`} onClick={()=>setCrewSpeaker(member.id)}>{member.name}</button>)}
             </div>
-            <p className="mt-2 text-sm">{CREW_MEMBERS.find(m=>m.id===crewSpeaker)?.role}</p>
-            <p role="status" className="mt-2 text-base">{crewConversation(s,crewSpeaker)}</p>
+            
+            <p role="status" className="mt-1 text-sm leading-snug">{crewConversation(s,crewSpeaker)}</p>
           </section>}
           {gangMeeting.hostile ? (
             <>
-              <p className="text-base">They are sizing you up. You can stand your ground, try talking, or walk away.</p>
+              
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
               {s.gangStage === 0 && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
@@ -496,12 +496,12 @@ function Game() {
               {crewSpeaker==="lez" && (s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
               {crewSpeaker==="nia" && (s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
               
-              {([1,2] as const).map(tier => <div key={tier} className="my-2 min-w-0">
+              <details className="rounded-lg border border-foreground/30 p-2"><summary className="cursor-pointer font-bold text-sm py-1">Weapons & other business</summary><div className="mt-2 flex flex-col gap-2">{([1,2] as const).map(tier => <div key={tier} className="min-w-0">
                 <Btn onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · $ {buyWeapon(tier).cost}</Btn>
                 <p className="px-1 py-1 text-sm text-muted-foreground">{tier===1?"Looks like it has seen better days.": "Ask the crew whether they can source something heavier."}</p>
               </div>)}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
-              <Btn onClick={() => setGangMeeting(null)}>Tell them to get lost</Btn>
+              </div></details><Btn onClick={() => setGangMeeting(null)}>Leave the crew</Btn>
             </>
           )}
         </Sheet>
@@ -869,16 +869,16 @@ function Icon(p: { disabled?: boolean; label: string; onClick: () => void; child
 function Sheet(p: { title: string; onClose?: () => void; children: React.ReactNode; compact?: boolean }) {
   // During a framed conversation the sheet keeps to the lower half so the scene above stays visible.
   return (
-    <div data-dialogue-sheet={p.compact ? "cinematic" : "plain"} className={`absolute inset-x-0 bottom-0 z-10 mx-auto flex ${p.compact ? "max-h-[48dvh] bg-card/95" : "max-h-[75vh] bg-card"} max-w-md flex-col gap-2 overflow-auto rounded-t-xl border-2 border-b-0 border-foreground p-4`}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{p.title}</h2>
+    <div data-dialogue-sheet={p.compact ? "cinematic" : "plain"} className={`absolute inset-x-0 bottom-0 z-10 mx-auto flex ${p.compact ? "h-[min(46dvh,370px)] bg-card/95" : "max-h-[75dvh] bg-card"} max-w-md flex-col overflow-hidden rounded-t-xl border-2 border-b-0 border-foreground`}>
+      <div className="flex shrink-0 items-center justify-between border-b border-foreground/20 bg-card px-3 py-2">
+        <h2 className="text-lg font-bold">{p.title}</h2>
         {p.onClose && (
           <button aria-label="Close" onClick={p.onClose} className="text-2xl">
             ✕
           </button>
         )}
       </div>
-      {p.children}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 flex flex-col gap-2" style={{ WebkitOverflowScrolling: "touch" }}>{p.children}</div>
     </div>
   );
 }
