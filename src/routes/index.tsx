@@ -1,3 +1,4 @@
+import { CrewDialogueCard, type CrewTopic } from "@/components/crime/CrewDialogueCard";
 import { PubBrawl } from "@/components/PubBrawl";
 import { buyWeapon, weaponName, weaponBlock } from "@/lib/counter-robbery";
 import { createFileRoute } from "@tanstack/react-router";
@@ -102,6 +103,7 @@ function Game() {
   const [strangerLeft, setStrangerLeft] = useState<number | null>(null);
   const [gangMeeting, setGangMeeting] = useState<GangMeeting | null>(null);
   const [crewSpeaker, setCrewSpeaker] = useState<CrewMember>("mick");
+  const [crewTopic, setCrewTopic] = useState<CrewTopic>("talk");
   const [crewContactOpen, setCrewContactOpen] = useState(false);
   const [game, setGame] = useState<CasinoGame | null>(null);
   const [pubFight, setPubFight] = useState(false);
@@ -446,43 +448,22 @@ function Game() {
           <div className="mt-2"><Button variant="ghost" onClick={()=>setResident(null)}>Leave them to it</Button></div>
         </div>
       )}
-      {gangMeeting && !gangMeeting.hostile && !activeStory(s) && storyAvailable(s,crewSpeaker) && (
-        <div role="dialog" aria-label="Crew mission offer" className="pointer-events-none absolute inset-0 z-30">
-          <div className="pointer-events-auto absolute left-1/2 top-[20%] w-[min(88vw,340px)] -translate-x-1/2 rounded-2xl border-2 border-foreground bg-card/95 px-3 py-3 text-center shadow-lg">
-            <p className="text-xs font-bold">{CREW_MEMBERS.find(m=>m.id===crewSpeaker)?.name ?? crewSpeaker}</p>
-            <p className="text-sm leading-snug">{storyDialogue(storyAvailable(s,crewSpeaker)!,s)}</p>
-          </div>
-          <div className="pointer-events-auto absolute inset-x-3 bottom-4 mx-auto flex max-w-sm flex-col gap-2">
-            <div className="flex gap-2">{CREW_MEMBERS.map(member=><button key={member.id} type="button" aria-pressed={crewSpeaker===member.id} onClick={()=>setCrewSpeaker(member.id)} className={crewSpeaker===member.id ? "min-h-11 flex-1 rounded-xl border-2 border-foreground bg-secondary font-bold" : "min-h-11 flex-1 rounded-xl border-2 border-foreground bg-card font-bold"}>{member.name}</button>)}</div>
-            <button type="button" className="min-h-12 rounded-xl border-2 border-foreground bg-primary font-bold text-primary-foreground shadow-lg" onClick={()=>{if(perform(beginStory(storyAvailable(s,crewSpeaker)!.id)))setGangMeeting(null);}}>Accept mission</button>
-            <button type="button" className="min-h-11 rounded-xl border-2 border-foreground bg-card/95 font-bold shadow" onClick={()=>setGangMeeting(null)}>Not now</button>
-          </div>
-        </div>
-      )}
-      {gangMeeting && (gangMeeting.hostile || activeStory(s) || !storyAvailable(s,crewSpeaker)) && (
-        <Sheet compact title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
-          <p className="text-sm leading-snug font-semibold">{gangMeeting.message}</p>
-          {!gangMeeting.hostile && <section aria-label="Talk to crew members" className="rounded-lg border border-foreground/30 p-2">
-            <p className="mb-2 text-sm font-bold">Talk to the crew</p>
-            <div className="grid grid-cols-3 gap-2">
-              {CREW_MEMBERS.map(member=><button key={member.id} type="button" aria-pressed={crewSpeaker===member.id} className={`min-h-11 rounded-lg border px-2 py-2 text-sm ${crewSpeaker===member.id?"bg-secondary font-bold":"bg-card"}`} onClick={()=>setCrewSpeaker(member.id)}>{member.name}</button>)}
-            </div>
-            
-            <p role="status" className="mt-1 text-sm leading-snug">{crewConversation(s,crewSpeaker)}</p>
-          </section>}
+      {gangMeeting && (
+        <CrewDialogueCard speaker={gangMeeting.hostile?"mick":crewSpeaker} onSpeaker={setCrewSpeaker} topic={crewTopic} onTopic={setCrewTopic} hostile={gangMeeting.hostile} onLeave={()=>setGangMeeting(null)} line={gangMeeting.hostile?gangMeeting.message:crewConversation(s,crewSpeaker)} bubble={!gangMeeting.hostile && storyAvailable(s,crewSpeaker) && !activeStory(s) ? storyDialogue(storyAvailable(s,crewSpeaker)!,s) : undefined}>
+
           {gangMeeting.hostile ? (
             <>
               
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
               {s.gangStage === 0 && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
-              {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
+              {crewTopic==="work" && ([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
               <Btn disabled={!!weaponBlock(s,1)} onClick={() => { if(perform(buyWeapon(1))) setGangMeeting(null); }}>Buy an ordinary bat · $180</Btn>
-              <Btn onClick={() => setGangMeeting(null)}>Fine. I'm leaving.</Btn>
+              
             </>
           ) : (
             <>
-              {activeStory(s) ? <section className="rounded-xl border border-foreground/50 p-3">
+              {(crewTopic==="talk" || crewTopic==="work") && activeStory(s) ? <section className="rounded-xl border border-foreground/50 p-3">
                 <p className="font-bold">{activeStory(s)?.title}</p>
                 <p className="text-sm">{UNDERWORLD_SCRIPTS[activeStory(s)!.id]?.intro ?? activeStory(s)?.setup}</p>
                 {crewSpeaker===activeStory(s)?.contact ? <>
@@ -491,33 +472,33 @@ function Game() {
                   {(s.underworldStoryStage??0)>0 && <p className="my-2 text-sm">{UNDERWORLD_SCRIPTS[activeStory(s)!.id]?.returnLine}</p>}
                   {(s.underworldStoryStage??0)>0 && activeStory(s)?.options.map(option=><Btn key={option.id} onClick={()=>{if(perform(finishStory(activeStory(s)!.id,option.id)))setGangMeeting(null);}}>{option.label}</Btn>)}
                 </> : <p className="text-sm">Speak to the person who approached you about this.</p>}
-              </section> : storyAvailable(s,crewSpeaker) && <section className="rounded-xl border border-foreground/50 p-3">
+              </section> : crewTopic==="talk" && storyAvailable(s,crewSpeaker) && <section className="rounded-xl border border-foreground/50 p-3">
                 <p className="font-bold">Something different</p>
                 <p className="my-2">{storyDialogue(storyAvailable(s,crewSpeaker)!,s)}</p>
-                <Btn onClick={()=>perform(beginStory(storyAvailable(s,crewSpeaker)!.id))}>Hear them out</Btn>
+                <Btn onClick={()=>{if(perform(beginStory(storyAvailable(s,crewSpeaker)!.id)))setCrewTopic("work");}}>Alright, I’m in</Btn>
               </section>}
-              <p className="text-base">{gangDialogue(s)}</p>
+              
               {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
-              {crewSpeaker==="mick" && gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
-              {crewSpeaker==="mick" && !s.underworldStoryActive && ["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
+              {crewTopic==="work" && crewSpeaker==="mick" && gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
+              {crewTopic==="work" && crewSpeaker==="mick" && !s.underworldStoryActive && ["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
                 <Btn disabled={!!s.gangParcel} onClick={() => { if(perform(gangJob("gang-courier"))) setGangMeeting(null); }}>{s.gangParcel ? "Package already collected" : "Take a package"}</Btn>
                 {gangAccess(s)==="trusted" && <Btn onClick={() => { if(perform(gangJob("gang-fence"))) setGangMeeting(null); }}>Meet their buyer</Btn>}
               </>}
-              {crewSpeaker==="nia" && s.gangStage>=1 && <Btn onClick={()=>perform(buyMoonDust)}>Buy Moon Dust · $1,000</Btn>}
-              {crewSpeaker==="nia" && hometownUnlocked(s) && !s.hometownJobDone && <section className="my-2 rounded-xl border p-3"><p className="font-bold">Bomb and Minnie</p><p className="text-sm">Nia needs someone to collect a Moon Dust shipment from another city. Lez says the streets might look familiar. Tell your family you're coming if you want to see them.</p><Btn onClick={()=>{if(perform(hometownSupplyRun))setGangMeeting(null);}}>Take the out-of-town delivery</Btn></section>}
-              {crewSpeaker==="lez" && (s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
-              {crewSpeaker==="nia" && (s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
+              {crewTopic==="business" && crewSpeaker==="nia" && s.gangStage>=1 && <Btn onClick={()=>perform(buyMoonDust)}>Buy Moon Dust · $1,000</Btn>}
+              {crewTopic==="business" && crewSpeaker==="nia" && hometownUnlocked(s) && !s.hometownJobDone && <section className="my-2 rounded-xl border p-3"><p className="font-bold">Bomb and Minnie</p><p className="text-sm">Nia needs someone to collect a Moon Dust shipment from another city. Lez says the streets might look familiar. Tell your family you're coming if you want to see them.</p><Btn onClick={()=>{if(perform(hometownSupplyRun))setGangMeeting(null);}}>Take the out-of-town delivery</Btn></section>}
+              {crewTopic==="news" && crewSpeaker==="lez" && (s.gangStage >= 1) && !s.abandonedCar && <Btn onClick={() => { if(perform(gangCarLesson())) setGangMeeting(null); }}>Ask about the old wreck</Btn>}
+              {crewTopic==="business" && crewSpeaker==="nia" && (s.gangRep >= 7 && (s.criminalTrust??0) >= 25 && s.karma <= -5) && !s.pawnIntroduction && <Btn onClick={() => { if(perform(pawnIntroductionAction())) setGangMeeting(null); }}>Ask who's really in charge</Btn>}
               
-              <details className="rounded-lg border border-foreground/30 p-2"><summary className="cursor-pointer font-bold text-sm py-1">Weapons & other business</summary><div className="mt-2 flex flex-col gap-2">{([1,2] as const).map(tier => <div key={tier} className="min-w-0">
+              {crewSpeaker==="nia" && crewTopic==="gear" && <div className="flex flex-col gap-2">{([1,2] as const).map(tier => <div key={tier} className="min-w-0">
                 <Btn onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · $ {buyWeapon(tier).cost}</Btn>
                 <p className="px-1 py-1 text-sm text-muted-foreground">{tier===1?"Looks like it has seen better days.": "Ask the crew whether they can source something heavier."}</p>
               </div>)}
               <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
-              </div></details><Btn onClick={() => setGangMeeting(null)}>Leave the crew</Btn>
+              </div>}
             </>
           )}
-        </Sheet>
+        </CrewDialogueCard>
       )}
 
       {enc && (
