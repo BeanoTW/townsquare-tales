@@ -1,0 +1,22 @@
+name: Claude Pub Brawl 3D Validation
+on:
+  pull_request:
+    paths:
+      - 'src/components/PubBrawl.tsx'
+      - 'src/components/fight/**'
+      - 'src/components/home3d/HomeScene3D.tsx'
+      - 'src/lib/fight-presentation.ts'
+      - 'src/lib/home3d/layout.ts'
+      - 'src/lib/home3d/venues.ts'
+      - 'src/routes/index.tsx'
+      - 'src/test/pub-brawl-presentation.test.tsx'
+      - '.github/workflows/claude-pub-brawl-3d.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/pub-brawl-presentation.test.tsx src/test/pub-brawl.test.ts
+      - run: bun run build
