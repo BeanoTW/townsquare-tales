@@ -128,7 +128,7 @@ function FeedbackIcons({ feedback }: { feedback: StreetObjectId | null }) {
   </>;
 }
 
-export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire, onWreckRepair, onPositionChange, conversation = null }: { conversation?: LiveConversation | null; movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean; onWreckRepair?: () => boolean; onPositionChange?: (x:number,y:number)=>void }) {
+export function TownMap({ movementMode = "joystick", hour, house, speed = 1, skating = false, karma = 0, onEnter, active, encounter, onEncounter, kidPresent = true, onKid, state, paused = false, onStreet, onStreetIncident, onDrive, onHotwire, onWreckRepair, onPositionChange, conversation = null, crewZoom = false }: { crewZoom?: boolean; conversation?: LiveConversation | null; movementMode?: "joystick" | "tap"; hour: number; house: number; speed?: number; skating?: boolean; karma?: number; onEnter: (id: string) => void; active: string | null; encounter?: EncounterSpot | null; onEncounter?: () => void; kidPresent?: boolean; onKid?: () => void; state?: GameState; paused?: boolean; onStreet?: (id: StreetObjectId) => boolean; onStreetIncident?: ((id: ResidentId) => void) | undefined; onDrive?: (destination: "home" | "work") => void; onHotwire?: () => boolean; onWreckRepair?: () => boolean; onPositionChange?: (x:number,y:number)=>void }) {
   const reducedMotion = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const castleOwned = Boolean((state?.ownedHomes ?? 0) & (1 << 4)) || house >= 4;
   const townHallReady = isTownHallBuilt({ day: state?.day ?? 1 });
@@ -734,6 +734,7 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
           an interior is open; remount a fresh renderer on return to avoid mobile
           WebGL contexts that resume with a permanently blank frame. Game state,
           movement and the SVG interaction overlay remain mounted. */}
+      <div data-crew-camera-zoom={crewZoom ? "active" : "off"} className="absolute inset-0 origin-[50%_53%] transition-transform duration-300 ease-out" style={{ transform: crewZoom ? "scale(1.14)" : "scale(1)" }}>
       {use3d && !active && <Suspense fallback={null}><TownWorld3D live={live3d} tick={t} house={house} hour={hour} skating={skating} head={head} kidPresent={kidPresent} encounter={encounter} constructionActive={constructionActive} townHallBuilt={townHallReady} mansionOwned={Boolean((state?.ownedHomes ?? ((1 << (house + 1)) - 1)) & (1 << 3))} castleOwned={castleOwned} yardRelocated={yardRelocated} companyCar={Boolean((state?.companyCar && !(state?.abandonedCar && (state?.wreckRepairs??0)>=3)))} driving={vehicle==="company"} carPosition={carPosition} wreckOwned={Boolean(state?.abandonedCar)} wreckPosition={wreckPosition} wreckDriving={vehicle==="wreck"} conversation={conversation} {...(crewVisuals ? { crew: crewVisuals } : {})} /></Suspense>}
       <svg ref={svgRef} style={use3d && conversation ? { opacity: 0, transition: "opacity .35s" } : { transition: "opacity .35s" }} viewBox="0 0 330 550" preserveAspectRatio="xMidYMid slice" className="relative block h-full w-full touch-none select-none font-hand"
         onPointerDownCapture={e=>{if(!pausedRef.current && movementMode === "joystick")onGroundPointerDown(e);}}
@@ -754,8 +755,8 @@ export function TownMap({ movementMode = "joystick", hour, house, speed = 1, ska
         {!use3d && (night || dusk) && <rect x={-2000} y={-2000} width={4000} height={4000} fill={night ? "var(--town-night-wash)" : "var(--town-dusk-wash)"} opacity={night ? 0.22 : 0.1} pointerEvents="none" />}
         </g>
       </svg>
+      </div>
 
-      
       {stickVisual && (
         <div data-floating-joystick aria-hidden="true" className="pointer-events-none absolute inset-0 z-20">
           <div
