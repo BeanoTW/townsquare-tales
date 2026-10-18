@@ -475,7 +475,6 @@ function Game() {
                 </> : <p className="text-sm">Speak to the person who approached you about this.</p>}
               </section> : crewTopic==="talk" && storyAvailable(s,crewSpeaker) && <section className="rounded-xl border border-foreground/50 p-3">
                 <p className="font-bold">Something different</p>
-                <p className="my-2">{storyDialogue(storyAvailable(s,crewSpeaker)!,s)}</p>
                 <Btn onClick={()=>{if(perform(beginStory(storyAvailable(s,crewSpeaker)!.id)))setCrewTopic("work");}}>Alright, I’m in</Btn>
               </section>}
               
