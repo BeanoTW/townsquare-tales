@@ -324,7 +324,7 @@ function Game() {
         state={s}
         onStreetIncident={id => setS(current => recordStreetIncident(current,id))}
         paused={Boolean(place || tab || enc || resident || gangMeeting || parkKidOpen || vignette || stage || arcade || wreckGame || crewScene3d)}
-        conversation={crewScene3d}
+        conversation={gangMeeting ? null : crewScene3d}
         onStreet={(id: StreetObjectId) => {
           if(id==="ramp"){
             // Without an equipped board the game opens on its requirement card instead of charging anything.
@@ -379,7 +379,7 @@ function Game() {
 
       <GlobalRenderingDiagnostics screen={game ? `Casino: ${game}` : arcade ? `Minigame: ${arcade}` : place ? `Interior: ${place}` : "Town map"} />
       {/* top HUD: always visible, including inside buildings */}
-      <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+      <div className={"pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3" + (gangMeeting && !gangMeeting.hostile && !activeStory(s) && storyAvailable(s,crewSpeaker) ? " hidden" : "")}>
         <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} health={s.health ?? 100} />
         <div className="pointer-events-auto flex shrink-0 flex-row gap-1 sm:gap-2">
           <Icon disabled={game !== null || arcade !== null} label="Player" onClick={() => setTab("player")}>
@@ -446,7 +446,20 @@ function Game() {
           <div className="mt-2"><Button variant="ghost" onClick={()=>setResident(null)}>Leave them to it</Button></div>
         </div>
       )}
-      {gangMeeting && (
+      {gangMeeting && !gangMeeting.hostile && !activeStory(s) && storyAvailable(s,crewSpeaker) && (
+        <div role="dialog" aria-label="Crew mission offer" className="pointer-events-none absolute inset-0 z-30">
+          <div className="pointer-events-auto absolute left-1/2 top-[20%] w-[min(88vw,340px)] -translate-x-1/2 rounded-2xl border-2 border-foreground bg-card/95 px-3 py-3 text-center shadow-lg">
+            <p className="text-xs font-bold">{CREW_MEMBERS.find(m=>m.id===crewSpeaker)?.name ?? crewSpeaker}</p>
+            <p className="text-sm leading-snug">{storyDialogue(storyAvailable(s,crewSpeaker)!,s)}</p>
+          </div>
+          <div className="pointer-events-auto absolute inset-x-3 bottom-4 mx-auto flex max-w-sm flex-col gap-2">
+            <div className="flex gap-2">{CREW_MEMBERS.map(member=><button key={member.id} type="button" aria-pressed={crewSpeaker===member.id} onClick={()=>setCrewSpeaker(member.id)} className={crewSpeaker===member.id ? "min-h-11 flex-1 rounded-xl border-2 border-foreground bg-secondary font-bold" : "min-h-11 flex-1 rounded-xl border-2 border-foreground bg-card font-bold"}>{member.name}</button>)}</div>
+            <button type="button" className="min-h-12 rounded-xl border-2 border-foreground bg-primary font-bold text-primary-foreground shadow-lg" onClick={()=>{if(perform(beginStory(storyAvailable(s,crewSpeaker)!.id)))setGangMeeting(null);}}>Accept mission</button>
+            <button type="button" className="min-h-11 rounded-xl border-2 border-foreground bg-card/95 font-bold shadow" onClick={()=>setGangMeeting(null)}>Not now</button>
+          </div>
+        </div>
+      )}
+      {gangMeeting && (gangMeeting.hostile || activeStory(s) || !storyAvailable(s,crewSpeaker)) && (
         <Sheet compact title={gangMeeting.hostile ? "Trouble in the north-east green" : "The crew at the green"}>
           <p className="text-sm leading-snug font-semibold">{gangMeeting.message}</p>
           {!gangMeeting.hostile && <section aria-label="Talk to crew members" className="rounded-lg border border-foreground/30 p-2">
