@@ -1,0 +1,16 @@
+name: Crew Dialogue Mobile Fix
+on:
+  pull_request:
+    paths:
+      - 'src/components/town3d/crew.tsx'
+      - 'src/routes/index.tsx'
+      - '.github/workflows/crew-dialogue-mobile-fix.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/test/underworld-cinematics.test.ts src/test/crew-contact-ui.test.ts
+      - run: bun run build
