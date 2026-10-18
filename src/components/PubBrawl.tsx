@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameState } from "@/lib/game-state";
-import { beginFight, settleFight, FIGHT_BILLS, PUB_STAKES, type Fight, type FightVenue, type MoveId } from "@/lib/combat";
+import { beginFight, settleFight, FIGHT_BILLS, PUB_STAKES, fightMaxHp, type Fight, type FightVenue, type MoveId } from "@/lib/combat";
 import { FIGHT_VENUES, MOVE_BAR, commentary, eventSeconds, fighterFor, playTurn, queueSeconds, voice, type FightEvent, type FighterLook } from "@/lib/fight-presentation";
 import type { CutsceneMode } from "@/lib/conversation-camera";
 import { IMPACT } from "@/components/fight/fight-acts";
@@ -151,7 +151,7 @@ export function PubBrawl({ state, onChange, onExit, cutsceneMode = "full", venue
       {view && phase !== "wager" && (
         <div className="pointer-events-none relative z-10 px-2 pt-[max(env(safe-area-inset-top),8px)]" data-fight-hud>
           <div className="grid grid-cols-2 gap-2">
-            <FighterCard name="You" hp={view.player.hp} max={100} ap={view.player.ap} guard={view.player.guard} active={view.turn === "player" && !busy && !view.over} />
+            <FighterCard name="You" hp={view.player.hp} max={fightMaxHp(state)} ap={view.player.ap} guard={view.player.guard} active={view.turn === "player" && !busy && !view.over} />
             <FighterCard name={opponent.name} hp={view.opponent.hp} max={opponentMax} ap={view.opponent.ap} guard={view.opponent.guard} active={busy} right />
           </div>
           <div className="mt-1 flex justify-center">
