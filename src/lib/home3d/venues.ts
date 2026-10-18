@@ -132,6 +132,8 @@ export const BAR: HomePlan = {
     vslot("bar-counter", 4.0, 2.25, 0, "bar", [6.2, 0.9], "Bar counter", "ROUND", 1.9),
     vslot("dance-floor", 9.45, 5.45, 0, "dance", [3.1, 4.1], "Dance floor", "CHAT", 1.6, true),
     vslot("dartboard", 10.2, 0.3, 0, "dance", [1.0, 0.3], "Dartboard", "DARTS", 2.25),
+    // Ron the bookie and his odds board beside the darts, looking out over the dance floor that doubles as the fight floor.
+    vslot("pub-brawl", 9.1, 0.75, 0, "dance", [0.8, 0.5], "Ron the bookie", "FIGHT", 2.2),
   ],
   focus: {
     all: R(0, 0, BW, BD),
