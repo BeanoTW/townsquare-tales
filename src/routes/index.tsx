@@ -380,7 +380,7 @@ function Game() {
       <GlobalRenderingDiagnostics screen={game ? `Casino: ${game}` : arcade ? `Minigame: ${arcade}` : place ? `Interior: ${place}` : "Town map"} />
       {/* top HUD: always visible, including inside buildings */}
       <div className="pointer-events-none absolute z-40 inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-        <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} />
+        <DayClock day={s.day} hour={s.hour} money={s.money} energy={s.energy} health={s.health ?? 100} />
         <div className="pointer-events-auto flex shrink-0 flex-row gap-1 sm:gap-2">
           <Icon disabled={game !== null || arcade !== null} label="Player" onClick={() => setTab("player")}>
             👤

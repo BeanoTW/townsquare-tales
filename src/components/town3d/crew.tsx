@@ -158,14 +158,14 @@ export function TownCameraRig({ live, skating, conversation }: { live: TownLive;
       const centerX = (marks.mick.x + marks.lez.x + marks.nia.x) / 3;
       const centerZ = (marks.mick.z + marks.lez.z + marks.nia.z) / 3;
       const focus = marks[beat.speaker ?? lead ?? "mick"] ?? marks.mick;
-      pose.eye = [centerX - 2.6, 3.6, centerZ + 6.8];
-      pose.target = [centerX * 0.55 + focus.x * 0.45, 0.9, centerZ * 0.55 + focus.z * 0.45];
-      pose.fov = 49;
+      pose.eye = [centerX - 2.6, 2.7, centerZ + 5.8];
+      pose.target = [centerX * 0.55 + focus.x * 0.45, 1.6, centerZ * 0.55 + focus.z * 0.45];
+      pose.fov = 46;
     }
     if (pose) {
       tmp.eye.set(...pose.eye); tmp.target.set(...pose.target);
       // The dialogue sheet covers the lower half: aim low so the people sit in the upper half of the frame.
-      if (active.cue.kind === "conversation") tmp.target.y -= 0.08;
+      // Keep the crew above the dialogue sheet: target higher rather than tilting down into empty sky.
       const s = shot.current;
       if (!s.ready || reduced) { s.eye.copy(tmp.eye); s.target.copy(tmp.target); s.fov = pose.fov; s.ready = true; }
       else {
