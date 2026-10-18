@@ -61,10 +61,12 @@ const LABELS: [keyof GameState, string][] = [
 const clampEnergy = (n: number) => Math.max(0, Math.min(100, n));
 
 export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random): ActionResult {
-  if (s.energy < def.energy) {
+  const moonDustActive = (s.wakeStreak ?? 0) > 0 && def.id !== "sleep" && def.id !== "stay-awake";
+  const energyCost = moonDustActive ? 0 : def.energy;
+  if (s.energy < energyCost) {
     return {
       ok: false,
-      message: `Not enough energy: need ${def.energy}, have ${s.energy}. Rest or eat first.`,
+      message: `Not enough energy: need ${energyCost}, have ${s.energy}. Rest or eat first.`,
     };
   }
   if (s.hour + def.hours > 24) {
@@ -85,7 +87,7 @@ export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random):
     ...s,
     ...patch,
     hour: patch.hour ?? s.hour + def.hours,
-    energy: clampEnergy(patch.energy ?? s.energy - def.energy),
+    energy: moonDustActive ? 100 : clampEnergy(patch.energy ?? s.energy - energyCost),
     // A real completed activity (not a menu click or instant purchase) breaks the sleep-only streak.
     ...(def.id !== "sleep" && def.id !== "stay-awake" && (def.hours > 0 || def.energy > 0) ? { lastActiveDay: s.day } : {}),
   };
@@ -96,7 +98,7 @@ export function runAction(s: GameState, def: ActionDef, rng: Rng = Math.random):
     const delta = value - (s[key] as number);
     return [`${label}: ${delta > 0 ? "+" : ""}${delta}`];
   });
-  if (def.hours && def.energy && patch.energy === undefined) changes.push(`Energy: -${def.energy}`);
+  if (def.hours && energyCost && patch.energy === undefined) changes.push(`Energy: -${energyCost}`);
 
   return { ok: true, next, message, hoursUsed: def.hours, changes };
 }
@@ -864,8 +866,8 @@ export const STAY_AWAKE:ActionDef={id:"stay-awake",label:"Stay awake another nig
  resolve:s=>{
   if((s.stimulantPacks??0)<1)return "No mysterious powder left. Perhaps try the revolutionary concept of sleeping.";
   const streak=s.wakeStreak??0;
-  if(streak>=2)return {patch:{day:s.day+1,hour:10,energy:50,health:100,stimulantPacks:s.stimulantPacks!-1,wakeStreak:0,medicalDebt:Math.min(1e6,(s.medicalDebt??0)+10000),lastSleepDay:s.day+1,lastActiveDay:s.day+1},message:"DAY THREE. You wake up in hospital arguing with a coat rack. The doctor hands you a $10,000 bill. Apparently your body has filed a formal complaint."};
-  return {patch:{day:s.day+1,hour:8,energy:80,health:Math.max(1,(s.health??100)-33),stimulantPacks:s.stimulantPacks!-1,wakeStreak:streak+1,lastActiveDay:s.day+1},message:streak===0?"You have defeated bedtime. The moon looks disappointed.": "Night two. You can hear your eyebrows thinking. Perhaps sleep before your organs resign."};
+  if(streak>=2)return {patch:{day:s.day+1,hour:10,energy:50,health:100,karma:s.karma-1,stimulantPacks:s.stimulantPacks!-1,wakeStreak:0,medicalDebt:Math.min(1e6,(s.medicalDebt??0)+10000),lastSleepDay:s.day+1,lastActiveDay:s.day+1},message:"DAY THREE. You wake up in hospital arguing with a coat rack. The doctor hands you a $10,000 bill. Apparently your body has filed a formal complaint."};
+  return {patch:{day:s.day+1,hour:8,energy:100,health:Math.max(1,(s.health??100)-33),karma:s.karma-1,stimulantPacks:s.stimulantPacks!-1,wakeStreak:streak+1,lastActiveDay:s.day+1},message:streak===0?"You have defeated bedtime. The moon looks disappointed.": "Night two. You can hear your eyebrows thinking. Perhaps sleep before your organs resign."};
  }};
 export function repayMedicalDebt(amount:number):ActionDef{return {id:"repay-medical-"+amount,label:"Pay hospital $"+amount,hours:0,energy:0,
  resolve:s=>{const payment=Math.min(amount,s.medicalDebt??0);return payment<=0?"No hospital balance outstanding.":s.money<payment?"You need $"+payment+" to make this payment.":{patch:{money:s.money-payment,medicalDebt:(s.medicalDebt??0)-payment},message:"Hospital payment of $"+payment+" accepted. The coat rack sends its regards."};}};}
