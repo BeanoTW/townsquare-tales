@@ -37,7 +37,7 @@ import { HOUSES, SCHOOLS, START } from "@/lib/game-data";
 import {buyMoonDust,hometownUnlocked,hometownSupplyRun} from "@/lib/hometown";
 import { EAT_SNACK, EAT_SANDWICH, STAY_AWAKE, repayMedicalDebt, SELL_GOODS, ALLEY_DICE, runAction, type ActionDef } from "@/lib/actions";
 import { gangReception, gangResponse, type GangMeeting } from "@/lib/street-gang";
-import { gangAccess, gangDialogue, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
+import { gangAccess, gangJob, deliverGangParcel, gangTaskObjective, advanceGangTask, crewChoices, resolveCrewEncounter, CREW_MEMBERS, crewConversation, type CrewMember } from "@/lib/gang-career";
 import {storyAvailable,activeStory,storyDialogue,beginStory,finishStory, UNDERWORLD_STORIES, storyObjective, investigateStory} from "@/lib/underworld-stories";
 import {UNDERWORLD_SCRIPTS,type InvestigationApproach} from "@/lib/underworld-story-script";
 import { gangCarLesson, pawnIntroductionAction, attemptHotwire, repairWreck } from "@/lib/underworld";
@@ -269,6 +269,7 @@ function Game() {
     setPlace(id);
   };
   const approachGang = (member: CrewMember = "mick") => {
+     setCrewTopic("talk");
     setCrewSpeaker(member);
     if (gangMeeting) return;
     setPlace(null);
@@ -457,8 +458,8 @@ function Game() {
               <Btn onClick={() => { if(perform(gangResponse("stand"))) setGangMeeting(null); }}>Stand ground · 10 energy · risk $10</Btn>
               <Btn onClick={() => { if(perform(gangResponse("talk"))) setGangMeeting(null); }}>Talk them down · 4 energy · risk $5</Btn>
               {s.gangStage === 0 && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Ask the crew for work</Btn>}
-              {crewTopic==="work" && ([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
-              <Btn disabled={!!weaponBlock(s,1)} onClick={() => { if(perform(buyWeapon(1))) setGangMeeting(null); }}>Buy an ordinary bat · $180</Btn>
+              {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
+
               
             </>
           ) : (
@@ -478,7 +479,7 @@ function Game() {
                 <Btn onClick={()=>{if(perform(beginStory(storyAvailable(s,crewSpeaker)!.id)))setCrewTopic("work");}}>Alright, I’m in</Btn>
               </section>}
               
-              {([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
+              {crewTopic==="work" && ([2,4].includes(s.gangTask??0)) && <div className="flex flex-col gap-2">{crewChoices(s).map(choice=><Btn key={choice.id} onClick={()=>{if(perform(resolveCrewEncounter(s.gangTask!,choice.id)))setGangMeeting(null);}}>{choice.label}</Btn>)}</div>}
               {crewTopic==="work" && crewSpeaker==="mick" && gangAccess(s)==="initiation" && !s.gangTask && <Btn onClick={() => { if(perform(gangJob("gang-initiation"))) setGangMeeting(null); }}>Hear them out</Btn>}
               {crewTopic==="work" && crewSpeaker==="mick" && !s.underworldStoryActive && ["probation","trusted"].includes(gangAccess(s)) && !s.gangTask && <>
                 <Btn onClick={() => { if(perform(gangJob("gang-lookout"))) setGangMeeting(null); }}>Keep watch</Btn>
@@ -494,8 +495,8 @@ function Game() {
                 <Btn onClick={() => { if(perform(buyWeapon(tier))) setGangMeeting(null); }}>{buyWeapon(tier).label} · $ {buyWeapon(tier).cost}</Btn>
                 <p className="px-1 py-1 text-sm text-muted-foreground">{tier===1?"Looks like it has seen better days.": "Ask the crew whether they can source something heavier."}</p>
               </div>)}
-              <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>
               </div>}
+              {crewSpeaker==="nia" && crewTopic==="business" && <Btn onClick={() => { perform(ALLEY_DICE); setGangMeeting(null); }}>Play street dice</Btn>}
             </>
           )}
         </CrewDialogueCard>
