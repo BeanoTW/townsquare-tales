@@ -131,9 +131,9 @@ describe("the brawl screen", () => {
   it("refuses stakes the player can't cover, and fights when they're out of health", () => {
     render(<PubBrawl state={{ ...state, money: 80 }} onChange={() => {}} onExit={() => {}} />);
     expect((screen.getByRole("button", { name: "$150" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(false);
     cleanup();
     render(<PubBrawl state={{ ...state, health: 0 }} onChange={() => {}} onExit={() => {}} />);
-    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(true;
+    expect((screen.getByRole("button", { name: "$50" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
